@@ -53,7 +53,7 @@ class User(db.Model):
     email = db.Column(db.String(100), unique=True, nullable=False, index=True)
     hashed_password = db.Column(db.String(255), nullable=False)
     is_active = db.Column(db.Boolean, default=True)
-    role = db.Column(db.Enum('user', 'staff'), nullable=False, default='user')
+    role = db.Column(db.Enum('user', 'staff', 'evaluator', 'admin'), nullable=False, default='user')
     created_at = db.Column(db.DateTime, server_default=db.func.now())
     updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
 
@@ -69,7 +69,8 @@ class Submission(db.Model):
     suc_agencies = db.Column(db.String(255), nullable=True)
     author = db.Column(db.String(255), nullable=False)
     presenter = db.Column(db.String(255), nullable=False)
-    status = db.Column(db.Enum('pending', 'accepted', 'rejected'), nullable=False, default='pending')
+    status = db.Column(db.Enum('pending', 'endorse', 'downgraded'), nullable=False, default='pending')
+    evaluation_status = db.Column(db.Enum('pending', 'endorse', 'downgraded-non_competitive', 'downgraded-poster_only'), nullable=False, default='pending')
     co_authors = db.Column(db.Text, nullable=True)
     abstract_view_url = db.Column(db.String(500), nullable=True)
     abstract_download_url = db.Column(db.String(500), nullable=True)
@@ -116,6 +117,8 @@ class ExtractedAbstractData(db.Model):
     paper_category = db.Column(db.String(255), nullable=True)
     thematic_area = db.Column(db.String(255), nullable=True)
     theme = db.Column(db.String(500), nullable=True)
+    status = db.Column(db.Enum('pending', 'endorse', 'downgraded'), nullable=False, default='pending')
+    evaluation_status = db.Column(db.Enum('pending', 'endorse', 'downgraded-non_competitive', 'downgraded-poster_only'), nullable=False, default='pending')
     extraction_status = db.Column(db.Enum('pending', 'extracted', 'failed'), nullable=False, default='pending')
     extraction_error = db.Column(db.Text, nullable=True)
     extracted_at = db.Column(db.DateTime, server_default=db.func.now())
@@ -134,7 +137,36 @@ class SUC(db.Model):
     created_at = db.Column(db.DateTime, server_default=db.func.now())
     updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
 
+class SubmissionVote(db.Model):
+    __tablename__ = 'submission_votes'
+    id = db.Column(db.Integer, primary_key=True)
+    submission_id = db.Column(db.Integer, db.ForeignKey('submissions.id'), nullable=False)
+    evaluator_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    # statuses: 'endorse', 'non_competitive', 'downgrade', 'reassign'
+    vote_status = db.Column(db.String(50), nullable=False)  
+    vote_notes = db.Column(db.Text, nullable=True) # Notes for why they voted this way
+    vote_reassign_to = db.Column(db.String(255), nullable=True) # Only if vote is 'reassign'
+    vote_downgrade_to = db.Column(db.String(255), nullable=True) # Only if vote is 'downgrade'
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
 
+    # Relationships
+    submission = db.relationship('Submission', foreign_keys=[submission_id], backref='votes')
+    evaluator = db.relationship('User', foreign_keys=[evaluator_id])
+
+class EvaluatorDiscussion(db.Model):
+    __tablename__ = 'evaluator_discussions'
+    id = db.Column(db.Integer, primary_key=True)
+    submission_id = db.Column(db.Integer, db.ForeignKey('submissions.id'), nullable=False)
+    evaluator_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+
+    # Relationships
+    submission = db.relationship('Submission', foreign_keys=[submission_id], backref='discussions')
+    evaluator = db.relationship('User', foreign_keys=[evaluator_id], backref='discussions')
+    
+    
 # Create tables
 with app.app_context():
     db.create_all()
@@ -217,6 +249,61 @@ def register():
         traceback.print_exc()
         return jsonify({"detail": str(e)}), 500
 
+@app.route('/api/current-user', methods=['GET', 'OPTIONS'])
+def get_current_user():
+    """Get the currently logged-in user from the session."""
+    if request.method == 'OPTIONS':
+        return jsonify({})
+    
+    try:
+        # For now, we'll use a simple approach - get user from Authorization header
+        # In production, use proper JWT or session-based authentication
+        auth_header = request.headers.get('Authorization')
+        if not auth_header:
+            return jsonify({"detail": "Authorization header required"}), 401
+        
+        # Simple token-based authentication (for demo purposes)
+        # In production, use JWT tokens
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]
+            # For demo, we'll use a simple token mapping
+            # In production, verify JWT token
+            user_data = verify_token(token)
+            if not user_data:
+                return jsonify({"detail": "Invalid token"}), 401
+            
+            return jsonify({
+                "id": user_data['id'],
+                "full_name": user_data['full_name'],
+                "email": user_data['email'],
+                "role": user_data['role']
+            }), 200
+        
+        return jsonify({"detail": "Invalid authorization format"}), 401
+        
+    except Exception as e:
+        print(f"Error getting current user: {e}")
+        return jsonify({"detail": str(e)}), 500
+
+def verify_token(token):
+    """Simple token verification for demo purposes."""
+    try:
+        # For demo: token is base64 encoded email
+        import base64
+        decoded = base64.b64decode(token).decode('utf-8')
+        if '@' in decoded:
+            user = User.query.filter_by(email=decoded).first()
+            if user:
+                return {
+                    "id": user.id,
+                    "full_name": user.full_name,
+                    "email": user.email,
+                    "role": user.role
+                }
+    except:
+        pass
+    return None
+
 @app.route('/api/login', methods=['POST', 'OPTIONS'])
 def login():
     if request.method == 'OPTIONS':
@@ -235,6 +322,10 @@ def login():
         if not bcrypt.check_password_hash(user.hashed_password, data['password']):
             return jsonify({"detail": "Invalid email or password"}), 401
         
+        # Generate a simple token (in production, use JWT)
+        import base64
+        token = base64.b64encode(user.email.encode('utf-8')).decode('utf-8')
+        
         return jsonify({
             "message": "Login successful",
             "user": {
@@ -242,14 +333,15 @@ def login():
                 "full_name": user.full_name,
                 "email": user.email,
                 "role": user.role
-            }
+            },
+            "token": token  # Return token for subsequent requests
         }), 200
         
     except Exception as e:
         print(f"Login error: {e}")
         traceback.print_exc()
         return jsonify({"detail": str(e)}), 500
-
+    
 @app.route('/api/submit', methods=['POST', 'OPTIONS'])
 def submit():
     if request.method == 'OPTIONS':
@@ -264,6 +356,7 @@ def submit():
         print(f"Content-Length: {request.content_length}")
         
         # Get form data
+        user_id = request.form.get('user_id', 0)
         extension_project_title = request.form.get('extension_project_title', '')
         thematic_area = request.form.get('thematic_area', '')
         paper_category = request.form.get('paper_category', '')
@@ -294,6 +387,12 @@ def submit():
             return jsonify({
                 "detail": f"Missing required fields: {', '.join(missing_fields)}"
             }), 400
+        
+        # Convert user_id to int if provided
+        try:
+            user_id = int(user_id) if user_id else 0
+        except ValueError:
+            user_id = 0
         
         # Handle co_authors
         if co_authors:
@@ -366,9 +465,9 @@ def submit():
             traceback.print_exc()
             return jsonify({"detail": f"Failed to upload endorsement to Google Drive: {str(drive_error)}"}), 500
         
-        # Create submission record
+        # Create submission record with user_id
         new_submission = Submission(
-            user_id=0,
+            user_id=user_id, 
             extension_project_title=extension_project_title,
             thematic_area=thematic_area,
             paper_category=paper_category,
@@ -387,7 +486,7 @@ def submit():
         
         db.session.add(new_submission)
         db.session.commit()
-        print(f"Submission saved to database with ID: {new_submission.id}")
+        print(f"Submission saved to database with ID: {new_submission.id}, User ID: {user_id}")
         
         return jsonify({
             "message": "Submission successful",
@@ -425,8 +524,49 @@ def submit():
             "detail": f"{error_type}: {error_msg}",
             "error_type": error_type
         }), 500
+        
+@app.route('/api/submissions/user/<int:user_id>', methods=['GET', 'OPTIONS'])
+def get_user_submissions(user_id):
+    """Get submissions for a specific user."""
+    if request.method == 'OPTIONS':
+        return jsonify({})
+    
+    try:
+        # Verify the user exists
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({"detail": "User not found"}), 404
+        
+        submissions = Submission.query.filter_by(user_id=user_id).order_by(Submission.created_at.desc()).all()
+        
+        result = [{
+            'id': s.id,
+            'user_id': s.user_id,
+            'extension_project_title': s.extension_project_title,
+            'thematic_area': s.thematic_area,
+            'paper_category': s.paper_category,
+            'suc_agencies': s.suc_agencies,
+            'author': s.author,
+            'presenter': s.presenter,
+            'status': s.status,
+            'co_authors': s.co_authors,
+            'abstract_view_url': s.abstract_view_url,
+            'abstract_download_url': s.abstract_download_url,
+            'endorsement_view_url': s.endorsement_view_url,
+            'endorsement_download_url': s.endorsement_download_url,
+            'compextproj_drive_view_url': s.compextproj_drive_view_url,
+            'compextproj_drive_download_url': s.compextproj_drive_download_url,
+            'created_at': s.created_at.strftime('%Y-%m-%d %H:%M:%S') if s.created_at else None
+        } for s in submissions]
+        
+        return jsonify(result), 200
+        
+    except Exception as e:
+        print(f"Error fetching user submissions: {e}")
+        traceback.print_exc()
+        return jsonify({"detail": str(e)}), 500
+    
 
-# Get all submissions for staff review
 @app.route('/api/submissions', methods=['GET', 'OPTIONS'])
 def get_submissions():
     if request.method == 'OPTIONS':
@@ -1474,6 +1614,262 @@ def sync_all_emails():
     except Exception as e:
         print(f"Error syncing emails: {e}")
         traceback.print_exc()
+        return jsonify({"detail": str(e)}), 500
+
+def evaluate_final_decision(submission_id):
+    """Automatically evaluates the submission based on majority votes."""
+    submission = Submission.query.get(submission_id)
+    votes = SubmissionVote.query.filter_by(submission_id=submission_id).all()
+    
+    endorse_count = 0
+    downgrade_count = 0
+    reassign_count = 0
+    downgrade_type = None
+
+    for vote in votes:
+        if vote.vote_status == 'endorse':
+            endorse_count += 1
+        elif vote.vote_status == 'downgrade':
+            downgrade_count += 1
+            # Store the downgrade type from the vote
+            if vote.vote_downgrade_to:
+                downgrade_type = vote.vote_downgrade_to
+        elif vote.vote_status == 'reassign':
+            reassign_count += 1
+
+    # Final decision logic based on 3 evaluators
+    if endorse_count >= 2:  # 2 or more endorse votes
+        submission.evaluation_status = 'endorse'
+        submission.status = 'endorse'  # Update status as well
+    elif downgrade_count >= 2:  # 2 or more downgrade votes
+        # Use the downgrade type from the votes
+        if downgrade_type:
+            submission.evaluation_status = downgrade_type
+        else:
+            submission.evaluation_status = 'downgraded-non_competitive'  # default
+        submission.status = 'downgraded'  # Update status as well
+    elif reassign_count >= 2:  # 2 or more reassign votes
+        submission.evaluation_status = 'pending'  # Keep pending for reassign
+        # Update thematic area is handled elsewhere
+    else:
+        submission.evaluation_status = 'pending'
+
+    db.session.commit()
+    
+@app.route('/api/submissions/<int:submission_id>/evaluate', methods=['POST', 'OPTIONS'])
+def evaluate_submission(submission_id):
+    if request.method == 'OPTIONS':
+        return jsonify({})
+    
+    try:
+        data = request.get_json()
+        evaluator_id = data.get('evaluator_id')
+        vote_status = data.get('vote_status')  # 'endorse', 'downgrade', 'reassign'
+        vote_notes = data.get('vote_notes', '')
+        vote_reassign_to = data.get('vote_reassign_to', '')
+        vote_downgrade_to = data.get('vote_downgrade_to', '')
+
+        # Validations
+        if not evaluator_id or not vote_status:
+            return jsonify({"detail": "Evaluator ID and vote status are required"}), 400
+
+        if vote_status not in ['endorse', 'downgrade', 'reassign']:
+            return jsonify({"detail": "Invalid vote status"}), 400
+
+        submission = Submission.query.get(submission_id)
+        if not submission:
+            return jsonify({"detail": "Submission not found"}), 404
+
+        # Check if evaluator already voted
+        existing_vote = SubmissionVote.query.filter_by(submission_id=submission_id, evaluator_id=evaluator_id).first()
+        
+        if existing_vote:
+            existing_vote.vote_status = vote_status
+            existing_vote.vote_notes = vote_notes
+            existing_vote.vote_reassign_to = vote_reassign_to
+            existing_vote.vote_downgrade_to = vote_downgrade_to
+        else:
+            new_vote = SubmissionVote(
+                submission_id=submission_id,
+                evaluator_id=evaluator_id,
+                vote_status=vote_status,
+                vote_notes=vote_notes,
+                vote_reassign_to=vote_reassign_to,
+                vote_downgrade_to=vote_downgrade_to
+            )
+            db.session.add(new_vote)
+
+        # IMMEDIATELY update the submission's thematic area if reassign is selected
+        if vote_status == 'reassign' and vote_reassign_to:
+            submission.thematic_area = vote_reassign_to
+
+        db.session.commit()
+
+        # Automatically update status based on all votes
+        evaluate_final_decision(submission_id)
+
+        # Fetch updated votes
+        votes = SubmissionVote.query.filter_by(submission_id=submission_id).all()
+        return jsonify({
+            "message": "Vote recorded successfully",
+            "evaluation_status": submission.evaluation_status,
+            "thematic_area": submission.thematic_area,
+            "votes": [{
+                "evaluator_id": v.evaluator_id,
+                "vote_status": v.vote_status,
+                "vote_notes": v.vote_notes,
+                "vote_reassign_to": v.vote_reassign_to,
+                "vote_downgrade_to": v.vote_downgrade_to
+            } for v in votes]
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        traceback.print_exc()
+        return jsonify({"detail": str(e)}), 500
+    
+#Get votes for a submission
+@app.route('/api/submissions/<int:submission_id>/evaluate', methods=['GET', 'OPTIONS'])
+def get_submission_votes(submission_id):
+    if request.method == 'OPTIONS':
+        return jsonify({})
+
+    try:
+        submission = Submission.query.get(submission_id)
+        if not submission:
+            return jsonify({"detail": "Submission not found"}), 404
+
+        votes = SubmissionVote.query.filter_by(submission_id=submission_id).all()
+
+        return jsonify({
+            "evaluation_status": submission.evaluation_status,
+            "votes": [{
+                "id": v.id,
+                "evaluator_id": v.evaluator_id,
+                "vote_status": v.vote_status,
+                "vote_notes": v.vote_notes,
+                "vote_reassign_to": v.vote_reassign_to,
+                "vote_downgrade_to": v.vote_downgrade_to,
+                "updated_at": v.updated_at.strftime('%Y-%m-%d %H:%M:%S') if v.updated_at else None
+            } for v in votes]
+        }), 200
+
+    except Exception as e:
+        return jsonify({"detail": str(e)}), 500
+
+
+#Post a message in the evaluator discussion
+@app.route('/api/submissions/<int:submission_id>/discussions', methods=['POST', 'OPTIONS'])
+def post_discussion(submission_id):
+    if request.method == 'OPTIONS':
+        return jsonify({})
+    
+    try:
+        data = request.get_json()
+        evaluator_id = data.get('evaluator_id')
+        message = data.get('message', '')
+
+        if not evaluator_id or not message:
+            return jsonify({"detail": "Evaluator ID and message are required"}), 400
+
+        submission = Submission.query.get(submission_id)
+        if not submission:
+            return jsonify({"detail": "Submission not found"}), 404
+
+        new_message = EvaluatorDiscussion(
+            submission_id=submission_id,
+            evaluator_id=evaluator_id,
+            message=message
+        )
+        db.session.add(new_message)
+        db.session.commit()
+
+        return jsonify({
+            "message": "Discussion posted successfully",
+            "id": new_message.id,
+            "evaluator_id": new_message.evaluator_id,
+            "message": new_message.message,  # Changed from 'text' to 'message'
+            "created_at": new_message.created_at.strftime('%Y-%m-%d %H:%M:%S') if new_message.created_at else None
+        }), 201
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"detail": str(e)}), 500
+
+#Get discussion for a submission
+@app.route('/api/submissions/<int:submission_id>/discussions', methods=['GET', 'OPTIONS'])
+def get_discussions(submission_id):
+    if request.method == 'OPTIONS':
+        return jsonify({})
+
+    try:
+        discussions = EvaluatorDiscussion.query.filter_by(submission_id=submission_id).order_by(EvaluatorDiscussion.created_at.asc()).all()
+
+        return jsonify([{
+            "id": d.id,
+            "evaluator_id": d.evaluator_id,
+            "message": d.message,
+            "created_at": d.created_at.strftime('%Y-%m-%d %H:%M:%S') if d.created_at else None
+        } for d in discussions]), 200
+
+    except Exception as e:
+        return jsonify({"detail": str(e)}), 500
+    
+    
+@app.route('/api/users/<int:user_id>/thematic-areas', methods=['GET', 'OPTIONS'])
+def get_user_thematic_areas_simple(user_id):
+    """Simple endpoint to get thematic areas for a user."""
+    if request.method == 'OPTIONS':
+        return jsonify({})
+    
+    try:
+        # Get distinct thematic areas
+        submissions = Submission.query.filter_by(user_id=user_id).with_entities(Submission.thematic_area).distinct().all()
+        
+        thematic_areas = [s[0] for s in submissions if s[0]]
+        
+        return jsonify({
+            "user_id": user_id,
+            "thematic_areas": thematic_areas
+        }), 200
+        
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({"detail": str(e)}), 500
+
+
+@app.route('/api/users/<int:user_id>/thematic-areas', methods=['POST', 'OPTIONS'])
+def update_user_thematic_areas_simple(user_id):
+    """Simple endpoint to update a submission's thematic area for a user."""
+    if request.method == 'OPTIONS':
+        return jsonify({})
+    
+    try:
+        data = request.get_json()
+        submission_id = data.get('submission_id')
+        new_thematic_area = data.get('thematic_area')
+        
+        if not submission_id or not new_thematic_area:
+            return jsonify({"detail": "Submission ID and thematic area are required"}), 400
+        
+        # Find the submission
+        submission = Submission.query.filter_by(id=submission_id, user_id=user_id).first()
+        if not submission:
+            return jsonify({"detail": "Submission not found"}), 404
+        
+        # Update
+        submission.thematic_area = new_thematic_area
+        db.session.commit()
+        
+        return jsonify({
+            "message": "Updated successfully",
+            "submission_id": submission_id,
+            "new_thematic_area": new_thematic_area
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error: {e}")
         return jsonify({"detail": str(e)}), 500
     
 if __name__ == '__main__':

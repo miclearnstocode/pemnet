@@ -70,6 +70,7 @@ const Toast = ({ message, type, onClose }) => {
 };
 
 export default function SubmitPage() {
+  const [activeTab, setActiveTab] = useState('submit');
   const [coAuthors, setCoAuthors] = useState(['']);
   const [chosenSuc, setChosenSuc] = useState('');
   const [showOtherSuc, setShowOtherSuc] = useState(false);
@@ -87,6 +88,8 @@ export default function SubmitPage() {
   const [isLoadingSucs, setIsLoadingSucs] = useState(true);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef(null);
+  const [userSubmissions, setUserSubmissions] = useState([]);
+  const [isLoadingSubmissions, setIsLoadingSubmissions] = useState(false);
 
   // Fetch SUCs from database
   useEffect(() => {
@@ -112,13 +115,39 @@ export default function SubmitPage() {
 
   // Check if user is logged in
   useEffect(() => {
-      const userData = localStorage.getItem('pemnet_user');
-      if (!userData) {
-        window.location.href = '/login';
+    const userData = localStorage.getItem('pemnet_user');
+    if (!userData) {
+      window.location.href = '/login';
+    } else {
+      const parsedUser = JSON.parse(userData);
+      setUser(parsedUser);
+      // Fetch user submissions after user is set
+      fetchUserSubmissions(parsedUser.id);
+    }
+  }, []);
+
+  // Fetch user's submissions
+  const fetchUserSubmissions = async (userId) => {
+    setIsLoadingSubmissions(true);
+    try {
+      const token = localStorage.getItem('pemnet_token');
+      const response = await fetch(`http://localhost:5000/api/submissions/user/${userId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setUserSubmissions(data);
       } else {
-        setUser(JSON.parse(userData));
+        console.error('Failed to fetch user submissions');
       }
-    }, []);
+    } catch (error) {
+      console.error('Error fetching user submissions:', error);
+    } finally {
+      setIsLoadingSubmissions(false);
+    }
+  };
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -196,165 +225,268 @@ export default function SubmitPage() {
   };
 
   async function handleSubmit(e) {
-      e.preventDefault();
-      setSubmitting(true);
-      setError('');
-      setToast(null);
+    e.preventDefault();
+    setSubmitting(true);
+    setError('');
+    setToast(null);
 
-      const token = localStorage.getItem('pemnet_token');
-      
-      if (!token) {
-          const errorMsg = 'You are not logged in. Please login again.';
-          setError(errorMsg);
-          showToast(errorMsg, 'error');
-          setSubmitting(false);
-          setTimeout(() => {
-              window.location.href = '/login';
-          }, 2000);
-          return;
-      }
+    const token = localStorage.getItem('pemnet_token');
+    const userData = JSON.parse(localStorage.getItem('pemnet_user'));
+    
+    if (!token || !userData) {
+      const errorMsg = 'You are not logged in. Please login again.';
+      setError(errorMsg);
+      showToast(errorMsg, 'error');
+      setSubmitting(false);
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 2000);
+      return;
+    }
 
-      const formData = new FormData(e.target);
-      const filteredCoAuthors = coAuthors.filter(c => c.trim() !== '');
-      
-      let finalSuc = chosenSuc;
-      
-      if (showOtherSuc) {
-          finalSuc = otherSucName.trim();
-          if (!finalSuc) {
-              const errorMsg = "Please enter your SUC/Agency name.";
-              setError(errorMsg);
-              showToast(errorMsg, 'error');
-              setSubmitting(false);
-              return;
-          }
-      }
-
+    const formData = new FormData(e.target);
+    const filteredCoAuthors = coAuthors.filter(c => c.trim() !== '');
+    
+    let finalSuc = chosenSuc;
+    
+    if (showOtherSuc) {
+      finalSuc = otherSucName.trim();
       if (!finalSuc) {
-          const errorMsg = "Please select or enter your SUC/Agency.";
-          setError(errorMsg);
-          showToast(errorMsg, 'error');
-          setSubmitting(false);
-          return;
+        const errorMsg = "Please enter your SUC/Agency name.";
+        setError(errorMsg);
+        showToast(errorMsg, 'error');
+        setSubmitting(false);
+        return;
       }
+    }
 
-      // Check if the SUC exists in the database, if not, add it
-      const existingSuc = sucList.find(s => s.name.toLowerCase() === finalSuc.toLowerCase());
-      if (!existingSuc && showOtherSuc) {
-          try {
-              const addResponse = await fetch('http://localhost:5000/api/sucs', {
-                  method: 'POST',
-                  headers: {
-                      'Content-Type': 'application/json',
-                      'Authorization': `Bearer ${token}`
-                  },
-                  body: JSON.stringify({
-                      name: finalSuc,
-                      region: 'Other',
-                      abbreviation: '',
-                      type: 'Other'
-                  })
-              });
+    if (!finalSuc) {
+      const errorMsg = "Please select or enter your SUC/Agency.";
+      setError(errorMsg);
+      showToast(errorMsg, 'error');
+      setSubmitting(false);
+      return;
+    }
 
-              if (addResponse.ok) {
-                  const newSuc = await addResponse.json();
-                  setSucList([...sucList, newSuc]);
-                  showToast('New SUC/Agency added to the database!', 'success');
-              }
-          } catch (error) {
-              console.error('Error adding SUC:', error);
-          }
-      }
-
-      // Build FormData for submission
-      const submitData = new FormData();
-
-      // Append all fields
-      submitData.append('extension_project_title', formData.get('title'));
-      submitData.append('thematic_area', formData.get('thematicArea'));
-      submitData.append('paper_category', formData.get('paperCategory'));
-      submitData.append('suc_agencies', finalSuc);
-      submitData.append('author', formData.get('author'));
-      submitData.append('presenter', formData.get('presenter'));
-      submitData.append('co_authors', filteredCoAuthors.length > 0 ? filteredCoAuthors.join(', ') : '');
-
-      if (abstractFile) {
-          const safeName = abstractFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-          const safeFile = new File([abstractFile], safeName, { type: 'application/pdf' });
-          submitData.append('abstract_file', safeFile);
-      } else {
-          const errorMsg = 'Abstract PDF file is required.';
-          setError(errorMsg);
-          showToast(errorMsg, 'error');
-          setSubmitting(false);
-          return;
-      }
-
-      if (endorsementFile) {
-          const safeName = endorsementFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-          const safeFile = new File([endorsementFile], safeName, { type: 'application/pdf' });
-          submitData.append('endorsement_file', safeFile);
-
-      } else {
-          const errorMsg = 'Endorsement PDF file is required.';
-          setError(errorMsg);
-          showToast(errorMsg, 'error');
-          setSubmitting(false);
-          return;
-      }
-
-      console.log('Submitting data:');
-      for (let pair of submitData.entries()) {
-          if (pair[0].includes('file')) {
-              console.log(pair[0] + ': ' + (pair[1]?.name || 'No file'));
-          } else {
-              console.log(pair[0] + ': ' + pair[1]);
-          }
-      }
-
+    // Check if the SUC exists in the database, if not, add it
+    const existingSuc = sucList.find(s => s.name.toLowerCase() === finalSuc.toLowerCase());
+    if (!existingSuc && showOtherSuc) {
       try {
-          const res = await fetch('http://localhost:5000/api/submit', {
-              method: 'POST',
-              headers: {
-                  'Authorization': `Bearer ${token}`
-              },
-              body: submitData,
-          });
+        const addResponse = await fetch('http://localhost:5000/api/sucs', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            name: finalSuc,
+            region: 'Other',
+            abbreviation: '',
+            type: 'Other'
+          })
+        });
 
-          console.log('Response status:', res.status);
-          
-          let data;
-          const text = await res.text();
-          console.log('Response text:', text);
-          
-          try {
-              data = JSON.parse(text);
-          } catch (parseError) {
-              console.error('Failed to parse JSON:', text);
-              throw new Error(`Server returned non-JSON response: ${text.substring(0, 100)}`);
-          }
-
-          if (res.ok) {
-              console.log('Submission successful:', data);
-              showToast('Abstract submitted successfully!', 'success');
-              setTimeout(() => {
-                  window.location.reload();
-              }, 2000);
-          } else {
-              console.error('Submission failed:', data);
-              const errorMsg = data.detail || data.error || data.msg || 'Submission failed. Please try again.';
-              setError(errorMsg);
-              showToast(errorMsg, 'error');
-          }
-      } catch (err) {
-          console.error('Submission network error:', err);
-          const errorMsg = err.message || 'Network error. Is the backend running on port 5000?';
-          setError(errorMsg);
-          showToast(errorMsg, 'error');
-      } finally {
-          setSubmitting(false);
+        if (addResponse.ok) {
+          const newSuc = await addResponse.json();
+          setSucList([...sucList, newSuc]);
+          showToast('New SUC/Agency added to the database!', 'success');
+        }
+      } catch (error) {
+        console.error('Error adding SUC:', error);
       }
+    }
+
+    // Build FormData for submission
+    const submitData = new FormData();
+
+    // Append all fields with user_id
+    submitData.append('user_id', userData.id);
+    submitData.append('extension_project_title', formData.get('title'));
+    submitData.append('thematic_area', formData.get('thematicArea'));
+    submitData.append('paper_category', formData.get('paperCategory'));
+    submitData.append('suc_agencies', finalSuc);
+    submitData.append('author', formData.get('author'));
+    submitData.append('presenter', formData.get('presenter'));
+    submitData.append('co_authors', filteredCoAuthors.length > 0 ? filteredCoAuthors.join(', ') : '');
+
+    if (abstractFile) {
+      const safeName = abstractFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const safeFile = new File([abstractFile], safeName, { type: 'application/pdf' });
+      submitData.append('abstract_file', safeFile);
+    } else {
+      const errorMsg = 'Abstract PDF file is required.';
+      setError(errorMsg);
+      showToast(errorMsg, 'error');
+      setSubmitting(false);
+      return;
+    }
+
+    if (endorsementFile) {
+      const safeName = endorsementFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const safeFile = new File([endorsementFile], safeName, { type: 'application/pdf' });
+      submitData.append('endorsement_file', safeFile);
+    } else {
+      const errorMsg = 'Endorsement PDF file is required.';
+      setError(errorMsg);
+      showToast(errorMsg, 'error');
+      setSubmitting(false);
+      return;
+    }
+
+    console.log('Submitting data:');
+    for (let pair of submitData.entries()) {
+      if (pair[0].includes('file')) {
+        console.log(pair[0] + ': ' + (pair[1]?.name || 'No file'));
+      } else {
+        console.log(pair[0] + ': ' + pair[1]);
+      }
+    }
+
+    try {
+      const res = await fetch('http://localhost:5000/api/submit', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: submitData,
+      });
+
+      console.log('Response status:', res.status);
+      
+      let data;
+      const text = await res.text();
+      console.log('Response text:', text);
+      
+      try {
+        data = JSON.parse(text);
+      } catch (parseError) {
+        console.error('Failed to parse JSON:', text);
+        throw new Error(`Server returned non-JSON response: ${text.substring(0, 100)}`);
+      }
+
+      if (res.ok) {
+        console.log('Submission successful:', data);
+        showToast('Abstract submitted successfully!', 'success');
+        // Refresh submissions list
+        fetchUserSubmissions(userData.id);
+        setTimeout(() => {
+          setActiveTab('my-submissions');
+        }, 1000);
+      } else {
+        console.error('Submission failed:', data);
+        const errorMsg = data.detail || data.error || data.msg || 'Submission failed. Please try again.';
+        setError(errorMsg);
+        showToast(errorMsg, 'error');
+      }
+    } catch (err) {
+      console.error('Submission network error:', err);
+      const errorMsg = err.message || 'Network error. Is the backend running on port 5000?';
+      setError(errorMsg);
+      showToast(errorMsg, 'error');
+    } finally {
+      setSubmitting(false);
+    }
   }
+
+  // Render submissions list
+  const renderSubmissions = () => {
+    if (isLoadingSubmissions) {
+      return (
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-500 border-t-transparent"></div>
+        </div>
+      );
+    }
+
+    if (userSubmissions.length === 0) {
+      return (
+        <div className="text-center py-12">
+          <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 text-slate-400">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-semibold text-slate-700">No Submissions Yet</h3>
+          <p className="text-slate-500 text-sm mt-1">You haven't submitted any abstracts yet.</p>
+          <button
+            onClick={() => setActiveTab('submit')}
+            className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition"
+          >
+            Submit Your First Abstract
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-4">
+        {userSubmissions.map((submission) => (
+          <div key={submission.id} className="bg-white border border-slate-200 rounded-xl p-5 hover:shadow-md transition">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-slate-900 truncate">
+                  {submission.extension_project_title}
+                </h3>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  <span className="text-xs px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full">
+                    {submission.thematic_area}
+                  </span>
+                  <span className="text-xs px-2.5 py-1 bg-purple-50 text-purple-700 rounded-full">
+                    {submission.paper_category}
+                  </span>
+                  <span className={`text-xs px-2.5 py-1 rounded-full ${
+                    submission.status === 'accepted' ? 'bg-emerald-50 text-emerald-700' :
+                    submission.status === 'rejected' ? 'bg-red-50 text-red-700' :
+                    'bg-yellow-50 text-yellow-700'
+                  }`}>
+                    {submission.status.charAt(0).toUpperCase() + submission.status.slice(1)}
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-4 mt-3 text-sm text-slate-600">
+                  <span><span className="font-medium">Author:</span> {submission.author}</span>
+                  <span><span className="font-medium">Presenter:</span> {submission.presenter}</span>
+                  {submission.suc_agencies && (
+                    <span><span className="font-medium">SUC:</span> {submission.suc_agencies}</span>
+                  )}
+                </div>
+                <div className="mt-3 text-xs text-slate-400">
+                  Submitted: {new Date(submission.created_at).toLocaleString()}
+                </div>
+              </div>
+              <div className="flex flex-col items-end gap-2 shrink-0">
+                {submission.abstract_view_url && (
+                  <a 
+                    href={submission.abstract_view_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-700 text-sm font-medium inline-flex items-center gap-1"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                    </svg>
+                    View Abstract
+                  </a>
+                )}
+                {submission.endorsement_view_url && (
+                  <a 
+                    href={submission.endorsement_view_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-emerald-600 hover:text-emerald-700 text-sm font-medium inline-flex items-center gap-1"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                    </svg>
+                    View Endorsement
+                  </a>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   if (!user) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
@@ -397,353 +529,420 @@ export default function SubmitPage() {
         </div>
       </nav>
 
-      {/* --- MAIN CONTENT --- */}
-      <div className="py-10 px-6">
-        <div className="max-w-5xl mx-auto">
-          <div className="flex justify-between items-center mb-8">
-            <div>
-              <h1 className="text-3xl font-bold text-slate-900">Submit Extension Project Abstract</h1>
-              <p className="text-slate-500 text-sm mt-1">Upload your abstract</p>
-            </div>
-            <Link href="/" className="text-blue-600 hover:text-blue-700 font-semibold text-sm inline-flex items-center gap-1 transition">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-              </svg>
-              Back to Home
-            </Link>
+      {/* --- TABS --- */}
+      <div className="max-w-5xl mx-auto px-6 pt-6">
+        <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
+          <div className="flex border-b border-slate-200">
+            <button
+              onClick={() => setActiveTab('submit')}
+              className={`flex-1 px-6 py-4 text-sm font-semibold transition relative ${
+                activeTab === 'submit'
+                  ? 'text-blue-600'
+                  : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              Submit Abstract
+              {activeTab === 'submit' && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600"></div>
+              )}
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab('my-submissions');
+                fetchUserSubmissions(user.id);
+              }}
+              className={`flex-1 px-6 py-4 text-sm font-semibold transition relative ${
+                activeTab === 'my-submissions'
+                  ? 'text-blue-600'
+                  : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              My Submissions
+              {userSubmissions.length > 0 && (
+                <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">
+                  {userSubmissions.length}
+                </span>
+              )}
+              {activeTab === 'my-submissions' && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600"></div>
+              )}
+            </button>
           </div>
 
-          <div className="bg-white p-8 rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100">
-            {error && !toast && (
-              <div className="bg-red-50 border border-red-100 text-red-600 text-sm p-4 rounded-xl mb-6 flex items-start gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 shrink-0 mt-0.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-                </svg>
-                {error}
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit} className="space-y-10">
-              {/* Section 1: Project Information */}
-              <div>
-                {/* Event Name */}
-                <div>
-                  <div className="w-full px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl text-slate-700 font-medium text-center">
-                    PEMNet 1st National Extension Conference 2026
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 mb-6 mt-6">
-                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <span className="text-blue-700 font-bold text-sm">1</span>
-                  </div>
-                  <h2 className="text-lg font-bold text-slate-900">Project Information</h2>
-                </div>
-                
-                <div className="space-y-5 pl-11">
+          {/* Tab Content */}
+          <div className="p-8">
+            {activeTab === 'submit' ? (
+              <>
+                <div className="flex justify-between items-center mb-6">
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Extension Project Title</label>
-                    <input 
-                      name="title" 
-                      type="text" 
-                      required 
-                      placeholder="Enter project title"
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
-                    />
+                    <h1 className="text-3xl font-bold text-slate-900">Submit Extension Project Abstract</h1>
+                    <p className="text-slate-500 text-sm mt-1">Upload your abstract for the conference</p>
                   </div>
+                  <Link href="/" className="text-blue-600 hover:text-blue-700 font-semibold text-sm inline-flex items-center gap-1 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+                    </svg>
+                    Back to Home
+                  </Link>
+                </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">Thematic Area</label>
-                      <select 
-                        name="thematicArea" 
-                        required 
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
-                      >
-                        <option value="">Select Thematic Area</option>
-                        {thematicAreas.map((area) => (
-                          <option key={area} value={area}>{area}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">Paper Category</label>
-                      <select 
-                        name="paperCategory" 
-                        required 
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
-                      >
-                        <option value="">Select Category</option>
-                        {paperCategories.map((cat) => (
-                          <option key={cat} value={cat}>{cat}</option>
-                        ))}
-                      </select>
-                    </div>
+                {error && !toast && (
+                  <div className="bg-red-50 border border-red-100 text-red-600 text-sm p-4 rounded-xl mb-6 flex items-start gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 shrink-0 mt-0.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                    </svg>
+                    {error}
                   </div>
+                )}
 
-                  <div ref={dropdownRef}>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">SUC / Agency</label>
+                <form onSubmit={handleSubmit} className="space-y-10">
+                  {/* Section 1: Project Information */}
+                  <div>
+                    <div>
+                      <div className="w-full px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl text-slate-700 font-medium text-center">
+                        PEMNet 1st National Extension Conference 2026
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 mb-6 mt-6">
+                      <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <span className="text-blue-700 font-bold text-sm">1</span>
+                      </div>
+                      <h2 className="text-lg font-bold text-slate-900">Project Information</h2>
+                    </div>
                     
-                    {!showOtherSuc ? (
-                      <div className="relative">
-                        <div className="relative">
-                          <input
-                            type="text"
-                            placeholder="Search SUC/Agency..."
-                            value={searchTerm}
-                            onChange={handleSearchChange}
-                            onFocus={() => setShowDropdown(true)}
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
-                          />
-                          {isLoadingSucs && (
-                            <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                              <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-500 border-t-transparent"></div>
-                            </div>
-                          )}
+                    <div className="space-y-5 pl-11">
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-1.5">Extension Project Title</label>
+                        <input 
+                          name="title" 
+                          type="text" 
+                          required 
+                          placeholder="Enter project title"
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-700 mb-1.5">Thematic Area</label>
+                          <select 
+                            name="thematicArea" 
+                            required 
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
+                          >
+                            <option value="">Select Thematic Area</option>
+                            {thematicAreas.map((area) => (
+                              <option key={area} value={area}>{area}</option>
+                            ))}
+                          </select>
                         </div>
 
-                        {/* Dropdown */}
-                        {showDropdown && (
-                          <div className="absolute z-20 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
-                            {filteredSucList.length > 0 ? (
-                              filteredSucList.map((suc) => (
-                                <button
-                                  key={suc.id}
-                                  type="button"
-                                  onClick={() => handleSucSelect(suc)}
-                                  className="w-full px-4 py-2.5 text-left hover:bg-blue-50 transition flex items-center justify-between border-b border-slate-50 last:border-0"
-                                >
-                                  <div>
-                                    <span className="text-sm font-medium text-slate-900">{suc.name}</span>
-                                    {suc.abbreviation && (
-                                      <span className="text-xs text-slate-500 ml-2">({suc.abbreviation})</span>
-                                    )}
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-700 mb-1.5">Paper Category</label>
+                          <select 
+                            name="paperCategory" 
+                            required 
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
+                          >
+                            <option value="">Select Category</option>
+                            {paperCategories.map((cat) => (
+                              <option key={cat} value={cat}>{cat}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      <div ref={dropdownRef}>
+                        <label className="block text-sm font-semibold text-slate-700 mb-1.5">SUC / Agency</label>
+                        
+                        {!showOtherSuc ? (
+                          <div className="relative">
+                            <div className="relative">
+                              <input
+                                type="text"
+                                placeholder="Search SUC/Agency..."
+                                value={searchTerm}
+                                onChange={handleSearchChange}
+                                onFocus={() => setShowDropdown(true)}
+                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
+                              />
+                              {isLoadingSucs && (
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-500 border-t-transparent"></div>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Dropdown */}
+                            {showDropdown && (
+                              <div className="absolute z-20 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                                {filteredSucList.length > 0 ? (
+                                  filteredSucList.map((suc) => (
+                                    <button
+                                      key={suc.id}
+                                      type="button"
+                                      onClick={() => handleSucSelect(suc)}
+                                      className="w-full px-4 py-2.5 text-left hover:bg-blue-50 transition flex items-center justify-between border-b border-slate-50 last:border-0"
+                                    >
+                                      <div>
+                                        <span className="text-sm font-medium text-slate-900">{suc.name}</span>
+                                        {suc.abbreviation && (
+                                          <span className="text-xs text-slate-500 ml-2">({suc.abbreviation})</span>
+                                        )}
+                                      </div>
+                                      <span className="text-xs text-slate-400">{suc.region}</span>
+                                    </button>
+                                  ))
+                                ) : (
+                                  <div className="px-4 py-3 text-sm text-slate-500">
+                                    No SUCs found. 
+                                    <button
+                                      type="button"
+                                      onClick={handleAddOther}
+                                      className="text-blue-600 font-semibold hover:underline ml-1"
+                                    >
+                                      Add "{searchTerm}" as new SUC
+                                    </button>
                                   </div>
-                                  <span className="text-xs text-slate-400">{suc.region}</span>
-                                </button>
-                              ))
-                            ) : (
-                              <div className="px-4 py-3 text-sm text-slate-500">
-                                No SUCs found. 
+                                )}
+                              </div>
+                            )}
+
+                            {/* Selected SUC display */}
+                            {chosenSuc && !showOtherSuc && (
+                              <div className="mt-2 flex items-center gap-2">
+                                <span className="text-sm text-emerald-600 font-medium">Selected: {chosenSuc}</span>
                                 <button
                                   type="button"
-                                  onClick={handleAddOther}
-                                  className="text-blue-600 font-semibold hover:underline ml-1"
+                                  onClick={() => {
+                                    setChosenSuc('');
+                                    setSearchTerm('');
+                                  }}
+                                  className="text-xs text-red-500 hover:text-red-700"
                                 >
-                                  Add "{searchTerm}" as new SUC
+                                  Clear
                                 </button>
                               </div>
                             )}
-                          </div>
-                        )}
 
-                        {/* Selected SUC display */}
-                        {chosenSuc && !showOtherSuc && (
-                          <div className="mt-2 flex items-center gap-2">
-                            <span className="text-sm text-emerald-600 font-medium">Selected: {chosenSuc}</span>
                             <button
                               type="button"
-                              onClick={() => {
-                                setChosenSuc('');
-                                setSearchTerm('');
-                              }}
-                              className="text-xs text-red-500 hover:text-red-700"
+                              onClick={handleAddOther}
+                              className="mt-2 text-sm text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1"
                             >
-                              Clear
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                              </svg>
+                              Can't find your SUC? Add it here
                             </button>
                           </div>
+                        ) : (
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="text"
+                                name="sucAgenciesOther"
+                                value={otherSucName}
+                                onChange={handleOtherSucChange}
+                                placeholder="Enter your SUC/Agency name"
+                                required
+                                className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setShowOtherSuc(false);
+                                  setOtherSucName('');
+                                  setChosenSuc('');
+                                }}
+                                className="px-3 py-3 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-xl transition"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </button>
+                            </div>
+                            <p className="text-xs text-slate-500 mt-1.5">
+                              This SUC/Agency will be added when you submit.
+                            </p>
+                          </div>
                         )}
+                      </div>
+                    </div>
+                  </div>
 
-                        <button
-                          type="button"
-                          onClick={handleAddOther}
-                          className="mt-2 text-sm text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1"
+                  {/* Section 2: Authors */}
+                  <div>
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
+                        <span className="text-emerald-700 font-bold text-sm">2</span>
+                      </div>
+                      <h2 className="text-lg font-bold text-slate-900">Author Information</h2>
+                    </div>
+                    
+                    <div className="space-y-5 pl-11">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-700 mb-1.5">Author</label>
+                          <input 
+                            name="author" 
+                            type="text" 
+                            required 
+                            placeholder="Main Author"
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-700 mb-1.5">Presenter</label>
+                          <input 
+                            name="presenter" 
+                            type="text" 
+                            required 
+                            placeholder="Presenter Name"
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Co-Authors */}
+                      <div>
+                        <div className="flex items-center justify-between mb-3">
+                          <label className="block text-sm font-semibold text-slate-700">Co-Authors</label>
+                          <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full">
+                            {coAuthors.length} {coAuthors.length === 1 ? 'Author' : 'Authors'}
+                          </span>
+                        </div>
+                        
+                        <div className="flex flex-wrap gap-2">
+                          {coAuthors.map((author, index) => (
+                            <div 
+                              key={index} 
+                              className="flex items-center gap-1.5 px-3 h-10 bg-slate-50 border border-slate-200 rounded-xl transition-colors hover:border-blue-300 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20"
+                            >
+                              <span className="text-xs font-bold text-blue-600">
+                                {index + 1}.
+                              </span>
+                              
+                              <input 
+                                type="text" 
+                                value={author}
+                                onChange={(e) => handleCoAuthorChange(index, e.target.value)}
+                                placeholder={`Author ${index + 1}`}
+                                className="w-32 bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none"
+                              />
+
+                              {coAuthors.length > 1 && (
+                                <button 
+                                  type="button" 
+                                  onClick={() => removeCoAuthor(index)}
+                                  className="w-5 h-5 shrink-0 flex items-center justify-center rounded-full text-slate-300 hover:text-red-500 hover:bg-red-50 transition"
+                                  title="Remove"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3 h-3">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+
+                        <button 
+                          type="button" 
+                          onClick={addCoAuthor}
+                          className="mt-3 inline-flex items-center gap-2 px-4 h-10 rounded-xl border-2 border-dashed border-blue-300 text-blue-600 font-semibold text-sm hover:border-blue-500 hover:bg-blue-50 transition"
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                           </svg>
-                          Can't find your SUC? Add it here
+                          Add Co-Author
                         </button>
                       </div>
-                    ) : (
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="text"
-                            name="sucAgenciesOther"
-                            value={otherSucName}
-                            onChange={handleOtherSucChange}
-                            placeholder="Enter your SUC/Agency name"
-                            required
-                            className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setShowOtherSuc(false);
-                              setOtherSucName('');
-                              setChosenSuc('');
-                            }}
-                            className="px-3 py-3 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-xl transition"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
-                        </div>
-                        <p className="text-xs text-slate-500 mt-1.5">
-                          This SUC/Agency will be added when you submit.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Section 2: Authors */}
-              <div>
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
-                    <span className="text-emerald-700 font-bold text-sm">2</span>
-                  </div>
-                  <h2 className="text-lg font-bold text-slate-900">Author Information</h2>
-                </div>
-                
-                <div className="space-y-5 pl-11">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">Author</label>
-                      <input 
-                        name="author" 
-                        type="text" 
-                        required 
-                        placeholder="Main Author"
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">Presenter</label>
-                      <input 
-                        name="presenter" 
-                        type="text" 
-                        required 
-                        placeholder="Presenter Name"
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
-                      />
                     </div>
                   </div>
 
-                  {/* Co-Authors */}
+                  {/* Section 3: Files */}
                   <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <label className="block text-sm font-semibold text-slate-700">Co-Authors</label>
-                      <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full">
-                        {coAuthors.length} {coAuthors.length === 1 ? 'Author' : 'Authors'}
-                      </span>
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
+                        <span className="text-yellow-700 font-bold text-sm">3</span>
+                      </div>
+                      <h2 className="text-lg font-bold text-slate-900">File Uploads</h2>
                     </div>
                     
-                    <div className="flex flex-wrap gap-2">
-                      {coAuthors.map((author, index) => (
-                        <div 
-                          key={index} 
-                          className="flex items-center gap-1.5 px-3 h-10 bg-slate-50 border border-slate-200 rounded-xl transition-colors hover:border-blue-300 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20"
-                        >
-                          <span className="text-xs font-bold text-blue-600">
-                            {index + 1}.
-                          </span>
-                          
-                          <input 
-                            type="text" 
-                            value={author}
-                            onChange={(e) => handleCoAuthorChange(index, e.target.value)}
-                            placeholder={`Author ${index + 1}`}
-                            className="w-32 bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none"
-                          />
-
-                          {coAuthors.length > 1 && (
-                            <button 
-                              type="button" 
-                              onClick={() => removeCoAuthor(index)}
-                              className="w-5 h-5 shrink-0 flex items-center justify-center rounded-full text-slate-300 hover:text-red-500 hover:bg-red-50 transition"
-                              title="Remove"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3 h-3">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                              </svg>
-                            </button>
-                          )}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pl-11">
+                      <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-6 hover:border-blue-300 transition text-center">
+                        <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-blue-600">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                          </svg>
                         </div>
-                      ))}
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">Abstract PDF *</label>
+                        <input 
+                          type="file" 
+                          accept=".pdf" 
+                          required 
+                          onChange={(e) => setAbstractFile(e.target.files[0])}
+                          className="w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-5 file:rounded-xl file:border-0 file:bg-blue-700 file:text-white file:font-semibold hover:file:bg-blue-800 cursor-pointer transition"
+                        />
+                      </div>
+                      <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-6 hover:border-blue-300 transition text-center">
+                        <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-emerald-600">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
+                          </svg>
+                        </div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">Endorsement PDF *</label>
+                        <input 
+                          type="file" 
+                          accept=".pdf" 
+                          required 
+                          onChange={(e) => setEndorsementFile(e.target.files[0])}
+                          className="w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-5 file:rounded-xl file:border-0 file:bg-emerald-600 file:text-white file:font-semibold hover:file:bg-emerald-700 cursor-pointer transition"
+                        />
+                      </div>
                     </div>
+                  </div>
 
+                  {/* Submit Button */}
+                  <div className="pt-4">
                     <button 
-                      type="button" 
-                      onClick={addCoAuthor}
-                      className="mt-3 inline-flex items-center gap-2 px-4 h-10 rounded-xl border-2 border-dashed border-blue-300 text-blue-600 font-semibold text-sm hover:border-blue-500 hover:bg-blue-50 transition"
+                      type="submit" 
+                      disabled={submitting || loading}
+                      className="w-full bg-linear-to-r from-blue-700 to-blue-800 text-white py-4 rounded-xl font-bold text-lg hover:from-blue-800 hover:to-blue-900 transition shadow-lg shadow-blue-700/20 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                      </svg>
-                      Add Co-Author
+                      {submitting ? "Submitting..." : "Submit Abstract"}
                     </button>
                   </div>
+                </form>
+              </>
+            ) : (
+              // My Submissions Tab
+              <>
+                <div className="flex justify-between items-center mb-6">
+                  <div>
+                    <h1 className="text-3xl font-bold text-slate-900">My Submissions</h1>
+                    <p className="text-slate-500 text-sm mt-1">View all your submitted abstracts</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setActiveTab('submit');
+                      fetchUserSubmissions(user.id);
+                    }}
+                    className="text-blue-600 hover:text-blue-700 font-semibold text-sm inline-flex items-center gap-1 transition"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                    Submit New Abstract
+                  </button>
                 </div>
-              </div>
 
-              {/* Section 3: Files */}
-              <div>
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
-                    <span className="text-yellow-700 font-bold text-sm">3</span>
-                  </div>
-                  <h2 className="text-lg font-bold text-slate-900">File Uploads</h2>
+                <div className="mt-4">
+                  {renderSubmissions()}
                 </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pl-11">
-                  <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-6 hover:border-blue-300 transition text-center">
-                    <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-blue-600">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-                      </svg>
-                    </div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">Abstract PDF *</label>
-                    <input 
-                      type="file" 
-                      accept=".pdf" 
-                      required 
-                      onChange={(e) => setAbstractFile(e.target.files[0])}
-                      className="w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-5 file:rounded-xl file:border-0 file:bg-blue-700 file:text-white file:font-semibold hover:file:bg-blue-800 cursor-pointer transition"
-                    />
-                  </div>
-                  <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-6 hover:border-blue-300 transition text-center">
-                    <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-emerald-600">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
-                      </svg>
-                    </div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">Endorsement PDF *</label>
-                    <input 
-                      type="file" 
-                      accept=".pdf" 
-                      required 
-                      onChange={(e) => setEndorsementFile(e.target.files[0])}
-                      className="w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-5 file:rounded-xl file:border-0 file:bg-emerald-600 file:text-white file:font-semibold hover:file:bg-emerald-700 cursor-pointer transition"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Submit Button */}
-              <div className="pt-4">
-                <button 
-                  type="submit" 
-                  disabled={submitting || loading}
-                  className="w-full bg-linear-to-r from-blue-700 to-blue-800 text-white py-4 rounded-xl font-bold text-lg hover:from-blue-800 hover:to-blue-900 transition shadow-lg shadow-blue-700/20 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {submitting ? "Submitting..." : "Submit Abstract"}
-                </button>
-              </div>
-            </form>
+              </>
+            )}
           </div>
         </div>
       </div>

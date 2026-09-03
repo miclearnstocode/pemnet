@@ -46,7 +46,8 @@ export default function LoginPage() {
         console.log('User role:', data.user.role); // Debug log
         
         // Redirect based on role
-        if (data.user.role === 'staff') {
+        // Evaluators and Admins go to review; Staff also goes to review; Users go to submit
+        if (data.user.role === 'evaluator' || data.user.role === 'admin' || data.user.role === 'staff') {
             window.location.href = '/review';
         } else {
             window.location.href = '/submit';

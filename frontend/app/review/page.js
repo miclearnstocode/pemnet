@@ -1,26 +1,79 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import ReassignModal from '../components/ReassignModal';
+import DowngradeModal from '../components/DowngradeModal';
+import ConfirmModal from '../components/ConfirmModal';
 
 export default function ReviewPage() {
-  const [activeTab, setActiveTab] = useState('system'); // 'system' or 'email'
+  // Get current user from localStorage
+  const [currentUser, setCurrentUser] = useState(null);
+  const [currentEvaluatorId, setCurrentEvaluatorId] = useState(null);
+  const [activeTab, setActiveTab] = useState('system');
   const [submissions, setSubmissions] = useState([]);
   const [selectedSubmission, setSelectedSubmission] = useState(null);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [userThematicAreas, setUserThematicAreas] = useState([]);
+  
+  // Toast
   const [toast, setToast] = useState(null);
-  const [reviewNotes, setReviewNotes] = useState('');
-  const [pdfModal, setPdfModal] = useState(null);
-  const [isModalLoading, setIsModalLoading] = useState(false);
+  
+  // Voting and Discussion
+  const [votes, setVotes] = useState({ votes: [], evaluation_status: 'pending' });
+  const [discussions, setDiscussions] = useState([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [voteNotes, setVoteNotes] = useState('');
+  
+  // Reassign Modal
+  const [showReassignModal, setShowReassignModal] = useState(false);
+  const [reassignLoading, setReassignLoading] = useState(false);
+  
+  // Downgrade Modal
+  const [showDowngradeModal, setShowDowngradeModal] = useState(false);
+  const [downgradeLoading, setDowngradeLoading] = useState(false);
+  
+  // Confirm Modal
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirmLoading, setConfirmLoading] = useState(false);
+  const [pendingVoteAction, setPendingVoteAction] = useState(null);
+  
+  // Other UI states
   const [checkingEmails, setCheckingEmails] = useState(false);
+  const [isModalLoading, setIsModalLoading] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
+
+  // Load user from localStorage on mount
+  useEffect(() => {
+    const storedUser = localStorage.getItem('pemnet_user');
+    if (storedUser) {
+      try {
+        const user = JSON.parse(storedUser);
+        setCurrentUser(user);
+        setCurrentEvaluatorId(user.id);
+        setAuthChecked(true);
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+        setAuthChecked(true);
+        // Redirect to login if user data is invalid
+        window.location.href = '/login';
+      }
+    } else {
+      setAuthChecked(true);
+      // No user found, redirect to login
+      window.location.href = '/login';
+    }
+  }, []);
 
   // Fetch submissions based on active tab
   useEffect(() => {
-    fetchSubmissions();
-  }, [activeTab, statusFilter]);
+    if (currentEvaluatorId && authChecked) {
+      fetchSubmissions();
+    }
+  }, [activeTab, statusFilter, currentEvaluatorId, authChecked]);
 
   const fetchSubmissions = async () => {
     setLoading(true);
@@ -36,11 +89,6 @@ export default function ReviewPage() {
       if (res.ok) {
         const data = await res.json();
         setSubmissions(data);
-        if (data.length > 0) {
-          setSelectedSubmission(data[0]);
-        } else {
-          setSelectedSubmission(null);
-        }
       }
     } catch (error) {
       console.error('Error fetching submissions:', error);
@@ -50,6 +98,20 @@ export default function ReviewPage() {
     }
   };
 
+  const fetchUserThematicAreas = async (userId) => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/users/${userId}/thematic-areas`);
+      if (res.ok) {
+        const data = await res.json();
+        return data.thematic_areas || [];
+      }
+      return [];
+    } catch (error) {
+      console.error('Error fetching user thematic areas:', error);
+      return [];
+    }
+  };
+  
   const checkEmails = async () => {
     setCheckingEmails(true);
     try {
@@ -77,100 +139,232 @@ export default function ReviewPage() {
     setTimeout(() => setToast(null), 5000);
   };
 
-  const handleAccept = async () => {
-    if (!selectedSubmission) return;
+  const selectSubmission = async (sub) => {
+    setSelectedSubmission(sub);
     
-    try {
-      const res = await fetch(`http://localhost:5000/api/submissions/${selectedSubmission.id}/status`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status: 'accepted' }),
-      });
+    // Fetch votes for the selected submission
+    const votesRes = await fetch(`http://localhost:5000/api/submissions/${sub.id}/evaluate`);
+    const votesData = await votesRes.json();
+    setVotes({
+      ...votesData,
+      evaluation_status: votesData.evaluation_status || 'pending'
+    });
 
-      if (res.ok) {
-        showToast('Submission accepted successfully!', 'success');
-        setSubmissions(submissions.map(s => 
-          s.id === selectedSubmission.id ? { ...s, status: 'accepted' } : s
-        ));
-        setSelectedSubmission({ ...selectedSubmission, status: 'accepted' });
-      }
-    } catch (error) {
-      console.error('Error accepting submission:', error);
-      showToast('Failed to accept submission', 'error');
+    // Fetch discussions
+    const discRes = await fetch(`http://localhost:5000/api/submissions/${sub.id}/discussions`);
+    const discData = await discRes.json();
+    setDiscussions(Array.isArray(discData) ? discData : []);
+    
+    // Fetch user's thematic areas
+    if (sub.user_id) {
+      const areas = await fetchUserThematicAreas(sub.user_id);
+      setUserThematicAreas(areas);
     }
   };
 
-  const handleReject = async () => {
-    if (!selectedSubmission) return;
-    
-    try {
-      const res = await fetch(`http://localhost:5000/api/submissions/${selectedSubmission.id}/status`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status: 'rejected' }),
-      });
-
-      if (res.ok) {
-        showToast('Submission rejected!', 'error');
-        setSubmissions(submissions.map(s => 
-          s.id === selectedSubmission.id ? { ...s, status: 'rejected' } : s
-        ));
-        setSelectedSubmission({ ...selectedSubmission, status: 'rejected' });
-      }
-    } catch (error) {
-      console.error('Error rejecting submission:', error);
-      showToast('Failed to reject submission', 'error');
+  // Open Reassign Modal
+  const openReassignModal = () => {
+    if (selectedSubmission) {
+      setShowReassignModal(true);
     }
   };
 
-  const handleEmailReview = async (action) => {
-    if (!selectedSubmission) return;
+  // Close Reassign Modal
+  const closeReassignModal = () => {
+    setShowReassignModal(false);
+    setReassignLoading(false);
+  };
+
+  // Open Downgrade Modal
+  const openDowngradeModal = () => {
+    if (selectedSubmission) {
+      setShowDowngradeModal(true);
+    }
+  };
+
+  // Close Downgrade Modal
+  const closeDowngradeModal = () => {
+    setShowDowngradeModal(false);
+    setDowngradeLoading(false);
+  };
+
+  // Submit Reassign Vote
+  const handleReassignVote = async (newThematicArea) => {
+    if (!selectedSubmission || !newThematicArea) return;
+
+    setReassignLoading(true);
 
     try {
-      const res = await fetch(`http://localhost:5000/api/email-submissions/${selectedSubmission.id}/review`, {
+      const res = await fetch(`http://localhost:5000/api/submissions/${selectedSubmission.id}/evaluate`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: action,
-          notes: reviewNotes,
+          evaluator_id: currentEvaluatorId,
+          vote_status: 'reassign',
+          vote_notes: voteNotes,
+          vote_reassign_to: newThematicArea
         }),
       });
 
       if (res.ok) {
         const data = await res.json();
-        showToast(`Email submission ${action}ed successfully!`, action === 'accept' ? 'success' : 'error');
+        setVotes(data);
+        setShowReassignModal(false);
+        setVoteNotes('');
+        setReassignLoading(false);
+        
+        showToast(`✅ Thematic area updated from "${selectedSubmission.thematic_area}" to "${newThematicArea}"`, 'success');
         
         fetchSubmissions();
-        setReviewNotes('');
-        
-        if (action === 'accept' && data.submission_id) {
-          showToast(`Created submission #${data.submission_id}`, 'success');
-        }
+        setSelectedSubmission({...selectedSubmission, thematic_area: newThematicArea});
       } else {
         const error = await res.json();
-        showToast(error.detail || 'Failed to process submission', 'error');
+        showToast(error.detail || 'Failed to update thematic area', 'error');
+        setReassignLoading(false);
       }
     } catch (error) {
-      console.error('Error reviewing submission:', error);
-      showToast('Failed to process submission', 'error');
+      showToast('Failed to update thematic area', 'error');
+      setReassignLoading(false);
     }
   };
 
-  const handleAcceptReject = (action) => {
-    if (activeTab === 'system') {
-      if (action === 'accept') {
-        handleAccept();
-      } else {
-        handleReject();
+  // Submit Downgrade Vote
+  const handleDowngradeVote = async (downgradeType) => {
+    if (!selectedSubmission) return;
+
+    setDowngradeLoading(true);
+
+    try {
+      let evaluationStatus = '';
+      if (downgradeType === 'non_competitive') {
+        evaluationStatus = 'downgraded-non_competitive';
+      } else if (downgradeType === 'poster_only') {
+        evaluationStatus = 'downgraded-poster_only';
       }
-    } else {
-      handleEmailReview(action);
+
+      const res = await fetch(`http://localhost:5000/api/submissions/${selectedSubmission.id}/evaluate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          evaluator_id: currentEvaluatorId,
+          vote_status: 'downgrade',
+          vote_notes: voteNotes,
+          vote_downgrade_to: evaluationStatus
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setVotes(data);
+        setShowDowngradeModal(false);
+        setVoteNotes('');
+        setDowngradeLoading(false);
+        
+        const displayName = downgradeType === 'non_competitive' 
+          ? 'Non-Competitive with Poster Only' 
+          : 'Poster Only';
+        showToast(`✅ Submission downgraded to "${displayName}"`, 'success');
+        
+        fetchSubmissions();
+        setSelectedSubmission({...selectedSubmission, evaluation_status: evaluationStatus});
+      } else {
+        const error = await res.json();
+        showToast(error.detail || 'Failed to downgrade', 'error');
+        setDowngradeLoading(false);
+      }
+    } catch (error) {
+      showToast('Failed to downgrade', 'error');
+      setDowngradeLoading(false);
+    }
+  };
+
+  const handleVote = async (vote_status) => {
+    if (!selectedSubmission) return;
+
+    try {
+      const res = await fetch(`http://localhost:5000/api/submissions/${selectedSubmission.id}/evaluate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          evaluator_id: currentEvaluatorId,
+          vote_status: vote_status,
+          vote_notes: voteNotes
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setVotes(data);
+        showToast(`Voted: ${vote_status.replace('_', ' ')}`, 'success');
+        setVoteNotes('');
+        
+        if (data.evaluation_status !== 'pending') {
+          fetchSubmissions();
+        }
+        return true;
+      } else {
+        const error = await res.json();
+        showToast(error.detail || 'Failed to vote', 'error');
+        return false;
+      }
+    } catch (error) {
+      showToast('Failed to vote', 'error');
+      return false;
+    }
+  };
+
+  const postMessage = async () => {
+    if (!newMessage.trim() || !selectedSubmission) return;
+
+    try {
+      const res = await fetch(`http://localhost:5000/api/submissions/${selectedSubmission.id}/discussions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          evaluator_id: currentEvaluatorId,
+          message: newMessage
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const messageContent = data.text || data.message || newMessage;
+        const newDiscussion = {
+          id: data.id || Date.now(),
+          evaluator_id: data.evaluator_id || currentEvaluatorId,
+          message: messageContent,
+          created_at: data.created_at || new Date().toLocaleString()
+        };
+        setDiscussions([...discussions, newDiscussion]);
+        setNewMessage('');
+        showToast('Message sent successfully!', 'success');
+      } else {
+        const error = await res.json();
+        showToast(error.detail || 'Failed to send message', 'error');
+      }
+    } catch (error) {
+      showToast('Failed to send message', 'error');
+    }
+  };
+
+  const handleEndorseWithConfirm = () => {
+    setPendingVoteAction('endorse');
+    setShowConfirmModal(true);
+  };
+
+  const confirmVote = async () => {
+    if (!pendingVoteAction) return;
+    
+    setConfirmLoading(true);
+    
+    try {
+      await handleVote(pendingVoteAction);
+      setShowConfirmModal(false);
+      setPendingVoteAction(null);
+    } catch (error) {
+      console.error('Error confirming vote:', error);
+    } finally {
+      setConfirmLoading(false);
     }
   };
 
@@ -189,7 +383,6 @@ export default function ReviewPage() {
       }
       return true;
     } else {
-      // Email submissions filter
       if (statusFilter !== 'all' && sub.status !== statusFilter) return false;
       if (searchTerm) {
         const search = searchTerm.toLowerCase();
@@ -205,21 +398,31 @@ export default function ReviewPage() {
 
   // Calculate stats
   const totalSubmissions = submissions.length;
-  const pendingCount = submissions.filter(s => s.status === 'pending').length;
-  const acceptedCount = submissions.filter(s => s.status === 'accepted').length;
-  const rejectedCount = submissions.filter(s => s.status === 'rejected').length;
+  const pendingCount = submissions.filter(s => s.evaluation_status === 'pending').length;
+  const endorsedCount = submissions.filter(s => s.evaluation_status === 'endorse').length;
+  const downgradedCount = submissions.filter(s => s.evaluation_status === 'downgraded-non_competitive' || s.evaluation_status === 'downgraded-poster_only').length;
 
-  // Get status badge color
   const getStatusColor = (status) => {
-    switch (status) {
-      case 'accepted': return 'bg-emerald-100 text-emerald-700';
-      case 'rejected': return 'bg-red-100 text-red-700';
+    const safeStatus = status || 'pending'; 
+    switch (safeStatus) {
+      case 'endorse': return 'bg-emerald-100 text-emerald-700';
+      case 'downgraded-non_competitive': return 'bg-yellow-100 text-yellow-700';
+      case 'downgraded-poster_only': return 'bg-orange-100 text-orange-700';
       case 'pending': return 'bg-yellow-100 text-yellow-700';
       default: return 'bg-slate-100 text-slate-700';
     }
   };
 
-  // Get category badge color
+  const getStatusDisplay = (status) => {
+    switch (status) {
+      case 'endorse': return 'Endorsed';
+      case 'downgraded-non_competitive': return 'Non-Competitive (Poster)';
+      case 'downgraded-poster_only': return 'Poster Only';
+      case 'pending': return 'Pending';
+      default: return status || 'Pending';
+    }
+  };
+
   const getCategoryColor = (category) => {
     if (!category) return 'bg-slate-100 text-slate-700';
     if (category.includes('Natural')) return 'bg-green-100 text-green-700';
@@ -251,16 +454,22 @@ export default function ReviewPage() {
     return null;
   };
 
-  // Open file in modal
-  const openFileInModal = (url, title, fileType) => {
-    if (!url) {
-      showToast(`No ${fileType} file available`, 'error');
-      return;
-    }
+  // Show loading while checking authentication
+  if (!authChecked) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
+      </div>
+    );
+  }
 
-    setIsModalLoading(true);
-    setPdfModal({ type: fileType, url, title });
-  };
+  // Redirect to login if no user is found (after auth check)
+  if (!currentUser) {
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login';
+    }
+    return null;
+  }
 
   if (loading) {
     return (
@@ -270,18 +479,22 @@ export default function ReviewPage() {
     );
   }
 
+  // Get user's display name
+  const getUserDisplayName = () => {
+    if (currentUser) {
+      return currentUser.full_name || `Evaluator ${currentUser.id}`;
+    }
+    return 'Evaluator';
+  };
+
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Toast Notification */}
       {toast && (
         <div className="fixed top-4 right-4 z-50 animate-slide-in">
-          <div className={`relative w-96 p-4 rounded-xl border shadow-lg ${
-            toast.type === 'success' ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'
-          }`}>
+          <div className={`relative w-96 p-4 rounded-xl border shadow-lg ${toast.type === 'success' ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'}`}>
             <div className="flex items-start gap-3">
-              <div className={`shrink-0 mt-0.5 ${
-                toast.type === 'success' ? 'text-emerald-700' : 'text-red-700'
-              }`}>
+              <div className={`shrink-0 mt-0.5 ${toast.type === 'success' ? 'text-emerald-700' : 'text-red-700'}`}>
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -295,40 +508,65 @@ export default function ReviewPage() {
         </div>
       )}
 
-      {/* PDF Modal */}
-      {pdfModal && (
-        <div className="fixed inset-0 z-50 overflow-hidden flex items-center justify-center">
-          <div 
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={() => setPdfModal(null)}
-          ></div>
+      {/* Reassign Modal */}
+      <ReassignModal
+        isOpen={showReassignModal}
+        onClose={closeReassignModal}
+        onSubmit={handleReassignVote}
+        currentThematicArea={selectedSubmission?.thematic_area || ''}
+        userThematicAreas={userThematicAreas}
+        isLoading={reassignLoading}
+      />
+
+      {/* Downgrade Modal */}
+      <DowngradeModal
+        isOpen={showDowngradeModal}
+        onClose={closeDowngradeModal}
+        onSubmit={handleDowngradeVote}
+        isLoading={downgradeLoading}
+      />
+
+      {/* Confirm Modal */}
+      <ConfirmModal
+        isOpen={showConfirmModal}
+        onClose={() => {
+          setShowConfirmModal(false);
+          setPendingVoteAction(null);
+        }}
+        onConfirm={confirmVote}
+        title="Endorse for Presentation"
+        message="Are you sure you want to endorse this submission for presentation? This action will cast your vote."
+        confirmText="Yes, Endorse"
+        cancelText="No, Cancel"
+        isLoading={confirmLoading}
+      />
+
+      {/* Details Modal */}
+      {selectedSubmission && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedSubmission(null)}></div>
           
-          <div className="relative w-full max-w-5xl h-[90vh] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-white">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-blue-600">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-                  </svg>
+          <div className="relative min-h-full flex items-center justify-center p-4">
+            <div className="relative w-full max-w-7xl bg-white rounded-2xl shadow-2xl overflow-hidden">
+              {/* Modal Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-white">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-blue-600">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900">
+                      {activeTab === 'system' ? 'Submission Details' : 'Email Details'}
+                    </h3>
+                    <p className="text-sm text-slate-500">
+                      {activeTab === 'system' ? selectedSubmission.extension_project_title : selectedSubmission.subject}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900">{pdfModal.title}</h3>
-                  <p className="text-sm text-slate-500">
-                    {selectedSubmission?.extension_project_title || selectedSubmission?.subject}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <a 
-                  href={pdfModal.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-200 transition"
-                >
-                  Open in New Tab
-                </a>
                 <button
-                  onClick={() => setPdfModal(null)}
+                  onClick={() => setSelectedSubmission(null)}
                   className="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
@@ -336,35 +574,281 @@ export default function ReviewPage() {
                   </svg>
                 </button>
               </div>
-            </div>
-            
-            <div className="flex-1 bg-slate-100 overflow-auto relative">
-              {isModalLoading && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="flex flex-col items-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mb-4"></div>
-                    <p className="text-slate-600">Loading PDF...</p>
+
+              {/* Modal Body */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 h-full min-h-[700px]">
+                
+                {/* Left Panel */}
+                <div className="p-8 overflow-y-auto max-h-[80vh] border-r border-slate-200">
+                  {activeTab === 'system' ? (
+                    <>
+                      <h4 className="text-base font-bold text-slate-700 uppercase mb-6">Submission Information</h4>
+                      <div className="space-y-5">
+                        <div>
+                          <p className="text-base text-slate-600 font-medium">Title</p>
+                          <p className="text-lg font-semibold text-slate-900">{selectedSubmission.extension_project_title}</p>
+                        </div>
+                        <div>
+                          <p className="text-base text-slate-600 font-medium">Author(s)</p>
+                          <p className="text-lg font-semibold text-slate-900">
+                            {selectedSubmission.author}
+                            {selectedSubmission.co_authors && `, ${selectedSubmission.co_authors}`}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-base text-slate-600 font-medium">SUC / Agency</p>
+                          <p className="text-lg font-semibold text-slate-900">{selectedSubmission.suc_agencies}</p>
+                        </div>
+                        
+                        {/* Thematic Area with Reassign Button */}
+                        <div>
+                          <div className="flex items-center justify-between">
+                            <p className="text-base text-slate-600 font-medium">Thematic Area</p>
+                            {votes.evaluation_status === 'pending' && (
+                              <button
+                                onClick={openReassignModal}
+                                className="text-md bg-blue-50 text-blue-600 px-3 py-1 rounded-lg hover:bg-blue-100 transition flex items-center gap-1"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3 h-3">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+                                </svg>
+                                Reassign
+                              </button>
+                            )}
+                          </div>
+                          <p className="text-lg font-semibold text-slate-900">{selectedSubmission.thematic_area}</p>
+                        </div>
+                        
+                        <div>
+                          <p className="text-base text-slate-600 font-medium">Paper Category</p>
+                          <span className={`inline-flex px-4 py-1.5 rounded-full text-base font-medium ${getCategoryColor(selectedSubmission.paper_category)}`}>
+                            {selectedSubmission.paper_category?.includes('Completed') ? 'Completed' : 'Ongoing'}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="text-base text-slate-600 font-medium">Final Status</p>
+                          <span className={`inline-flex px-4 py-1.5 rounded-full text-base font-medium ${getStatusColor(votes.evaluation_status)}`}>
+                            {getStatusDisplay(votes.evaluation_status)}
+                          </span>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <h4 className="text-base font-bold text-slate-700 uppercase mb-6">Email Information</h4>
+                      <div className="space-y-5">
+                        <div>
+                          <p className="text-base text-slate-600 font-medium">From</p>
+                          <p className="text-lg font-semibold text-slate-900">{selectedSubmission.sender_name}</p>
+                          <p className="text-base text-slate-500">{selectedSubmission.sender_email}</p>
+                        </div>
+                        <div>
+                          <p className="text-base text-slate-600 font-medium">Project Leader</p>
+                          <p className="text-lg font-semibold text-slate-900">{selectedSubmission.project_leader_name}</p>
+                        </div>
+                        <div>
+                          <p className="text-base text-slate-600 font-medium">Received</p>
+                          <p className="text-lg font-semibold text-slate-900">
+                            {new Date(selectedSubmission.email_received_at).toLocaleString('en-US', {
+                              month: 'short', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                            })}
+                          </p>
+                        </div>
+                        
+                        {/* Thematic Area with Reassign Button for Email too */}
+                        <div>
+                          <div className="flex items-center justify-between">
+                            <p className="text-base text-slate-600 font-medium">Thematic Area</p>
+                            {votes.evaluation_status === 'pending' && (
+                              <button
+                                onClick={openReassignModal}
+                                className="text-xs bg-blue-50 text-blue-600 px-3 py-1 rounded-lg hover:bg-blue-100 transition flex items-center gap-1"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3 h-3">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+                                </svg>
+                                Reassign
+                              </button>
+                            )}
+                          </div>
+                          <p className="text-lg font-semibold text-slate-900">{selectedSubmission.thematic_area}</p>
+                        </div>
+                        
+                        <div>
+                          <p className="text-base text-slate-600 font-medium">Final Status</p>
+                          <span className={`inline-flex px-4 py-1.5 rounded-full text-base font-medium ${getStatusColor(votes.evaluation_status)}`}>
+                            {getStatusDisplay(votes.evaluation_status)}
+                          </span>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Voting Panel */}
+                  {votes.evaluation_status === 'pending' && (
+                    <div className="mt-8 pt-6 border-t border-slate-200">
+                      
+                      {/* Endorse Button with Confirmation */}
+                      <div className="mt-5">
+                        <button
+                          onClick={handleEndorseWithConfirm}
+                          className="w-full bg-emerald-600 text-white py-4 rounded-xl font-semibold text-base hover:bg-emerald-700 transition flex items-center justify-center gap-2"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          Endorse for Presentation
+                        </button>
+                      </div>
+                      
+                      {/* Downgrade Button */}
+                      <div className="mt-4">
+                        <button
+                          onClick={openDowngradeModal}
+                          className="w-full bg-yellow-50 text-yellow-600 py-4 rounded-xl font-semibold text-base hover:bg-yellow-100 transition flex items-center justify-center gap-2"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                          </svg>
+                          Downgrade
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Live Votes */}
+                  <div className="mt-8 pt-6 border-t border-slate-200">
+                    <h4 className="text-base font-bold text-slate-700 uppercase mb-4">Live Votes ({(votes.votes || []).length}/3)</h4>
+                    <div className="space-y-3">
+                      {(votes.votes || []).map((vote, idx) => (
+                        <div key={idx} className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                          <div className="flex justify-between items-center">
+                            <p className="text-base font-semibold text-slate-900">
+                              {vote.evaluator_id === currentEvaluatorId 
+                                ? `${getUserDisplayName()} (You)` 
+                                : `Evaluator ${vote.evaluator_id}`}
+                            </p>
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(vote.vote_status)}`}>
+                              {vote.vote_status === 'endorse' ? 'Endorse for Presentation' : 
+                               vote.vote_status === 'downgrade' ? 'Downgraded' :
+                               vote.vote_status?.replace('_', ' ').toUpperCase()}
+                            </span>
+                          </div>
+                          {vote.vote_notes && (
+                            <p className="mt-2 text-sm text-slate-500 italic">"{vote.vote_notes}"</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Discussion Panel */}
+                  <div className="mt-8 pt-6 border-t border-slate-200">
+                    <h4 className="text-base font-bold text-slate-900 uppercase mb-4">Evaluator Discussion</h4>
+                    <div className="max-h-48 overflow-y-auto bg-slate-50 border border-slate-200 rounded-xl p-4 mb-4 space-y-3">
+                      {Array.isArray(discussions) && discussions.length > 0 ? (
+                        discussions.map((msg) => {
+                          const isCurrentUser = msg.evaluator_id === currentEvaluatorId;
+                          return (
+                            <div key={msg.id || Math.random()} className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
+                              <div className={`max-w-[80%] ${isCurrentUser ? 'items-end' : 'items-start'}`}>
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="text-xs font-bold text-slate-600">
+                                    {isCurrentUser ? getUserDisplayName() : `Evaluator ${msg.evaluator_id}`}
+                                  </span>
+                                  <span className="text-xs text-slate-400">{msg.created_at}</span>
+                                </div>
+                                <div className={`px-4 py-2 rounded-xl ${
+                                  isCurrentUser 
+                                    ? 'bg-blue-600 text-white rounded-br-none' 
+                                    : 'bg-white border border-slate-200 text-slate-900 rounded-bl-none'
+                                }`}>
+                                  <p className="text-sm">{msg.message || msg.text || 'No message'}</p>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <p className="text-center text-slate-500 text-sm py-4">No discussions yet</p>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={newMessage}
+                        onChange={(e) => setNewMessage(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && postMessage()}
+                        placeholder="Write a message to other evaluators..."
+                        className="flex-1 px-4 py-2 border border-slate-200 rounded-xl text-sm text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                      />
+                      <button onClick={postMessage} className="bg-blue-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-blue-700 transition">
+                        Send
+                      </button>
+                    </div>
                   </div>
                 </div>
-              )}
-              
-              {pdfModal.url.includes('drive.google.com') ? (
-                <iframe
-                  src={`https://drive.google.com/file/d/${extractGoogleDriveId(pdfModal.url)}/preview`}
-                  className="w-full h-full min-h-150"
-                  title={pdfModal.title}
-                  onLoad={() => setIsModalLoading(false)}
-                  onError={() => setIsModalLoading(false)}
-                />
-              ) : (
-                <iframe
-                  src={pdfModal.url}
-                  className="w-full h-full min-h-150"
-                  title={pdfModal.title}
-                  onLoad={() => setIsModalLoading(false)}
-                  onError={() => setIsModalLoading(false)}
-                />
-              )}
+
+                {/* Right Panel: File Viewer */}
+                <div className="bg-slate-50 p-6 overflow-y-auto max-h-[80vh]">
+                  <h4 className="text-base font-bold text-slate-700 uppercase mb-4">File Viewer</h4>
+                  
+                  {activeTab === 'system' ? (
+                    <div className="space-y-6">
+                      <div>
+                        <p className="text-base font-semibold text-slate-700 mb-3">Abstract PDF</p>
+                        {selectedSubmission.abstract_view_url ? (
+                          <div className="border rounded-lg bg-white overflow-hidden" style={{ height: '550px' }}>
+                            <iframe
+                              src={`https://drive.google.com/file/d/${extractGoogleDriveId(selectedSubmission.abstract_view_url)}/preview?embedded=true`}
+                              className="w-full h-full"
+                              allow="autoplay"
+                              onLoad={() => setIsModalLoading(false)}
+                            />
+                          </div>
+                        ) : (
+                          <div className="text-center py-16 text-slate-500 bg-white rounded-lg border text-lg">No Abstract Available</div>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-base font-semibold text-slate-700 mb-3">Endorsement PDF</p>
+                        {selectedSubmission.endorsement_view_url ? (
+                          <div className="border rounded-lg bg-white overflow-hidden" style={{ height: '550px' }}>
+                            <iframe
+                              src={`https://drive.google.com/file/d/${extractGoogleDriveId(selectedSubmission.endorsement_view_url)}/preview?embedded=true`}
+                              className="w-full h-full"
+                              allow="autoplay"
+                            />
+                          </div>
+                        ) : (
+                          <div className="text-center py-16 text-slate-500 bg-white rounded-lg border text-lg">No Endorsement Available</div>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-base font-semibold text-slate-700 mb-3">Attachment</p>
+                        {selectedSubmission.attachment_filename && (
+                          <p className="text-sm text-slate-500 mb-3">{selectedSubmission.attachment_filename}</p>
+                        )}
+                        {selectedSubmission.attachment_view_url ? (
+                          <div className="border rounded-lg bg-white overflow-hidden" style={{ height: '650px' }}>
+                            <iframe
+                              src={`https://drive.google.com/file/d/${extractGoogleDriveId(selectedSubmission.attachment_view_url)}/preview?embedded=true`}
+                              className="w-full h-full"
+                              allow="autoplay"
+                              onLoad={() => setIsModalLoading(false)}
+                            />
+                          </div>
+                        ) : (
+                          <div className="text-center py-16 text-slate-500 bg-white rounded-lg border text-lg">No Attachment Available</div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -375,7 +859,14 @@ export default function ReviewPage() {
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Abstract Review</h1>
-            <p className="text-slate-500 text-sm mt-1">Review and manage submitted abstracts from SUC users and email submissions.</p>
+            <p className="text-slate-500 text-sm mt-1">
+              Review, vote, and collaborate with your fellow evaluators.
+              {currentUser && (
+                <span className="block text-xs text-slate-400 mt-0.5">
+                  Logged in as: <strong>{currentUser.full_name}</strong>
+                </span>
+              )}
+            </p>
           </div>
           <Link href="/" className="text-blue-600 hover:text-blue-700 font-semibold text-sm">
             ← Back to Dashboard
@@ -384,146 +875,63 @@ export default function ReviewPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-8 py-6">
-      {/* Tabs */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex gap-1 bg-slate-100 p-1 rounded-xl">
-          <button
-            onClick={() => {
-              setActiveTab('system');
-              setStatusFilter('all');
-              setCategoryFilter('all');
-              setSearchTerm('');
-            }}
-            className={`px-6 py-2.5 rounded-lg font-semibold text-sm transition ${
-              activeTab === 'system'
-                ? 'bg-white shadow-sm text-slate-900'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 inline mr-2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-            </svg>
-            System Submissions
-          </button>
-          <div className="relative flex items-center">
+        {/* Tabs */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex gap-1 bg-slate-100 p-1 rounded-xl">
             <button
-              onClick={() => {
-                setActiveTab('email');
-                setCategoryFilter('all');
-                setSearchTerm('');
-              }}
-              className={`px-6 py-2.5 rounded-lg font-semibold text-sm transition flex items-center gap-2 ${
-                activeTab === 'email'
-                  ? 'bg-white shadow-sm text-slate-900'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
+              onClick={() => { setActiveTab('system'); setStatusFilter('all'); setCategoryFilter('all'); setSearchTerm(''); }}
+              className={`px-6 py-2.5 rounded-lg font-semibold text-sm transition ${activeTab === 'system' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-600 hover:text-slate-900'}`}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
-              </svg>
+              System Submissions
+            </button>
+            <button
+              onClick={() => { setActiveTab('email'); setCategoryFilter('all'); setSearchTerm(''); }}
+              className={`px-6 py-2.5 rounded-lg font-semibold text-sm transition ${activeTab === 'email' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-600 hover:text-slate-900'}`}
+            >
               Email Submissions
             </button>
-            {activeTab === 'email' && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  checkEmails();
-                }}
-                disabled={checkingEmails}
-                className="ml-2 px-3 py-1 text-xs rounded-lg font-medium bg-blue-100 text-blue-600 hover:bg-blue-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {checkingEmails ? (
-                  <span className="flex items-center gap-1">
-                    <div className="animate-spin rounded-full h-3 w-3 border-2 border-blue-600 border-t-transparent"></div>
-                    Checking
-                  </span>
-                ) : (
-                  'Check Inbox'
-                )}
-              </button>
-            )}
           </div>
+          
+          {activeTab === 'email' && (
+            <button
+              onClick={checkEmails}
+              disabled={checkingEmails}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50 flex items-center gap-2"
+            >
+              {checkingEmails ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                  Checking...
+                </>
+              ) : (
+                <>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9" />
+                  </svg>
+                  Check Inbox
+                </>
+              )}
+            </button>
+          )}
         </div>
-        
-        {activeTab === 'email' && (
-          <button
-            onClick={checkEmails}
-            disabled={checkingEmails}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50 flex items-center gap-2"
-          >
-            {checkingEmails ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                Checking...
-              </>
-            ) : (
-              <>
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9" />
-                </svg>
-                Check Inbox
-              </>
-            )}
-          </button>
-        )}
-      </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-blue-600">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-slate-900">{totalSubmissions}</p>
-                <p className="text-sm text-slate-500">Total {activeTab === 'system' ? 'Submissions' : 'Emails'}</p>
-              </div>
-            </div>
+            <p className="text-2xl font-bold text-slate-900">{totalSubmissions}</p>
+            <p className="text-sm text-slate-500">Total {activeTab === 'system' ? 'Submissions' : 'Emails'}</p>
           </div>
-
           <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-yellow-600">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-slate-900">{pendingCount}</p>
-                <p className="text-sm text-slate-500">Pending Review</p>
-              </div>
-            </div>
+            <p className="text-2xl font-bold text-yellow-600">{pendingCount}</p>
+            <p className="text-sm text-slate-500">Pending Review</p>
           </div>
-
           <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-emerald-600">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-slate-900">{acceptedCount}</p>
-                <p className="text-sm text-slate-500">Accepted</p>
-              </div>
-            </div>
+            <p className="text-2xl font-bold text-emerald-600">{endorsedCount}</p>
+            <p className="text-sm text-slate-500">Endorsed</p>
           </div>
-
           <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-red-600">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-slate-900">{rejectedCount}</p>
-                <p className="text-sm text-slate-500">Rejected</p>
-              </div>
-            </div>
+            <p className="text-2xl font-bold text-yellow-600">{downgradedCount}</p>
+            <p className="text-sm text-slate-500">Downgraded</p>
           </div>
         </div>
 
@@ -541,436 +949,109 @@ export default function ReviewPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
             </svg>
           </div>
-          
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-          >
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none">
             <option value="all">All Status</option>
             <option value="pending">Pending</option>
-            <option value="accepted">Accepted</option>
-            <option value="rejected">Rejected</option>
+            <option value="endorse">Endorsed</option>
+            <option value="downgraded">Downgraded</option>
           </select>
-
           {activeTab === 'system' && (
-            <>
-              <select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-                className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-              >
-                <option value="all">All Categories</option>
-                <option value="Completed Extension Project Papers">Completed Extension</option>
-                <option value="Ongoing Extension Project Papers">Ongoing Extension</option>
-              </select>
-            </>
+            <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none">
+              <option value="all">All Categories</option>
+              <option value="Completed Extension Project Papers">Completed Extension</option>
+              <option value="Ongoing Extension Project Papers">Ongoing Extension</option>
+            </select>
           )}
         </div>
 
-        {/* Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Submissions List */}
-          <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200">
+        {/* Content - List Only */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200">
+                  {activeTab === 'system' ? (
+                    <>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Title & Author</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">SUC / Agency</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Category</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Date</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Status</th>
+                    </>
+                  ) : (
+                    <>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Subject / Sender</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Project Leader</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Received</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Status</th>
+                    </>
+                  )}
+                </tr>
+              </thead>
+              <tbody>
+                {filteredSubmissions.map((sub) => (
+                  <tr
+                    key={sub.id}
+                    onClick={() => selectSubmission(sub)}
+                    className="cursor-pointer border-b border-slate-100 hover:bg-blue-50/50 transition"
+                  >
                     {activeTab === 'system' ? (
                       <>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Title & Author</th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">SUC / Agency</th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Category</th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Date</th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Status</th>
+                        <td className="px-6 py-4">
+                          <p className="text-sm font-semibold text-slate-900">{sub.extension_project_title}</p>
+                          <p className="text-xs text-slate-500 mt-1">{sub.author}</p>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-600">{sub.suc_agencies}</td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${getCategoryColor(sub.paper_category)}`}>
+                            {sub.paper_category?.includes('Completed') ? 'Completed' : 'Ongoing'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-600">
+                          {new Date(sub.created_at).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(sub.evaluation_status || 'pending')}`}>
+                            {getStatusDisplay(sub.evaluation_status || 'pending')}
+                          </span>
+                        </td>
                       </>
                     ) : (
                       <>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Subject / Sender</th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Project Leader</th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Received</th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Status</th>
+                        <td className="px-6 py-4">
+                          <p className="text-sm font-semibold text-slate-900">{sub.subject}</p>
+                          <p className="text-xs text-slate-500 mt-1">{sub.sender_name} ({sub.sender_email})</p>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-600">{sub.project_leader_name}</td>
+                        <td className="px-6 py-4 text-sm text-slate-600">
+                          {new Date(sub.email_received_at).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(sub.evaluation_status || 'pending')}`}>
+                            {getStatusDisplay(sub.evaluation_status || 'pending')}
+                          </span>
+                        </td>
                       </>
                     )}
                   </tr>
-                </thead>
-                <tbody>
-                  {filteredSubmissions.map((sub) => (
-                    <tr
-                      key={sub.id}
-                      onClick={() => setSelectedSubmission(sub)}
-                      className={`cursor-pointer border-b border-slate-100 hover:bg-blue-50/50 transition ${
-                        selectedSubmission?.id === sub.id ? 'bg-blue-50/50 border-blue-200' : ''
-                      }`}
-                    >
-                      {activeTab === 'system' ? (
-                        <>
-                          <td className="px-6 py-4">
-                            <p className="text-sm font-semibold text-slate-900">{sub.extension_project_title}</p>
-                            <p className="text-xs text-slate-500 mt-1">{sub.author}</p>
-                          </td>
-                          <td className="px-6 py-4 text-sm text-slate-600">{sub.suc_agencies}</td>
-                          <td className="px-6 py-4">
-                            <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${getCategoryColor(sub.paper_category)}`}>
-                              {sub.paper_category?.includes('Completed') ? 'Completed' : 'Ongoing'}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-sm text-slate-600">
-                            {new Date(sub.created_at).toLocaleDateString('en-US', {
-                              month: 'short',
-                              day: '2-digit',
-                              year: 'numeric'
-                            })}
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(sub.status)}`}>
-                              {sub.status.charAt(0).toUpperCase() + sub.status.slice(1)}
-                            </span>
-                          </td>
-                        </>
-                      ) : (
-                        <>
-                          <td className="px-6 py-4">
-                            <p className="text-sm font-semibold text-slate-900">{sub.subject}</p>
-                            <p className="text-xs text-slate-500 mt-1">{sub.sender_name} ({sub.sender_email})</p>
-                          </td>
-                          <td className="px-6 py-4 text-sm text-slate-600">{sub.project_leader_name}</td>
-                          <td className="px-6 py-4 text-sm text-slate-600">
-                            {new Date(sub.email_received_at).toLocaleDateString('en-US', {
-                              month: 'short',
-                              day: '2-digit',
-                              year: 'numeric'
-                            })}
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(sub.status)}`}>
-                              {sub.status.charAt(0).toUpperCase() + sub.status.slice(1)}
-                            </span>
-                          </td>
-                        </>
-                      )}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {filteredSubmissions.length === 0 && (
-                <div className="text-center py-12 text-slate-500">
-                  <p>No {activeTab === 'system' ? 'submissions' : 'email submissions'} found</p>
-                  {activeTab === 'email' && (
-                    <button
-                      onClick={checkEmails}
-                      className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition"
-                    >
-                      Check Inbox for New Emails
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Submission Details */}
-          <div className="lg:col-span-1 bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-            {selectedSubmission ? (
-              activeTab === 'system' ? (
-                // System Submission Details
-                <>
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-lg font-bold text-slate-900">Submission Details</h2>
-                    <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedSubmission.status)}`}>
-                      {selectedSubmission.status.charAt(0).toUpperCase() + selectedSubmission.status.slice(1)}
-                    </span>
-                  </div>
-
-                  <h3 className="text-xl font-bold text-slate-900 mb-4">{selectedSubmission.extension_project_title}</h3>
-
-                  <div className="space-y-4">
-                    <div className="flex items-start gap-3">
-                      <div className="w-5 h-5 text-slate-400 mt-0.5">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-                        </svg>
-                      </div>
-                      <div>
-                        <p className="text-sm text-slate-600">Author(s):</p>
-                        <p className="text-sm font-medium text-slate-900">
-                          {selectedSubmission.author}
-                          {selectedSubmission.co_authors && `, ${selectedSubmission.co_authors}`}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-3">
-                      <div className="w-5 h-5 text-slate-400 mt-0.5">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z" />
-                        </svg>
-                      </div>
-                      <div>
-                        <p className="text-sm text-slate-600">SUC / Agency:</p>
-                        <p className="text-sm font-medium text-slate-900">{selectedSubmission.suc_agencies}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-3">
-                      <div className="w-5 h-5 text-slate-400 mt-0.5">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                      </div>
-                      <div>
-                        <p className="text-sm text-slate-600">Thematic Area:</p>
-                        <p className="text-sm font-medium text-slate-900">{selectedSubmission.thematic_area}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-3">
-                      <div className="w-5 h-5 text-slate-400 mt-0.5">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                      </div>
-                      <div>
-                        <p className="text-sm text-slate-600">Paper Category:</p>
-                        <p className="text-sm font-medium text-slate-900">{selectedSubmission.paper_category}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-3">
-                      <div className="w-5 h-5 text-slate-400 mt-0.5">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-                        </svg>
-                      </div>
-                      <div>
-                        <p className="text-sm text-slate-600">Date Submitted:</p>
-                        <p className="text-sm font-medium text-slate-900">
-                          {new Date(selectedSubmission.created_at).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: '2-digit',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Abstract File */}
-                  <div className="mt-6 p-4 bg-slate-50 rounded-xl">
-                    <p className="text-sm font-semibold text-slate-700 mb-3">Abstract File</p>
-                    <button
-                      onClick={() => openFileInModal(selectedSubmission.abstract_view_url, 'Abstract Document', 'Abstract')}
-                      className="w-full px-4 py-3 bg-white border border-blue-300 rounded-lg text-blue-600 hover:bg-blue-50 font-medium text-sm flex items-center justify-center gap-2 transition"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-                      </svg>
-                      View PDF Document
-                    </button>
-                  </div>
-
-                  {/* Endorsement File */}
-                  <div className="mt-3 p-4 bg-slate-50 rounded-xl">
-                    <p className="text-sm font-semibold text-slate-700 mb-3">Endorsement Letter</p>
-                    <button
-                      onClick={() => openFileInModal(selectedSubmission.endorsement_view_url, 'Endorsement Letter', 'Endorsement')}
-                      className="w-full px-4 py-3 bg-white border border-blue-300 rounded-lg text-blue-600 hover:bg-blue-50 font-medium text-sm flex items-center justify-center gap-2 transition"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-                      </svg>
-                      View PDF Document
-                    </button>
-                  </div>
-
-                  {/* Review Notes */}
-                  <div className="mt-6">
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">Review Notes (Optional)</label>
-                    <textarea
-                      value={reviewNotes}
-                      onChange={(e) => setReviewNotes(e.target.value)}
-                      placeholder="Add notes or feedback for the author..."
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                      rows={4}
-                    />
-                    <p className="text-xs text-slate-400 mt-1">These notes will be included in the decision email.</p>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="mt-6 space-y-3">
-                    <button
-                      onClick={() => handleAcceptReject('accept')}
-                      disabled={selectedSubmission.status === 'accepted'}
-                      className="w-full bg-emerald-600 text-white py-3 rounded-xl font-semibold hover:bg-emerald-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 inline mr-2">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      Accept Abstract
-                    </button>
-                    <button
-                      onClick={() => handleAcceptReject('reject')}
-                      disabled={selectedSubmission.status === 'rejected'}
-                      className="w-full bg-red-50 text-red-600 py-3 rounded-xl font-semibold hover:bg-red-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 inline mr-2">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                      Reject Abstract
-                    </button>
-                  </div>
-                </>
-              ) : (
-                // Email Submission Details
-                <>
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-lg font-bold text-slate-900">Email Details</h2>
-                    <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedSubmission.status)}`}>
-                      {selectedSubmission.status.charAt(0).toUpperCase() + selectedSubmission.status.slice(1)}
-                    </span>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-sm text-slate-600">Subject</p>
-                      <p className="font-semibold text-slate-900">{selectedSubmission.subject}</p>
-                    </div>
-
-                    <div>
-                      <p className="text-sm text-slate-600">From</p>
-                      <p className="text-slate-900">{selectedSubmission.sender_name}</p>
-                      <p className="text-sm text-slate-500">{selectedSubmission.sender_email}</p>
-                    </div>
-
-                    <div>
-                      <p className="text-sm text-slate-600">Project Leader</p>
-                      <p className="font-semibold text-slate-900">{selectedSubmission.project_leader_name}</p>
-                    </div>
-
-                    <div>
-                      <p className="text-sm text-slate-600">Received</p>
-                      <p className="text-slate-900">
-                        {new Date(selectedSubmission.email_received_at).toLocaleString('en-US', {
-                          month: 'short',
-                          day: '2-digit',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </p>
-                    </div>
-
-                    {selectedSubmission.attachment_filename && (
-                      <div>
-                        <p className="text-sm text-slate-600">Attachment</p>
-                        <button
-                          onClick={() => openFileInModal(selectedSubmission.attachment_view_url, selectedSubmission.attachment_filename, 'Attachment')}
-                          className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center gap-2 mt-1"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-                          </svg>
-                          {selectedSubmission.attachment_filename}
-                        </button>
-                      </div>
-                    )}
-
-                    {selectedSubmission.body && (
-                      <div>
-                        <p className="text-sm text-slate-600">Message Preview</p>
-                        <div className="mt-2 p-3 bg-slate-50 rounded-lg text-sm text-slate-700 max-h-32 overflow-y-auto whitespace-pre-wrap">
-                          {selectedSubmission.body.slice(0, 500)}
-                          {selectedSubmission.body.length > 500 && '...'}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Review Notes */}
-                  {selectedSubmission.status === 'pending' && (
-                    <>
-                      <div className="mt-6">
-                        <label className="block text-sm font-semibold text-slate-700 mb-2">Review Notes</label>
-                        <textarea
-                          value={reviewNotes}
-                          onChange={(e) => setReviewNotes(e.target.value)}
-                          placeholder="Add notes or feedback for the sender..."
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                          rows={3}
-                        />
-                      </div>
-
-                      {/* Action Buttons */}
-                      <div className="mt-6 space-y-3">
-                        <button
-                          onClick={() => handleAcceptReject('accept')}
-                          className="w-full bg-emerald-600 text-white py-3 rounded-xl font-semibold hover:bg-emerald-700 transition"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 inline mr-2">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          Accept & Create Submission
-                        </button>
-                        <button
-                          onClick={() => handleAcceptReject('reject')}
-                          className="w-full bg-red-50 text-red-600 py-3 rounded-xl font-semibold hover:bg-red-100 transition"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 inline mr-2">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                          Reject
-                        </button>
-                      </div>
-                    </>
-                  )}
-
-                  {selectedSubmission.status === 'accepted' && (
-                    <div className="mt-6 p-4 bg-emerald-50 rounded-xl">
-                      <p className="text-sm text-emerald-700">This email has been accepted</p>
-                    </div>
-                  )}
-
-                  {selectedSubmission.status === 'rejected' && (
-                    <div className="mt-6 p-4 bg-red-50 rounded-xl">
-                      <p className="text-sm text-red-700">This email has been rejected</p>
-                    </div>
-                  )}
-                </>
-              )
-            ) : (
-              <div className="text-center py-12">
-                <p className="text-slate-500">Select a submission to view details</p>
-                {activeTab === 'email' && (
-                  <button
-                    onClick={checkEmails}
-                    className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition"
-                  >
-                    Check Inbox for New Emails
-                  </button>
-                )}
+                ))}
+              </tbody>
+            </table>
+            {filteredSubmissions.length === 0 && (
+              <div className="text-center py-12 text-slate-500">
+                <p>No {activeTab === 'system' ? 'submissions' : 'email submissions'} found</p>
               </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* Tailwind animations */}
       <style jsx>{`
         @keyframes slideIn {
-          from {
-            transform: translateX(100%);
-            opacity: 0;
-          }
-          to {
-            transform: translateX(0);
-            opacity: 1;
-          }
+          from { transform: translateX(100%); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
         }
-        .animate-slide-in {
-          animation: slideIn 0.3s ease-out;
-        }
+        .animate-slide-in { animation: slideIn 0.3s ease-out; }
       `}</style>
     </div>
   );

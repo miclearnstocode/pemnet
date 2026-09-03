@@ -5,7 +5,7 @@ import PyPDF2
 from pdfminer.high_level import extract_text as pdfminer_extract_text
 
 
-class PDFExtractor:
+class DOCSExtractor:
     def __init__(self, file_buffer, filename=None):
         self.file_buffer = file_buffer
         self.filename = filename
@@ -421,5 +421,5 @@ class PDFExtractor:
     @staticmethod
     def extract_from_file_buffer(file_buffer, filename=None):
         """Static method to extract data from file buffer (PDF or DOCX)"""
-        extractor = PDFExtractor(file_buffer, filename)
+        extractor = DOCSExtractor(file_buffer, filename)
         return extractor.extract_all()

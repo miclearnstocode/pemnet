@@ -333,23 +333,100 @@ class DOCSExtractor:
         
         return None
     
+    def _get_highlighted_paragraphs(self):
+        """Use python-docx to find paragraphs with yellow highlight or shading (including inside TABLES)."""
+        try:
+            from docx import Document
+            import tempfile
+            import os
+
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.docx') as tmp_file:
+                tmp_file.write(self.file_buffer)
+                tmp_path = tmp_file.name
+
+            doc = Document(tmp_path)
+            highlighted_paragraphs = []
+
+            # Helper function to check a single paragraph
+            def check_paragraph(paragraph):
+                for run in paragraph.runs:
+                    # Check for text highlight
+                    if run.font.highlight_color is not None:
+                        if str(run.font.highlight_color) == 'YELLOW' or 'yellow' in str(run.font.highlight_color).lower():
+                            highlighted_paragraphs.append(paragraph.text.strip())
+                            return True
+                    
+                    # Check for shading (background color) in the run's XML
+                    rPr = run._r.rPr
+                    if rPr is not None:
+                        shd = rPr.find('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}shd')
+                        if shd is not None:
+                            fill = shd.get('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}fill')
+                            if fill and fill.lower() in ['ffff00', 'yellow']:
+                                highlighted_paragraphs.append(paragraph.text.strip())
+                                return True
+                
+                # Check paragraph shading
+                pPr = paragraph._p.pPr
+                if pPr is not None:
+                    shd = pPr.find('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}shd')
+                    if shd is not None:
+                        fill = shd.get('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}fill')
+                        if fill and fill.lower() in ['ffff00', 'yellow']:
+                            highlighted_paragraphs.append(paragraph.text.strip())
+                            return True
+                            
+                return False
+
+            # 1. Check regular paragraphs
+            for paragraph in doc.paragraphs:
+                check_paragraph(paragraph)
+
+            # 2. Check paragraphs inside TABLES (this is where your template is!)
+            def recurse_tables(tables):
+                for table in tables:
+                    for row in table.rows:
+                        for cell in row.cells:
+                            for paragraph in cell.paragraphs:
+                                check_paragraph(paragraph)
+                            # Recursively check nested tables
+                            if cell.tables:
+                                recurse_tables(cell.tables)
+
+            recurse_tables(doc.tables)
+
+            os.unlink(tmp_path)
+            return highlighted_paragraphs
+        except Exception as e:
+            print(f"Warning: Could not detect highlights in DOCX: {e}")
+            return []
+
     def extract_paper_category(self):
-        """Extract paper category - get the checked one"""
+        """Extract paper category - checks for [X], [✓], and color highlight."""
         if not self.text:
             return None
         
-        checked_match = re.search(r'\[[xX]\]\s*(Completed|Ongoing)\s+Extension\s+Project\s+Paper', self.text, re.IGNORECASE)
-        if checked_match:
-            category = checked_match.group(1).strip()
-            return f"{category.capitalize()} Extension Project Paper"
+        categories = ["Completed", "Ongoing"]
         
+        # 1. Existing text checks
+        for cat in categories:
+            if re.search(r'\[(x|X|✓|√|✔|v|V)\]\s*' + cat, self.text):
+                return f"{cat} Extension Project Paper"
+
+        # 2. Check highlighted paragraphs
+        highlighted_paragraphs = self._get_highlighted_paragraphs()
+        for text in highlighted_paragraphs:
+            for cat in categories:
+                if cat.lower() in text.lower():
+                    return f"{cat} Extension Project Paper"
+
         return None
-    
+
     def extract_thematic_area(self):
-        """Extract thematic area - get the checked one"""
+        """Extract thematic area - checks for [X], [✓], and color highlight."""
         if not self.text:
             return None
-        
+
         thematic_areas = [
             'Food Production, Agriculture, Fisheries, and Natural Resource Systems',
             'Health, Nutrition, Wellness, and Community Care',
@@ -357,21 +434,20 @@ class DOCSExtractor:
             'Livelihood, Entrepreneurship, Cooperatives, MSMEs, and Local Economic Development',
             'Environment, Climate Action, Disaster Risk Reduction, and Community Resilience'
         ]
-        
+
+        # 1. Existing text checks
         for area in thematic_areas:
-            area_pattern = r'\[[xX]\]\s*' + re.escape(area)
-            if re.search(area_pattern, self.text, re.IGNORECASE | re.DOTALL):
+            if re.search(r'\[(x|X|✓|√|✔|v|V)\]\s*' + re.escape(area), self.text, re.IGNORECASE):
                 return area
-        
-        x_pattern = r'\[[xX]\]\s*([^\n]+(?:\s*[^\n]+)*?)(?=\s*(?:\[[xX\s]\]|$|\n\n))'
-        matches = re.findall(x_pattern, self.text, re.IGNORECASE | re.DOTALL)
-        
-        for area_text in matches:
-            area_text = area_text.strip()
+
+        # 2. Check highlighted paragraphs
+        highlighted_paragraphs = self._get_highlighted_paragraphs()
+        for text in highlighted_paragraphs:
+            text_clean = re.sub(r'^[\[\]xX✓√✔vV\s]+', '', text).strip()
             for area in thematic_areas:
-                if area.lower() in area_text.lower():
+                if area.lower() in text_clean.lower():
                     return area
-        
+
         return None
     
     def extract_theme(self):

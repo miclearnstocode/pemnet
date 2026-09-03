@@ -709,31 +709,42 @@ def process_email_submission(email_data):
         if attachment and attachment.get('data'):
             try:
                 original_filename = attachment.get('filename', 'attachment.pdf')
-                if not original_filename.lower().endswith('.pdf'):
-                    original_filename = original_filename + '.pdf'
+                
+                # Determine file type from extension
+                is_docx = original_filename.lower().endswith('.docx')
+                is_pdf = original_filename.lower().endswith('.pdf')
+                
+                # If it's not PDF or DOCX, treat as PDF for extraction attempt
+                if not is_pdf and not is_docx:
+                    # Try to detect from file content
+                    if attachment['data'][:4] == b'%PDF':
+                        is_pdf = True
+                    elif attachment['data'][:2] == b'PK':
+                        is_docx = True
                 
                 # Step 1: Create temporary file
-                with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as temp_file:
+                suffix = '.docx' if is_docx else '.pdf'
+                with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp_file:
                     temp_file.write(attachment['data'])
                     temp_path = temp_file.name
                 
                 print(f"📄 Temporary file created: {temp_path} ({os.path.getsize(temp_path)} bytes)")
                 
-                # Step 2: Read the attachment (PDF extraction)
+                # Step 2: Extract data from the file based on type
                 try:
-                    from pdf_extracted import PDFExtractor
-                    print("📄 Reading and extracting data from PDF attachment...")
+                    if is_docx:
+                        from docs_extracted import DOCSExtractor as DOCXExtractor
+                        print("📄 Reading and extracting data from DOCX attachment...")
+                        extractor = DOCXExtractor(attachment['data'], filename=original_filename)
+                    else:
+                        from pdf_extracted import PDFExtractor
+                        print("📄 Reading and extracting data from PDF attachment...")
+                        extractor = PDFExtractor(attachment['data'])
                     
-                    # Read the PDF file for extraction
-                    with open(temp_path, 'rb') as f:
-                        pdf_buffer = f.read()
-                    
-                    # Extract data using PDFExtractor
-                    extractor = PDFExtractor(pdf_buffer)
                     extracted_data = extractor.extract_all()
                     
                     if extracted_data:
-                        print(f"✅ PDF extraction successful!")
+                        print(f"✅ Extraction successful!")
                         if extracted_data.get('title'):
                             print(f"   📝 Title: {extracted_data.get('title')}")
                         if extracted_data.get('authors_data'):
@@ -743,23 +754,21 @@ def process_email_submission(email_data):
                         if extracted_data.get('thematic_area'):
                             print(f"   🎯 Thematic Area: {extracted_data.get('thematic_area')}")
                     else:
-                        print("⚠️  No data extracted from PDF")
+                        print("⚠️  No data extracted from file")
                         
-                except ImportError:
-                    print("⚠️  pdf_extracted module not found, skipping extraction")
+                except ImportError as e:
+                    print(f"⚠️  Import error: {e}")
                 except Exception as e:
-                    print(f"⚠️  Error extracting PDF data: {e}")
+                    print(f"⚠️  Error extracting data: {e}")
                     import traceback
                     traceback.print_exc()
                 
-                # Step 3: Extract project title (from email first, then PDF)
+                # Step 3: Extract project title (from email first, then extracted data)
                 project_title = subject.replace('ABSTRACT-', '').strip()
                 if not project_title or len(project_title) < 5:
-                    # Try from extracted data
                     if extracted_data and extracted_data.get('title'):
                         project_title = extracted_data.get('title')
                     else:
-                        # Try from body
                         lines = body.split('\n') if body else []
                         for line in lines:
                             if 'ABSTRACT' in line.upper() or 'TITLE' in line.upper():
@@ -768,17 +777,23 @@ def process_email_submission(email_data):
                         if not project_title:
                             project_title = subject
                 
-                # Step 4: Upload to Google Drive
+                # Step 4: Get paper category and thematic area from extracted data
+                paper_category = extracted_data.get('paper_category') if extracted_data else None
+                thematic_area = extracted_data.get('thematic_area') if extracted_data else None
+                
+                # Step 5: Upload to Google Drive with folder structure
                 print(f"📤 Uploading attachment to Google Drive...")
                 view_url, download_url = upload_file_to_drive(
                     temp_path,
                     f"abstract_{original_filename}",
                     project_title=project_title,
-                    sender_name=sender_name
+                    sender_name=sender_name,
+                    paper_category=paper_category,
+                    thematic_area=thematic_area
                 )
                 attachment_view_url = view_url
                 attachment_download_url = download_url
-                print(f"📎 Uploaded attachment to Drive: {view_url} (Sender: {sender_name})")
+                print(f"📎 Uploaded attachment to Drive: {view_url}")
                 
             except Exception as e:
                 print(f"❌ Error processing attachment: {e}")
@@ -793,7 +808,7 @@ def process_email_submission(email_data):
                     except:
                         pass
         
-        # Step 5: Store in Database (Email Data)
+        # Step 6: Store in Database (Email Data)
         email_submission = EmailSubmission(
             email_message_id=email_data['id'],
             sender_email=sender_email,
@@ -811,7 +826,7 @@ def process_email_submission(email_data):
         db.session.add(email_submission)
         db.session.flush()  # Get the ID for the relationship
         
-        # Step 6: Store Extracted Data in Database
+        # Step 7: Store Extracted Data in Database
         if extracted_data:
             try:
                 # Prepare authors data
@@ -838,12 +853,24 @@ def process_email_submission(email_data):
                     extraction_status='extracted' if extracted_data else 'failed'
                 )
                 db.session.add(extracted_record)
-                print(f"✅ Extracted data saved to database")
+                print(f"✅ Extracted data saved to database (email_submission_id: {email_submission.id})")
                 
             except Exception as e:
                 print(f"⚠️  Error saving extracted data: {e}")
                 import traceback
                 traceback.print_exc()
+        else:
+            # Even if no extracted data, create a record with failed status
+            try:
+                extracted_record = ExtractedAbstractData(
+                    email_submission_id=email_submission.id,
+                    extraction_status='failed',
+                    extraction_error='No data could be extracted from the attachment'
+                )
+                db.session.add(extracted_record)
+                print(f"⚠️  Created failed extraction record for email_submission_id: {email_submission.id}")
+            except Exception as e:
+                print(f"⚠️  Error saving failed extraction record: {e}")
         
         db.session.commit()
         
@@ -1105,7 +1132,6 @@ def check_email_submissions():
         print(f"📧 Reading emails from inbox of: pemnet26@gmail.com")
         print(f"Found {len(existing_ids)} existing email records in database")
         
-        # Simple query - just get emails with attachments, exclude self
         query = 'has:attachment -from:pemnet26@gmail.com'
         
         emails = gmail_service.get_emails_with_attachments(

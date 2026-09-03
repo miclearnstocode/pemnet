@@ -8,7 +8,7 @@ from datetime import datetime
 
 # Import both extractors
 from pdf_extracted import PDFExtractor
-from docs_extracted import PDFExtractor as DOCXExtractor
+from docs_extracted import DOCSExtractor as DOCXExtractor
 
 # ANSI color codes for better output
 class Colors:

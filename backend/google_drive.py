@@ -1,0 +1,213 @@
+import os
+import io
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaFileUpload, MediaIoBaseUpload
+from googleapiclient.errors import HttpError
+
+# Load your .env variables
+from dotenv import load_dotenv
+load_dotenv()
+
+SCOPES = ['https://www.googleapis.com/auth/drive']
+SERVICE_ACCOUNT_FILE = 'rdesystem-secret.json'
+
+# Root folder ID - this is already PEMnet_storage
+ROOT_FOLDER_ID = '1PDcpYy-3wyt94YgJqVT5k5wnWtCi6TIg'
+
+# Event name
+EVENT_NAME = "PEMNet 1st National Extension Conference 2026"
+
+def get_drive_service():
+    """Get Google Drive service using official API client."""
+    try:
+        creds = service_account.Credentials.from_service_account_file(
+            SERVICE_ACCOUNT_FILE, 
+            scopes=SCOPES
+        )
+        service = build('drive', 'v3', credentials=creds)
+        return service
+    except Exception as e:
+        print(f"Error getting Drive service: {e}")
+        raise
+
+def sanitize_folder_name(name):
+    """Sanitize folder name to be valid for Google Drive."""
+    if not name or not isinstance(name, str):
+        return "Untitled"
+    # Remove invalid characters, limit to 100 chars
+    import re
+    sanitized = re.sub(r'[<>:"/\\|?*\x00-\x1f]', '_', name)
+    sanitized = sanitized.strip()
+    return sanitized[:100] if sanitized else "Untitled"
+
+def get_or_create_folder(service, folder_name, parent_id=None):
+    """Get existing folder or create a new one using Google API client."""
+    if not folder_name or not isinstance(folder_name, str):
+        folder_name = "Untitled"
+    
+    # Sanitize folder name
+    folder_name = sanitize_folder_name(folder_name)
+    
+    try:
+        # Search for existing folder
+        query = f"name='{folder_name}' and mimeType='application/vnd.google-apps.folder' and trashed=false"
+        if parent_id:
+            query += f" and '{parent_id}' in parents"
+        
+        response = service.files().list(
+            q=query,
+            spaces='drive',
+            fields='files(id, name)',
+            supportsAllDrives=True,
+            includeItemsFromAllDrives=True
+        ).execute()
+        
+        files = response.get('files', [])
+        
+        if files:
+            folder_id = files[0]['id']
+            print(f"📁 Found existing folder: {folder_name}")
+            return folder_id
+        
+        # Create new folder
+        file_metadata = {
+            'name': folder_name,
+            'mimeType': 'application/vnd.google-apps.folder'
+        }
+        if parent_id:
+            file_metadata['parents'] = [parent_id]
+        
+        folder = service.files().create(
+            body=file_metadata,
+            fields='id',
+            supportsAllDrives=True
+        ).execute()
+        
+        folder_id = folder.get('id')
+        print(f"✅ Created new folder: {folder_name}")
+        return folder_id
+        
+    except HttpError as e:
+        print(f"Error in folder operation: {e}")
+        raise
+
+def upload_file_to_drive(file_path, filename, project_title=None, sender_name=None):
+    """
+    Uploads a file to Google Drive.
+    
+    Folder structure:
+    PEMnet_storage (ROOT)
+    └── PEMNet 1st National Extension Conference 2026
+        └── [Sender Name]
+            └── file.pdf
+    """
+    print("=" * 50)
+    print("📤 Starting upload to Google Drive...")
+    
+    # Validate inputs
+    if not file_path or not os.path.exists(file_path):
+        raise Exception(f"File not found: {file_path}")
+    
+    # Ensure filename is a string
+    if not filename or not isinstance(filename, str):
+        filename = "uploaded_file.pdf"
+    
+    # Sanitize filename
+    filename = sanitize_folder_name(filename)
+    
+    # Get Drive service
+    service = get_drive_service()
+    
+    # Step 1: Get or create Event folder
+    event_folder_id = get_or_create_folder(
+        service,
+        EVENT_NAME,
+        ROOT_FOLDER_ID
+    )
+    print(f"📁 Event folder: {EVENT_NAME} (ID: {event_folder_id})")
+    
+    # Step 2: Get or create Sender folder (directly under Event folder)
+    final_folder_id = event_folder_id
+    if sender_name:
+        safe_sender_name = sanitize_folder_name(sender_name)
+        sender_folder_id = get_or_create_folder(
+            service,
+            safe_sender_name,
+            event_folder_id  # Directly under Event folder
+        )
+        final_folder_id = sender_folder_id
+        print(f"📁 Sender folder: {safe_sender_name} (ID: {sender_folder_id})")
+    else:
+        # If no sender name, use a default folder
+        default_folder_id = get_or_create_folder(
+            service,
+            "Unidentified Sender",
+            event_folder_id
+        )
+        final_folder_id = default_folder_id
+        print(f"📁 Default folder: Unidentified Sender (ID: {default_folder_id})")
+    
+    # Step 3: Upload file directly to the sender folder
+    print(f"📄 Uploading: {filename}")
+    
+    # Create file metadata
+    file_metadata = {
+        'name': filename,
+        'parents': [final_folder_id]
+    }
+    
+    # Create media upload
+    media = MediaFileUpload(
+        file_path,
+        mimetype='application/pdf',
+        resumable=True
+    )
+    
+    # Upload the file
+    try:
+        file = service.files().create(
+            body=file_metadata,
+            media_body=media,
+            fields='id, name',
+            supportsAllDrives=True
+        ).execute()
+        
+        file_id = file.get('id')
+        
+        if not file_id:
+            raise Exception("No file ID returned")
+        
+        print(f"✅ Uploaded: {filename}")
+        print(f"📂 Location: {EVENT_NAME} → {safe_sender_name if sender_name else 'Unidentified Sender'}")
+        print("=" * 50)
+        
+        view_url = f"https://drive.google.com/file/d/{file_id}/view"
+        download_url = f"https://drive.google.com/uc?export=download&id={file_id}"
+        
+        return view_url, download_url
+        
+    except HttpError as e:
+        print(f"❌ Upload error: {e}")
+        raise
+
+def test_drive_connection():
+    """Test connection using Google API client."""
+    try:
+        service = get_drive_service()
+        
+        # Test getting the root folder
+        folder = service.files().get(
+            fileId=ROOT_FOLDER_ID,
+            fields='id, name',
+            supportsAllDrives=True
+        ).execute()
+        
+        print(f"✅ Connected")
+        print(f"  Folder: {folder.get('name')}")
+        print(f"  ID: {folder.get('id')}")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Failed: {e}")
+        return False

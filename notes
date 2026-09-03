@@ -1,0 +1,17 @@
+cd frontend npm run dev
+cd backend python app.py
+npm run dev -- -H 0.0.0.0
+venv\Scripts\activate
+
+Hyber62n@te11
+
+python test_pdf_extraction.py abstract_PEMNet_Phase3_Ongoing_Abstract_FINAL_OBJECTIVES_REVISED.pdf
+
+python test_pdf_extraction.py PEMNet_Abstract_BABAYI.docx
+
+Update in the system:
+Work on for the submission of full paper
+
+dynamic change of presenter in the system submission for approval and accepted or rejected. state reason why - when submitting full paper. 
+
+resubmission & revised paper.

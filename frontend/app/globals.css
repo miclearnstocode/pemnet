@@ -1,0 +1,218 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f8fafc; /* Light gray-blue for background */
+  --foreground: #1e293b; /* Dark slate for text */
+  
+  /* PEMNet Logo Colors */
+  --color-pem-teal: #0f8a8a;
+  --color-pem-navy: #1a3c6e;
+  --color-pem-gold: #fbb034;
+  --color-pem-green: #4caf50;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-teal: var(--color-pem-teal);
+  --color-navy: var(--color-pem-navy);
+  --color-gold: var(--color-pem-gold);
+  --color-green: var(--color-pem-green);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0f172a; /* Slightly bluish dark */
+    --foreground: #f1f5f9;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Pulsating background rings */
+@keyframes pulse-ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+}
+
+/* Orbiting badges (Full 360 degrees) */
+@keyframes orbit-badge {
+  from {
+    transform: rotate(0deg) translateX(var(--orbit-radius)) rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg) translateX(var(--orbit-radius)) rotate(-360deg);
+  }
+}
+
+/* Fade in and out for badges*/
+@keyframes fade-badge {
+  0%, 100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+  15%, 85% {
+    opacity: 1;
+    visibility: visible;
+  }
+  50% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+@keyframes fade-badge-reverse {
+  0%, 100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+  15%, 85% {
+    opacity: 1;
+    visibility: visible;
+  }
+  50% {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+
+/* Subtle slide-in for text */
+@keyframes slide-up-text {
+  from {
+    opacity: 0.6;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up-text {
+  animation: slide-up-text 0.5s ease-out forwards;
+}
+
+/* The container holds all 3 steps. It translates Y smoothly to loop. */
+@keyframes stepper-vertical-slide {
+  0%, 33.33% { transform: translateY(0); }        /* Step 1 active */
+  33.34%, 66.66% { transform: translateY(-100px); } /* Step 2 active */
+  66.67%, 100% { transform: translateY(-200px); }    /* Step 3 active */
+}
+
+.animate-stepper-slide {
+  animation: stepper-vertical-slide 9s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+/* The filling line - grows and shrinks automatically */
+@keyframes line-fill-pure {
+  0%, 33.33% { height: 100%; }
+  33.34%, 66.66% { height: 0%; }
+  66.67%, 100% { height: 0%; }
+}
+
+@keyframes fill-line {
+  0% { height: 0%; }
+  100% { height: 100%; }
+}
+
+/* Line 1 - Fills during Step 1, shrinks during Steps 2 & 3 */
+@keyframes line-1-loop {
+  0%, 33.33% { height: 100%; }
+  33.34%, 100% { height: 0%; }
+}
+.animate-line-1 {
+  animation: fill-line 2.5s cubic-bezier(0.4, 0, 0.2, 1) forwards, 
+             line-1-loop 9s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+/* Line 2 - Shrinks during Step 1, fills during Step 2, shrinks during Step 3 */
+@keyframes line-2-loop {
+  0%, 33.33% { height: 0%; }
+  33.34%, 66.66% { height: 100%; }
+  66.67%, 100% { height: 0%; }
+}
+.animate-line-2 {
+  /* We add a 3s delay so it waits for Step 2 to start, then uses your fill-line animation */
+  animation: fill-line 2.5s cubic-bezier(0.4, 0, 0.2, 1) forwards, 
+             line-2-loop 9s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation-delay: 3s, 0s;
+}
+
+/* Text 1 - Smoothly slides and dims */
+@keyframes text-highlight-1 {
+  0%, 33.33% { opacity: 1; transform: translateX(0); }
+  33.34%, 100% { opacity: 0.5; transform: translateX(-8px); }
+}
+.animate-text-1 {
+  animation: text-highlight-1 9s ease-in-out infinite;
+  transition: opacity 1.5s ease-in-out, transform 1.5s ease-in-out;
+}
+
+/* Text 2 - Smoothly slides and dims */
+@keyframes text-highlight-2 {
+  0%, 33.33% { opacity: 0.5; transform: translateX(-8px); }
+  33.34%, 66.66% { opacity: 1; transform: translateX(0); }
+  66.67%, 100% { opacity: 0.5; transform: translateX(-8px); }
+}
+.animate-text-2 {
+  animation: text-highlight-2 9s ease-in-out infinite;
+  transition: opacity 1.5s ease-in-out, transform 1.5s ease-in-out;
+}
+
+/* Text 3 - Smoothly slides and dims */
+@keyframes text-highlight-3 {
+  0%, 66.66% { opacity: 0.5; transform: translateX(-8px); }
+  66.67%, 100% { opacity: 1; transform: translateX(0); }
+}
+.animate-text-3 {
+  animation: text-highlight-3 9s ease-in-out infinite;
+  transition: opacity 1.5s ease-in-out, transform 1.5s ease-in-out;
+}
+
+/* Badge 1 - Smoothly scales, colors, and glows */
+@keyframes badge-1-state {
+  0%, 33.33% { background-color: #1e40af; border-color: #1e40af; color: #ffffff; transform: scale(1.05); box-shadow: 0 4px 6px -1px rgb(30 64 175 / 0.3); }
+  33.34%, 100% { background-color: #ffffff; border-color: #cbd5e1; color: #64748b; transform: scale(1); box-shadow: none; }
+}
+.animate-badge-1 {
+  animation: badge-1-state 9s ease-in-out infinite;
+  transition: background-color 1.5s ease-in-out, border-color 1.5s ease-in-out, color 1.5s ease-in-out, transform 1.5s ease-in-out, box-shadow 1.5s ease-in-out;
+}
+
+/* Badge 2 - Smoothly scales, colors, and glows */
+@keyframes badge-2-state {
+  0%, 33.33% { background-color: #ffffff; border-color: #cbd5e1; color: #64748b; transform: scale(1); box-shadow: none; }
+  33.34%, 66.66% { background-color: #1e40af; border-color: #1e40af; color: #ffffff; transform: scale(1.05); box-shadow: 0 4px 6px -1px rgb(30 64 175 / 0.3); }
+  66.67%, 100% { background-color: #ffffff; border-color: #cbd5e1; color: #64748b; transform: scale(1); box-shadow: none; }
+}
+.animate-badge-2 {
+  animation: badge-2-state 9s ease-in-out infinite;
+  transition: background-color 1.5s ease-in-out, border-color 1.5s ease-in-out, color 1.5s ease-in-out, transform 1.5s ease-in-out, box-shadow 1.5s ease-in-out;
+}
+
+/* Badge 3 - Smoothly scales, colors, and glows */
+@keyframes badge-3-state {
+  0%, 66.66% { background-color: #ffffff; border-color: #cbd5e1; color: #64748b; transform: scale(1); box-shadow: none; }
+  66.67%, 100% { background-color: #1e40af; border-color: #1e40af; color: #ffffff; transform: scale(1.05); box-shadow: 0 4px 6px -1px rgb(30 64 175 / 0.3); }
+}
+.animate-badge-3 {
+  animation: badge-3-state 9s ease-in-out infinite;
+  transition: background-color 1.5s ease-in-out, border-color 1.5s ease-in-out, color 1.5s ease-in-out, transform 1.5s ease-in-out, box-shadow 1.5s ease-in-out;
+}

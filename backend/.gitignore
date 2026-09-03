@@ -1,0 +1,6 @@
+# Google credentials - NEVER COMMIT
+rdesystem.json
+rdesystem-secret.json
+credentials.json
+token_pemnet26_gmail_com.pickle
+*.json

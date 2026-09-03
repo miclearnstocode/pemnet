@@ -293,38 +293,41 @@ class DOCSExtractor:
         }
     
     def extract_corresponding_author(self):
-        """Extract corresponding author - get only the name and email"""
+        """Extract corresponding author - robustly handles typos/space breaks within emails."""
         if not self.text:
             return None
         
-        patterns = [
-            r'3\.\s*Name\s+and\s+Email\s+Address\s+of\s+Corresponding\s+Author\s*[|:]\s*([^\n|]+)',
-            r'3\.\s*Name\s+and\s+Email\s+Address\s+of\s+Corresponding\s+Author\s*\n\s*([^\n]+)',
-            r'Name\s+and\s+Email\s+Address\s+of\s+Corresponding\s+Author\s*\|\s*([^\n]+)',
-        ]
+        # Normalize text: convert all newlines and multiple spaces to single spaces
+        normalized_text = re.sub(r'\s+', ' ', self.text)
         
-        for pattern in patterns:
-            match = re.search(pattern, self.text, re.IGNORECASE | re.DOTALL)
-            if match:
-                section_text = match.group(1).strip()
-                email_match = re.search(r'([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})', section_text)
-                if email_match:
-                    email = email_match.group(1).strip()
-                    name = section_text[:email_match.start()].strip()
-                    name = re.sub(r'[,\s]+$', '', name)
-                    # Keep PhD in the name
-                    name = name.strip()
+        # Look for the section label and split by "|" to isolate the value part
+        pattern = r'3\.\s*Name\s+and\s+Email\s+Address\s+of\s+Corresponding\s+Author\s*\|\s*([^|]+)'
+        match = re.search(pattern, normalized_text, re.IGNORECASE)
+        
+        if match:
+            section_text = match.group(1).strip()
+            
+            # Regex to find the email address (ALLOWS SPACES AROUND THE DOT, e.g. "gmail. com")
+            email_match = re.search(r'([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\s*\.\s*[a-zA-Z]{2,})', section_text)
+            if email_match:
+                email = re.sub(r'\s+', '', email_match.group(1).strip()) # Remove ALL spaces to fix typo
+                # Extract name (everything before the email, clean up commas)
+                name = section_text[:email_match.start()].strip()
+                name = re.sub(r'[,\s]+$', '', name)
+                
+                if name and email:
                     return {
                         'full': f"{name} {email}".strip(),
                         'name': name,
                         'email': email
                     }
         
-        email_pattern = r'([A-Z][A-Za-z\s.,]+(?:PhD|Dr\.)?)\s+([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})'
-        match = re.search(email_pattern, self.text, re.IGNORECASE)
+        # Fallback to generic regex if not found in the table
+        email_pattern = r'([A-Z][A-Za-z\s.,]+(?:PhD|Dr\.)?)\s+([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\s*\.\s*[a-zA-Z]{2,})'
+        match = re.search(email_pattern, normalized_text, re.IGNORECASE)
         if match:
             name = match.group(1).strip()
-            email = match.group(2).strip()
+            email = re.sub(r'\s+', '', match.group(2).strip())
             return {
                 'full': f"{name} {email}".strip(),
                 'name': name,
@@ -402,18 +405,19 @@ class DOCSExtractor:
             return []
 
     def extract_paper_category(self):
-        """Extract paper category - checks for [X], [✓], and color highlight."""
+        """Extract paper category - Handles [X], [✓], [/], and other markups, then fallback to highlighted color."""
         if not self.text:
             return None
         
         categories = ["Completed", "Ongoing"]
         
-        # 1. Existing text checks
+        # 1. Existing text checks. Remove newlines from text first to avoid line break issues.
+        normalized_text = re.sub(r'\s+', ' ', self.text)
         for cat in categories:
-            if re.search(r'\[(x|X|✓|√|✔|v|V)\]\s*' + cat, self.text):
+            if re.search(r'\[(x|X|✓|√|✔|v|V|/)\]\s*' + cat, normalized_text, re.IGNORECASE):
                 return f"{cat} Extension Project Paper"
 
-        # 2. Check highlighted paragraphs
+        # 2. Fallback: Check highlighted paragraphs (only if text check failed)
         highlighted_paragraphs = self._get_highlighted_paragraphs()
         for text in highlighted_paragraphs:
             for cat in categories:
@@ -423,7 +427,7 @@ class DOCSExtractor:
         return None
 
     def extract_thematic_area(self):
-        """Extract thematic area - checks for [X], [✓], and color highlight."""
+        """Extract thematic area - Handles [X], [✓], [/], and other markups, then fallback to highlighted color."""
         if not self.text:
             return None
 
@@ -435,15 +439,16 @@ class DOCSExtractor:
             'Environment, Climate Action, Disaster Risk Reduction, and Community Resilience'
         ]
 
-        # 1. Existing text checks
+        # 1. Existing text checks. Remove newlines from text first to avoid line break issues.
+        normalized_text = re.sub(r'\s+', ' ', self.text)
         for area in thematic_areas:
-            if re.search(r'\[(x|X|✓|√|✔|v|V)\]\s*' + re.escape(area), self.text, re.IGNORECASE):
+            if re.search(r'\[(x|X|✓|√|✔|v|V|/)\]\s*' + re.escape(area), normalized_text, re.IGNORECASE):
                 return area
 
-        # 2. Check highlighted paragraphs
+        # 2. Fallback: Check highlighted paragraphs (only if text check failed)
         highlighted_paragraphs = self._get_highlighted_paragraphs()
         for text in highlighted_paragraphs:
-            text_clean = re.sub(r'^[\[\]xX✓√✔vV\s]+', '', text).strip()
+            text_clean = re.sub(r'^[\[\]xX✓√✔vV/\s]+', '', text).strip()
             for area in thematic_areas:
                 if area.lower() in text_clean.lower():
                     return area

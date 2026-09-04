@@ -612,7 +612,7 @@ export default function ReviewPage() {
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3 h-3">
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
                                 </svg>
-                                Reassign
+                                Reassigned
                               </button>
                             )}
                           </div>
@@ -667,7 +667,7 @@ export default function ReviewPage() {
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3 h-3">
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
                                 </svg>
-                                Reassign
+                                Reassigned
                               </button>
                             )}
                           </div>
@@ -707,9 +707,11 @@ export default function ReviewPage() {
                           onClick={openDowngradeModal}
                           className="w-full bg-yellow-50 text-yellow-600 py-4 rounded-xl font-semibold text-base hover:bg-yellow-100 transition flex items-center justify-center gap-2"
                         >
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                          </svg>
+                          <img 
+                            src="/images/downgrade.png" 
+                            alt="Downgrade" 
+                            className="w-5 h-5 object-contain"
+                          />
                           Downgrade
                         </button>
                       </div>

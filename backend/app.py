@@ -205,6 +205,33 @@ def test_cors():
         return jsonify({})
     return jsonify({"message": "CORS is working!"})
 
+@app.route('/api/validate-email', methods=['GET', 'OPTIONS'])
+def validate_email():
+    """Check if an email exists in the email_submissions table."""
+    if request.method == 'OPTIONS':
+        return jsonify({})
+    
+    try:
+        email = request.args.get('email')
+        if not email:
+            return jsonify({"valid": False, "detail": "Email parameter required"}), 400
+        
+        # Check if email exists in email_submissions
+        exists = db.session.query(
+            EmailSubmission.query.filter_by(sender_email=email).exists()
+        ).scalar()
+        
+        return jsonify({
+            "valid": exists,
+            "email": email,
+            "exists": exists
+        }), 200
+        
+    except Exception as e:
+        print(f"Error validating email: {e}")
+        traceback.print_exc()
+        return jsonify({"valid": False, "detail": str(e)}), 500
+    
 @app.route('/api/register', methods=['POST', 'OPTIONS'])
 def register():
     if request.method == 'OPTIONS':
@@ -216,6 +243,16 @@ def register():
         if not data.get('full_name') or not data.get('email') or not data.get('password'):
             return jsonify({"detail": "All fields are required"}), 400
         
+        # SECURITY CHECK: Verify email exists in email_submissions
+        email_exists = db.session.query(
+            EmailSubmission.query.filter_by(sender_email=data['email']).exists()
+        ).scalar()
+        
+        if not email_exists:
+            return jsonify({
+                "detail": "This email is not registered in our system. Please use the email you used to submit your abstract."
+            }), 403
+        
         existing_user = User.query.filter_by(email=data['email']).first()
         if existing_user:
             return jsonify({"detail": "Email already registered"}), 400
@@ -226,7 +263,7 @@ def register():
             full_name=data['full_name'],
             email=data['email'],
             hashed_password=hashed_password,
-            role='user'  # Default role is user
+            role='user'
         )
         
         db.session.add(new_user)
@@ -245,7 +282,7 @@ def register():
         print(f"Registration error: {e}")
         traceback.print_exc()
         return jsonify({"detail": str(e)}), 500
-
+    
 @app.route('/api/current-user', methods=['GET', 'OPTIONS'])
 def get_current_user():
     """Get the currently logged-in user from the session."""
@@ -330,16 +367,45 @@ def login():
         if not data.get('email') or not data.get('password'):
             return jsonify({"detail": "Email and password are required"}), 400
         
-        user = User.query.filter_by(email=data['email']).first()
+        # Sanitize inputs to prevent SQL injection
+        email = data['email'].strip().lower()
+        password = data['password']
+        
+        # Validate email format
+        if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
+            return jsonify({"detail": "Invalid credentials"}), 401
+        
+        # Validate password length
+        if len(password) < 8:
+            return jsonify({"detail": "Invalid credentials"}), 401
+        
+        # Use parameterized query to prevent SQL injection
+        # SQLAlchemy automatically uses parameterized queries
+        user = User.query.filter_by(email=email).first()
+        
         if not user:
-            return jsonify({"detail": "Invalid email or password"}), 401
+            # Use generic message for security
+            return jsonify({"detail": "Invalid credentials"}), 401
         
-        if not bcrypt.check_password_hash(user.hashed_password, data['password']):
-            return jsonify({"detail": "Invalid email or password"}), 401
+        # Check if user is active
+        if not user.is_active:
+            return jsonify({"detail": "Account is deactivated. Please contact support."}), 403
         
-        # Generate a simple token (in production, use JWT)
+        # Verify password using bcrypt
+        if not bcrypt.check_password_hash(user.hashed_password, password):
+            # Use generic message for security
+            return jsonify({"detail": "Invalid credentials"}), 401
+        
+        # Generate secure token
+        import secrets
         import base64
-        token = base64.b64encode(user.email.encode('utf-8')).decode('utf-8')
+        
+        # Create a secure token using secrets module
+        token_data = f"{user.email}|{secrets.token_urlsafe(32)}"
+        token = base64.b64encode(token_data.encode('utf-8')).decode('utf-8')
+        
+        # Log successful login (optional)
+        print(f"✅ User logged in: {user.email} at {datetime.now()}")
         
         return jsonify({
             "message": "Login successful",
@@ -349,13 +415,13 @@ def login():
                 "email": user.email,
                 "role": user.role
             },
-            "token": token  # Return token for subsequent requests
+            "token": token
         }), 200
         
     except Exception as e:
         print(f"Login error: {e}")
         traceback.print_exc()
-        return jsonify({"detail": str(e)}), 500
+        return jsonify({"detail": "An error occurred during login"}), 500
     
 @app.route('/api/submit', methods=['POST', 'OPTIONS'])
 def submit():

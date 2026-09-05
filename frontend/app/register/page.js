@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 
-// Toast Component
+// Toast Component (same as before)
 const Toast = ({ message, type, onClose }) => {
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -69,6 +69,9 @@ export default function RegisterPage() {
   const [strengthColor, setStrengthColor] = useState('bg-slate-200');
   const [passwordMatch, setPasswordMatch] = useState(true);
   const [touched, setTouched] = useState(false);
+  const [email, setEmail] = useState('');
+  const [isEmailValidating, setIsEmailValidating] = useState(false);
+  const [emailValid, setEmailValid] = useState(null);
 
   // Real-time password strength check
   useEffect(() => {
@@ -82,9 +85,46 @@ export default function RegisterPage() {
     }
   }, [password, confirmPassword, touched]);
 
+  // Validate email against submissions
+  useEffect(() => {
+    const validateEmail = async () => {
+      if (!email || email.length < 3) {
+        setEmailValid(null);
+        return;
+      }
+
+      // Basic email validation
+      if (!email.includes('@')) {
+        setEmailValid(false);
+        return;
+      }
+
+      setIsEmailValidating(true);
+      try {
+        const res = await fetch(`http://localhost:5000/api/validate-email?email=${encodeURIComponent(email)}`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+          },
+        });
+
+        const data = await res.json();
+        setEmailValid(data.valid);
+      } catch (error) {
+        console.error('Error validating email:', error);
+        setEmailValid(false);
+      } finally {
+        setIsEmailValidating(false);
+      }
+    };
+
+    // Debounce email validation
+    const timer = setTimeout(validateEmail, 500);
+    return () => clearTimeout(timer);
+  }, [email]);
+
   const showToast = (message, type) => {
     setToast({ message, type });
-    // Auto-hide toast after 5 seconds
     setTimeout(() => {
       setToast(null);
     }, 5000);
@@ -149,7 +189,7 @@ export default function RegisterPage() {
 
     const formData = new FormData(e.target);
     const fullName = formData.get('fullName');
-    const email = formData.get('email');
+    const emailValue = formData.get('email');
     const passwordValue = formData.get('password');
     const confirmPasswordValue = formData.get('confirmPassword');
 
@@ -163,8 +203,17 @@ export default function RegisterPage() {
     }
 
     // Validate email
-    if (!email || !email.includes('@')) {
+    if (!emailValue || !emailValue.includes('@')) {
       const errorMsg = 'Please enter a valid email address.';
+      setError(errorMsg);
+      showToast(errorMsg, 'error');
+      setLoading(false);
+      return;
+    }
+
+    // Validate email exists in submissions (security check)
+    if (emailValid !== true) {
+      const errorMsg = 'This email address is not registered in our system. Please use the email you used to submit your abstract.';
       setError(errorMsg);
       showToast(errorMsg, 'error');
       setLoading(false);
@@ -192,7 +241,7 @@ export default function RegisterPage() {
 
     const data = {
       full_name: fullName.trim(),
-      email: email.trim(),
+      email: emailValue.trim(),
       password: passwordValue,
     };
 
@@ -218,7 +267,6 @@ export default function RegisterPage() {
         const successMsg = 'Account created successfully! Redirecting to login...';
         showToast(successMsg, 'success');
         
-        // Redirect after toast shows
         setTimeout(() => {
           window.location.href = '/login';
         }, 3000);
@@ -271,7 +319,10 @@ export default function RegisterPage() {
               />
             </div>
             <h1 className="text-2xl font-bold text-slate-900">Create an Account</h1>
-            <p className="text-slate-500 text-sm mt-1">Join the PEMNet extension network today</p>
+            <p className="text-slate-500 text-sm mt-1">Register to access the PEMNet extension network</p>
+            <p className="text-xs text-amber-600 mt-2 bg-amber-50 p-2 rounded-lg">
+              ⚠️ Only users who have submitted abstracts via email can register
+            </p>
           </div>
 
           {/* Form */}
@@ -290,19 +341,64 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-semibold text-slate-700 mb-1.5">Email Address</label>
-              <input 
-                type="email" 
-                id="email" 
-                name="email"
-                placeholder="you@example.com"
-                autoComplete="email"
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
-                required
-              />
+              <label htmlFor="email" className="block text-sm font-semibold text-slate-700 mb-1.5">
+                Email Address
+                {isEmailValidating && <span className="ml-2 text-xs text-slate-400">Checking...</span>}
+              </label>
+              <div className="relative">
+                <input 
+                  type="email" 
+                  id="email" 
+                  name="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  autoComplete="email"
+                  className={`w-full px-4 py-3 bg-slate-50 border rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition pr-12 ${
+                    emailValid === true ? 'border-emerald-500 focus:border-emerald-500' :
+                    emailValid === false ? 'border-red-500 focus:border-red-500' :
+                    'border-slate-200 focus:border-blue-500'
+                  }`}
+                  required
+                />
+                <div className="absolute inset-y-0 right-0 pr-4 flex items-center">
+                  {emailValid === true && (
+                    <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                  {emailValid === false && (
+                    <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  )}
+                  {isEmailValidating && (
+                    <svg className="w-5 h-5 text-slate-400 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  )}
+                </div>
+              </div>
+              {emailValid === false && (
+                <p className="mt-1.5 text-xs text-red-500 flex items-center gap-1.5">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  This email is not registered in the system. Please use the email you used to submit your abstract.
+                </p>
+              )}
+              {emailValid === true && (
+                <p className="mt-1.5 text-xs text-emerald-500 flex items-center gap-1.5">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  Email verified ✓
+                </p>
+              )}
             </div>
 
-            {/* Password Field */}
+            {/* Password Field - same as before */}
             <div>
               <label htmlFor="password" className="block text-sm font-semibold text-slate-700 mb-1.5">Password</label>
               <div className="relative">
@@ -415,7 +511,7 @@ export default function RegisterPage() {
               )}
             </div>
 
-            {/* Confirm Password */}
+            {/* Confirm Password - same as before */}
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-semibold text-slate-700 mb-1.5">Confirm Password</label>
               <div className="relative">
@@ -484,10 +580,14 @@ export default function RegisterPage() {
 
             <button 
               type="submit" 
-              disabled={loading}
-              className="w-full bg-blue-700 text-white py-3 rounded-xl font-semibold hover:bg-blue-800 transition shadow-lg shadow-blue-700/20 mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={loading || emailValid !== true}
+              className={`w-full py-3 rounded-xl font-semibold transition shadow-lg mt-4 ${
+                loading || emailValid !== true
+                  ? 'bg-slate-400 text-white cursor-not-allowed shadow-none'
+                  : 'bg-blue-700 text-white hover:bg-blue-800 shadow-lg shadow-blue-700/20'
+              }`}
             >
-              {loading ? "Creating Account..." : "Sign Up"}
+              {loading ? "Creating Account..." : emailValid === true ? "Sign Up" : "Verify Email First"}
             </button>
           </form>
 
@@ -531,11 +631,22 @@ export default function RegisterPage() {
             width: 0%;
           }
         }
+        @keyframes spin {
+          from {
+            transform: rotate(0deg);
+          }
+          to {
+            transform: rotate(360deg);
+          }
+        }
         .animate-slide-in {
           animation: slideIn 0.3s ease-out;
         }
         .animate-progress-shrink {
           animation: progressShrink 5s linear forwards;
+        }
+        .animate-spin {
+          animation: spin 1s linear infinite;
         }
       `}</style>
     </div>

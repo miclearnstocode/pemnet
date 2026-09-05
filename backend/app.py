@@ -105,8 +105,6 @@ class ExtractedAbstractData(db.Model):
     __tablename__ = 'extracted_abstract_data'
     id = db.Column(db.Integer, primary_key=True)
     email_submission_id = db.Column(db.Integer, db.ForeignKey('email_submissions.id'), nullable=False, index=True)
-    
-    # Extracted fields from PDF
     title = db.Column(db.String(500), nullable=True)
     title_english = db.Column(db.String(500), nullable=True)
     authors = db.Column(db.Text, nullable=True)
@@ -1870,6 +1868,43 @@ def update_user_thematic_areas_simple(user_id):
     except Exception as e:
         db.session.rollback()
         print(f"Error: {e}")
+        return jsonify({"detail": str(e)}), 500
+    
+@app.route('/api/email-submissions/<int:email_submission_id>/extracted-data', methods=['GET', 'OPTIONS'])
+def get_extracted_data(email_submission_id):
+    """Get extracted abstract data for an email submission."""
+    if request.method == 'OPTIONS':
+        return jsonify({})
+    
+    try:
+        # Get the extracted data for this email submission
+        extracted = ExtractedAbstractData.query.filter_by(email_submission_id=email_submission_id).first()
+        
+        if not extracted:
+            return jsonify({}), 200  # Return empty object if no extracted data
+        
+        return jsonify({
+            'id': extracted.id,
+            'email_submission_id': extracted.email_submission_id,
+            'title': extracted.title,
+            'title_english': extracted.title_english,
+            'authors': extracted.authors,
+            'authors_list': extracted.authors_list,
+            'project_leader': extracted.project_leader,
+            'corresponding_author_name': extracted.corresponding_author_name,
+            'corresponding_author_email': extracted.corresponding_author_email,
+            'paper_category': extracted.paper_category,
+            'thematic_area': extracted.thematic_area,
+            'theme': extracted.theme,
+            'status': extracted.status,
+            'evaluation_status': extracted.evaluation_status,
+            'extraction_status': extracted.extraction_status,
+            'extraction_error': extracted.extraction_error,
+            'extracted_at': extracted.extracted_at.strftime('%Y-%m-%d %H:%M:%S') if extracted.extracted_at else None
+        }), 200
+        
+    except Exception as e:
+        print(f"Error fetching extracted data: {e}")
         return jsonify({"detail": str(e)}), 500
     
 if __name__ == '__main__':

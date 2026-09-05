@@ -141,6 +141,8 @@ export default function LoginPage() {
         // Redirect based on role
         if (data.user.role === 'evaluator' || data.user.role === 'admin' || data.user.role === 'staff') {
           window.location.href = '/review';
+        } else if (data.user.role === 'master_approver') {
+          window.location.href = '/master-review';
         } else {
           window.location.href = '/submit';
         }
@@ -180,7 +182,7 @@ export default function LoginPage() {
 
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="relative w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-blue-50 to-emerald-50 rounded-2xl p-3 flex items-center justify-center">
+            <div className="relative w-20 h-20 mx-auto mb-4 bg-linear-to-br from-blue-50 to-emerald-50 rounded-2xl p-3 flex items-center justify-center">
               <img
                 src="/images/pemnet_logo.png"
                 alt="PEMNet Logo"

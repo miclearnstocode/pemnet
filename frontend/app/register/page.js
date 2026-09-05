@@ -25,7 +25,7 @@ const Toast = ({ message, type, onClose }) => {
         </div>
         
         <div className="flex items-start gap-3">
-          <div className={`flex-shrink-0 mt-0.5 ${iconColor}`}>
+          <div className={`shrink-0 mt-0.5 ${iconColor}`}>
             {type === 'success' ? (
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -44,7 +44,7 @@ const Toast = ({ message, type, onClose }) => {
           </div>
           <button 
             onClick={onClose}
-            className={`flex-shrink-0 ${textColor} hover:opacity-70 transition`}
+            className={`shrink-0 ${textColor} hover:opacity-70 transition`}
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -309,7 +309,7 @@ export default function RegisterPage() {
           
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="relative w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-blue-50 to-emerald-50 rounded-2xl p-3 flex items-center justify-center">
+            <div className="relative w-20 h-20 mx-auto mb-4 bg-linear-to-br from-blue-50 to-emerald-50 rounded-2xl p-3 flex items-center justify-center">
               <img 
                 src="/images/pemnet_logo.png" 
                 alt="PEMNet Logo" 

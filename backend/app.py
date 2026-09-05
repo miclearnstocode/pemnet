@@ -2,17 +2,19 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
-from datetime import timedelta, datetime
-import os, json
+from datetime import datetime
+import os
 import tempfile, re
 import traceback
-import base64
 from werkzeug.utils import secure_filename
 from werkzeug.exceptions import UnprocessableEntity
 from dotenv import load_dotenv
 from google_drive import upload_file_to_drive
 from functools import wraps
 from gmail_service import GmailService
+from models import db, User, Submission, EmailSubmission, ExtractedAbstractData, SUC, SubmissionVote, EvaluatorDiscussion
+from master_approver import MasterApproverService
+from email_service import gmail_service, send_status_update_email, send_confirmation_email
 
 load_dotenv()
 
@@ -23,7 +25,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['MAX_CONTENT_LENGTH'] = 64 * 1024 * 1024  # 64MB max file size
 
 # Initialize extensions
-db = SQLAlchemy(app)
+db.init_app(app)
 bcrypt = Bcrypt(app)
 
 # CORS configuration
@@ -44,125 +46,6 @@ def after_request(response):
     response.headers.add('Access-Control-Allow-Credentials', 'true')
     response.headers.add('Access-Control-Max-Age', '3600')
     return response
-
-# Models
-class User(db.Model):
-    __tablename__ = 'users'
-    id = db.Column(db.Integer, primary_key=True)
-    full_name = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(100), unique=True, nullable=False, index=True)
-    hashed_password = db.Column(db.String(255), nullable=False)
-    is_active = db.Column(db.Boolean, default=True)
-    role = db.Column(db.Enum('user', 'staff', 'evaluator', 'admin'), nullable=False, default='user')
-    created_at = db.Column(db.DateTime, server_default=db.func.now())
-    updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
-
-class Submission(db.Model):
-    __tablename__ = 'submissions'
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, nullable=False, default=0)
-    paper_trail_no = db.Column(db.String(50), nullable=True) 
-    submission_type = db.Column(db.String(50), nullable=True, default='abstract')  
-    extension_project_title = db.Column(db.String(255), nullable=False)
-    thematic_area = db.Column(db.String(255), nullable=False)
-    paper_category = db.Column(db.String(255), nullable=False)
-    suc_agencies = db.Column(db.String(255), nullable=True)
-    author = db.Column(db.String(255), nullable=False)
-    presenter = db.Column(db.String(255), nullable=False)
-    status = db.Column(db.Enum('pending', 'endorse', 'downgraded'), nullable=False, default='pending')
-    evaluation_status = db.Column(db.Enum('pending', 'endorse', 'downgraded-non_competitive', 'downgraded-poster_only'), nullable=False, default='pending')
-    co_authors = db.Column(db.Text, nullable=True)
-    abstract_view_url = db.Column(db.String(500), nullable=True)
-    abstract_download_url = db.Column(db.String(500), nullable=True)
-    endorsement_view_url = db.Column(db.String(500), nullable=True)
-    endorsement_download_url = db.Column(db.String(500), nullable=True)
-    compextproj_drive_view_url = db.Column(db.String(500), nullable=True)
-    compextproj_drive_download_url = db.Column(db.String(500), nullable=True)
-    created_at = db.Column(db.DateTime, server_default=db.func.now())
-
-class EmailSubmission(db.Model):
-    __tablename__ = 'email_submissions'
-    id = db.Column(db.Integer, primary_key=True)
-    email_message_id = db.Column(db.String(255), unique=True, nullable=False, index=True)
-    sender_email = db.Column(db.String(255), nullable=False)
-    sender_name = db.Column(db.String(255), nullable=True)
-    project_leader_name = db.Column(db.String(255), nullable=True)
-    subject = db.Column(db.String(500), nullable=False)
-    body = db.Column(db.Text, nullable=True)
-    attachment_filename = db.Column(db.String(255), nullable=True)
-    attachment_view_url = db.Column(db.String(500), nullable=True)
-    attachment_download_url = db.Column(db.String(500), nullable=True)
-    status = db.Column(db.Enum('pending', 'accepted', 'rejected', 'processed'), nullable=False, default='pending')
-    processed_submission_id = db.Column(db.Integer, db.ForeignKey('submissions.id'), nullable=True)  # Fixed: Added ForeignKey
-    email_received_at = db.Column(db.DateTime, nullable=False)
-    created_at = db.Column(db.DateTime, server_default=db.func.now())
-    updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
-
-    # Relationship to submission - fixed with proper foreign_keys
-    submission = db.relationship('Submission', foreign_keys=[processed_submission_id], backref='email_submissions')
-    
-class ExtractedAbstractData(db.Model):
-    __tablename__ = 'extracted_abstract_data'
-    id = db.Column(db.Integer, primary_key=True)
-    email_submission_id = db.Column(db.Integer, db.ForeignKey('email_submissions.id'), nullable=False, index=True)
-    title = db.Column(db.String(500), nullable=True)
-    title_english = db.Column(db.String(500), nullable=True)
-    authors = db.Column(db.Text, nullable=True)
-    authors_list = db.Column(db.Text, nullable=True)  # JSON array of authors
-    project_leader = db.Column(db.String(255), nullable=True)
-    corresponding_author_name = db.Column(db.String(255), nullable=True)
-    corresponding_author_email = db.Column(db.String(255), nullable=True)
-    paper_category = db.Column(db.String(255), nullable=True)
-    thematic_area = db.Column(db.String(255), nullable=True)
-    theme = db.Column(db.String(500), nullable=True)
-    status = db.Column(db.Enum('pending', 'endorse', 'downgraded'), nullable=False, default='pending')
-    evaluation_status = db.Column(db.Enum('pending', 'endorse', 'downgraded-non_competitive', 'downgraded-poster_only'), nullable=False, default='pending')
-    extraction_status = db.Column(db.Enum('pending', 'extracted', 'failed'), nullable=False, default='pending')
-    extraction_error = db.Column(db.Text, nullable=True)
-    extracted_at = db.Column(db.DateTime, server_default=db.func.now())
-    
-    email_submission = db.relationship('EmailSubmission', foreign_keys=[email_submission_id], backref='extracted_data')
-    
-class SUC(db.Model):
-    __tablename__ = 'sucs'
-    id = db.Column(db.Integer, primary_key=True)
-    region = db.Column(db.String(100), nullable=False)
-    name = db.Column(db.String(255), nullable=False, unique=True)
-    abbreviation = db.Column(db.String(50), nullable=True)
-    type = db.Column(db.String(50), nullable=True)
-    is_active = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, server_default=db.func.now())
-    updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
-
-class SubmissionVote(db.Model):
-    __tablename__ = 'submission_votes'
-    id = db.Column(db.Integer, primary_key=True)
-    submission_id = db.Column(db.Integer, db.ForeignKey('submissions.id'), nullable=False)
-    evaluator_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    # statuses: 'endorse', 'non_competitive', 'downgrade', 'reassign'
-    vote_status = db.Column(db.String(50), nullable=False)  
-    vote_notes = db.Column(db.Text, nullable=True) # Notes for why they voted this way
-    vote_reassign_to = db.Column(db.String(255), nullable=True) # Only if vote is 'reassign'
-    vote_downgrade_to = db.Column(db.String(255), nullable=True) # Only if vote is 'downgrade'
-    created_at = db.Column(db.DateTime, server_default=db.func.now())
-    updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
-
-    # Relationships
-    submission = db.relationship('Submission', foreign_keys=[submission_id], backref='votes')
-    evaluator = db.relationship('User', foreign_keys=[evaluator_id])
-
-class EvaluatorDiscussion(db.Model):
-    __tablename__ = 'evaluator_discussions'
-    id = db.Column(db.Integer, primary_key=True)
-    submission_id = db.Column(db.Integer, db.ForeignKey('submissions.id'), nullable=False)
-    evaluator_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    message = db.Column(db.Text, nullable=False)
-    created_at = db.Column(db.DateTime, server_default=db.func.now())
-
-    # Relationships
-    submission = db.relationship('Submission', foreign_keys=[submission_id], backref='discussions')
-    evaluator = db.relationship('User', foreign_keys=[evaluator_id], backref='discussions')
-    
     
 # Create tables
 with app.app_context():
@@ -876,7 +759,6 @@ def handle_unprocessable_entity(e):
     return jsonify({"msg": str(e.description or "Unprocessable Entity")}), 422
 
 try:
-    # This is the account that RECEIVES the emails
     gmail_service = GmailService(target_email='pemnet26@gmail.com')
     print("✅ Gmail service initialized successfully for: pemnet26@gmail.com")
 except Exception as e:
@@ -1697,6 +1579,7 @@ def sync_all_emails():
         traceback.print_exc()
         return jsonify({"detail": str(e)}), 500
 
+# ========== EVALUATOR ROUTES ==========
 def evaluate_final_decision(submission_id):
     """Automatically evaluates the submission based on majority votes."""
     submission = Submission.query.get(submission_id)
@@ -1964,7 +1847,7 @@ def get_extracted_data(email_submission_id):
         extracted = ExtractedAbstractData.query.filter_by(email_submission_id=email_submission_id).first()
         
         if not extracted:
-            return jsonify({}), 200  # Return empty object if no extracted data
+            return jsonify({}), 200 
         
         return jsonify({
             'id': extracted.id,
@@ -1990,5 +1873,55 @@ def get_extracted_data(email_submission_id):
         print(f"Error fetching extracted data: {e}")
         return jsonify({"detail": str(e)}), 500
     
+# ========== MASTER APPROVER ROUTES ==========
+
+@app.route('/api/master-approver/status-summary', methods=['GET', 'OPTIONS'])
+def master_approver_status_summary():
+    """Get status summary for master approver dashboard."""
+    if request.method == 'OPTIONS':
+        return jsonify({})
+    
+    result, status_code = MasterApproverService.get_status_summary()
+    return jsonify(result), status_code
+
+@app.route('/api/master-approver/pending-submissions', methods=['GET', 'OPTIONS'])
+def master_approver_pending_submissions():
+    """Get all pending submissions with vote summaries."""
+    if request.method == 'OPTIONS':
+        return jsonify({})
+    
+    result, status_code = MasterApproverService.get_pending_submissions()
+    return jsonify(result), status_code
+
+@app.route('/api/submissions/<int:submission_id>/master-status', methods=['POST', 'OPTIONS'])
+def set_master_status(submission_id):
+    """Master approver sets the final status of a submission."""
+    if request.method == 'OPTIONS':
+        return jsonify({})
+    
+    data = request.get_json()
+    result, status_code = MasterApproverService.set_final_status(submission_id, data)
+    return jsonify(result), status_code
+
+@app.route('/api/submissions/<int:submission_id>/master-details', methods=['GET', 'OPTIONS'])
+def get_submission_with_votes(submission_id):
+    """Get submission details with all votes and extracted data for master approver."""
+    if request.method == 'OPTIONS':
+        return jsonify({})
+    
+    result, status_code = MasterApproverService.get_submission_with_votes(submission_id)
+    return jsonify(result), status_code
+
+@app.route('/api/master-approver/bulk-email', methods=['POST', 'OPTIONS'])
+def bulk_send_status_emails():
+    """Send bulk status update emails."""
+    if request.method == 'OPTIONS':
+        return jsonify({})
+    
+    data = request.get_json()
+    result, status_code = MasterApproverService.bulk_send_status_emails(data)
+    return jsonify(result), status_code
+
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000, host='127.0.0.1')

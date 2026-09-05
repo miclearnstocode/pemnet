@@ -523,7 +523,7 @@ export default function ReviewPage() {
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 h-full min-h-[700px]">
+              <div className="grid grid-cols-1 lg:grid-cols-2 h-full min-h-175">
                 {/* Left Panel - "Submission Information" Structure */}
                 <div className="p-8 overflow-y-auto max-h-[80vh] border-r border-slate-200">
                   <h4 className="text-base font-bold text-slate-700 uppercase mb-6">Submission Information</h4>

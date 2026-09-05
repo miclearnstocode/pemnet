@@ -38,6 +38,10 @@ export default function ReviewPage() {
   const [checkingEmails, setCheckingEmails] = useState(false);
   const [isModalLoading, setIsModalLoading] = useState(false);
 
+  const [showDowngradeConfirm, setShowDowngradeConfirm] = useState(false);
+  const [pendingDowngradeType, setPendingDowngradeType] = useState(null);
+  const [downgradeConfirmLoading, setDowngradeConfirmLoading] = useState(false);
+  
   useEffect(() => {
     const storedUser = localStorage.getItem('pemnet_user');
     if (storedUser) {
@@ -202,6 +206,71 @@ export default function ReviewPage() {
       setConfirmLoading(false);
     }
   };
+
+  // ---------------- DOWNGRADE LOGIC ----------------
+
+  // Step 1: When user clicks Downgrade button, open modal
+  const handleOpenDowngradeModal = () => {
+    setShowDowngradeModal(true);
+  };
+
+  // Step 2: When user selects a downgrade type, show confirmation
+  const handleDowngradeWithConfirm = async (downgradeType) => {
+    setPendingDowngradeType(downgradeType);
+    setShowDowngradeModal(false); // Close selection modal
+    setShowDowngradeConfirm(true); // Open confirmation modal
+  };
+
+  // Step 3: Once confirmed, submit to backend
+  const handleDowngradeVote = async (downgradeType) => {
+    if (!selectedSubmission || !downgradeType) return;
+
+    setDowngradeLoading(true);
+
+    try {
+      const res = await fetch(`http://localhost:5000/api/submissions/${selectedSubmission.id}/evaluate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          evaluator_id: currentEvaluatorId,
+          vote_status: 'downgrade',
+          vote_notes: voteNotes,
+          vote_downgrade_to: downgradeType
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setVotes(data);
+        showToast('Submission downgraded', 'success');
+        setVoteNotes('');
+        setDowngradeLoading(false);
+        fetchSubmissions();
+      } else {
+        const error = await res.json();
+        showToast(error.detail || 'Failed to downgrade', 'error');
+        setDowngradeLoading(false);
+      }
+    } catch (error) {
+      showToast('Failed to downgrade', 'error');
+      setDowngradeLoading(false);
+    }
+  };
+
+  // Step 4: Confirm action execution
+  const confirmDowngradeVote = async () => {
+    if (!pendingDowngradeType) return;
+    setDowngradeConfirmLoading(true);
+    try {
+      await handleDowngradeVote(pendingDowngradeType);
+      setShowDowngradeConfirm(false);
+      setPendingDowngradeType(null);
+    } finally {
+      setDowngradeConfirmLoading(false);
+    }
+  };
+
+  // ---------------- END OF DOWNGRADE LOGIC ----------------
 
   // Filter submissions
   const filteredSubmissions = submissions.filter(sub => {
@@ -374,42 +443,15 @@ export default function ReviewPage() {
         currentThematicArea={getThematicArea()}
       />
 
+      {/* Downgrade Selection Modal (No duplicate) */}
       <DowngradeModal
         isOpen={showDowngradeModal}
         onClose={() => setShowDowngradeModal(false)}
-        onSubmit={async (downgradeType) => {
-          setDowngradeLoading(true);
-          try {
-            const res = await fetch(`http://localhost:5000/api/submissions/${selectedSubmission.id}/evaluate`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                evaluator_id: currentEvaluatorId,
-                vote_status: 'downgrade',
-                vote_notes: voteNotes,
-                vote_downgrade_to: downgradeType
-              }),
-            });
-            if (res.ok) {
-              const data = await res.json();
-              setVotes(data);
-              setShowDowngradeModal(false);
-              setVoteNotes('');
-              setDowngradeLoading(false);
-              showToast('Submission downgraded', 'success');
-              fetchSubmissions();
-            } else {
-              const error = await res.json();
-              showToast(error.detail || 'Failed to downgrade', 'error');
-              setDowngradeLoading(false);
-            }
-          } catch (error) {
-            showToast('Failed to downgrade', 'error');
-            setDowngradeLoading(false);
-          }
-        }}
+        onSubmit={handleDowngradeWithConfirm}  // Opens confirmation
+        isLoading={downgradeLoading}
       />
 
+      {/* Endorse Confirmation Modal */}
       <ConfirmModal
         isOpen={showConfirmModal}
         onClose={() => { setShowConfirmModal(false); setPendingVoteAction(null); }}
@@ -420,7 +462,20 @@ export default function ReviewPage() {
         cancelText="No, Cancel"
         isLoading={confirmLoading}
       />
-
+      
+      {/* Downgrade Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showDowngradeConfirm}
+        onClose={() => { setShowDowngradeConfirm(false); setPendingDowngradeType(null); }}
+        onConfirm={confirmDowngradeVote}
+        title="Confirm Downgrade"
+        message={`Are you sure you want to downgrade this submission? This will be recorded as a ${pendingDowngradeType === 'non_competitive' ? 'Non-Competitive (Poster)' : 'Poster Only'} decision.`}
+        confirmText="Yes, Downgrade"
+        cancelText="No, Cancel"
+        isLoading={downgradeConfirmLoading}
+        type="warning" // Makes it Yellow
+      />
+      
       {selectedSubmission && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedSubmission(null)}></div>
@@ -506,7 +561,7 @@ export default function ReviewPage() {
                       </div>
                       
                       <div className="mt-4">
-                        <button onClick={() => setShowDowngradeModal(true)} className="w-full bg-yellow-50 text-yellow-600 py-4 rounded-xl font-semibold text-base hover:bg-yellow-100 transition flex items-center justify-center gap-2">
+                        <button onClick={handleOpenDowngradeModal} className="w-full bg-yellow-50 text-yellow-600 py-4 rounded-xl font-semibold text-base hover:bg-yellow-100 transition flex items-center justify-center gap-2">
                           <img src="/images/downgrade.png" alt="Downgrade" className="w-5 h-5 object-contain" />
                           Downgrade
                         </button>

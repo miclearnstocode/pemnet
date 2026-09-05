@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 export default function EmailReviewPage() {
-    // Placeholder: Replace with actual logged-in evaluator ID (e.g., 1, 2, 3)
-    const [currentEvaluatorId, setCurrentEvaluatorId] = useState(1); 
+    // FIX: Load actual evaluator ID from localStorage (Fallback to 3 if missing)
+    const [currentEvaluatorId, setCurrentEvaluatorId] = useState(null); 
     
     const [submissions, setSubmissions] = useState([]);
     const [selectedSubmission, setSelectedSubmission] = useState(null);
@@ -20,8 +20,26 @@ export default function EmailReviewPage() {
     const [discussions, setDiscussions] = useState([]);
     const [newMessage, setNewMessage] = useState('');
     const [voteNotes, setVoteNotes] = useState('');
+    
+    // Reassign Modal States
+    const [showReassignModal, setShowReassignModal] = useState(false);
+    const [newThematicArea, setNewThematicArea] = useState('');
+    const [isReassignLoading, setIsReassignLoading] = useState(false);
 
     useEffect(() => {
+        // Fetch user from localStorage
+        const userData = localStorage.getItem('pemnet_user');
+        if (userData) {
+            try {
+                const user = JSON.parse(userData);
+                setCurrentEvaluatorId(user.id || 3); // Fallback if missing
+            } catch (e) {
+                setCurrentEvaluatorId(3); // Fallback for testing
+            }
+        } else {
+            setCurrentEvaluatorId(3); // Fallback for testing
+        }
+        
         fetchSubmissions();
     }, [statusFilter]);
 
@@ -47,11 +65,16 @@ export default function EmailReviewPage() {
     const fetchVotesAndDiscussions = async (submissionId) => {
         const votesRes = await fetch(`http://localhost:5000/api/submissions/${submissionId}/evaluate`);
         const votesData = await votesRes.json();
-        setVotes(votesData);
+        // FIX: Ensure evaluation_status is never undefined
+        setVotes({
+            ...votesData,
+            evaluation_status: votesData.evaluation_status || 'pending'
+        });
 
         const discRes = await fetch(`http://localhost:5000/api/submissions/${submissionId}/discussions`);
         const discData = await discRes.json();
-        setDiscussions(discData);
+        // FIX: Safely handle array vs error object
+        setDiscussions(Array.isArray(discData) ? discData : []);
     };
 
     const selectSubmission = async (sub) => {
@@ -119,7 +142,10 @@ export default function EmailReviewPage() {
 
             if (res.ok) {
                 const data = await res.json();
-                setVotes(data);
+                setVotes({
+                    ...data,
+                    evaluation_status: data.evaluation_status || 'pending'
+                });
                 showToast(`Voted: ${vote_status.replace('_', ' ')}`, 'success');
                 setVoteNotes('');
                 
@@ -159,8 +185,54 @@ export default function EmailReviewPage() {
         }
     };
 
+    // Reassign Logic
+    const openReassignModal = () => {
+        setNewThematicArea(selectedSubmission?.thematic_area || '');
+        setShowReassignModal(true);
+    };
+
+    const handleReassignSubmit = async () => {
+        if (!selectedSubmission || !newThematicArea) return;
+        setIsReassignLoading(true);
+
+        try {
+            const res = await fetch(`http://localhost:5000/api/submissions/${selectedSubmission.id}/evaluate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    evaluator_id: currentEvaluatorId,
+                    vote_status: 'reassign',
+                    vote_notes: '',
+                    vote_reassign_to: newThematicArea
+                }),
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                setVotes({
+                    ...data,
+                    evaluation_status: data.evaluation_status || 'pending'
+                });
+                showToast('Successfully reassigned!', 'success');
+                setShowReassignModal(false);
+                
+                if (data.evaluation_status !== 'pending') {
+                    fetchSubmissions();
+                }
+            } else {
+                const error = await res.json();
+                showToast(error.detail || 'Failed to reassign', 'error');
+            }
+        } catch (error) {
+            showToast('Failed to reassign', 'error');
+        } finally {
+            setIsReassignLoading(false);
+        }
+    };
+
     const getStatusColor = (status) => {
-        switch (status) {
+        const safeStatus = status || 'pending'; // FIX: Never pass undefined
+        switch (safeStatus) {
             case 'accepted': return 'bg-emerald-100 text-emerald-700';
             case 'non_competitive': return 'bg-red-100 text-red-700';
             case 'downgraded': return 'bg-yellow-100 text-yellow-700';
@@ -177,6 +249,15 @@ export default function EmailReviewPage() {
             </div>
         );
     }
+
+    // Thematic Areas for Modal
+    const thematicAreas = [
+        'Food Production, Agriculture, Fisheries, and Natural Resource Systems',
+        'Health, Nutrition, Wellness, and Community Care',
+        'Education, Literacy, Skills Development, and Lifelong Learning',
+        'Livelihood, Entrepreneurship, Cooperatives, MSMEs, and Local Economic Development',
+        'Environment, Climate Action, Disaster Risk Reduction, and Community Resilience'
+    ];
 
     return (
         <div className="min-h-screen bg-slate-50">
@@ -197,6 +278,50 @@ export default function EmailReviewPage() {
                             <div className={`flex-1 ${toast.type === 'success' ? 'text-emerald-700' : 'text-red-700'}`}>
                                 <p className="font-semibold text-sm">{toast.type === 'success' ? 'Success!' : 'Error!'}</p>
                                 <p className="text-sm">{toast.message}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Reassign Modal */}
+            {showReassignModal && (
+                <div className="fixed inset-0 z-50 overflow-y-auto">
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowReassignModal(false)}></div>
+                    <div className="relative min-h-full flex items-center justify-center p-4">
+                        <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
+                            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+                                <h3 className="text-lg font-bold text-slate-900">Reassign Thematic Area</h3>
+                                <button onClick={() => setShowReassignModal(false)} className="text-slate-400 hover:text-slate-600">✕</button>
+                            </div>
+                            <div className="p-6">
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">Select New Thematic Area</label>
+                                <select
+                                    value={newThematicArea}
+                                    onChange={(e) => setNewThematicArea(e.target.value)}
+                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                                >
+                                    <option value="">-- Select --</option>
+                                    {thematicAreas.map((area) => (
+                                        <option key={area} value={area}>{area}</option>
+                                    ))}
+                                </select>
+
+                                <div className="mt-6 flex gap-3">
+                                    <button
+                                        onClick={() => setShowReassignModal(false)}
+                                        className="flex-1 px-4 py-2 bg-slate-100 text-slate-700 rounded-xl font-semibold hover:bg-slate-200 transition"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={handleReassignSubmit}
+                                        disabled={!newThematicArea || isReassignLoading}
+                                        className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition disabled:opacity-50"
+                                    >
+                                        {isReassignLoading ? 'Submitting...' : 'Reassign'}
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -342,8 +467,9 @@ export default function EmailReviewPage() {
                             <>
                                 <div className="flex items-center justify-between mb-4">
                                     <h2 className="text-lg font-bold text-slate-900">Email Details</h2>
+                                    {/* FIX: Safe fallback here */}
                                     <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(votes.evaluation_status)}`}>
-                                        {votes.evaluation_status.charAt(0).toUpperCase() + votes.evaluation_status.slice(1)}
+                                        {votes.evaluation_status ? votes.evaluation_status.charAt(0).toUpperCase() + votes.evaluation_status.slice(1) : 'Pending'}
                                     </span>
                                 </div>
 
@@ -440,7 +566,7 @@ export default function EmailReviewPage() {
                                                     ⬇️ Downgrade
                                                 </button>
                                                 <button
-                                                    onClick={() => handleVote('reassign')}
+                                                    onClick={openReassignModal}
                                                     className="w-full bg-blue-50 text-blue-600 py-3 rounded-xl font-semibold hover:bg-blue-100 transition"
                                                 >
                                                     🔄 Reassign

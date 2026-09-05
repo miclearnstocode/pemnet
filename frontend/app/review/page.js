@@ -7,6 +7,8 @@ import DowngradeModal from '../components/DowngradeModal';
 import ConfirmModal from '../components/ConfirmModal';
 
 export default function ReviewPage() {
+  // Store the full user object
+  const [currentUser, setCurrentUser] = useState(null);
   const [currentEvaluatorId, setCurrentEvaluatorId] = useState(null);
   const [activeTab, setActiveTab] = useState('system');
   const [submissions, setSubmissions] = useState([]);
@@ -15,6 +17,9 @@ export default function ReviewPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
+
+  // ADDED: Store ALL users for name mapping (never display ID!)
+  const [allUsers, setAllUsers] = useState([]);
 
   // Extracted data for email submissions
   const [emailExtractedData, setEmailExtractedData] = useState(null);
@@ -47,11 +52,18 @@ export default function ReviewPage() {
     if (storedUser) {
       try {
         const user = JSON.parse(storedUser);
+        setCurrentUser(user); // Store full user object
         setCurrentEvaluatorId(user.id || 3); // fallback
       } catch (error) {
         console.error('Error parsing user data:', error);
       }
     }
+
+    // ADDED: Fetch all users to map IDs to full names
+    fetch('http://localhost:5000/api/users')
+      .then(res => res.json())
+      .then(data => setAllUsers(data))
+      .catch(err => console.error('Error fetching users:', err));
   }, []);
 
   useEffect(() => {
@@ -380,6 +392,15 @@ export default function ReviewPage() {
     return emailExtractedData?.thematic_area || 'Not specified';
   };
 
+  // This function NEVER uses `id` for display - it uses `full_name`
+  const getEvaluatorName = (id) => {
+      const user = allUsers.find(u => u.id === id);
+      if (user) {
+          return user.full_name; // Returns "Evaluator 1", "Evaluator 2", etc.
+      }
+      return 'Evaluator'; // Fallback if users not loaded yet
+  };
+
   const getPaperCategory = () => {
     if (activeTab === 'system') return selectedSubmission?.paper_category;
     return emailExtractedData?.paper_category || 'Not specified';
@@ -575,7 +596,11 @@ export default function ReviewPage() {
                       {(votes.votes || []).map((vote, idx) => (
                         <div key={idx} className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
                           <div className="flex justify-between items-center">
-                            <p className="text-base font-semibold text-slate-900">Evaluator {vote.evaluator_id}</p>
+                              <p className="text-base font-semibold text-slate-900">
+                                  {vote.evaluator_id === currentEvaluatorId 
+                                      ? `${currentUser?.full_name || 'You'} (You)` 
+                                      : getEvaluatorName(vote.evaluator_id)}
+                              </p>
                             <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(vote.vote_status)}`}>
                               {vote.vote_status === 'endorse' ? 'Endorse for Presentation' : 
                                vote.vote_status === 'downgrade' ? 'Downgraded' :
@@ -600,9 +625,9 @@ export default function ReviewPage() {
                             <div key={msg.id || Math.random()} className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
                               <div className={`max-w-[80%] ${isCurrentUser ? 'items-end' : 'items-start'}`}>
                                 <div className="flex items-center gap-2 mb-1">
-                                  <span className="text-xs font-bold text-slate-600">
-                                    {isCurrentUser ? 'You' : `Evaluator ${msg.evaluator_id}`}
-                                  </span>
+                                    <span className="text-xs font-bold text-slate-600">
+                                        {isCurrentUser ? 'You' : getEvaluatorName(msg.evaluator_id)}
+                                    </span>
                                   <span className="text-xs text-slate-400">{msg.created_at}</span>
                                 </div>
                                 <div className={`px-4 py-2 rounded-xl ${isCurrentUser ? 'bg-blue-600 text-white rounded-br-none' : 'bg-white border border-slate-200 text-slate-900 rounded-bl-none'}`}>
@@ -677,11 +702,31 @@ export default function ReviewPage() {
       {/* Header and main UI */}
       <div className="bg-white border-b border-slate-200 px-8 py-6">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
+          {/* Left: Title and Subtitle */}
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Abstract Review</h1>
             <p className="text-slate-500 text-sm mt-1">Review, vote, and collaborate with your fellow evaluators.</p>
           </div>
-          <Link href="/" className="text-blue-600 hover:text-blue-700 font-semibold text-sm">← Back to Dashboard</Link>
+          
+          {/* Right: Evaluator Profile & Back Button */}
+          <div className="flex items-center gap-4">
+            {/* Evaluator Profile Pill */}
+            <div className="flex items-center gap-2.5 px-3 py-1.5 bg-slate-100 border border-slate-200 rounded-full">
+              {/* Profile Icon (Avatar) */}
+              <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold uppercase text-sm shadow-sm">
+                {currentUser?.full_name?.charAt(0) || 'E'}
+              </div>
+              <div className="leading-tight">
+                <p className="text-sm font-semibold text-slate-800">{currentUser?.full_name || 'Evaluator'}</p>
+                <p className="text-[10px] text-slate-500 uppercase tracking-wider font-medium">{currentUser?.role || 'User'}</p>
+              </div>
+            </div>
+
+            {/* Back to Dashboard */}
+            <Link href="/" className="text-blue-600 hover:text-blue-700 font-semibold text-sm transition">
+              ← Back to Dashboard
+            </Link>
+          </div>
         </div>
       </div>
 

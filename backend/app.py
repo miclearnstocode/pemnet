@@ -123,7 +123,6 @@ class ExtractedAbstractData(db.Model):
     
     email_submission = db.relationship('EmailSubmission', foreign_keys=[email_submission_id], backref='extracted_data')
     
-    
 class SUC(db.Model):
     __tablename__ = 'sucs'
     id = db.Column(db.Integer, primary_key=True)
@@ -283,6 +282,24 @@ def get_current_user():
         print(f"Error getting current user: {e}")
         return jsonify({"detail": str(e)}), 500
 
+@app.route('/api/users', methods=['GET', 'OPTIONS'])
+def get_all_users():
+    """Get all users for name mapping."""
+    if request.method == 'OPTIONS':
+        return jsonify({})
+    
+    try:
+        users = User.query.all()
+        return jsonify([{
+            'id': user.id,
+            'full_name': user.full_name,
+            'email': user.email,
+            'role': user.role
+        } for user in users]), 200
+    except Exception as e:
+        print(f"Error fetching users: {e}")
+        return jsonify({"detail": str(e)}), 500
+    
 def verify_token(token):
     """Simple token verification for demo purposes."""
     try:

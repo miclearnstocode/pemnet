@@ -5,9 +5,17 @@ venv\Scripts\activate
 
 Hyber62n@te11
 
-python test_pdf_extraction.py abstract_PEMNet_Phase3_Ongoing_Abstract_FINAL_OBJECTIVES_REVISED.pdf
+python test_pdf_extraction.py files/abstract_PEMNet_Phase3_Ongoing_Abstract_FINAL_OBJECTIVES_REVISED.pdf
 
 python test_pdf_extraction.py PEMNet_Abstract_BABAYI.docx
+
+python test_pdf_extraction.py "abstract_Abstract_Template_PEMNet LANADA.docx"
+
+python test_pdf_extraction.py "abstract_Abstract_Anaerobic Digestion_ Sony P. Aquino.docx"
+
+python test_pdf_extraction.py "abstract_Abstract_ParSU_Ongoing_ProgramBREES.docx.pdf"
+
+python test_pdf_extraction.py "abstract_1. Abstract_PEMNet_DSSC Kompos sa Loob ng Rehas - Competitive.pdf"
 
 Update in the system:
 Work on for the submission of full paper
@@ -15,3 +23,12 @@ Work on for the submission of full paper
 dynamic change of presenter in the system submission for approval and accepted or rejected. state reason why - when submitting full paper. 
 
 resubmission & revised paper.
+
+
+-- Add Evaluator 2
+INSERT INTO `users` (`full_name`, `email`, `hashed_password`, `is_active`, `role`, `created_at`) 
+VALUES ('Evaluator 2', 'evaluator2@gmail.com', '$2b$12$CJrL.nSp3oEDIzA38s0xxuGH.pvQDoQEams4jlK7QZeqiJTeRp0jC', 1, 'evaluator', NOW());
+
+-- Add Evaluator 3
+INSERT INTO `users` (`full_name`, `email`, `hashed_password`, `is_active`, `role`, `created_at`) 
+VALUES ('Evaluator 3', 'evaluator3@gmail.com', '$2b$12$XwnjwUvrhTYcVb6Y0YQU/OYnTErRlon5RavZrYjwHg8X.jq3AqJ9m', 1, 'evaluator', NOW());

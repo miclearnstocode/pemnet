@@ -659,8 +659,8 @@ export default function MasterReviewPage() {
                 <p className="text-[10px] text-slate-500 uppercase tracking-wider font-medium">Master Approver</p>
               </div>
             </div>
-            <Link href="/review" className="text-purple-600 hover:text-purple-700 font-semibold text-sm transition">
-              ← Back to Review
+            <Link href="/login" className="text-red-600 hover:text-red-700 font-semibold text-sm transition">
+              ← Logout
             </Link>
           </div>
         </div>

@@ -722,9 +722,9 @@ export default function ReviewPage() {
               </div>
             </div>
 
-            {/* Back to Dashboard */}
-            <Link href="/" className="text-blue-600 hover:text-blue-700 font-semibold text-sm transition">
-              ← Back to Dashboard
+            {/* Logout Button */}
+            <Link href="/login" className="text-red-600 hover:text-red-700 font-semibold text-sm transition">
+              ← Logout
             </Link>
           </div>
         </div>

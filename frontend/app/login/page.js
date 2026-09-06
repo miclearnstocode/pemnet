@@ -143,6 +143,8 @@ export default function LoginPage() {
           window.location.href = '/review';
         } else if (data.user.role === 'master_approver') {
           window.location.href = '/master-review';
+        } else if (data.user.role === 'treasurer') {
+          window.location.href = '/treasurer';
         } else {
           window.location.href = '/submit';
         }

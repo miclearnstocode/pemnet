@@ -11,7 +11,7 @@ class User(db.Model):
     email = db.Column(db.String(100), unique=True, nullable=False, index=True)
     hashed_password = db.Column(db.String(255), nullable=False)
     is_active = db.Column(db.Boolean, default=True)
-    role = db.Column(db.Enum('user', 'staff', 'evaluator', 'admin', 'master_approver'), nullable=False, default='user')
+    role = db.Column(db.Enum('user', 'staff', 'evaluator', 'admin', 'master_approver', 'treasurer'), nullable=False, default='user')
     created_at = db.Column(db.DateTime, server_default=db.func.now())
     updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
 

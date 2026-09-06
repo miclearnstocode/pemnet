@@ -168,3 +168,43 @@ class EvaluatorDiscussion(db.Model):
 
     submission = db.relationship('Submission', foreign_keys=[submission_id], backref='discussions')
     evaluator = db.relationship('User', foreign_keys=[evaluator_id], backref='discussions')
+    
+class Payment(db.Model):
+    __tablename__ = 'payments'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    submission_id = db.Column(db.Integer, db.ForeignKey('submissions.id'), nullable=False)
+    payment_proof_view_url = db.Column(db.String(500), nullable=True)
+    payment_proof_download_url = db.Column(db.String(500), nullable=True)
+    payment_status = db.Column(db.Enum('pending', 'verified', 'rejected'), nullable=False, default='pending')
+    payment_amount = db.Column(db.Numeric(10, 2), nullable=True)
+    payment_date = db.Column(db.DateTime, nullable=True)
+    reference_number = db.Column(db.String(100), nullable=True)
+    verified_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    verified_at = db.Column(db.DateTime, nullable=True)
+    rejection_reason = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
+
+    # Relationships
+    user = db.relationship('User', foreign_keys=[user_id])
+    submission = db.relationship('Submission', foreign_keys=[submission_id])
+    verifier = db.relationship('User', foreign_keys=[verified_by])
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'submission_id': self.submission_id,
+            'payment_proof_view_url': self.payment_proof_view_url,
+            'payment_proof_download_url': self.payment_proof_download_url,
+            'payment_status': self.payment_status,
+            'payment_amount': float(self.payment_amount) if self.payment_amount else None,
+            'payment_date': self.payment_date.strftime('%Y-%m-%d %H:%M:%S') if self.payment_date else None,
+            'reference_number': self.reference_number,
+            'verified_by': self.verified_by,
+            'verified_at': self.verified_at.strftime('%Y-%m-%d %H:%M:%S') if self.verified_at else None,
+            'rejection_reason': self.rejection_reason,
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None,
+            'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S') if self.updated_at else None
+        }

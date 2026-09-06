@@ -69,6 +69,7 @@ const Toast = ({ message, type, onClose }) => {
   );
 };
 
+
 export default function SubmitPage() {
   const [activeTab, setActiveTab] = useState('submit');
   const [coAuthors, setCoAuthors] = useState(['']);
@@ -90,6 +91,15 @@ export default function SubmitPage() {
   const dropdownRef = useRef(null);
   const [userSubmissions, setUserSubmissions] = useState([]);
   const [isLoadingSubmissions, setIsLoadingSubmissions] = useState(false);
+  const [paymentFile, setPaymentFile] = useState(null);
+  const [paymentData, setPaymentData] = useState(null);
+  const [paymentLoading, setPaymentLoading] = useState(false);
+  const [referenceNumber, setReferenceNumber] = useState('');
+  const [paymentAmount, setPaymentAmount] = useState('');
+  const [paymentDate, setPaymentDate] = useState('');
+  const [paymentStatus, setPaymentStatus] = useState(null);
+  const [isUploadingPayment, setIsUploadingPayment] = useState(false);
+  const [userPayments, setUserPayments] = useState([]);
 
   // Fetch SUCs from database
   useEffect(() => {
@@ -173,6 +183,78 @@ export default function SubmitPage() {
       setFilteredSucList(filtered);
     }
   }, [searchTerm, sucList]);
+
+  const checkPaymentStatus = async (submissionId) => {
+    try {
+      const token = localStorage.getItem('pemnet_token');
+      const response = await fetch(`http://localhost:5000/api/payments/submission/${submissionId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setPaymentData(data);
+        if (data.exists) {
+          setPaymentStatus(data.payment.payment_status);
+        }
+        return data;
+      }
+    } catch (error) {
+      console.error('Error checking payment status:', error);
+    }
+    return null;
+  };
+
+  const handlePaymentUpload = async (e) => {
+    e.preventDefault();
+    if (!paymentFile || !selectedSubmission) {
+      showToast('Please select a payment proof file', 'error');
+      return;
+    }
+    
+    setIsUploadingPayment(true);
+    
+    try {
+      const token = localStorage.getItem('pemnet_token');
+      const userData = JSON.parse(localStorage.getItem('pemnet_user'));
+      
+      const formData = new FormData();
+      formData.append('user_id', userData.id);
+      formData.append('submission_id', selectedSubmission.id);
+      formData.append('reference_number', referenceNumber);
+      formData.append('payment_amount', paymentAmount);
+      formData.append('payment_date', paymentDate);
+      formData.append('payment_proof', paymentFile);
+      
+      const response = await fetch('http://localhost:5000/api/payments/upload', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        showToast('Payment proof uploaded successfully!', 'success');
+        setPaymentData(data);
+        setPaymentStatus('pending');
+        setPaymentFile(null);
+        setReferenceNumber('');
+        setPaymentAmount('');
+        setPaymentDate('');
+      } else {
+        const error = await response.json();
+        showToast(error.detail || 'Failed to upload payment proof', 'error');
+      }
+    } catch (error) {
+      console.error('Error uploading payment:', error);
+      showToast('Network error. Please try again.', 'error');
+    } finally {
+      setIsUploadingPayment(false);
+    }
+  };
 
   const showToast = (message, type) => {
     setToast({ message, type });
@@ -493,6 +575,23 @@ export default function SubmitPage() {
     );
   };
 
+  const fetchUserPayments = async (userId) => {
+    try {
+      const token = localStorage.getItem('pemnet_token');
+      const response = await fetch(`http://localhost:5000/api/payments/user/${userId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setUserPayments(data);
+      }
+    } catch (error) {
+      console.error('Error fetching payments:', error);
+    }
+  };
+
   if (!user) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
@@ -569,6 +668,24 @@ export default function SubmitPage() {
                 </span>
               )}
               {activeTab === 'my-submissions' && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600"></div>
+              )}
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab('payment');
+                if (user) {
+                  fetchUserPayments(user.id);
+                }
+              }}
+              className={`flex-1 px-6 py-4 text-sm font-semibold transition relative ${
+                activeTab === 'payment'
+                  ? 'text-blue-600'
+                  : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              Payment
+              {activeTab === 'payment' && (
                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600"></div>
               )}
             </button>
@@ -947,7 +1064,7 @@ export default function SubmitPage() {
                   </div>
                 </form>
               </>
-            ) : (
+            ) : activeTab === 'my-submissions' ? (
               // My Submissions Tab
               <>
                 <div className="flex justify-between items-center mb-6">
@@ -955,11 +1072,221 @@ export default function SubmitPage() {
                     <h1 className="text-3xl font-bold text-slate-900">My Submissions</h1>
                     <p className="text-slate-500 text-sm mt-1">View all your submitted abstracts</p>
                   </div>
+                  <button
+                    onClick={() => {
+                      setActiveTab('submit');
+                      fetchUserSubmissions(user.id);
+                    }}
+                    className="text-blue-600 hover:text-blue-700 font-semibold text-sm inline-flex items-center gap-1 transition"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                    Submit New Abstract
+                  </button>
                 </div>
 
                 <div className="mt-4">
                   {renderSubmissions()}
                 </div>
+              </>
+            ) : (
+              // Payment Tab
+              <>
+                <div className="flex justify-between items-center mb-6">
+                  <div>
+                    <h1 className="text-3xl font-bold text-slate-900">Payment</h1>
+                    <p className="text-slate-500 text-sm mt-1">Manage your registration payments</p>
+                  </div>
+                </div>
+
+                {/* Payment Information */}
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-6">
+                  <h2 className="text-lg font-bold text-blue-800 mb-2">Registration Fees</h2>
+                  <div className="space-y-2 text-blue-700">
+                    <p><span className="font-semibold">Regular Registration Fee:</span> PhP 6,500.00</p>
+                    <p><span className="font-semibold">Early-Bird Registration Fee:</span> PhP 6,000.00 <span className="text-xs text-blue-500">(for payments made on or before October 3, 2026)</span></p>
+                    <div className="mt-3 pt-3 border-t border-blue-200">
+                      <p className="font-semibold">Registration Fee Inclusions:</p>
+                      <ul className="list-disc list-inside text-sm space-y-1 ml-2">
+                        <li>Conference kit</li>
+                        <li>Two (2) managed buffet lunches</li>
+                        <li>Five (5) snacks</li>
+                      </ul>
+                    </div>
+                    <div className="mt-3 pt-3 border-t border-blue-200">
+                      <p className="font-semibold">Payment Details</p>
+                      <p className="text-sm">Payments may be deposited or transferred to the following official account:</p>
+                      <div className="bg-white p-4 rounded-lg mt-2 space-y-1 text-sm">
+                        <p><span className="font-semibold">Account Name:</span> Philippine Extension Managers Network, Inc.</p>
+                        <p><span className="font-semibold">Bank:</span> Bank of the Philippine Islands</p>
+                        <p><span className="font-semibold">Account Number:</span> 1330-0222-23</p>
+                        <p><span className="font-semibold">Branch:</span> Iloilo Jaro Branch: E Lopez St. Cor D.B. Ledesma St., Jaro, Iloilo City 5000</p>
+                      </div>
+                      <p className="text-xs text-blue-600 mt-2">After payment, upload a clear copy of the validated deposit slip or electronic transaction receipt. The proof of payment must indicate the participant's full name, institution, amount paid, date of payment, and transaction or reference number.</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Payment Form - Only show for endorsed submissions */}
+                {userSubmissions.filter(s => s.status === 'endorse').length > 0 ? (
+                  <>
+                    <div className="bg-white border border-slate-200 rounded-xl p-6 mb-6">
+                      <h3 className="text-lg font-bold text-slate-900 mb-4">Upload Payment Proof</h3>
+                      <p className="text-sm text-slate-600 mb-4">Select an endorsed submission and upload your payment proof.</p>
+                      
+                      <form onSubmit={handlePaymentUpload} className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-700 mb-1.5">Select Submission</label>
+                          <select
+                            onChange={(e) => {
+                              const subId = parseInt(e.target.value);
+                              const sub = userSubmissions.find(s => s.id === subId);
+                              setSelectedSubmission(sub);
+                              if (sub) {
+                                checkPaymentStatus(sub.id);
+                              }
+                            }}
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                          >
+                            <option value="">Select a submission</option>
+                            {userSubmissions.filter(s => s.status === 'endorse').map((sub) => (
+                              <option key={sub.id} value={sub.id}>
+                                {sub.extension_project_title}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {selectedSubmission && (
+                          <>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Reference Number</label>
+                                <input
+                                  type="text"
+                                  value={referenceNumber}
+                                  onChange={(e) => setReferenceNumber(e.target.value)}
+                                  placeholder="Enter transaction/reference number"
+                                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                                  required
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Payment Amount (PHP)</label>
+                                <input
+                                  type="number"
+                                  value={paymentAmount}
+                                  onChange={(e) => setPaymentAmount(e.target.value)}
+                                  placeholder="6500.00"
+                                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                                  required
+                                />
+                              </div>
+                            </div>
+                            <div>
+                              <label className="block text-sm font-semibold text-slate-700 mb-1.5">Payment Date</label>
+                              <input
+                                type="date"
+                                value={paymentDate}
+                                onChange={(e) => setPaymentDate(e.target.value)}
+                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                                required
+                              />
+                            </div>
+
+                            <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-6 hover:border-blue-300 transition text-center">
+                              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-blue-600">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                                </svg>
+                              </div>
+                              <label className="block text-sm font-semibold text-slate-700 mb-2">Payment Proof (Image or PDF)</label>
+                              <input
+                                type="file"
+                                accept=".jpg,.jpeg,.png,.gif,.bmp,.webp,.pdf"
+                                onChange={(e) => setPaymentFile(e.target.files[0])}
+                                className="w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-5 file:rounded-xl file:border-0 file:bg-blue-700 file:text-white file:font-semibold hover:file:bg-blue-800 cursor-pointer transition"
+                                required
+                              />
+                              <p className="text-xs text-slate-500 mt-2">Accepted formats: JPG, PNG, GIF, BMP, WEBP, PDF</p>
+                            </div>
+
+                            {paymentData && paymentData.exists && (
+                              <div className={`p-4 rounded-xl ${paymentData.payment.payment_status === 'verified' ? 'bg-emerald-50 border border-emerald-200' : paymentData.payment.payment_status === 'rejected' ? 'bg-red-50 border border-red-200' : 'bg-yellow-50 border border-yellow-200'}`}>
+                                <p className="font-semibold">Payment Status: <span className={
+                                  paymentData.payment.payment_status === 'verified' ? 'text-emerald-600' :
+                                  paymentData.payment.payment_status === 'rejected' ? 'text-red-600' :
+                                  'text-yellow-600'
+                                }>{paymentData.payment.payment_status.toUpperCase()}</span></p>
+                                {paymentData.payment.payment_status === 'rejected' && paymentData.payment.rejection_reason && (
+                                  <p className="text-sm text-red-600 mt-1">Reason: {paymentData.payment.rejection_reason}</p>
+                                )}
+                                {paymentData.payment.payment_proof_view_url && (
+                                  <a href={paymentData.payment.payment_proof_view_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-700 text-sm inline-flex items-center gap-1 mt-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                                    </svg>
+                                    View Payment Proof
+                                  </a>
+                                )}
+                              </div>
+                            )}
+
+                            <button
+                              type="submit"
+                              disabled={isUploadingPayment || !paymentFile}
+                              className="w-full bg-emerald-600 text-white py-3 rounded-xl font-semibold hover:bg-emerald-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {isUploadingPayment ? 'Uploading...' : 'Upload Payment Proof'}
+                            </button>
+                          </>
+                        )}
+                      </form>
+                    </div>
+
+                    {/* Payment History */}
+                    <div className="bg-white border border-slate-200 rounded-xl p-6">
+                      <h3 className="text-lg font-bold text-slate-900 mb-4">Payment History</h3>
+                      {userPayments.length > 0 ? (
+                        <div className="space-y-3">
+                          {userPayments.map((payment) => (
+                            <div key={payment.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200">
+                              <div>
+                                <p className="font-semibold text-slate-900">{payment.submission_title || 'Submission'}</p>
+                                <p className="text-sm text-slate-600">Amount: PhP {payment.payment_amount}</p>
+                                <p className="text-sm text-slate-600">Reference: {payment.reference_number}</p>
+                              </div>
+                              <div className="text-right">
+                                <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${
+                                  payment.payment_status === 'verified' ? 'bg-emerald-100 text-emerald-700' :
+                                  payment.payment_status === 'rejected' ? 'bg-red-100 text-red-700' :
+                                  'bg-yellow-100 text-yellow-700'
+                                }`}>
+                                  {payment.payment_status.toUpperCase()}
+                                </span>
+                                <p className="text-xs text-slate-400 mt-1">{new Date(payment.created_at).toLocaleDateString()}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-center text-slate-500 py-4">No payment records found.</p>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <div className="bg-white border border-slate-200 rounded-xl p-8 text-center">
+                    <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 text-slate-400">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-semibold text-slate-700">No Endorsed Submissions</h3>
+                    <p className="text-slate-500 text-sm mt-1">You need to have an endorsed submission to make a payment.</p>
+                    <p className="text-slate-500 text-sm">Please wait for your submission to be endorsed by the evaluators.</p>
+                  </div>
+                )}
               </>
             )}
           </div>

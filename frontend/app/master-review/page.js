@@ -31,6 +31,9 @@ export default function MasterReviewPage() {
   const [emailExtractedData, setEmailExtractedData] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   
+  // Collapsible sections
+  const [showEndorsement, setShowEndorsement] = useState(false);
+  
   // Downgrade Modal States
   const [showDowngradeModal, setShowDowngradeModal] = useState(false);
   const [downgradeLoading, setDowngradeLoading] = useState(false);
@@ -119,6 +122,7 @@ export default function MasterReviewPage() {
     setSubmissionDetails(null);
     setEmailExtractedData(null);
     setSelectedStatus(sub.evaluation_status || 'pending');
+    setShowEndorsement(false); // Reset endorsement visibility
     setIsModalOpen(true);
     
     try {
@@ -589,6 +593,7 @@ export default function MasterReviewPage() {
                   
                   {activeTab === 'system' ? (
                     <div className="space-y-6">
+                      {/* Abstract PDF - Always visible */}
                       <div>
                         <p className="text-sm font-semibold text-slate-700 mb-3">Abstract PDF</p>
                         {selectedSubmission.abstract_view_url ? (
@@ -603,16 +608,41 @@ export default function MasterReviewPage() {
                           <div className="text-center py-16 text-slate-500 bg-white rounded-lg border text-lg">No Abstract Available</div>
                         )}
                       </div>
+                      
+                      {/* Endorsement PDF - Collapsible */}
                       {selectedSubmission.endorsement_view_url && (
                         <div>
-                          <p className="text-sm font-semibold text-slate-700 mb-3">Endorsement PDF</p>
-                          <div className="border rounded-lg bg-white overflow-hidden" style={{ height: '350px' }}>
-                            <iframe 
-                              src={`https://drive.google.com/file/d/${extractGoogleDriveId(selectedSubmission.endorsement_view_url)}/preview?embedded=true`} 
-                              className="w-full h-full" 
-                              allow="autoplay" 
-                            />
-                          </div>
+                          <button
+                            onClick={() => setShowEndorsement(!showEndorsement)}
+                            className="w-full flex items-center justify-between p-3 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition"
+                          >
+                            <span className="text-sm font-semibold text-slate-700">Endorsement PDF</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-slate-500">
+                                {showEndorsement ? 'Hide' : 'Show'}
+                              </span>
+                              <svg 
+                                xmlns="http://www.w3.org/2000/svg" 
+                                fill="none" 
+                                viewBox="0 0 24 24" 
+                                strokeWidth={2} 
+                                stroke="currentColor" 
+                                className={`w-4 h-4 text-slate-500 transition-transform duration-200 ${showEndorsement ? 'rotate-180' : ''}`}
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                              </svg>
+                            </div>
+                          </button>
+                          
+                          {showEndorsement && (
+                            <div className="mt-3 border rounded-lg bg-white overflow-hidden transition-all duration-300" style={{ height: '350px' }}>
+                              <iframe 
+                                src={`https://drive.google.com/file/d/${extractGoogleDriveId(selectedSubmission.endorsement_view_url)}/preview?embedded=true`} 
+                                className="w-full h-full" 
+                                allow="autoplay" 
+                              />
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>

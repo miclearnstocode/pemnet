@@ -327,6 +327,8 @@ def submit():
         suc_agencies = request.form.get('suc_agencies', '')
         author = request.form.get('author', '')
         presenter = request.form.get('presenter', '')
+        corresponding_author_name = request.form.get('corresponding_author_name', '')  # NEW
+        corresponding_author_email = request.form.get('corresponding_author_email', '')  # NEW
         co_authors = request.form.get('co_authors', '')
         
         # Debug print all form fields
@@ -429,7 +431,7 @@ def submit():
             traceback.print_exc()
             return jsonify({"detail": f"Failed to upload endorsement to Google Drive: {str(drive_error)}"}), 500
         
-        # Create submission record with user_id
+        # Create submission record with user_id and new fields
         new_submission = Submission(
             user_id=user_id, 
             extension_project_title=extension_project_title,
@@ -438,6 +440,8 @@ def submit():
             suc_agencies=suc_agencies,
             author=author,
             presenter=presenter,
+            corresponding_author_name=corresponding_author_name,  # NEW
+            corresponding_author_email=corresponding_author_email,  # NEW
             status='pending',
             co_authors=co_authors,
             abstract_view_url=abstract_view_url,

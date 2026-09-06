@@ -307,6 +307,8 @@ export default function SubmitPage() {
     submitData.append('suc_agencies', finalSuc);
     submitData.append('author', formData.get('author'));
     submitData.append('presenter', formData.get('presenter'));
+    submitData.append('corresponding_author_name', formData.get('correspondingAuthorName'));
+    submitData.append('corresponding_author_email', formData.get('correspondingAuthorEmail'));
     submitData.append('co_authors', filteredCoAuthors.length > 0 ? filteredCoAuthors.join(', ') : '');
 
     if (abstractFile) {
@@ -443,8 +445,11 @@ export default function SubmitPage() {
                   </span>
                 </div>
                 <div className="flex flex-wrap gap-4 mt-3 text-sm text-slate-600">
-                  <span><span className="font-medium">Author:</span> {submission.author}</span>
+                  <span><span className="font-medium">Project Leader:</span> {submission.author}</span>
                   <span><span className="font-medium">Presenter:</span> {submission.presenter}</span>
+                  {submission.corresponding_author_name && (
+                    <span><span className="font-medium">Corresponding Author:</span> {submission.corresponding_author_name}</span>
+                  )}
                   {submission.suc_agencies && (
                     <span><span className="font-medium">SUC:</span> {submission.suc_agencies}</span>
                   )}
@@ -523,7 +528,7 @@ export default function SubmitPage() {
               }}
               className="text-sm text-red-600 hover:text-red-700 font-semibold"
             >
-              Logout
+              ← Logout
             </button>
           </div>
         </div>
@@ -771,7 +776,7 @@ export default function SubmitPage() {
                     </div>
                   </div>
 
-                  {/* Section 2: Authors */}
+                  {/* Section 2: Author Information - Two Column Layout */}
                   <div>
                     <div className="flex items-center gap-3 mb-6">
                       <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
@@ -781,19 +786,23 @@ export default function SubmitPage() {
                     </div>
                     
                     <div className="space-y-5 pl-11">
+                      {/* Two Column Grid for Author Fields */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        {/* Project Leader (was Author) */}
                         <div>
-                          <label className="block text-sm font-semibold text-slate-700 mb-1.5">Author</label>
+                          <label className="block text-sm font-semibold text-slate-700 mb-1.5">Project Leader</label>
                           <input 
                             name="author" 
                             type="text" 
                             required 
-                            placeholder="Main Author"
+                            placeholder="Project Leader Name"
                             className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
                           />
                         </div>
+
+                        {/* Paper Presenter (was Presenter) */}
                         <div>
-                          <label className="block text-sm font-semibold text-slate-700 mb-1.5">Presenter</label>
+                          <label className="block text-sm font-semibold text-slate-700 mb-1.5">Paper Presenter</label>
                           <input 
                             name="presenter" 
                             type="text" 
@@ -802,9 +811,31 @@ export default function SubmitPage() {
                             className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
                           />
                         </div>
+
+                        {/* Corresponding Author Name - NEW */}
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-700 mb-1.5">Corresponding Author Name</label>
+                          <input 
+                            name="correspondingAuthorName" 
+                            type="text" 
+                            placeholder="Corresponding Author Name"
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
+                          />
+                        </div>
+
+                        {/* Corresponding Author Email - NEW */}
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-700 mb-1.5">Corresponding Author Email</label>
+                          <input 
+                            name="correspondingAuthorEmail" 
+                            type="email" 
+                            placeholder="corresponding@email.com"
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
+                          />
+                        </div>
                       </div>
 
-                      {/* Co-Authors */}
+                      {/* Co-Authors - Full Width */}
                       <div>
                         <div className="flex items-center justify-between mb-3">
                           <label className="block text-sm font-semibold text-slate-700">Co-Authors</label>
@@ -924,18 +955,6 @@ export default function SubmitPage() {
                     <h1 className="text-3xl font-bold text-slate-900">My Submissions</h1>
                     <p className="text-slate-500 text-sm mt-1">View all your submitted abstracts</p>
                   </div>
-                  <button
-                    onClick={() => {
-                      setActiveTab('submit');
-                      fetchUserSubmissions(user.id);
-                    }}
-                    className="text-blue-600 hover:text-blue-700 font-semibold text-sm inline-flex items-center gap-1 transition"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                    </svg>
-                    Submit New Abstract
-                  </button>
                 </div>
 
                 <div className="mt-4">

@@ -341,6 +341,109 @@ class DOCSExtractor:
             }
         
         return None
+
+    def extract_sucs(self):
+        """Extract SUCs - Removes longer names first so shorter names CANNOT falsely match inside them."""
+        if not self.text:
+            return None
+        
+        # Normalize text to handle extra spaces
+        normalized_text = re.sub(r'\s+', ' ', self.text)
+        
+        # Exact FULL SUC names from the database table
+        suc_names = [
+            "University of the Philippines System", "Eulogio \"Amang\" Rodriguez Institute of Science and Technology",
+            "Marikina Polytechnic College", "Philippine Normal University", "National Aviation Academy of the Philippines",
+            "Polytechnic University of the Philippines", "Rizal Technological University", "Technological University of the Philippines",
+            "Don Mariano Marcos Memorial State University", "Ilocos Sur Polytechnic State College", "Mariano Marcos State University",
+            "Pangasinan State University", "University of Northern Philippines", "Abra State Institute of Sciences and Technology",
+            "Apayao State College", "Benguet State University", "Ifugao State University", "Kalinga State University",
+            "Mountain Province State University", "Batanes State College", "Cagayan State University", "Isabela State University",
+            "Nueva Vizcaya State University", "Quirino State University", "Aurora State College of Technology",
+            "Bataan Peninsula State University", "Bulacan Agricultural State College", "Bulacan State University",
+            "Central Luzon State University", "Nueva Ecija University of Science and Technology", "Pampanga State Agricultural University",
+            "Pampanga State University", "Philippine Merchant Marine Academy", "President Ramon Magsaysay University",
+            "Tarlac Agricultural University", "Tarlac State University", "Batangas State University", "Cavite State University",
+            "Laguna State Polytechnic University", "Southern Luzon State University", "University of Rizal System",
+            "Marinduque State University", "Mindoro State University", "Occidental Mindoro State College", "Palawan State University",
+            "Romblon State University", "Western Philippines University", "Bicol State College of Applied Sciences and Technology",
+            "Bicol University", "Camarines Norte State College", "Camarines Sur Polytechnic Colleges", "Catanduanes State University",
+            "Central Bicol State University of Agriculture", "Dr. Emilio B. Espinosa, Sr. Memorial State College of Agriculture and Technology",
+            "Partido State University", "Sorsogon State University", "Aklan State University", "Capiz State University",
+            "Guimaras State University", "Iloilo Science and Technology University", "Iloilo State University of Fisheries Science and Technology",
+            "Northern Iloilo State University", "University of Antique", "West Visayas State University", "Carlos Hilado Memorial State University",
+            "Central Philippines State University", "Negros Oriental State University", "Siquijor State College", "State University of Northern Negros",
+            "Bohol Island State University", "Cebu Normal University", "Cebu Technological University", "Biliran Province State University",
+            "Eastern Samar State University", "Eastern Visayas State University", "Leyte Normal University", "Northwest Samar State University",
+            "Palompon Institute of Technology", "Samar State University", "Southern Leyte State University", "University of Eastern Philippines",
+            "Visayas State University", "Basilan State College", "J.H. Cerilles State College", "Jose Rizal Memorial State University",
+            "Western Mindanao State University", "Zamboanga Peninsula Polytechnic State University", "Zamboanga State College of Marine Sciences and Technology",
+            "Bukidnon State University", "Camiguin Polytechnic State College", "Central Mindanao University", "MSU – Iligan Institute of Technology",
+            "Northern Bukidnon State College", "Northwestern Mindanao State College of Science and Technology", "University of Science and Technology of Southern Philippines",
+            "Davao de Oro State College", "Davao del Norte State College", "Davao del Sur State College", "Davao Oriental State University",
+            "Southern Philippines Agri-Business, Marine and Aquatic School of Technology", "University of Southeastern Philippines",
+            "Cotabato Foundation College of Science and Technology", "South Cotabato State College", "Sultan Kudarat State University",
+            "University of Southern Mindanao", "Agusan del Sur State College of Agriculture and Technology", "Caraga State University",
+            "North Eastern Mindanao State University", "Surigao del Norte State University", "Adiong Memorial State College",
+            "Cotabato State University", "Mindanao State University", "MSU–Tawi-Tawi College of Technology and Oceanography",
+            "Sulu State College", "Tawi-Tawi Regional Agricultural College"
+        ]
+
+        # CRITICAL: Sort by length (longest first)
+        suc_names.sort(key=len, reverse=True)
+        
+        found_sucs = []
+        remaining_text = normalized_text  # This is the text we will modify
+        
+        for name in suc_names:
+            # Check if the full name exists in the CURRENT remaining text
+            if name in remaining_text:
+                found_sucs.append(name)
+                # CRITICAL: Remove this longer name from the text
+                # This physically REMOVES "West Visayas State University" from the string
+                # So when we get to the shorter "Visayas State University", it is GONE!
+                remaining_text = remaining_text.replace(name, '')
+        
+        if found_sucs:
+            return ', '.join(found_sucs) 
+        
+        # Fallback: Look for text right after authors (if exact table matching fails)
+        authors_data = self.extract_authors()
+        if authors_data and authors_data.get('affiliation'):
+            return authors_data['affiliation']
+            
+        return None
+    
+    def extract_corresponding_author_position(self):
+        """Extract corresponding author's position (Professor, Dean, etc.)"""
+        if not self.text:
+            return None
+        
+        # Normalize text
+        normalized_text = re.sub(r'\s+', ' ', self.text)
+        
+        positions = [
+            'Professor', 'Associate Professor', 'Assistant Professor', 'Instructor', 
+            'Dean', 'Director', 'Chairperson', 'Department Head', 'Registrar', 
+            'Extension Coordinator', 'Research Director', 'Campus Director'
+        ]
+        
+        corr_author = self.extract_corresponding_author()
+        if corr_author and corr_author.get('name'):
+            # Find the section around the corresponding author
+            name = re.escape(corr_author['name'])
+            pattern = rf'{name}[^|]*?({ "|".join(positions) })'
+            match = re.search(pattern, normalized_text, re.IGNORECASE)
+            if match:
+                return match.group(1).strip()
+        
+        # Fallback: Search anywhere in the document
+        for pos in positions:
+            match = re.search(rf'\b{re.escape(pos)}\b', normalized_text, re.IGNORECASE)
+            if match:
+                return match.group(0)
+                
+        return None
     
     def _get_highlighted_paragraphs(self):
         """Use python-docx to find paragraphs with yellow highlight or shading (including inside TABLES)."""
@@ -556,6 +659,8 @@ class DOCSExtractor:
                 'title_english': self.extract_title_english(),
                 'authors_data': self.extract_authors(),
                 'corresponding_author': self.extract_corresponding_author(),
+                'sucs': self.extract_sucs(),
+                'corresponding_author_position': self.extract_corresponding_author_position(),
                 'paper_category': self.extract_paper_category(),
                 'thematic_area': self.extract_thematic_area(),
                 'theme': self.extract_theme()

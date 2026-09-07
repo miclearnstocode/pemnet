@@ -6,7 +6,7 @@ import tempfile
 import re
 from datetime import datetime
 
-# Import both extractors
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pdf_extracted import PDFExtractor
 from docs_extracted import DOCSExtractor as DOCXExtractor
 
@@ -177,6 +177,10 @@ def test_extraction_from_file(filepath):
             print_field("Corresponding Author Email", corr_author.get('email'))
         else:
             print_field("Corresponding Author", None)
+        
+        # New Fields
+        print_field("SUCs", extracted_data.get('sucs'))
+        print_field("Corresponding Author Position", extracted_data.get('corresponding_author_position'))
         
         print_field("Paper Category", extracted_data.get('paper_category'))
         print_field("Thematic Area", extracted_data.get('thematic_area'))

@@ -29,7 +29,7 @@ export default function TreasurerPage() {
       try {
         const user = JSON.parse(storedUser);
         setCurrentUser(user);
-        // Check if user has treasurer role (admin or master_approver)
+
         if (user.role !== 'treasurer') {
           window.location.href = '/treasurer';
         }

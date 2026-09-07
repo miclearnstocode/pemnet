@@ -100,6 +100,7 @@ export default function SubmitPage() {
   const [paymentStatus, setPaymentStatus] = useState(null);
   const [isUploadingPayment, setIsUploadingPayment] = useState(false);
   const [userPayments, setUserPayments] = useState([]);
+  const [selectedSubmission, setSelectedSubmission] = useState(null);
 
   // Fetch SUCs from database
   useEffect(() => {
@@ -700,12 +701,6 @@ export default function SubmitPage() {
                     <h1 className="text-3xl font-bold text-slate-900">Submit Extension Project Abstract</h1>
                     <p className="text-slate-500 text-sm mt-1">Upload your abstract for the conference</p>
                   </div>
-                  <Link href="/" className="text-blue-600 hover:text-blue-700 font-semibold text-sm inline-flex items-center gap-1 transition">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-                    </svg>
-                    Back to Home
-                  </Link>
                 </div>
 
                 {error && !toast && (

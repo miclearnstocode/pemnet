@@ -86,7 +86,12 @@ export default function MasterReviewPage() {
       const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
-        setSubmissions(data);
+        // Ensure evaluation_status is properly set
+        const processedData = data.map(sub => ({
+          ...sub,
+          evaluation_status: sub.evaluation_status || sub.status || 'pending'
+        }));
+        setSubmissions(processedData);
       }
       
       const statsRes = await fetch('http://localhost:5000/api/master-approver/status-summary');
@@ -159,13 +164,78 @@ export default function MasterReviewPage() {
       if (res.ok) {
         const data = await res.json();
         showToast(`Status updated to ${getStatusDisplay(status)}`, 'success');
-        fetchSubmissions();
-        setSelectedSubmission({ ...selectedSubmission, evaluation_status: status });
+        
+        // Map status for submissions.status field
+        const statusMapping = {
+          'endorse': 'endorse',
+          'downgraded-non_competitive': 'downgraded',
+          'downgraded-poster_only': 'downgraded',
+          'pending': 'pending'
+        };
+        
+        // Update the submissions list
+        setSubmissions(prev => 
+          prev.map(sub => 
+            sub.id === selectedSubmission.id 
+              ? { 
+                  ...sub, 
+                  evaluation_status: status,
+                  status: statusMapping[status] || 'pending'
+                }
+              : sub
+          )
+        );
+        
+        // Update the selected submission
+        setSelectedSubmission(prev => ({
+          ...prev,
+          evaluation_status: status,
+          status: statusMapping[status] || 'pending'
+        }));
+        
+        // Update submissionDetails if it exists
+        setSubmissionDetails(prev => {
+          if (prev) {
+            return {
+              ...prev,
+              evaluation_status: status,
+              submission: {
+                ...prev.submission,
+                evaluation_status: status,
+                status: statusMapping[status] || 'pending'
+              }
+            };
+          }
+          return prev;
+        });
+        
+        // Update stats
+        setStats(prev => {
+          const newStats = { ...prev };
+          if (status === 'endorse') {
+            newStats.pending = Math.max(0, (prev.pending || 0) - 1);
+            newStats.endorsed = (prev.endorsed || 0) + 1;
+          } else if (status === 'downgraded-non_competitive' || status === 'downgraded-poster_only') {
+            newStats.pending = Math.max(0, (prev.pending || 0) - 1);
+            if (status === 'downgraded-non_competitive') {
+              newStats.non_competitive = (prev.non_competitive || 0) + 1;
+            } else {
+              newStats.poster_only = (prev.poster_only || 0) + 1;
+            }
+          }
+          return newStats;
+        });
+        
         setShowConfirmModal(false);
         setPendingStatusAction(null);
         setShowDowngradeConfirm(false);
         setPendingDowngradeType(null);
-        setIsModalOpen(false);
+        
+        // Close modal after a short delay
+        setTimeout(() => {
+          setIsModalOpen(false);
+        }, 1500);
+        
       } else {
         const error = await res.json();
         showToast(error.detail || 'Failed to update status', 'error');

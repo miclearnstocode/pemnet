@@ -171,26 +171,23 @@ class DOCSExtractor:
         if not self.text:
             return None
         
-        # Method 1: Look for table format with | separator
-        pattern = r'2\.\s*Author/s\s+and\s+Institutional\s+Affiliation/s\s*\|\s*([^\n]+)'
-        match = re.search(pattern, self.text, re.IGNORECASE)
+        # SEARCH FOR THE "2. Author/s" LINE AND GET EVERYTHING AFTER IT
+        # We use re.DOTALL to capture across new lines and stop at "3. Name and Email"
+        pattern = r'2\.\s*Author/s\s+and\s+Institutional\s+Affiliation/s\s*\|\s*(.*?)(?=\s*3\.\s*Name\s+and\s+Email\s+Address|$)'
+        match = re.search(pattern, self.text, re.IGNORECASE | re.DOTALL)
+        
         if match:
             authors_text = match.group(1).strip()
-            # Clean up
-            authors_text = re.sub(r'\s*(?:3\.|Name and Email|Paper Category|Thematic Area).*$', '', authors_text, flags=re.IGNORECASE)
+            # Remove the 'Note: ...' instruction part if it exists
+            authors_text = re.sub(r'\s*Note:.*?paper presenter', '', authors_text, flags=re.IGNORECASE)
+            # Remove the "3. Name and Email..." if it snuck in
+            authors_text = re.sub(r'\s*3\.\s*Name.*$', '', authors_text, flags=re.IGNORECASE | re.DOTALL)
             authors_text = ' '.join(authors_text.split())
+            
             if authors_text and len(authors_text) > 5:
                 return self._parse_authors(authors_text)
         
-        # Method 2: Look for the pattern with "/" separator
-        author_pattern = r'([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\.?\s*[A-Z]\.?\s*[A-Z][a-z]+(?:,\s*(?:PhD|Dr\.)\s*\*?)\s*(?:/\s*[^\n]+)?)'
-        match = re.search(author_pattern, self.text, re.IGNORECASE | re.DOTALL)
-        if match:
-            authors_text = match.group(1).strip()
-            authors_text = ' '.join(authors_text.split())
-            return self._parse_authors(authors_text)
-        
-        # Method 3: Look for the authors section by finding the label
+        # FALLBACK: Look for a line with a pipe separator
         lines = self.text.split('\n')
         for i, line in enumerate(lines):
             if re.search(r'2\.\s*Author/s\s+and\s+Institutional\s+Affiliation/s', line, re.IGNORECASE):
@@ -198,30 +195,7 @@ class DOCSExtractor:
                     parts = line.split('|', 1)
                     if len(parts) == 2:
                         authors_text = parts[1].strip()
-                        authors_text = re.sub(r'\s*(?:3\.|Name and Email|Paper Category|Thematic Area).*$', '', authors_text, flags=re.IGNORECASE)
-                        authors_text = ' '.join(authors_text.split())
-                        if authors_text and len(authors_text) > 5:
-                            return self._parse_authors(authors_text)
-                else:
-                    author_parts = []
-                    for j in range(i + 1, min(i + 10, len(lines))):
-                        next_line = lines[j].strip()
-                        if not next_line:
-                            continue
-                        if re.search(r'3\.|Name and Email|Paper Category|Thematic Area', next_line, re.IGNORECASE):
-                            break
-                        if '|' in next_line:
-                            parts = next_line.split('|', 1)
-                            if len(parts) == 2:
-                                author_parts.append(parts[1].strip())
-                            else:
-                                author_parts.append(next_line)
-                        else:
-                            author_parts.append(next_line)
-                    
-                    if author_parts:
-                        authors_text = ' '.join(author_parts)
-                        authors_text = re.sub(r'\s*(?:3\.|Name and Email|Paper Category|Thematic Area).*$', '', authors_text, flags=re.IGNORECASE)
+                        authors_text = re.sub(r'\s*Note:.*?paper presenter', '', authors_text, flags=re.IGNORECASE)
                         authors_text = ' '.join(authors_text.split())
                         if authors_text and len(authors_text) > 5:
                             return self._parse_authors(authors_text)
@@ -247,45 +221,51 @@ class DOCSExtractor:
             name_part = parts[0].strip()
             affiliation_part = parts[1].strip() if len(parts) > 1 else ''
         
-        # Check if the name has an asterisk (project leader)
-        has_asterisk = '*' in name_part
+        # Split authors by semicolon
+        author_parts = [part.strip() for part in name_part.split(';') if part.strip()]
+
+        # ------------------------------------------------------------------
+        # 1. LOOK FOR PROJECT LEADER BY FINDING THE ASTERISK (*)
+        # ------------------------------------------------------------------
         project_leader = None
         
-        if has_asterisk:
-            # Extract the name with PhD but without the asterisk
-            project_leader = name_part.replace('*', '').strip()
-            # Clean up any extra spaces
-            project_leader = re.sub(r'\s+', ' ', project_leader)
-            # Remove trailing comma if present
-            project_leader = re.sub(r',\s*$', '', project_leader)
-        else:
-            # If no asterisk, the first author is the project leader by default
-            # Keep the name as is (with PhD if present)
-            project_leader = name_part.strip()
+        for part in author_parts:
+            if '*' in part:
+                # Remove asterisk and any trailing commas
+                project_leader = part.replace('*', '').strip()
+                project_leader = re.sub(r',\s*$', '', project_leader).strip()
+                break
         
-        # Clean the name for the authors list (remove PhD and asterisk for clean list)
-        clean_name = name_part
-        # Remove PhD, Dr., etc. for clean display
-        clean_name = re.sub(r',\s*(?:PhD|Dr\.|Ph\.D\.)\s*', '', clean_name, flags=re.IGNORECASE)
-        clean_name = re.sub(r'\s*(?:PhD|Dr\.|Ph\.D\.)\s*,?\s*', '', clean_name, flags=re.IGNORECASE)
-        # Remove asterisk
-        clean_name = clean_name.replace('*', '').strip()
+        # If no asterisk found, default to the FIRST author
+        if not project_leader:
+            if author_parts:
+                project_leader = author_parts[0]
+                project_leader = re.sub(r',\s*$', '', project_leader).strip()
+
+        # ------------------------------------------------------------------
+        # 2. CLEAN UP AUTHORS LIST
+        # ------------------------------------------------------------------
+        clean_authors_list = []
+        for part in author_parts:
+            # Remove PhD, Dr., and asterisks for a clean display list
+            clean = re.sub(r',\s*(?:PhD|Dr\.|Ph\.D\.)\s*', '', part, flags=re.IGNORECASE)
+            clean = re.sub(r'\s*(?:PhD|Dr\.|Ph\.D\.)\s*,?\s*', '', clean, flags=re.IGNORECASE)
+            clean = clean.replace('*', '').strip()
+            
+            # Clean out trailing commas
+            clean = re.sub(r',\s*$', '', clean).strip()
+            
+            if clean and len(clean) > 2:
+                clean_authors_list.append(clean)
         
-        # Parse authors list
-        authors_list = []
-        if clean_name:
-            authors_list.append(clean_name)
-        
-        # If there are multiple authors (separated by ;), split them
-        if ';' in clean_name:
-            parts = clean_name.split(';')
-            authors_list = []
-            for part in parts:
-                part = part.strip()
-                if part:
-                    authors_list.append(part)
-        
-        # Build the full text with affiliation
+        # If we only got one author but there were multiple, re-check
+        if len(clean_authors_list) <= 1 and len(author_parts) > 1:
+            clean_authors_list = author_parts
+            clean_authors_list = [re.sub(r',\s*(?:PhD|Dr\.|Ph\.D\.)\s*', '', a, flags=re.IGNORECASE).replace('*', '').strip() for a in clean_authors_list]
+
+        # ------------------------------------------------------------------
+        # 3. BUILD THE FULL TEXT WITH AFFILIATION
+        # ------------------------------------------------------------------
         if affiliation_part:
             full_text = f"{name_part} / {affiliation_part}"
         else:
@@ -293,11 +273,11 @@ class DOCSExtractor:
         
         return {
             'full_text': full_text,
-            'list': authors_list,
+            'list': clean_authors_list,
             'project_leader': project_leader,
             'affiliation': affiliation_part if affiliation_part else None
         }
-    
+        
     def extract_corresponding_author(self):
         """Extract corresponding author - robustly handles typos/space breaks within emails."""
         if not self.text:

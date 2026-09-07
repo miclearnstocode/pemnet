@@ -381,6 +381,7 @@ export default function ReviewPage() {
 
   const filteredSubmissions = submissions.filter(sub => {
     if (activeTab === 'system') {
+      // FIXED: Use status field for filtering
       if (statusFilter !== 'all' && sub.status !== statusFilter) return false;
       if (categoryFilter !== 'all' && sub.paper_category !== categoryFilter) return false;
       if (searchTerm) {
@@ -406,39 +407,53 @@ export default function ReviewPage() {
     }
   });
 
+  // FIXED: Use status field for stat cards
   const totalSubmissions = submissions.length;
-  const pendingCount = submissions.filter(s => s.evaluation_status === 'pending').length;
-  const endorsedCount = submissions.filter(s => s.evaluation_status === 'endorse').length;
-  const downgradedCount = submissions.filter(s => s.evaluation_status === 'downgraded-non_competitive' || s.evaluation_status === 'downgraded-poster_only').length;
+  const pendingCount = submissions.filter(s => s.status === 'pending').length;
+  const endorsedCount = submissions.filter(s => s.status === 'endorse' || s.status === 'accepted').length;
+  const downgradedCount = submissions.filter(s => s.status === 'downgraded').length;
 
+  // FIXED: Status display functions use status field
   const getStatusColor = (status) => {
     const safeStatus = status || 'pending';
     switch (safeStatus) {
-      case 'endorse': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
-      case 'downgraded-non_competitive': return 'bg-amber-50 text-amber-700 border-amber-200';
-      case 'downgraded-poster_only': return 'bg-orange-50 text-orange-700 border-orange-200';
-      case 'pending': return 'bg-blue-50 text-blue-700 border-blue-200';
-      default: return 'bg-slate-50 text-slate-700 border-slate-200';
+      case 'endorse':
+      case 'accepted':
+        return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+      case 'downgraded':
+        return 'bg-amber-50 text-amber-700 border-amber-200';
+      case 'pending':
+        return 'bg-blue-50 text-blue-700 border-blue-200';
+      default:
+        return 'bg-slate-50 text-slate-700 border-slate-200';
     }
   };
 
   const getStatusDisplay = (status) => {
     switch (status) {
-      case 'endorse': return 'Endorsed';
-      case 'downgraded-non_competitive': return 'Non-Competitive (Poster)';
-      case 'downgraded-poster_only': return 'Poster Only';
-      case 'pending': return 'Pending Review';
-      default: return status || 'Pending';
+      case 'endorse':
+      case 'accepted':
+        return 'Endorsed';
+      case 'downgraded':
+        return 'Downgraded';
+      case 'pending':
+        return 'Pending Review';
+      default:
+        return status || 'Pending';
     }
   };
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case 'endorse': return faCheckCircle;
-      case 'downgraded-non_competitive': return faExclamationTriangle;
-      case 'downgraded-poster_only': return faExclamationTriangle;
-      case 'pending': return faClock;
-      default: return faInfoCircle;
+      case 'endorse':
+      case 'accepted':
+        return faCheckCircle;
+      case 'downgraded':
+        return faExclamationTriangle;
+      case 'pending':
+        return faClock;
+      default:
+        return faInfoCircle;
     }
   };
 
@@ -533,6 +548,15 @@ export default function ReviewPage() {
     const user = allUsers.find(u => u.id === id);
     if (user) return user.full_name;
     return 'Evaluator';
+  };
+
+  // Get the display status for a submission (for the table)
+  const getSubmissionStatus = (sub) => {
+    if (activeTab === 'system') {
+      return sub.status || 'pending';
+    } else {
+      return sub.status || 'pending';
+    }
   };
 
   return (
@@ -1181,6 +1205,7 @@ export default function ReviewPage() {
           )}
         </div>
 
+        {/* FIXED: Stat Cards now use the status field correctly */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all">
             <div className="flex items-center justify-between">
@@ -1254,6 +1279,7 @@ export default function ReviewPage() {
               <option value="pending">Pending</option>
               <option value="endorse">Endorsed</option>
               <option value="downgraded">Downgraded</option>
+              <option value="accepted">Accepted</option>
             </select>
           </div>
           {activeTab === 'system' && (
@@ -1343,67 +1369,72 @@ export default function ReviewPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredSubmissions.map((sub) => (
-                  <tr 
-                    key={sub.id} 
-                    onClick={() => selectSubmission(sub)} 
-                    className="cursor-pointer border-b border-slate-100 hover:bg-blue-50/40 transition-all group"
-                  >
-                    {activeTab === 'system' ? (
-                      <>
-                        <td className="px-6 py-4">
-                          <p className="text-sm font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">{sub.extension_project_title}</p>
-                          <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1.5">
-                            <FontAwesomeIcon icon={faUserCircle} className="w-3 h-3 text-slate-400" />
-                            {sub.author}
-                          </p>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-slate-600">{sub.suc_agencies}</td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-medium border ${getCategoryColor(sub.paper_category)}`}>
-                            <FontAwesomeIcon icon={faBookOpen} className="w-3 h-3" />
-                            {sub.paper_category?.includes('Completed') ? 'Completed' : 'Ongoing'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-slate-600">
-                          <div className="flex items-center gap-1.5">
-                            <FontAwesomeIcon icon={faCalendarAlt} className="w-3 h-3 text-slate-400" />
-                            {new Date(sub.created_at).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-medium border ${getStatusColor(sub.evaluation_status || 'pending')}`}>
-                            <FontAwesomeIcon icon={getStatusIcon(sub.evaluation_status || 'pending')} className="w-3 h-3" />
-                            {getStatusDisplay(sub.evaluation_status || 'pending')}
-                          </span>
-                        </td>
-                      </>
-                    ) : (
-                      <>
-                        <td className="px-6 py-4">
-                          <p className="text-sm font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">{sub.subject}</p>
-                          <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1.5">
-                            <FontAwesomeIcon icon={faEnvelope} className="w-3 h-3 text-slate-400" />
-                            {sub.sender_name} ({sub.sender_email})
-                          </p>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-slate-600">{sub.project_leader_name}</td>
-                        <td className="px-6 py-4 text-sm text-slate-600">
-                          <div className="flex items-center gap-1.5">
-                            <FontAwesomeIcon icon={faCalendarAlt} className="w-3 h-3 text-slate-400" />
-                            {new Date(sub.email_received_at).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-medium border ${getStatusColor(sub.evaluation_status || 'pending')}`}>
-                            <FontAwesomeIcon icon={getStatusIcon(sub.evaluation_status || 'pending')} className="w-3 h-3" />
-                            {getStatusDisplay(sub.evaluation_status || 'pending')}
-                          </span>
-                        </td>
-                      </>
-                    )}
-                  </tr>
-                ))}
+                {filteredSubmissions.map((sub) => {
+                  // Get the correct status for this submission
+                  const displayStatus = activeTab === 'system' ? (sub.status || 'pending') : (sub.status || 'pending');
+                  
+                  return (
+                    <tr 
+                      key={sub.id} 
+                      onClick={() => selectSubmission(sub)} 
+                      className="cursor-pointer border-b border-slate-100 hover:bg-blue-50/40 transition-all group"
+                    >
+                      {activeTab === 'system' ? (
+                        <>
+                          <td className="px-6 py-4">
+                            <p className="text-sm font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">{sub.extension_project_title}</p>
+                            <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1.5">
+                              <FontAwesomeIcon icon={faUserCircle} className="w-3 h-3 text-slate-400" />
+                              {sub.author}
+                            </p>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-slate-600">{sub.suc_agencies}</td>
+                          <td className="px-6 py-4">
+                            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-medium border ${getCategoryColor(sub.paper_category)}`}>
+                              <FontAwesomeIcon icon={faBookOpen} className="w-3 h-3" />
+                              {sub.paper_category?.includes('Completed') ? 'Completed' : 'Ongoing'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-slate-600">
+                            <div className="flex items-center gap-1.5">
+                              <FontAwesomeIcon icon={faCalendarAlt} className="w-3 h-3 text-slate-400" />
+                              {new Date(sub.created_at).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-medium border ${getStatusColor(displayStatus)}`}>
+                              <FontAwesomeIcon icon={getStatusIcon(displayStatus)} className="w-3 h-3" />
+                              {getStatusDisplay(displayStatus)}
+                            </span>
+                          </td>
+                        </>
+                      ) : (
+                        <>
+                          <td className="px-6 py-4">
+                            <p className="text-sm font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">{sub.subject}</p>
+                            <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1.5">
+                              <FontAwesomeIcon icon={faEnvelope} className="w-3 h-3 text-slate-400" />
+                              {sub.sender_name} ({sub.sender_email})
+                            </p>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-slate-600">{sub.project_leader_name}</td>
+                          <td className="px-6 py-4 text-sm text-slate-600">
+                            <div className="flex items-center gap-1.5">
+                              <FontAwesomeIcon icon={faCalendarAlt} className="w-3 h-3 text-slate-400" />
+                              {new Date(sub.email_received_at).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-medium border ${getStatusColor(displayStatus)}`}>
+                              <FontAwesomeIcon icon={getStatusIcon(displayStatus)} className="w-3 h-3" />
+                              {getStatusDisplay(displayStatus)}
+                            </span>
+                          </td>
+                        </>
+                      )}
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
             {filteredSubmissions.length === 0 && (

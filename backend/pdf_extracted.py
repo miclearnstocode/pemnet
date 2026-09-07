@@ -84,7 +84,7 @@ class PDFExtractor:
             return {}
     
     def extract_title(self):
-        """Extract main title - robustly handles multi-line text and table structures."""
+        """Extract main title - robustly handles multi-line text, table structures, and standard abstracts."""
         if not self.text:
             return None
         
@@ -93,8 +93,31 @@ class PDFExtractor:
         if table_data.get('title'):
             return table_data['title']
         
-        # 2. Fallback to text regex
+        # 2. Check if it's a Standard Abstract (has "ABSTRACT" or "SDG" in the first 500 chars)
         normalized_text = re.sub(r'\s+', ' ', self.text)
+        if 'ABSTRACT' in normalized_text[:500] or 'SDG' in normalized_text[:500]:
+            # Extract the title: find the first line that is not a header or abstract
+            # The title is usually the first 1-2 lines before the authors
+            lines = [line.strip() for line in self.text.split('\n') if line.strip()]
+            
+            # Skip the first few lines if they're headers (like "ABSTRACT TEMPLATE")
+            # Find the first line that has letters and is not 'Abstract', 'Keywords', etc.
+            title_lines = []
+            for line in lines:
+                if not line: continue
+                if re.search(r'^(ABSTRACT|KEYWORDS|Keywords|SDG)', line, re.IGNORECASE): 
+                    break
+                if re.search(r'^(MA\.|RHODA|ALJUN|DAVAO)', line): # Skip author names or SUCs
+                    break
+                if len(line) > 10 and not re.search(r'^\d+\.\s', line): # Skip numbered list
+                    title_lines.append(line)
+                if len(title_lines) >= 2:
+                    break
+            
+            if title_lines:
+                return ' '.join(title_lines)
+        
+        # 3. Fallback to text regex for table format
         pattern = r'1\.\s*Title\s+of\s+the\s+Extension\s+Project\s+Paper\s*[|:]*\s*(.*?)(?=\s*2\.\s*Author|$)'
         match = re.search(pattern, normalized_text, re.IGNORECASE | re.DOTALL)
         
@@ -132,9 +155,43 @@ class PDFExtractor:
         if table_data.get('authors'):
             return self._parse_authors(table_data['authors'])
 
-        # 2. Fallback to text regex if table extraction failed
+        # 2. Standard Abstract Format (like in your image)
         normalized_text = re.sub(r'\s+', ' ', self.text)
-        
+        if 'ABSTRACT' in normalized_text[:500] or 'SDG' in normalized_text[:500]:
+            lines = [line.strip() for line in self.text.split('\n') if line.strip()]
+            
+            # Look for lines that are pure Author Names (Capital Letters with Degrees)
+            author_lines = []
+            for line in lines:
+                # Match patterns like: "MA. ERWYNYAH E. CARAOA, DBA"
+                if re.match(r'^[A-Z][A-Za-z\.\s]*,?\s*(DBA|MABM|MBA|PhD|Ph\.D|EdD|M\.D|MA|MSc|BS|MS)\s*$', line, re.IGNORECASE):
+                    author_lines.append(line)
+                # Match patterns like: "DR. JOHN DOE"
+                elif re.match(r'^(DR\.|PROF\.|MR\.|MS\.|MRS\.)\s+[A-Z]', line, re.IGNORECASE) and len(line) < 50:
+                    author_lines.append(line)
+            
+            if author_lines:
+                # Parse the found author lines
+                full_text = '; '.join(author_lines)
+                authors_list = []
+                
+                # Remove degrees for the list
+                for author in author_lines:
+                    clean_author = re.sub(r',\s*(DBA|MABM|MBA|PhD|Ph\.D|EdD|M\.D|MA|MSc|BS|MS)\s*$', '', author).strip()
+                    if clean_author:
+                        authors_list.append(clean_author)
+                
+                # Assume the first author is the Project Leader
+                project_leader = authors_list[0] if authors_list else None
+                
+                return {
+                    'full_text': full_text,
+                    'list': authors_list,
+                    'project_leader': project_leader,
+                    'institution': None
+                }
+
+        # 3. Fallback to text regex if table extraction failed
         pattern = r'2\.\s*Author/s\s+and\s+Institutional\s+Affiliation/s\s*[|:]*\s*(.*?)(?=\s*3\.\s*Name|$)'
         match = re.search(pattern, normalized_text, re.IGNORECASE | re.DOTALL)
         
@@ -306,66 +363,179 @@ class PDFExtractor:
         return None
 
     def extract_sucs(self):
-        """Extract SUCs - Removes longer names first so shorter names CANNOT falsely match inside them."""
+        """Extract SUCs - Case-insensitive. Uses updated DB names. Removes longer names first so shorter names CANNOT falsely match."""
         if not self.text:
             return None
         
-        # Normalize text to handle extra spaces
+        # Normalize text to handle extra spaces and keep a version for case-insensitive matching
         normalized_text = re.sub(r'\s+', ' ', self.text)
+        normalized_text_lower = normalized_text.lower()  # Lowercase for searching
         
-        # Exact FULL SUC names from the database table
+        # EXACT UPDATED FULL SUC names from the database table
         suc_names = [
-            "University of the Philippines System", "Eulogio \"Amang\" Rodriguez Institute of Science and Technology",
-            "Marikina Polytechnic College", "Philippine Normal University", "National Aviation Academy of the Philippines",
-            "Polytechnic University of the Philippines", "Rizal Technological University", "Technological University of the Philippines",
-            "Don Mariano Marcos Memorial State University", "Ilocos Sur Polytechnic State College", "Mariano Marcos State University",
-            "Pangasinan State University", "University of Northern Philippines", "Abra State Institute of Sciences and Technology",
-            "Apayao State College", "Benguet State University", "Ifugao State University", "Kalinga State University",
-            "Mountain Province State University", "Batanes State College", "Cagayan State University", "Isabela State University",
-            "Nueva Vizcaya State University", "Quirino State University", "Aurora State College of Technology",
-            "Bataan Peninsula State University", "Bulacan Agricultural State College", "Bulacan State University",
-            "Central Luzon State University", "Nueva Ecija University of Science and Technology", "Pampanga State Agricultural University",
-            "Pampanga State University", "Philippine Merchant Marine Academy", "President Ramon Magsaysay University",
-            "Tarlac Agricultural University", "Tarlac State University", "Batangas State University", "Cavite State University",
-            "Laguna State Polytechnic University", "Southern Luzon State University", "University of Rizal System",
-            "Marinduque State University", "Mindoro State University", "Occidental Mindoro State College", "Palawan State University",
-            "Romblon State University", "Western Philippines University", "Bicol State College of Applied Sciences and Technology",
-            "Bicol University", "Camarines Norte State College", "Camarines Sur Polytechnic Colleges", "Catanduanes State University",
-            "Central Bicol State University of Agriculture", "Dr. Emilio B. Espinosa, Sr. Memorial State College of Agriculture and Technology",
-            "Partido State University", "Sorsogon State University", "Aklan State University", "Capiz State University",
-            "Guimaras State University", "Iloilo Science and Technology University", "Iloilo State University of Fisheries Science and Technology",
-            "Northern Iloilo State University", "University of Antique", "West Visayas State University", "Carlos Hilado Memorial State University",
-            "Central Philippines State University", "Negros Oriental State University", "Siquijor State College", "State University of Northern Negros",
-            "Bohol Island State University", "Cebu Normal University", "Cebu Technological University", "Biliran Province State University",
-            "Eastern Samar State University", "Eastern Visayas State University", "Leyte Normal University", "Northwest Samar State University",
-            "Palompon Institute of Technology", "Samar State University", "Southern Leyte State University", "University of Eastern Philippines",
-            "Visayas State University", "Basilan State College", "J.H. Cerilles State College", "Jose Rizal Memorial State University",
-            "Western Mindanao State University", "Zamboanga Peninsula Polytechnic State University", "Zamboanga State College of Marine Sciences and Technology",
-            "Bukidnon State University", "Camiguin Polytechnic State College", "Central Mindanao University", "MSU – Iligan Institute of Technology",
-            "Northern Bukidnon State College", "Northwestern Mindanao State College of Science and Technology", "University of Science and Technology of Southern Philippines",
-            "Davao de Oro State College", "Davao del Norte State College", "Davao del Sur State College", "Davao Oriental State University",
-            "Southern Philippines Agri-Business, Marine and Aquatic School of Technology", "University of Southeastern Philippines",
-            "Cotabato Foundation College of Science and Technology", "South Cotabato State College", "Sultan Kudarat State University",
-            "University of Southern Mindanao", "Agusan del Sur State College of Agriculture and Technology", "Caraga State University",
-            "North Eastern Mindanao State University", "Surigao del Norte State University", "Adiong Memorial State College",
-            "Cotabato State University", "Mindanao State University", "MSU–Tawi-Tawi College of Technology and Oceanography",
-            "Sulu State College", "Tawi-Tawi Regional Agricultural College"
+            # National Capital Region
+            "University of the Philippines",
+            "Polytechnic University of the Philippines",
+            "Technological University of the Philippines",
+            "Philippine Normal University",
+            "National Aviation Academy of the Philippines",
+            "Eulogio \"Amang\" Rodriguez Institute of Science and Technology",
+            "Marikina Polytechnic College",
+            "Rizal Technological University",
+            # Ilocos Region
+            "Don Mariano Marcos Memorial State University",
+            "University of Ilocos Philippines",
+            "Mariano Marcos State University",
+            "Pangasinan State University",
+            "University of Northern Philippines",
+            # Cordillera Administrative Region
+            "Apayao State College",
+            "Benguet State University",
+            "Ifugao State University",
+            "Kalinga State University",
+            "Mountain Province State University",
+            "Philippine Military Academy",
+            "University of Abra",
+            # Cagayan Valley
+            "Batanes State College",
+            "Cagayan State University",
+            "Isabela State University",
+            "Nueva Vizcaya State University",
+            "Quirino State University",
+            # Central Luzon
+            "Aurora State College of Technology",
+            "Bataan Peninsula State University",
+            "Bulacan State Agricultural University",
+            "Bulacan State University",
+            "Central Luzon State University",
+            "Pampanga State University",
+            "Nueva Ecija University of Science and Technology",
+            "Pampanga State Agricultural University",
+            "Philippine Merchant Marine Academy",
+            "President Ramon Magsaysay State University",
+            "Tarlac Agricultural University",
+            "Tarlac State University",
+            # Calabarzon
+            "Batangas State University",
+            "Cavite State University",
+            "Laguna State Polytechnic University",
+            "Southern Luzon State University",
+            "University of Rizal System",
+            # Mimaropa
+            "Marinduque State University",
+            "Mindoro State University",
+            "Occidental Mindoro State University",
+            "Palawan State University",
+            "Romblon State University",
+            "Western Philippines University",
+            # Bicol Region
+            "Bicol University",
+            "University of Camarines Norte",
+            "Camarines Sur Polytechnic Colleges",
+            "Catanduanes State University",
+            "Central Bicol State University of Agriculture",
+            "Dr. Emilio B. Espinosa Sr. Memorial State College of Agriculture and Technology",
+            "Partido State University",
+            "Sorsogon State University",
+            "Southeast Asian University of Technology",
+            # Western Visayas
+            "Aklan State University",
+            "Capiz State University",
+            "Guimaras State University",
+            "Iloilo Science and Technology University",
+            "Iloilo State University of Fisheries Science and Technology",
+            "Northern Iloilo State University",
+            "University of Antique",
+            "University of the Philippines Visayas",
+            "West Visayas State University",
+            # Negros Island Region
+            "Philippine Normal University Visayas",
+            "State University of Northern Negros",
+            "Carlos Hilado Memorial State University",
+            "Central Philippines State University",
+            "Technological University of the Philippines Visayas",
+            "Negros Oriental State University",
+            "Siquijor State College",
+            # Central Visayas
+            "Bohol Island State University",
+            "Cebu Normal University",
+            "Cebu Technological University",
+            "University of the Philippines Cebu",
+            # Eastern Visayas
+            "Biliran Province State University",
+            "Eastern Samar State University",
+            "Eastern Visayas State University",
+            "Leyte Normal University",
+            "Northwest Samar State University",
+            "Palompon Institute of Technology",
+            "Samar State University",
+            "Southern Leyte State University",
+            "University of Eastern Philippines",
+            "University of the Philippines Tacloban",
+            "Visayas State University",
+            # Zamboanga Peninsula
+            "Zamboanga del Sur State University",
+            "Zamboanga del Sur Polytechnic State College",
+            "Jose Rizal Memorial State University",
+            "Mindanao State University–Zamboanga Sibugay",
+            "Sulu State University",
+            "Western Mindanao State University",
+            "Zamboanga Peninsula Polytechnic State University",
+            "Zamboanga State College of Marine Sciences and Technology",
+            # Northern Mindanao
+            "Bukidnon State University",
+            "Camiguin Polytechnic State College",
+            "Central Mindanao University",
+            "Iligan City Polytechnic State College",
+            "Mindanao State University–Iligan Institute of Technology",
+            "Mindanao State University–Sultan Naga Dimaporo",
+            "Misamis Occidental State College",
+            "Northern Bukidnon State College",
+            "University of Northwestern Mindanao",
+            "University of Science and Technology of Southern Philippines",
+            # Davao Region
+            "Davao de Oro State College",
+            "Davao del Norte State College",
+            "Davao del Sur State College",
+            "Davao Oriental State University",
+            "Southern Philippines Agri-Business and Marine and Aquatic School of Technology",
+            "University of Southeastern Philippines",
+            # Soccsksargen
+            "Cotabato Foundation College of Science and Technology",
+            "University of Southern Mindanao",
+            "Mindanao State University–General Santos",
+            "South Cotabato State College",
+            "Sultan Kudarat State University",
+            # Caraga
+            "Agusan del Sur State University",
+            "Caraga State University",
+            "North Eastern Mindanao State University",
+            "Surigao del Norte State University",
+            # Bangsamoro
+            "Adiong Memorial State College",
+            "Basilan State University",
+            "Cotabato State University",
+            "Mindanao State University–Maguindanao",
+            "Mindanao State University Main",
+            "Mindanao State University–Tawi-Tawi College of Technology and Oceanography",
+            "Tawi-Tawi Regional Agricultural College"
         ]
 
         # CRITICAL: Sort by length (longest first)
         suc_names.sort(key=len, reverse=True)
         
         found_sucs = []
-        remaining_text = normalized_text  # This is the text we will modify
+        remaining_text_lower = normalized_text_lower  # Work on the lowercase version to prevent short matches
         
         for name in suc_names:
-            # Check if the full name exists in the CURRENT remaining text
-            if name in remaining_text:
+            name_lower = name.lower()
+            
+            # Check if the full name exists in the CURRENT remaining text (case-insensitive)
+            if name_lower in remaining_text_lower:
                 found_sucs.append(name)
+                
                 # CRITICAL: Remove this longer name from the text
-                # This physically REMOVES "West Visayas State University" from the string
-                # So when we get to the shorter "Visayas State University", it is GONE!
-                remaining_text = remaining_text.replace(name, '')
+                remaining_text_lower = remaining_text_lower.replace(name_lower, '')
         
         if found_sucs:
             return ', '.join(found_sucs) 
@@ -473,6 +643,11 @@ class PDFExtractor:
         
         # 1. Existing text checks. Remove newlines from text first to avoid line break issues.
         normalized_text = re.sub(r'\s+', ' ', self.text)
+        
+        # IF THIS IS A STANDARD ABSTRACT (NO TEMPLATE), RETURN NULL IMMEDIATELY
+        if 'ABSTRACT' in normalized_text[:500] and 'Paper Category' not in normalized_text:
+            return None
+        
         for cat in categories:
             if re.search(r'\[(x|X|✓|√|✔|v|V|/)\]\s*' + cat, normalized_text, re.IGNORECASE):
                 return f"{cat} Extension Project Paper"
@@ -508,6 +683,11 @@ class PDFExtractor:
 
         # 1. Existing text checks. Remove newlines from text first to avoid line break issues.
         normalized_text = re.sub(r'\s+', ' ', self.text)
+        
+        # IF THIS IS A STANDARD ABSTRACT (NO TEMPLATE), RETURN NULL IMMEDIATELY
+        if 'ABSTRACT' in normalized_text[:500] and 'Thematic Area' not in normalized_text:
+            return None
+        
         for area in thematic_areas:
             if re.search(r'\[(x|X|✓|√|✔|v|V|/)\]\s*' + re.escape(area), normalized_text, re.IGNORECASE):
                 return area
@@ -543,6 +723,11 @@ class PDFExtractor:
             theme = re.sub(r'\s*(?:Instructions|A\.|1\.).*$', '', theme, flags=re.IGNORECASE)
             if theme and len(theme) > 10:
                 return theme
+        
+        # Fallback for Standard Abstract with SDG at the end
+        sdg_match = re.search(r'(SDG\s*[:#]?\s*\d+.*)', self.text, re.IGNORECASE)
+        if sdg_match:
+            return sdg_match.group(1).strip()
         
         return None
     

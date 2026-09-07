@@ -1,7 +1,6 @@
-# master_approver.py
 from flask import jsonify, request
 from models import db, Submission, User, SubmissionVote, EmailSubmission, ExtractedAbstractData
-from email_service import send_status_update_email
+from email_service import send_status_update_email, send_endorsement_confirmation_email
 import traceback
 import json
 
@@ -16,18 +15,12 @@ class MasterApproverService:
         Set the final status of a submission by the master approver.
         This updates both submissions.status and submissions.evaluation_status,
         and also updates extracted_abstract_data.status if it exists.
-        
-        Args:
-            submission_id (int): ID of the submission
-            data (dict): Request data containing status and notes
-        
-        Returns:
-            tuple: (response, status_code)
         """
         try:
             status = data.get('status')
             master_approver_id = data.get('master_approver_id')
             notes = data.get('notes', '')
+            send_email = data.get('send_email', True)  # NEW: Flag to control email sending
             
             # Validate inputs
             if not status:
@@ -63,8 +56,8 @@ class MasterApproverService:
             submission.evaluation_status = status
             submission.status = status_mapping.get(status, 'pending')
             
-            # Also update extracted_abstract_data if it exists (for email submissions)
-            # Find email submission linked to this submission
+            # Get extracted data if it exists
+            extracted_data = None
             email_sub = EmailSubmission.query.filter_by(processed_submission_id=submission_id).first()
             if email_sub:
                 extracted_data = ExtractedAbstractData.query.filter_by(email_submission_id=email_sub.id).first()
@@ -79,9 +72,41 @@ class MasterApproverService:
             
             db.session.commit()
             
-            # Send email notification
+            # Send email notification based on status
             try:
+                # Always send status update email
                 MasterApproverService._send_status_notification(submission, status, notes)
+                
+                # If status is 'endorse' and send_email is True, send detailed confirmation email
+                if status == 'endorse' and send_email:
+                    # Prepare submission data for email
+                    submission_data = submission.to_dict()
+                    
+                    # Get extracted data if available
+                    extracted_dict = None
+                    if extracted_data:
+                        extracted_dict = {
+                            'title': extracted_data.title,
+                            'authors': extracted_data.authors,
+                            'authors_list': extracted_data.authors_list,
+                            'project_leader': extracted_data.project_leader,
+                            'sucs': extracted_data.sucs,
+                            'corresponding_author_name': extracted_data.corresponding_author_name,
+                            'corresponding_author_email': extracted_data.corresponding_author_email,
+                            'corresponding_author_position': extracted_data.corresponding_author_position,
+                            'paper_category': extracted_data.paper_category,
+                            'thematic_area': extracted_data.thematic_area,
+                            'theme': extracted_data.theme,
+                            'submission_id': extracted_data.submission_id
+                        }
+                    
+                    # Send the detailed endorsement confirmation email
+                    email_sent = send_endorsement_confirmation_email(submission_data, extracted_dict)
+                    if email_sent:
+                        print(f"📧 Endorsement confirmation email sent for submission {submission_id}")
+                    else:
+                        print(f"⚠️ Endorsement confirmation email not sent for submission {submission_id}")
+                        
             except Exception as email_error:
                 print(f"⚠️ Error sending email notification: {email_error}")
                 # Don't fail the request if email fails
@@ -101,7 +126,8 @@ class MasterApproverService:
                 "updated_by": master_approver_id,
                 "submission_status": submission.status,
                 "extracted_status": updated_extracted.evaluation_status if updated_extracted else None,
-                "is_email_submission": updated_email_sub is not None
+                "is_email_submission": updated_email_sub is not None,
+                "email_sent": status == 'endorse' and send_email  # Indicate if email was sent
             }, 200
             
         except Exception as e:

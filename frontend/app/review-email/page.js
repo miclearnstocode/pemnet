@@ -45,21 +45,27 @@ export default function EmailReviewPage() {
     }, [statusFilter]);
 
     const fetchSubmissions = async () => {
-        try {
-            const res = await fetch(`http://localhost:5000/api/email-submissions?status=${statusFilter}`);
-            if (res.ok) {
-                const data = await res.json();
-                setSubmissions(data);
-                if (data.length > 0 && !selectedSubmission) {
-                    setSelectedSubmission(data[0]);
-                    fetchVotesAndDiscussions(data[0].id);
-                }
+    setLoading(true);
+    try {
+        const res = await fetch(`http://localhost:5000/api/email-submissions?status=${statusFilter}`);
+        if (res.ok) {
+        const data = await res.json();
+        setSubmissions(data);
+        
+        // If there's a selected submission, update it
+        if (selectedSubmission) {
+            const updated = data.find(s => s.id === selectedSubmission.id);
+            if (updated) {
+            setSelectedSubmission(updated);
             }
-        } catch (error) {
-            console.error('Error fetching submissions:', error);
-        } finally {
-            setLoading(false);
         }
+        }
+    } catch (error) {
+        console.error('Error fetching submissions:', error);
+        showToast('Failed to fetch submissions', 'error');
+    } finally {
+        setLoading(false);
+    }
     };
 
     const fetchVotesAndDiscussions = async (submissionId) => {

@@ -31,6 +31,9 @@ export default function MasterReviewPage() {
   const [emailExtractedData, setEmailExtractedData] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   
+  // Email sending preference
+  const [sendEmailConfirmation, setSendEmailConfirmation] = useState(true);
+  
   // Collapsible sections
   const [showEndorsement, setShowEndorsement] = useState(false);
   
@@ -86,7 +89,6 @@ export default function MasterReviewPage() {
       const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
-        // Ensure evaluation_status is properly set
         const processedData = data.map(sub => ({
           ...sub,
           evaluation_status: sub.evaluation_status || sub.status || 'pending'
@@ -127,7 +129,8 @@ export default function MasterReviewPage() {
     setSubmissionDetails(null);
     setEmailExtractedData(null);
     setSelectedStatus(sub.evaluation_status || 'pending');
-    setShowEndorsement(false); // Reset endorsement visibility
+    setShowEndorsement(false);
+    setSendEmailConfirmation(true); // Reset email preference
     setIsModalOpen(true);
     
     try {
@@ -157,15 +160,16 @@ export default function MasterReviewPage() {
         body: JSON.stringify({
           status: status,
           master_approver_id: currentUser.id,
-          notes: notes || document.getElementById('masterNotes')?.value || ''
+          notes: notes || document.getElementById('masterNotes')?.value || '',
+          send_email: sendEmailConfirmation // Pass email preference
         }),
       });
 
       if (res.ok) {
         const data = await res.json();
-        showToast(`Status updated to ${getStatusDisplay(status)}`, 'success');
+        const emailMessage = data.email_sent ? ' Confirmation email sent to the corresponding author.' : '';
+        showToast(`Status updated to ${getStatusDisplay(status)}.${emailMessage}`, 'success');
         
-        // Map status for submissions.status field
         const statusMapping = {
           'endorse': 'endorse',
           'downgraded-non_competitive': 'downgraded',
@@ -173,7 +177,6 @@ export default function MasterReviewPage() {
           'pending': 'pending'
         };
         
-        // Update the submissions list
         setSubmissions(prev => 
           prev.map(sub => 
             sub.id === selectedSubmission.id 
@@ -186,14 +189,12 @@ export default function MasterReviewPage() {
           )
         );
         
-        // Update the selected submission
         setSelectedSubmission(prev => ({
           ...prev,
           evaluation_status: status,
           status: statusMapping[status] || 'pending'
         }));
         
-        // Update submissionDetails if it exists
         setSubmissionDetails(prev => {
           if (prev) {
             return {
@@ -209,7 +210,6 @@ export default function MasterReviewPage() {
           return prev;
         });
         
-        // Update stats
         setStats(prev => {
           const newStats = { ...prev };
           if (status === 'endorse') {
@@ -231,7 +231,6 @@ export default function MasterReviewPage() {
         setShowDowngradeConfirm(false);
         setPendingDowngradeType(null);
         
-        // Close modal after a short delay
         setTimeout(() => {
           setIsModalOpen(false);
         }, 1500);
@@ -250,6 +249,8 @@ export default function MasterReviewPage() {
   const confirmStatusChange = (status) => {
     setSelectedStatus(status);
     setPendingStatusAction(status);
+    // Only show email option for endorse action
+    setSendEmailConfirmation(status === 'endorse');
     setShowConfirmModal(true);
   };
 
@@ -281,6 +282,8 @@ export default function MasterReviewPage() {
   // Return to Sender - Direct action
   const handleReturnToSender = () => {
     setPendingStatusAction('return_to_sender');
+    // Don't show email option for return to sender
+    setSendEmailConfirmation(false);
     setShowConfirmModal(true);
   };
 
@@ -438,7 +441,7 @@ export default function MasterReviewPage() {
         </div>
       )}
 
-      {/* Endorse Confirmation Modal */}
+      {/* Endorse Confirmation Modal with Email Option */}
       <ConfirmModal
         isOpen={showConfirmModal}
         onClose={() => { setShowConfirmModal(false); setPendingStatusAction(null); }}
@@ -449,9 +452,31 @@ export default function MasterReviewPage() {
             handleSetStatus(pendingStatusAction);
           }
         }}
-        title={pendingStatusAction === 'return_to_sender' ? 'Return to Sender' : 'Confirm Status Change'}
+        title={pendingStatusAction === 'return_to_sender' ? 'Return to Sender' : 
+               pendingStatusAction === 'endorse' ? 'Endorse for Presentation' : 
+               'Confirm Status Change'}
         message={pendingStatusAction === 'return_to_sender' 
           ? 'Are you sure you want to return this submission to the sender for revisions?'
+          : pendingStatusAction === 'endorse'
+            ? `
+              <div>
+                <p class="mb-2">Are you sure you want to endorse this submission for presentation?</p>
+                <div class="mt-4 p-3 bg-emerald-50 rounded-lg border border-emerald-200">
+                  <label class="flex items-center gap-2 text-sm text-emerald-800 cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      ${sendEmailConfirmation ? 'checked' : ''}
+                      onChange={(e) => setSendEmailConfirmation(e.target.checked)}
+                      class="w-4 h-4 text-emerald-600 rounded border-emerald-300 focus:ring-emerald-500"
+                    />
+                    <span>Send confirmation email to corresponding author</span>
+                  </label>
+                  <p class="text-xs text-emerald-600 mt-1 ml-6">
+                    An email will be sent to the corresponding author with the acceptance details.
+                  </p>
+                </div>
+              </div>
+            `
           : `Are you sure you want to change the status to <strong>${getStatusDisplay(pendingStatusAction)}</strong>?`
         }
         confirmText={pendingStatusAction === 'return_to_sender' ? 'Yes, Return' : 'Yes, Confirm'}
@@ -628,6 +653,7 @@ export default function MasterReviewPage() {
                           <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         Endorse for Presentation
+                        <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">📧</span>
                       </button>
                       
                       {/* Downgrade - Yellow/Orange */}

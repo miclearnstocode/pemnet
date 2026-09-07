@@ -37,14 +37,15 @@ export default function ConfirmModal({
               {title || 'Confirm Action'}
             </h3>
             
-            {/* Fix: Use dangerouslySetInnerHTML to render HTML tags */}
-            <p className="text-sm text-slate-600 text-center mb-6">
-              {typeof message === 'string' && message.includes('<strong>') ? (
+            <div className="text-sm text-slate-600 text-center mb-6">
+              {typeof message === 'string' && message.includes('<div') ? (
+                <div dangerouslySetInnerHTML={{ __html: message }} />
+              ) : typeof message === 'string' && message.includes('<strong>') ? (
                 <span dangerouslySetInnerHTML={{ __html: message }} />
               ) : (
                 message
               )}
-            </p>
+            </div>
 
             <div className="flex gap-3">
               <button

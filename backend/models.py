@@ -120,7 +120,6 @@ class ExtractedAbstractData(db.Model):
     submission_id = db.Column(db.String(50), unique=True, nullable=True, index=True) 
     email_submission_id = db.Column(db.Integer, db.ForeignKey('email_submissions.id'), nullable=False, index=True)
     title = db.Column(db.String(500), nullable=True)
-    title_english = db.Column(db.String(500), nullable=True)
     authors = db.Column(db.Text, nullable=True)
     authors_list = db.Column(db.Text, nullable=True)
     project_leader = db.Column(db.String(255), nullable=True)
@@ -138,6 +137,34 @@ class ExtractedAbstractData(db.Model):
     extracted_at = db.Column(db.DateTime, server_default=db.func.now())
     
     email_submission = db.relationship('EmailSubmission', foreign_keys=[email_submission_id], backref='extracted_data')
+    
+class ExtractedDataRevision(db.Model):
+    __tablename__ = 'extracted_data_revisions'
+    id = db.Column(db.Integer, primary_key=True)
+    extracted_data_id = db.Column(db.Integer, db.ForeignKey('extracted_abstract_data.id'), nullable=False, index=True)
+    edited_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    
+    # Fields tracked (only storing what was changed)
+    changes = db.Column(db.Text, nullable=True)  # JSON string of changed fields
+    
+    # Snapshot of the data AFTER the edit
+    title = db.Column(db.String(500), nullable=True)
+    authors = db.Column(db.Text, nullable=True)
+    authors_list = db.Column(db.Text, nullable=True)
+    project_leader = db.Column(db.String(255), nullable=True)
+    sucs = db.Column(db.String(255), nullable=True)
+    corresponding_author_name = db.Column(db.String(255), nullable=True)
+    corresponding_author_email = db.Column(db.String(255), nullable=True)
+    corresponding_author_position = db.Column(db.String(255), nullable=True)
+    paper_category = db.Column(db.String(255), nullable=True)
+    thematic_area = db.Column(db.String(255), nullable=True)
+    theme = db.Column(db.String(500), nullable=True)
+    
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+
+    # Relationships
+    extracted_data = db.relationship('ExtractedAbstractData', foreign_keys=[extracted_data_id], backref='revisions')
+    editor = db.relationship('User', foreign_keys=[edited_by])
     
 class SUC(db.Model):
     __tablename__ = 'sucs'

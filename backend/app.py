@@ -3,7 +3,7 @@ from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from datetime import datetime
-import os
+import os, json
 import tempfile, re
 import traceback
 from werkzeug.utils import secure_filename
@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 from google_drive import upload_file_to_drive
 from functools import wraps
 from gmail_service import GmailService
-from models import db, User, Submission, EmailSubmission, ExtractedAbstractData, SUC, SubmissionVote, EvaluatorDiscussion, Payment
+from models import db, User, Submission, EmailSubmission, ExtractedAbstractData, SUC, SubmissionVote, EvaluatorDiscussion, Payment, ExtractedDataRevision
 from master_approver import MasterApproverService
 from email_service import gmail_service, send_status_update_email, send_confirmation_email
 
@@ -1003,7 +1003,6 @@ def process_email_submission(email_data):
                     submission_id=submission_id_value,
                     email_submission_id=email_submission.id,
                     title=extracted_data.get('title'),
-                    title_english=extracted_data.get('title_english'),
                     authors=authors_data.get('full_text') if authors_data else None,
                     authors_list=authors_list_json,
                     project_leader=authors_data.get('project_leader') if authors_data else None,
@@ -1374,21 +1373,26 @@ def get_email_submissions():
         
         submissions = query.order_by(EmailSubmission.email_received_at.desc()).all()
         
-        result = [{
-            'id': s.id,
-            'sender_email': s.sender_email,
-            'sender_name': s.sender_name,
-            'project_leader_name': s.project_leader_name,
-            'subject': s.subject,
-            'body': s.body[:500] if s.body else '',  # Truncate for display
-            'attachment_filename': s.attachment_filename,
-            'attachment_view_url': s.attachment_view_url,
-            'attachment_download_url': s.attachment_download_url,
-            'status': s.status,
-            'processed_submission_id': s.processed_submission_id,
-            'email_received_at': s.email_received_at.strftime('%Y-%m-%d %H:%M:%S') if s.email_received_at else None,
-            'created_at': s.created_at.strftime('%Y-%m-%d %H:%M:%S') if s.created_at else None
-        } for s in submissions]
+        result = []
+        for s in submissions:
+            # Fetch the extracted data for this email submission
+            extracted_data = ExtractedAbstractData.query.filter_by(email_submission_id=s.id).first()
+            
+            result.append({
+                'id': s.id,
+                'sender_email': s.sender_email,
+                'sender_name': s.sender_name,
+                'project_leader_name': extracted_data.project_leader if extracted_data else s.project_leader_name,  # FIXED HERE
+                'subject': s.subject,
+                'body': s.body[:500] if s.body else '',
+                'attachment_filename': s.attachment_filename,
+                'attachment_view_url': s.attachment_view_url,
+                'attachment_download_url': s.attachment_download_url,
+                'status': s.status,
+                'processed_submission_id': s.processed_submission_id,
+                'email_received_at': s.email_received_at.strftime('%Y-%m-%d %H:%M:%S') if s.email_received_at else None,
+                'created_at': s.created_at.strftime('%Y-%m-%d %H:%M:%S') if s.created_at else None
+            })
         
         return jsonify(result), 200
         
@@ -1917,7 +1921,6 @@ def get_extracted_data(email_submission_id):
             'id': extracted.id,
             'email_submission_id': extracted.email_submission_id,
             'title': extracted.title,
-            'title_english': extracted.title_english,
             'authors': extracted.authors,
             'authors_list': extracted.authors_list,
             'project_leader': extracted.project_leader,
@@ -1937,6 +1940,142 @@ def get_extracted_data(email_submission_id):
         
     except Exception as e:
         print(f"Error fetching extracted data: {e}")
+        return jsonify({"detail": str(e)}), 500
+    
+@app.route('/api/extracted-data/<int:extracted_data_id>/edit', methods=['PUT', 'OPTIONS'])
+def edit_extracted_data(extracted_data_id):
+    """Edit extracted data and log the changes."""
+    if request.method == 'OPTIONS':
+        return jsonify({})
+
+    try:
+        data = request.get_json()
+        evaluator_id = data.get('evaluator_id')
+        
+        # Fetch the original data
+        extracted = ExtractedAbstractData.query.get(extracted_data_id)
+        if not extracted:
+            return jsonify({"detail": "Extracted data not found"}), 404
+
+        # Build a list of changed fields
+        changes = {}
+        
+        # Helper to compare and update
+        def update_field(field_name, column, max_length=None):
+            if field_name in data:
+                new_value = data[field_name]
+                old_value = getattr(extracted, column)
+                
+                # Convert to string for comparison
+                if new_value != old_value:
+                    changes[field_name] = {
+                        'old': old_value,
+                        'new': new_value
+                    }
+                    setattr(extracted, column, new_value)
+
+        # Update all editable fields
+        update_field('title', 'title')
+        update_field('authors', 'authors')
+        update_field('authors_list', 'authors_list')
+        update_field('project_leader', 'project_leader')
+        update_field('sucs', 'sucs')
+        update_field('corresponding_author_name', 'corresponding_author_name')
+        update_field('corresponding_author_email', 'corresponding_author_email')
+        update_field('corresponding_author_position', 'corresponding_author_position')
+        update_field('paper_category', 'paper_category')
+        update_field('thematic_area', 'thematic_area')
+        update_field('theme', 'theme')
+
+        # Save changes if any
+        if changes:
+            db.session.commit()
+
+            # Create a revision log
+            import json
+            revision = ExtractedDataRevision(
+                extracted_data_id=extracted_data_id,
+                edited_by=evaluator_id,
+                changes=json.dumps(changes),
+                title=extracted.title,
+                authors=extracted.authors,
+                authors_list=extracted.authors_list,
+                project_leader=extracted.project_leader,
+                sucs=extracted.sucs,
+                corresponding_author_name=extracted.corresponding_author_name,
+                corresponding_author_email=extracted.corresponding_author_email,
+                corresponding_author_position=extracted.corresponding_author_position,
+                paper_category=extracted.paper_category,
+                thematic_area=extracted.thematic_area,
+                theme=extracted.theme
+            )
+            db.session.add(revision)
+            db.session.commit()
+
+        return jsonify({
+            "message": "Data updated successfully",
+            "changes": changes,
+            "data": {
+                'title': extracted.title,
+                'authors': extracted.authors,
+                'authors_list': extracted.authors_list,
+                'project_leader': extracted.project_leader,
+                'sucs': extracted.sucs,
+                'corresponding_author_name': extracted.corresponding_author_name,
+                'corresponding_author_email': extracted.corresponding_author_email,
+                'corresponding_author_position': extracted.corresponding_author_position,
+                'paper_category': extracted.paper_category,
+                'thematic_area': extracted.thematic_area,
+                'theme': extracted.theme,
+            }
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error editing extracted data: {e}")
+        traceback.print_exc()
+        return jsonify({"detail": str(e)}), 500
+
+
+@app.route('/api/extracted-data/<int:extracted_data_id>/revisions', methods=['GET', 'OPTIONS'])
+def get_extracted_data_revisions(extracted_data_id):
+    """Get all revisions for an extracted data record."""
+    if request.method == 'OPTIONS':
+        return jsonify({})
+
+    try:
+        revisions = ExtractedDataRevision.query.filter_by(
+            extracted_data_id=extracted_data_id
+        ).order_by(ExtractedDataRevision.created_at.desc()).all()
+
+        result = []
+        for rev in revisions:
+            user = User.query.get(rev.edited_by)
+            result.append({
+                'id': rev.id,
+                'edited_by': rev.edited_by,
+                'edited_by_name': user.full_name if user else 'Unknown',
+                'changes': json.loads(rev.changes) if rev.changes else {},
+                'snapshot': {
+                    'title': rev.title,
+                    'authors': rev.authors,
+                    'authors_list': rev.authors_list,
+                    'project_leader': rev.project_leader,
+                    'sucs': rev.sucs,
+                    'corresponding_author_name': rev.corresponding_author_name,
+                    'corresponding_author_email': rev.corresponding_author_email,
+                    'corresponding_author_position': rev.corresponding_author_position,
+                    'paper_category': rev.paper_category,
+                    'thematic_area': rev.thematic_area,
+                    'theme': rev.theme,
+                },
+                'created_at': rev.created_at.strftime('%Y-%m-%d %H:%M:%S') if rev.created_at else None
+            })
+
+        return jsonify(result), 200
+
+    except Exception as e:
+        print(f"Error fetching revisions: {e}")
         return jsonify({"detail": str(e)}), 500
     
 # ========== MASTER APPROVER ROUTES ==========

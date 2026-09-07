@@ -17,6 +17,9 @@ python test_pdf_extraction.py "abstract_Abstract_ParSU_Ongoing_ProgramBREES.docx
 
 python test_pdf_extraction.py "abstract_1. Abstract_PEMNet_DSSC Kompos sa Loob ng Rehas - Competitive.pdf"
 
+python test_pdf_extraction.py "abstract_Entrepreneurial Competencies and Skills of STCBF Seaweed Farmer Beneficiaries in Digos City.pdf"
+
+python test_pdf_extraction.py "abstract_Abstract_PEMNet_Tablate et al_Project LPLM.docx"
 Update in the system:
 Work on for the submission of full paper
 

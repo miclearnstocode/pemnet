@@ -3,6 +3,11 @@ import re
 import os
 import PyPDF2
 from pdfminer.high_level import extract_text as pdfminer_extract_text
+# We need lxml to parse XML data inside the docx
+try:
+    from lxml import etree
+except ImportError:
+    etree = None
 
 
 class DOCSExtractor:
@@ -10,6 +15,7 @@ class DOCSExtractor:
         self.file_buffer = file_buffer
         self.filename = filename
         self.text = None
+        self.doc = None  # Store the python-docx Document object for direct table access
     
     def _is_docx(self):
         """Check if the file is a DOCX based on filename or magic bytes"""
@@ -72,15 +78,15 @@ class DOCSExtractor:
                 tmp_file.write(self.file_buffer)
                 tmp_path = tmp_file.name
             
-            doc = Document(tmp_path)
+            self.doc = Document(tmp_path)  # Store for direct table access
             
             text = ""
-            for paragraph in doc.paragraphs:
+            for paragraph in self.doc.paragraphs:
                 if paragraph.text:
                     text += paragraph.text + "\n"
             
             # Extract text from tables with better formatting
-            for table in doc.tables:
+            for table in self.doc.tables:
                 for row in table.rows:
                     row_text = []
                     for cell in row.cells:
@@ -339,23 +345,17 @@ class DOCSExtractor:
     def _get_highlighted_paragraphs(self):
         """Use python-docx to find paragraphs with yellow highlight or shading (including inside TABLES)."""
         try:
-            from docx import Document
-            import tempfile
-            import os
-
-            with tempfile.NamedTemporaryFile(delete=False, suffix='.docx') as tmp_file:
-                tmp_file.write(self.file_buffer)
-                tmp_path = tmp_file.name
-
-            doc = Document(tmp_path)
             highlighted_paragraphs = []
+            if not self.doc:
+                return highlighted_paragraphs
 
             # Helper function to check a single paragraph
             def check_paragraph(paragraph):
                 for run in paragraph.runs:
                     # Check for text highlight
                     if run.font.highlight_color is not None:
-                        if str(run.font.highlight_color) == 'YELLOW' or 'yellow' in str(run.font.highlight_color).lower():
+                        # Check if it's NOT 'None' or if it's any color
+                        if str(run.font.highlight_color) != 'None':
                             highlighted_paragraphs.append(paragraph.text.strip())
                             return True
                     
@@ -365,7 +365,8 @@ class DOCSExtractor:
                         shd = rPr.find('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}shd')
                         if shd is not None:
                             fill = shd.get('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}fill')
-                            if fill and fill.lower() in ['ffff00', 'yellow']:
+                            # Check if it's any color (not just yellow) by checking if it's not 'auto' or 'FFFFFF'
+                            if fill and fill.lower() not in ['auto', 'ffffff']:
                                 highlighted_paragraphs.append(paragraph.text.strip())
                                 return True
                 
@@ -375,14 +376,14 @@ class DOCSExtractor:
                     shd = pPr.find('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}shd')
                     if shd is not None:
                         fill = shd.get('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}fill')
-                        if fill and fill.lower() in ['ffff00', 'yellow']:
+                        if fill and fill.lower() not in ['auto', 'ffffff']:
                             highlighted_paragraphs.append(paragraph.text.strip())
                             return True
                             
                 return False
 
             # 1. Check regular paragraphs
-            for paragraph in doc.paragraphs:
+            for paragraph in self.doc.paragraphs:
                 check_paragraph(paragraph)
 
             # 2. Check paragraphs inside TABLES (this is where your template is!)
@@ -396,28 +397,76 @@ class DOCSExtractor:
                             if cell.tables:
                                 recurse_tables(cell.tables)
 
-            recurse_tables(doc.tables)
+            recurse_tables(self.doc.tables)
 
-            os.unlink(tmp_path)
             return highlighted_paragraphs
         except Exception as e:
             print(f"Warning: Could not detect highlights in DOCX: {e}")
             return []
 
-    def extract_paper_category(self):
-        """Extract paper category - Handles [X], [✓], [/], and other markups, then fallback to highlighted color."""
-        if not self.text:
-            return None
-        
-        categories = ["Completed", "Ongoing"]
-        
-        # 1. Existing text checks. Remove newlines from text first to avoid line break issues.
-        normalized_text = re.sub(r'\s+', ' ', self.text)
-        for cat in categories:
-            if re.search(r'\[(x|X|✓|√|✔|v|V|/)\]\s*' + cat, normalized_text, re.IGNORECASE):
-                return f"{cat} Extension Project Paper"
+    def _cell_has_shape_or_fill(self, cell):
+        """Helper method to inspect a cell's XML for shapes, Wingdings, or background fills."""
+        try:
+            if not etree:
+                return False
+            
+            # Check for any shape or pict element in the cell XML
+            cell_xml = cell._tc.xml
+            if '<w:pict>' in cell_xml or '<v:shape' in cell_xml or '<w:object' in cell_xml:
+                return True
+            
+            # Check for Wingdings or Symbol fonts (often used for checkbox symbols)
+            if 'Wingdings' in cell_xml or 'Symbol' in cell_xml:
+                return True
+            
+            # Check for any run with custom shading (background color)
+            if 'w:shd' in cell_xml:
+                # Check if the fill is not transparent
+                if 'w:fill="FFFFFF"' not in cell_xml and 'w:fill="auto"' not in cell_xml:
+                    return True
 
-        # 2. Fallback: Check highlighted paragraphs (only if text check failed)
+            return False
+        except:
+            return False
+
+    def extract_paper_category(self):
+        """Extract paper category - Detects shapes, Wingdings, ANY bracket markers, or highlights."""
+        categories = ["Completed", "Ongoing"]
+
+        # 1. PREMIUM METHOD: Directly iterate DOCX tables using self.doc
+        if self.doc:
+            try:
+                for table in self.doc.tables:
+                    for row in table.rows:
+                        # Store the row text for finding the label
+                        row_label = ' '.join(cell.text for cell in row.cells)
+                        
+                        if 'Paper Category' in row_label:
+                            for cell in row.cells:
+                                cell_text = cell.text
+                                
+                                # Check if the cell contains a Shape, Wingdings, or highlighted Fill
+                                if self._cell_has_shape_or_fill(cell):
+                                    for cat in categories:
+                                        if cat in cell_text:
+                                            return f"{cat} Extension Project Paper"
+                                
+                                # Robust check for ANY marker: [X], [x], [/], [V], [🗹], [☑], etc.
+                                for cat in categories:
+                                    if re.search(r'\[[^\s\]]+\]\s*' + cat, cell_text, re.IGNORECASE):
+                                        return f"{cat} Extension Project Paper"
+            except Exception as e:
+                print(f"Warning: Error in table iteration: {e}")
+
+        # 2. FALLBACK METHOD: Existing text checks with robust regex
+        if self.text:
+            normalized_text = re.sub(r'\s+', ' ', self.text)
+            filled_marker_pattern = r'\[[^\s\]]+\]'
+            for cat in categories:
+                if re.search(filled_marker_pattern + r'\s*' + cat, normalized_text, re.IGNORECASE):
+                    return f"{cat} Extension Project Paper"
+
+        # 3. FALLBACK: Check highlighted paragraphs
         highlighted_paragraphs = self._get_highlighted_paragraphs()
         for text in highlighted_paragraphs:
             for cat in categories:
@@ -427,10 +476,7 @@ class DOCSExtractor:
         return None
 
     def extract_thematic_area(self):
-        """Extract thematic area - Handles [X], [✓], [/], and other markups, then fallback to highlighted color."""
-        if not self.text:
-            return None
-
+        """Extract thematic area - Detects shapes, Wingdings, ANY bracket markers, or highlights."""
         thematic_areas = [
             'Food Production, Agriculture, Fisheries, and Natural Resource Systems',
             'Health, Nutrition, Wellness, and Community Care',
@@ -439,13 +485,39 @@ class DOCSExtractor:
             'Environment, Climate Action, Disaster Risk Reduction, and Community Resilience'
         ]
 
-        # 1. Existing text checks. Remove newlines from text first to avoid line break issues.
-        normalized_text = re.sub(r'\s+', ' ', self.text)
-        for area in thematic_areas:
-            if re.search(r'\[(x|X|✓|√|✔|v|V|/)\]\s*' + re.escape(area), normalized_text, re.IGNORECASE):
-                return area
+        # 1. PREMIUM METHOD: Directly iterate DOCX tables using self.doc
+        if self.doc:
+            try:
+                for table in self.doc.tables:
+                    for row in table.rows:
+                        row_label = ' '.join(cell.text for cell in row.cells)
+                        
+                        if 'Thematic Area' in row_label:
+                            for cell in row.cells:
+                                cell_text = cell.text
+                                
+                                # Check if the cell contains a Shape, Wingdings, or highlighted Fill
+                                if self._cell_has_shape_or_fill(cell):
+                                    for area in thematic_areas:
+                                        if area in cell_text:
+                                            return area
+                                
+                                # Robust check for ANY marker: [X], [x], [/], [V], [🗹], [☑], etc.
+                                for area in thematic_areas:
+                                    if re.search(r'\[[^\s\]]+\]\s*' + re.escape(area), cell_text, re.IGNORECASE):
+                                        return area
+            except Exception as e:
+                print(f"Warning: Error in table iteration: {e}")
 
-        # 2. Fallback: Check highlighted paragraphs (only if text check failed)
+        # 2. FALLBACK METHOD: Existing text checks with robust regex
+        if self.text:
+            normalized_text = re.sub(r'\s+', ' ', self.text)
+            filled_marker_pattern = r'\[[^\s\]]+\]'
+            for area in thematic_areas:
+                if re.search(filled_marker_pattern + r'\s*' + re.escape(area), normalized_text, re.IGNORECASE):
+                    return area
+
+        # 3. FALLBACK: Check highlighted paragraphs
         highlighted_paragraphs = self._get_highlighted_paragraphs()
         for text in highlighted_paragraphs:
             text_clean = re.sub(r'^[\[\]xX✓√✔vV/\s]+', '', text).strip()

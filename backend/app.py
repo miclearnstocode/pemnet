@@ -706,20 +706,19 @@ def get_sucs():
             query = query.filter(
                 db.or_(
                     SUC.name.like(f'%{search}%'),
-                    SUC.abbreviation.like(f'%{search}%'),
                     SUC.region.like(f'%{search}%')
                 )
             )
         
         sucs = query.order_by(SUC.name).all()
         
-        result = [{
-            'id': s.id,
-            'region': s.region,
-            'name': s.name,
-            'abbreviation': s.abbreviation,
-            'type': s.type
-        } for s in sucs]
+        result = []
+        for s in sucs:
+            result.append({
+                'id': s.id,
+                'region': s.region,
+                'name': s.name
+            })
         
         return jsonify(result), 200
         
@@ -745,9 +744,7 @@ def add_suc():
         
         new_suc = SUC(
             name=data['name'],
-            region=data.get('region', 'Other'),
-            abbreviation=data.get('abbreviation', ''),
-            type=data.get('type', 'Other')
+            region=data.get('region', 'Other')
         )
         
         db.session.add(new_suc)
@@ -756,9 +753,7 @@ def add_suc():
         return jsonify({
             'id': new_suc.id,
             'region': new_suc.region,
-            'name': new_suc.name,
-            'abbreviation': new_suc.abbreviation,
-            'type': new_suc.type
+            'name': new_suc.name
         }), 201
         
     except Exception as e:
@@ -915,6 +910,8 @@ def process_email_submission(email_data):
                             print(f"   📂 Category: {extracted_data.get('paper_category')}")
                         if extracted_data.get('thematic_area'):
                             print(f"   🎯 Thematic Area: {extracted_data.get('thematic_area')}")
+                        if extracted_data.get('sucs'):
+                            print(f"   🏫 SUCs: {extracted_data.get('sucs')}")
                     else:
                         print("⚠️  No data extracted from file")
                         
@@ -1012,8 +1009,8 @@ def process_email_submission(email_data):
                     project_leader=authors_data.get('project_leader') if authors_data else None,
                     corresponding_author_name=corresponding_author.get('name') if corresponding_author else None,
                     corresponding_author_email=corresponding_author.get('email') if corresponding_author else None,
-                    corresponding_author_position=corresponding_author.get('position') if corresponding_author else None,
-                    sucs=extracted_data.get('sucs'),
+                    corresponding_author_position=extracted_data.get('corresponding_author_position'),  # NEW
+                    sucs=extracted_data.get('sucs'),  # NEW
                     paper_category=extracted_data.get('paper_category'),
                     thematic_area=extracted_data.get('thematic_area'),
                     theme=extracted_data.get('theme'),
@@ -1021,6 +1018,8 @@ def process_email_submission(email_data):
                 )
                 db.session.add(extracted_record)
                 print(f"✅ Extracted data saved to database (email_submission_id: {email_submission.id})")
+                print(f"   🏫 SUCs: {extracted_data.get('sucs')}")
+                print(f"   📍 Corresponding Author Position: {extracted_data.get('corresponding_author_position')}")
                 
             except Exception as e:
                 print(f"⚠️  Error saving extracted data: {e}")

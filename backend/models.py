@@ -144,11 +144,19 @@ class SUC(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     region = db.Column(db.String(100), nullable=False)
     name = db.Column(db.String(255), nullable=False, unique=True)
-    abbreviation = db.Column(db.String(50), nullable=True)
-    type = db.Column(db.String(50), nullable=True)
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
     updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'region': self.region,
+            'name': self.name,
+            'is_active': self.is_active,
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None,
+            'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S') if self.updated_at else None
+        }
 
 class SubmissionVote(db.Model):
     __tablename__ = 'submission_votes'

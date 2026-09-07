@@ -102,20 +102,39 @@ export default function SubmitPage() {
   const [userPayments, setUserPayments] = useState([]);
   const [selectedSubmission, setSelectedSubmission] = useState(null);
 
-  // Fetch SUCs from database
   useEffect(() => {
     const fetchSUCs = async () => {
       try {
+        console.log('Fetching SUCs...');
         const response = await fetch('http://localhost:5000/api/sucs');
-        if (response.ok) {
-          const data = await response.json();
-          setSucList(data);
-          setFilteredSucList(data);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('SUCs fetched:', data.length, 'items');
+        
+        // Ensure data is an array
+        if (Array.isArray(data)) {
+          // Sanitize data to ensure all expected fields exist
+          const sanitizedData = data.map((suc) => ({
+            ...suc,
+            region: suc.region || 'Unknown Region',
+            name: suc.name || 'Unknown SUC'
+          }));
+          
+          setSucList(sanitizedData);
+          setFilteredSucList(sanitizedData);
         } else {
-          console.error('Failed to fetch SUCs');
+          console.error('Unexpected data format:', data);
+          setSucList([]);
+          setFilteredSucList([]);
         }
       } catch (error) {
         console.error('Error fetching SUCs:', error);
+        setSucList([]);
+        setFilteredSucList([]);
       } finally {
         setIsLoadingSucs(false);
       }
@@ -123,7 +142,6 @@ export default function SubmitPage() {
     
     fetchSUCs();
   }, []);
-
   // Check if user is logged in
   useEffect(() => {
     const userData = localStorage.getItem('pemnet_user');

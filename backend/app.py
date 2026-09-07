@@ -327,8 +327,9 @@ def submit():
         suc_agencies = request.form.get('suc_agencies', '')
         author = request.form.get('author', '')
         presenter = request.form.get('presenter', '')
-        corresponding_author_name = request.form.get('corresponding_author_name', '')  # NEW
-        corresponding_author_email = request.form.get('corresponding_author_email', '')  # NEW
+        corresponding_author_name = request.form.get('corresponding_author_name', '')  
+        corresponding_author_position = request.form.get('corresponding_author_position', '')
+        corresponding_author_email = request.form.get('corresponding_author_email', '')
         co_authors = request.form.get('co_authors', '')
         
         # Debug print all form fields
@@ -440,8 +441,9 @@ def submit():
             suc_agencies=suc_agencies,
             author=author,
             presenter=presenter,
-            corresponding_author_name=corresponding_author_name,  # NEW
-            corresponding_author_email=corresponding_author_email,  # NEW
+            corresponding_author_name=corresponding_author_name, 
+            corresponding_author_position=corresponding_author_position,
+            corresponding_author_email=corresponding_author_email,  
             status='pending',
             co_authors=co_authors,
             abstract_view_url=abstract_view_url,
@@ -495,12 +497,10 @@ def submit():
         
 @app.route('/api/submissions/user/<int:user_id>', methods=['GET', 'OPTIONS'])
 def get_user_submissions(user_id):
-    """Get submissions for a specific user."""
     if request.method == 'OPTIONS':
         return jsonify({})
     
     try:
-        # Verify the user exists
         user = User.query.get(user_id)
         if not user:
             return jsonify({"detail": "User not found"}), 404
@@ -516,6 +516,9 @@ def get_user_submissions(user_id):
             'suc_agencies': s.suc_agencies,
             'author': s.author,
             'presenter': s.presenter,
+            'corresponding_author_name': s.corresponding_author_name,
+            'corresponding_author_email': s.corresponding_author_email,
+            'corresponding_author_position': s.corresponding_author_position, 
             'status': s.status,
             'co_authors': s.co_authors,
             'abstract_view_url': s.abstract_view_url,

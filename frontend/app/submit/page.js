@@ -533,6 +533,9 @@ export default function SubmitPage() {
                   {submission.corresponding_author_name && (
                     <span><span className="font-medium">Corresponding Author:</span> {submission.corresponding_author_name}</span>
                   )}
+                  {submission.corresponding_author_position && (
+                    <span><span className="font-medium">Position:</span> {submission.corresponding_author_position}</span>
+                  )}
                   {submission.suc_agencies && (
                     <span><span className="font-medium">SUC:</span> {submission.suc_agencies}</span>
                   )}
@@ -924,7 +927,7 @@ export default function SubmitPage() {
                           />
                         </div>
 
-                        {/* Corresponding Author Name - NEW */}
+                        {/* Corresponding Author Name */}
                         <div>
                           <label className="block text-sm font-semibold text-slate-700 mb-1.5">Corresponding Author Name</label>
                           <input 
@@ -935,7 +938,17 @@ export default function SubmitPage() {
                           />
                         </div>
 
-                        {/* Corresponding Author Email - NEW */}
+                        {/* Corresponding Author Position/Designation */}
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-700 mb-1.5">Corresponding Author Position/Designation</label>
+                          <input 
+                            name="correspondingAuthorPosition" 
+                            type="text" 
+                            placeholder="e.g., Professor, Research Director, Extension Coordinator"
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
+                          />
+                        </div>
+                        {/* Corresponding Author Email */}
                         <div>
                           <label className="block text-sm font-semibold text-slate-700 mb-1.5">Corresponding Author Email</label>
                           <input 

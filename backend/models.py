@@ -37,8 +37,9 @@ class Submission(db.Model):
     suc_agencies = db.Column(db.String(255), nullable=True)
     author = db.Column(db.String(255), nullable=False)
     presenter = db.Column(db.String(255), nullable=False)
-    corresponding_author_name = db.Column(db.String(255), nullable=True)  # NEW
-    corresponding_author_email = db.Column(db.String(255), nullable=True)  # NEW
+    corresponding_author_name = db.Column(db.String(255), nullable=True)  
+    corresponding_author_position = db.Column(db.String(255), nullable=True)
+    corresponding_author_email = db.Column(db.String(255), nullable=True) 
     status = db.Column(db.Enum('pending', 'endorse', 'downgraded'), nullable=False, default='pending')
     evaluation_status = db.Column(db.Enum('pending', 'endorse', 'downgraded-non_competitive', 'downgraded-poster_only'), nullable=False, default='pending')
     co_authors = db.Column(db.Text, nullable=True)
@@ -61,6 +62,7 @@ class Submission(db.Model):
             'author': self.author,
             'presenter': self.presenter,
             'corresponding_author_name': self.corresponding_author_name,  
+            'corresponding_author_position': self.corresponding_author_position,
             'corresponding_author_email': self.corresponding_author_email, 
             'status': self.status,
             'evaluation_status': self.evaluation_status,

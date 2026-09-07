@@ -28,6 +28,7 @@ class User(db.Model):
 class Submission(db.Model):
     __tablename__ = 'submissions'
     id = db.Column(db.Integer, primary_key=True)
+    submission_id = db.Column(db.String(50), unique=True, nullable=True, index=True) 
     user_id = db.Column(db.Integer, nullable=False, default=0)
     paper_trail_no = db.Column(db.String(50), nullable=True) 
     submission_type = db.Column(db.String(50), nullable=True, default='abstract')  
@@ -54,6 +55,7 @@ class Submission(db.Model):
     def to_dict(self):
         return {
             'id': self.id,
+            'submission_id': self.submission_id,  # NEW
             'user_id': self.user_id,
             'extension_project_title': self.extension_project_title,
             'thematic_area': self.thematic_area,
@@ -75,7 +77,7 @@ class Submission(db.Model):
             'compextproj_drive_download_url': self.compextproj_drive_download_url,
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None
         }
-
+        
 class EmailSubmission(db.Model):
     __tablename__ = 'email_submissions'
     id = db.Column(db.Integer, primary_key=True)
@@ -115,6 +117,7 @@ class EmailSubmission(db.Model):
 class ExtractedAbstractData(db.Model):
     __tablename__ = 'extracted_abstract_data'
     id = db.Column(db.Integer, primary_key=True)
+    submission_id = db.Column(db.String(50), unique=True, nullable=True, index=True) 
     email_submission_id = db.Column(db.Integer, db.ForeignKey('email_submissions.id'), nullable=False, index=True)
     title = db.Column(db.String(500), nullable=True)
     title_english = db.Column(db.String(500), nullable=True)
@@ -123,6 +126,8 @@ class ExtractedAbstractData(db.Model):
     project_leader = db.Column(db.String(255), nullable=True)
     corresponding_author_name = db.Column(db.String(255), nullable=True)
     corresponding_author_email = db.Column(db.String(255), nullable=True)
+    corresponding_author_position = db.Column(db.String(255), nullable=True)
+    sucs = db.Column(db.String(255), nullable=True)
     paper_category = db.Column(db.String(255), nullable=True)
     thematic_area = db.Column(db.String(255), nullable=True)
     theme = db.Column(db.String(500), nullable=True)

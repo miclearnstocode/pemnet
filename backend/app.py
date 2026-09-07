@@ -306,6 +306,53 @@ def login():
         traceback.print_exc()
         return jsonify({"detail": "An error occurred during login"}), 500
     
+def generate_submission_id():
+    """Generate a unique submission ID in format pemnet-XXX-YYYY"""
+    from datetime import datetime
+    
+    current_year = datetime.now().year
+    year_prefix = str(current_year)
+    
+    # Find the last submission ID for the current year
+    # Query submissions with submission_id starting with pemnet- and ending with current year
+    pattern = f'pemnet-%{year_prefix}'
+    
+    # Get all submission IDs for current year
+    existing_ids = Submission.query.filter(
+        Submission.submission_id.like(f'pemnet-%-{year_prefix}')
+    ).with_entities(Submission.submission_id).all()
+    
+    # Also check extracted_abstract_data for email submissions
+    extracted_ids = ExtractedAbstractData.query.filter(
+        ExtractedAbstractData.submission_id.like(f'pemnet-%-{year_prefix}')
+    ).with_entities(ExtractedAbstractData.submission_id).all()
+    
+    # Combine all IDs
+    all_ids = [id[0] for id in existing_ids if id[0]] + [id[0] for id in extracted_ids if id[0]]
+    
+    max_number = 0
+    
+    if all_ids:
+        # Extract numbers from existing IDs
+        for submission_id in all_ids:
+            try:
+                # Format: pemnet-XXX-YYYY
+                parts = submission_id.split('-')
+                if len(parts) == 3:
+                    num = int(parts[1])
+                    if num > max_number:
+                        max_number = num
+            except (ValueError, IndexError):
+                continue
+    
+    # Increment the number
+    next_number = max_number + 1
+    
+    # Format with 3 digits (e.g., 001, 002, 010, 100)
+    formatted_number = f"{next_number:03d}"
+    
+    return f"pemnet-{formatted_number}-{year_prefix}"
+
 @app.route('/api/submit', methods=['POST', 'OPTIONS'])
 def submit():
     if request.method == 'OPTIONS':
@@ -432,9 +479,13 @@ def submit():
             traceback.print_exc()
             return jsonify({"detail": f"Failed to upload endorsement to Google Drive: {str(drive_error)}"}), 500
         
+        submission_id_value = generate_submission_id()
+        print(f"Generated submission ID: {submission_id_value}")
+        
         # Create submission record with user_id and new fields
         new_submission = Submission(
             user_id=user_id, 
+            submission_id=submission_id_value,
             extension_project_title=extension_project_title,
             thematic_area=thematic_area,
             paper_category=paper_category,
@@ -461,6 +512,7 @@ def submit():
         return jsonify({
             "message": "Submission successful",
             "submission_id": new_submission.id,
+            "submission_id_format": submission_id_value,
             "status": "pending",
             "abstract_view_url": abstract_view_url,
             "abstract_download_url": abstract_download_url,
@@ -917,6 +969,8 @@ def process_email_submission(email_data):
                         print(f"🧹 Cleaned up temp file: {temp_path}")
                     except:
                         pass
+        submission_id_value = generate_submission_id()
+        print(f"Generated submission ID for email: {submission_id_value}")
         
         # Step 6: Store in Database (Email Data)
         email_submission = EmailSubmission(
@@ -949,6 +1003,7 @@ def process_email_submission(email_data):
                 corresponding_author = extracted_data.get('corresponding_author')
                 
                 extracted_record = ExtractedAbstractData(
+                    submission_id=submission_id_value,
                     email_submission_id=email_submission.id,
                     title=extracted_data.get('title'),
                     title_english=extracted_data.get('title_english'),
@@ -957,6 +1012,8 @@ def process_email_submission(email_data):
                     project_leader=authors_data.get('project_leader') if authors_data else None,
                     corresponding_author_name=corresponding_author.get('name') if corresponding_author else None,
                     corresponding_author_email=corresponding_author.get('email') if corresponding_author else None,
+                    corresponding_author_position=corresponding_author.get('position') if corresponding_author else None,
+                    sucs=extracted_data.get('sucs'),
                     paper_category=extracted_data.get('paper_category'),
                     thematic_area=extracted_data.get('thematic_area'),
                     theme=extracted_data.get('theme'),
@@ -973,6 +1030,7 @@ def process_email_submission(email_data):
             # Even if no extracted data, create a record with failed status
             try:
                 extracted_record = ExtractedAbstractData(
+                    submission_id=submission_id_value,
                     email_submission_id=email_submission.id,
                     extraction_status='failed',
                     extraction_error='No data could be extracted from the attachment'
@@ -1864,8 +1922,10 @@ def get_extracted_data(email_submission_id):
             'authors': extracted.authors,
             'authors_list': extracted.authors_list,
             'project_leader': extracted.project_leader,
+            'sucs': extracted.sucs,
             'corresponding_author_name': extracted.corresponding_author_name,
             'corresponding_author_email': extracted.corresponding_author_email,
+            'corresponding_author_position': extracted.corresponding_author_position,  # NEW
             'paper_category': extracted.paper_category,
             'thematic_area': extracted.thematic_area,
             'theme': extracted.theme,

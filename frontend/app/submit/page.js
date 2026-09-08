@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
 
 const thematicAreas = [
   "Food Production, Agricultural, Fisheries, and Natural Resource Systems",
@@ -31,8 +33,8 @@ const Toast = ({ message, type, onClose }) => {
   const progressColor = type === 'success' ? 'bg-emerald-500' : 'bg-red-500';
 
   return (
-    <div className="fixed top-4 right-4 z-50 animate-slide-in">
-      <div className={`relative w-96 max-w-[calc(100vw-2rem)] p-4 rounded-xl border shadow-lg ${bgColor}`}>
+    <div className="fixed top-20 right-4 z-[9999] animate-slide-in">
+      <div className={`relative w-96 max-w-[calc(100vw-2rem)] p-4 rounded-xl border shadow-2xl ${bgColor}`}>
         <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-100 rounded-b-xl overflow-hidden">
           <div className={`h-full ${progressColor} animate-progress-shrink`}></div>
         </div>
@@ -68,7 +70,6 @@ const Toast = ({ message, type, onClose }) => {
     </div>
   );
 };
-
 
 export default function SubmitPage() {
   const [activeTab, setActiveTab] = useState('submit');
@@ -115,9 +116,7 @@ export default function SubmitPage() {
         const data = await response.json();
         console.log('SUCs fetched:', data.length, 'items');
         
-        // Ensure data is an array
         if (Array.isArray(data)) {
-          // Sanitize data to ensure all expected fields exist
           const sanitizedData = data.map((suc) => ({
             ...suc,
             region: suc.region || 'Unknown Region',
@@ -142,29 +141,30 @@ export default function SubmitPage() {
     
     fetchSUCs();
   }, []);
-  // Check if user is logged in
+
+  // Check if user is logged in - simply check localStorage for user data
   useEffect(() => {
     const userData = localStorage.getItem('pemnet_user');
     if (!userData) {
       window.location.href = '/login';
     } else {
-      const parsedUser = JSON.parse(userData);
-      setUser(parsedUser);
-      // Fetch user submissions after user is set
-      fetchUserSubmissions(parsedUser.id);
+      try {
+        const parsedUser = JSON.parse(userData);
+        setUser(parsedUser);
+        fetchUserSubmissions(parsedUser.id);
+        fetchUserPayments(parsedUser.id);
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+        localStorage.removeItem('pemnet_user');
+        window.location.href = '/login';
+      }
     }
   }, []);
 
-  // Fetch user's submissions
   const fetchUserSubmissions = async (userId) => {
     setIsLoadingSubmissions(true);
     try {
-      const token = localStorage.getItem('pemnet_token');
-      const response = await fetch(`http://localhost:5000/api/submissions/user/${userId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await fetch(`http://localhost:5000/api/submissions/user/${userId}`);
       if (response.ok) {
         const data = await response.json();
         setUserSubmissions(data);
@@ -175,6 +175,18 @@ export default function SubmitPage() {
       console.error('Error fetching user submissions:', error);
     } finally {
       setIsLoadingSubmissions(false);
+    }
+  };
+
+  const fetchUserPayments = async (userId) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/payments/user/${userId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setUserPayments(data);
+      }
+    } catch (error) {
+      console.error('Error fetching payments:', error);
     }
   };
 
@@ -205,12 +217,7 @@ export default function SubmitPage() {
 
   const checkPaymentStatus = async (submissionId) => {
     try {
-      const token = localStorage.getItem('pemnet_token');
-      const response = await fetch(`http://localhost:5000/api/payments/submission/${submissionId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await fetch(`http://localhost:5000/api/payments/submission/${submissionId}`);
       if (response.ok) {
         const data = await response.json();
         setPaymentData(data);
@@ -235,7 +242,6 @@ export default function SubmitPage() {
     setIsUploadingPayment(true);
     
     try {
-      const token = localStorage.getItem('pemnet_token');
       const userData = JSON.parse(localStorage.getItem('pemnet_user'));
       
       const formData = new FormData();
@@ -248,9 +254,6 @@ export default function SubmitPage() {
       
       const response = await fetch('http://localhost:5000/api/payments/upload', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
         body: formData
       });
       
@@ -263,6 +266,7 @@ export default function SubmitPage() {
         setReferenceNumber('');
         setPaymentAmount('');
         setPaymentDate('');
+        fetchUserPayments(userData.id);
       } else {
         const error = await response.json();
         showToast(error.detail || 'Failed to upload payment proof', 'error');
@@ -331,14 +335,41 @@ export default function SubmitPage() {
     setError('');
     setToast(null);
 
-    const token = localStorage.getItem('pemnet_token');
-    const userData = JSON.parse(localStorage.getItem('pemnet_user'));
-    
-    if (!token || !userData) {
+    // Check if user exists in localStorage
+    const userData = localStorage.getItem('pemnet_user');
+    if (!userData) {
       const errorMsg = 'You are not logged in. Please login again.';
       setError(errorMsg);
       showToast(errorMsg, 'error');
       setSubmitting(false);
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 2000);
+      return;
+    }
+
+    let parsedUser;
+    try {
+      parsedUser = JSON.parse(userData);
+    } catch (error) {
+      console.error('Error parsing user data:', error);
+      const errorMsg = 'Session error. Please login again.';
+      setError(errorMsg);
+      showToast(errorMsg, 'error');
+      setSubmitting(false);
+      localStorage.removeItem('pemnet_user');
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 2000);
+      return;
+    }
+
+    if (!parsedUser || !parsedUser.id) {
+      const errorMsg = 'Invalid user session. Please login again.';
+      setError(errorMsg);
+      showToast(errorMsg, 'error');
+      setSubmitting(false);
+      localStorage.removeItem('pemnet_user');
       setTimeout(() => {
         window.location.href = '/login';
       }, 2000);
@@ -377,13 +408,10 @@ export default function SubmitPage() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify({
             name: finalSuc,
-            region: 'Other',
-            abbreviation: '',
-            type: 'Other'
+            region: 'Other'
           })
         });
 
@@ -400,8 +428,7 @@ export default function SubmitPage() {
     // Build FormData for submission
     const submitData = new FormData();
 
-    // Append all fields with user_id
-    submitData.append('user_id', userData.id);
+    submitData.append('user_id', parsedUser.id);
     submitData.append('extension_project_title', formData.get('title'));
     submitData.append('thematic_area', formData.get('thematicArea'));
     submitData.append('paper_category', formData.get('paperCategory'));
@@ -412,11 +439,7 @@ export default function SubmitPage() {
     submitData.append('corresponding_author_email', formData.get('correspondingAuthorEmail'));
     submitData.append('co_authors', filteredCoAuthors.length > 0 ? filteredCoAuthors.join(', ') : '');
 
-    if (abstractFile) {
-      const safeName = abstractFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-      const safeFile = new File([abstractFile], safeName, { type: 'application/pdf' });
-      submitData.append('abstract_file', safeFile);
-    } else {
+    if (!abstractFile) {
       const errorMsg = 'Abstract PDF file is required.';
       setError(errorMsg);
       showToast(errorMsg, 'error');
@@ -424,11 +447,7 @@ export default function SubmitPage() {
       return;
     }
 
-    if (endorsementFile) {
-      const safeName = endorsementFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-      const safeFile = new File([endorsementFile], safeName, { type: 'application/pdf' });
-      submitData.append('endorsement_file', safeFile);
-    } else {
+    if (!endorsementFile) {
       const errorMsg = 'Endorsement PDF file is required.';
       setError(errorMsg);
       showToast(errorMsg, 'error');
@@ -436,7 +455,15 @@ export default function SubmitPage() {
       return;
     }
 
-    console.log('Submitting data:');
+    const safeAbstractName = abstractFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const safeAbstractFile = new File([abstractFile], safeAbstractName, { type: 'application/pdf' });
+    submitData.append('abstract_file', safeAbstractFile);
+
+    const safeEndorsementName = endorsementFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const safeEndorsementFile = new File([endorsementFile], safeEndorsementName, { type: 'application/pdf' });
+    submitData.append('endorsement_file', safeEndorsementFile);
+
+    console.log('Submitting data with user_id:', parsedUser.id);
     for (let pair of submitData.entries()) {
       if (pair[0].includes('file')) {
         console.log(pair[0] + ': ' + (pair[1]?.name || 'No file'));
@@ -448,9 +475,6 @@ export default function SubmitPage() {
     try {
       const res = await fetch('http://localhost:5000/api/submit', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
         body: submitData,
       });
 
@@ -470,8 +494,12 @@ export default function SubmitPage() {
       if (res.ok) {
         console.log('Submission successful:', data);
         showToast('Abstract submitted successfully!', 'success');
-        // Refresh submissions list
-        fetchUserSubmissions(userData.id);
+        setAbstractFile(null);
+        setEndorsementFile(null);
+        setChosenSuc('');
+        setSearchTerm('');
+        setCoAuthors(['']);
+        fetchUserSubmissions(parsedUser.id);
         setTimeout(() => {
           setActiveTab('my-submissions');
         }, 1000);
@@ -491,7 +519,6 @@ export default function SubmitPage() {
     }
   }
 
-  // Render submissions list
   const renderSubmissions = () => {
     if (isLoadingSubmissions) {
       return (
@@ -597,23 +624,6 @@ export default function SubmitPage() {
     );
   };
 
-  const fetchUserPayments = async (userId) => {
-    try {
-      const token = localStorage.getItem('pemnet_token');
-      const response = await fetch(`http://localhost:5000/api/payments/user/${userId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setUserPayments(data);
-      }
-    } catch (error) {
-      console.error('Error fetching payments:', error);
-    }
-  };
-
   if (!user) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
@@ -641,16 +651,10 @@ export default function SubmitPage() {
           
           <div className="flex items-center gap-4">
             <span className="text-sm text-slate-600">Welcome, {user.full_name}</span>
-            <button 
-              onClick={() => {
-                localStorage.removeItem('pemnet_token');
-                localStorage.removeItem('pemnet_user');
-                window.location.href = '/login';
-              }}
-              className="text-sm text-red-600 hover:text-red-700 font-semibold"
-            >
-              ← Logout
-            </button>
+            <Link href="/login" className="inline-flex items-center gap-2 text-red-600 hover:text-red-700 font-medium text-sm transition-all hover:bg-red-50 px-4 py-2 rounded-xl">
+              <FontAwesomeIcon icon={faSignOutAlt} className="w-4 h-4" />
+              Logout
+            </Link>
           </div>
         </div>
       </nav>
@@ -811,7 +815,6 @@ export default function SubmitPage() {
                               )}
                             </div>
 
-                            {/* Dropdown */}
                             {showDropdown && (
                               <div className="absolute z-20 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
                                 {filteredSucList.length > 0 ? (
@@ -846,7 +849,6 @@ export default function SubmitPage() {
                               </div>
                             )}
 
-                            {/* Selected SUC display */}
                             {chosenSuc && !showOtherSuc && (
                               <div className="mt-2 flex items-center gap-2">
                                 <span className="text-sm text-emerald-600 font-medium">Selected: {chosenSuc}</span>
@@ -909,7 +911,7 @@ export default function SubmitPage() {
                     </div>
                   </div>
 
-                  {/* Section 2: Author Information - Two Column Layout */}
+                  {/* Section 2: Author Information */}
                   <div>
                     <div className="flex items-center gap-3 mb-6">
                       <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
@@ -919,9 +921,7 @@ export default function SubmitPage() {
                     </div>
                     
                     <div className="space-y-5 pl-11">
-                      {/* Two Column Grid for Author Fields */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        {/* Project Leader (was Author) */}
                         <div>
                           <label className="block text-sm font-semibold text-slate-700 mb-1.5">Project Leader</label>
                           <input 
@@ -933,7 +933,6 @@ export default function SubmitPage() {
                           />
                         </div>
 
-                        {/* Paper Presenter (was Presenter) */}
                         <div>
                           <label className="block text-sm font-semibold text-slate-700 mb-1.5">Paper Presenter</label>
                           <input 
@@ -945,7 +944,6 @@ export default function SubmitPage() {
                           />
                         </div>
 
-                        {/* Corresponding Author Name */}
                         <div>
                           <label className="block text-sm font-semibold text-slate-700 mb-1.5">Corresponding Author Name</label>
                           <input 
@@ -956,7 +954,6 @@ export default function SubmitPage() {
                           />
                         </div>
 
-                        {/* Corresponding Author Position/Designation */}
                         <div>
                           <label className="block text-sm font-semibold text-slate-700 mb-1.5">Corresponding Author Position/Designation</label>
                           <input 
@@ -966,7 +963,7 @@ export default function SubmitPage() {
                             className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
                           />
                         </div>
-                        {/* Corresponding Author Email */}
+
                         <div>
                           <label className="block text-sm font-semibold text-slate-700 mb-1.5">Corresponding Author Email</label>
                           <input 
@@ -978,7 +975,6 @@ export default function SubmitPage() {
                         </div>
                       </div>
 
-                      {/* Co-Authors - Full Width */}
                       <div>
                         <div className="flex items-center justify-between mb-3">
                           <label className="block text-sm font-semibold text-slate-700">Co-Authors</label>
@@ -1059,6 +1055,9 @@ export default function SubmitPage() {
                           onChange={(e) => setAbstractFile(e.target.files[0])}
                           className="w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-5 file:rounded-xl file:border-0 file:bg-blue-700 file:text-white file:font-semibold hover:file:bg-blue-800 cursor-pointer transition"
                         />
+                        {abstractFile && (
+                          <p className="text-xs text-emerald-600 mt-2">{abstractFile.name}</p>
+                        )}
                       </div>
                       <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-6 hover:border-blue-300 transition text-center">
                         <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center mx-auto mb-3">
@@ -1074,6 +1073,9 @@ export default function SubmitPage() {
                           onChange={(e) => setEndorsementFile(e.target.files[0])}
                           className="w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-5 file:rounded-xl file:border-0 file:bg-emerald-600 file:text-white file:font-semibold hover:file:bg-emerald-700 cursor-pointer transition"
                         />
+                        {endorsementFile && (
+                          <p className="text-xs text-emerald-600 mt-2">{endorsementFile.name}</p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1236,6 +1238,9 @@ export default function SubmitPage() {
                                 required
                               />
                               <p className="text-xs text-slate-500 mt-2">Accepted formats: JPG, PNG, GIF, BMP, WEBP, PDF</p>
+                              {paymentFile && (
+                                <p className="text-xs text-emerald-600 mt-2">{paymentFile.name}</p>
+                              )}
                             </div>
 
                             {paymentData && paymentData.exists && (
@@ -1284,8 +1289,7 @@ export default function SubmitPage() {
                                 <p className="text-sm text-slate-600">Reference: {payment.reference_number}</p>
                               </div>
                               <div className="text-right">
-                                <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${
-                                  payment.payment_status === 'verified' ? 'bg-emerald-100 text-emerald-700' :
+                                <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${payment.payment_status === 'verified' ? 'bg-emerald-100 text-emerald-700' :
                                   payment.payment_status === 'rejected' ? 'bg-red-100 text-red-700' :
                                   'bg-yellow-100 text-yellow-700'
                                 }`}>

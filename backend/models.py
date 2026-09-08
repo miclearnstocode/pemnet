@@ -29,7 +29,6 @@ class Submission(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     submission_id = db.Column(db.String(50), unique=True, nullable=True, index=True) 
     user_id = db.Column(db.Integer, nullable=False, default=0)
-    paper_trail_no = db.Column(db.String(50), nullable=True) 
     submission_type = db.Column(db.String(50), nullable=True, default='abstract')  
     extension_project_title = db.Column(db.String(255), nullable=False)
     thematic_area = db.Column(db.String(255), nullable=False)

@@ -90,7 +90,7 @@ class EmailSubmission(db.Model):
     attachment_filename = db.Column(db.String(255), nullable=True)
     attachment_view_url = db.Column(db.String(500), nullable=True)
     attachment_download_url = db.Column(db.String(500), nullable=True)
-    status = db.Column(db.Enum('pending', 'accepted', 'rejected', 'processed'), nullable=False, default='pending')
+    status = db.Column(db.Enum('endorse','downgraded','pending'), nullable=False, default='pending')
     processed_submission_id = db.Column(db.Integer, db.ForeignKey('submissions.id'), nullable=True)
     email_received_at = db.Column(db.DateTime, nullable=False)
     created_at = db.Column(db.DateTime, server_default=db.func.now())

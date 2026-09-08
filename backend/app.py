@@ -1421,7 +1421,19 @@ def get_email_submissions():
         query = EmailSubmission.query
         
         if status_filter != 'all':
-            query = query.filter_by(status=status_filter)
+            # Map frontend filter to actual statuses
+            if status_filter == 'endorse':
+                query = query.filter_by(status='endorse')
+            elif status_filter == 'downgrade':
+                query = query.filter_by(status='downgraded')
+            elif status_filter == 'pending':
+                query = query.filter_by(status='pending')
+            elif status_filter == 'uncategorized':
+                # For uncategorized, we need to check extraction_status
+                query = query.join(ExtractedAbstractData, ExtractedAbstractData.email_submission_id == EmailSubmission.id)
+                query = query.filter(ExtractedAbstractData.extraction_status == 'failed')
+            else:
+                query = query.filter_by(status=status_filter)
         
         submissions = query.order_by(EmailSubmission.email_received_at.desc()).all()
         
@@ -1430,12 +1442,11 @@ def get_email_submissions():
             # Fetch the extracted data for this email submission
             extracted_data = ExtractedAbstractData.query.filter_by(email_submission_id=s.id).first()
             
-            # Determine the display status - use email submission status
-            display_status = s.status
-            
-            # If extraction failed, mark as uncategorized
+            # Determine the display status based on extraction status
             if extracted_data and extracted_data.extraction_status == 'failed':
                 display_status = 'uncategorized'
+            else:
+                display_status = s.status
             
             result.append({
                 'id': s.id,
@@ -1447,7 +1458,7 @@ def get_email_submissions():
                 'attachment_filename': s.attachment_filename,
                 'attachment_view_url': s.attachment_view_url,
                 'attachment_download_url': s.attachment_download_url,
-                'status': display_status,  # Use the determined status
+                'status': display_status,
                 'extraction_status': extracted_data.extraction_status if extracted_data else 'pending',
                 'processed_submission_id': s.processed_submission_id,
                 'email_received_at': s.email_received_at.strftime('%Y-%m-%d %H:%M:%S') if s.email_received_at else None,
@@ -1788,8 +1799,8 @@ def get_submission_data(submission_id):
             'id': email_sub.id,
             'user_id': 0,  # No user associated with email submissions
             'title': extracted.title if extracted else email_sub.subject,
-            'status': email_sub.status,
-            'evaluation_status': 'pending',  # Email submissions don't have evaluation status
+            'status': email_sub.status,  # Will be 'pending', 'endorse', or 'downgraded'
+            'evaluation_status': extracted.evaluation_status if extracted else 'pending',
             'thematic_area': extracted.thematic_area if extracted else 'Not specified',
             'paper_category': extracted.paper_category if extracted else 'Not specified',
             'author': extracted.project_leader if extracted else email_sub.project_leader_name,
@@ -1808,11 +1819,15 @@ def evaluate_final_decision(submission_id, submission_type='system'):
     """Automatically evaluates the submission based on majority votes."""
     if submission_type == 'system':
         submission = Submission.query.get(submission_id)
+        if not submission:
+            return
     else:
         # For email submissions, update the email submission status
         email_sub = EmailSubmission.query.get(submission_id)
         if not email_sub:
             return
+        # Also get the extracted data to update evaluation_status
+        extracted = ExtractedAbstractData.query.filter_by(email_submission_id=submission_id).first()
     
     votes = SubmissionVote.query.filter_by(submission_id=submission_id).all()
     
@@ -1837,20 +1852,27 @@ def evaluate_final_decision(submission_id, submission_type='system'):
             submission.evaluation_status = 'endorse'
             submission.status = 'endorse'
         else:
-            email_sub.status = 'accepted'
+            # For email submissions, use 'endorse' status
+            email_sub.status = 'endorse'
+            if extracted:
+                extracted.evaluation_status = 'endorse'
     elif downgrade_count >= 2:  # 2 or more downgrade votes
         if downgrade_type:
             if submission_type == 'system':
                 submission.evaluation_status = downgrade_type
                 submission.status = 'downgraded'
             else:
-                email_sub.status = 'rejected'
+                email_sub.status = 'downgraded'
+                if extracted:
+                    extracted.evaluation_status = downgrade_type
         else:
             if submission_type == 'system':
                 submission.evaluation_status = 'downgraded-non_competitive'
                 submission.status = 'downgraded'
             else:
-                email_sub.status = 'rejected'
+                email_sub.status = 'downgraded'
+                if extracted:
+                    extracted.evaluation_status = 'downgraded-non_competitive'
     elif reassign_count >= 2:  # 2 or more reassign votes
         if submission_type == 'system':
             submission.evaluation_status = 'pending'
@@ -1932,8 +1954,9 @@ def evaluate_submission(submission_id):
         if submission_data['type'] == 'system':
             evaluation_status = submission_data['data'].evaluation_status
         else:
-            # For email submissions, use the email status
-            evaluation_status = submission_data['data'].status
+            # For email submissions, use the extracted data evaluation_status
+            extracted = ExtractedAbstractData.query.filter_by(email_submission_id=submission_id).first()
+            evaluation_status = extracted.evaluation_status if extracted else submission_data['status']
 
         return jsonify({
             "message": "Vote recorded successfully",
@@ -1967,11 +1990,13 @@ def get_submission_votes(submission_id):
 
         votes = SubmissionVote.query.filter_by(submission_id=submission_id).all()
 
-        # Get evaluation status
+        # Get evaluation status based on submission type
         if submission_data['type'] == 'system':
             evaluation_status = submission_data['data'].evaluation_status
         else:
-            evaluation_status = submission_data['data'].status
+            # For email submissions, get from extracted data
+            extracted = ExtractedAbstractData.query.filter_by(email_submission_id=submission_id).first()
+            evaluation_status = extracted.evaluation_status if extracted else 'pending'
 
         return jsonify({
             "evaluation_status": evaluation_status,

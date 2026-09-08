@@ -647,9 +647,10 @@ class DOCSExtractor:
                                         if cat in cell_text:
                                             return f"{cat} Extension Project Paper"
                                 
-                                # Robust check for ANY marker: [X], [x], [/], [V], [🗹], [☑], etc.
+                                # Updated regex to match [X], [x], [/], [V], [🗹], [☑], [ /], [X], etc.
                                 for cat in categories:
-                                    if re.search(r'\[[^\s\]]+\]\s*' + cat, cell_text, re.IGNORECASE):
+                                    # Pattern allows spaces inside brackets: [ /], [x ], [ x], etc.
+                                    if re.search(r'\[\s*[xX/✓√✔vV🗹☑]\s*\]\s*' + cat, cell_text, re.IGNORECASE):
                                         return f"{cat} Extension Project Paper"
             except Exception as e:
                 print(f"Warning: Error in table iteration: {e}")
@@ -657,7 +658,8 @@ class DOCSExtractor:
         # 2. FALLBACK METHOD: Existing text checks with robust regex
         if self.text:
             normalized_text = re.sub(r'\s+', ' ', self.text)
-            filled_marker_pattern = r'\[[^\s\]]+\]'
+            # Updated pattern to match ANY filled checkbox including [ /], [ x], etc.
+            filled_marker_pattern = r'\[\s*[xX/✓√✔vV🗹☑]\s*\]'
             for cat in categories:
                 if re.search(filled_marker_pattern + r'\s*' + cat, normalized_text, re.IGNORECASE):
                     return f"{cat} Extension Project Paper"
@@ -698,9 +700,9 @@ class DOCSExtractor:
                                         if area in cell_text:
                                             return area
                                 
-                                # Robust check for ANY marker: [X], [x], [/], [V], [🗹], [☑], etc.
+                                # Updated regex to match [X], [x], [/], [V], [🗹], [☑], [ /], etc.
                                 for area in thematic_areas:
-                                    if re.search(r'\[[^\s\]]+\]\s*' + re.escape(area), cell_text, re.IGNORECASE):
+                                    if re.search(r'\[\s*[xX/✓√✔vV🗹☑]\s*\]\s*' + re.escape(area), cell_text, re.IGNORECASE):
                                         return area
             except Exception as e:
                 print(f"Warning: Error in table iteration: {e}")
@@ -708,7 +710,8 @@ class DOCSExtractor:
         # 2. FALLBACK METHOD: Existing text checks with robust regex
         if self.text:
             normalized_text = re.sub(r'\s+', ' ', self.text)
-            filled_marker_pattern = r'\[[^\s\]]+\]'
+            # Updated pattern to match ANY filled checkbox including [ /], [ x], etc.
+            filled_marker_pattern = r'\[\s*[xX/✓√✔vV🗹☑]\s*\]'
             for area in thematic_areas:
                 if re.search(filled_marker_pattern + r'\s*' + re.escape(area), normalized_text, re.IGNORECASE):
                     return area

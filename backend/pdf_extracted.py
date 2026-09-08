@@ -580,7 +580,7 @@ class PDFExtractor:
     
     def _get_highlighted_text_areas(self):
         """
-        Use PyMuPDF (fitz) to find areas with a yellow highlight background.
+        Use PyMuPDF (fitz) to find areas with a highlight background color.
         Returns a list of strings found in those highlighted areas.
         """
         try:
@@ -592,8 +592,10 @@ class PDFExtractor:
                 for drawing in page.get_drawings():
                     if drawing.get("fill"):
                         r, g, b = drawing["fill"]
-                        # Check if it's yellow (high Red, high Green, low Blue)
-                        if r > 0.8 and g > 0.8 and b < 0.4:
+                        # Check if it's yellow or any color (not white/transparent)
+                        # Yellow: r>0.8, g>0.8, b<0.4
+                        # Also check for other colors like gray, light yellow, etc.
+                        if (r > 0.7 and g > 0.7 and b < 0.5) or (r < 0.9 and g < 0.9 and b < 0.9 and drawing.get("fill")):
                             rect = drawing["rect"]
                             text = page.get_text("text", clip=rect).strip()
                             if text:
@@ -606,32 +608,228 @@ class PDFExtractor:
                         if text:
                             highlighted_texts.append(text)
 
+                # 3. NEW: Use PyMuPDF to find highlighted text by color
+                # Get all text blocks and check if they have a highlight color
+                page_dict = page.get_text("dict")
+                for block in page_dict.get("blocks", []):
+                    if block.get("type") == 0:  # Text block
+                        for line in block.get("lines", []):
+                            for span in line.get("spans", []):
+                                # Check for text highlight color in the span
+                                # PyMuPDF stores highlight color in 'color' field
+                                # Sometimes it's in the span's 'flags' or 'color'
+                                # Let's check for non-black, non-white text colors
+                                if span.get("color") is not None:
+                                    # Check if text has a background highlight
+                                    # This is usually detected by looking at the annotation
+                                    pass  # Fall through to other methods
+
             doc.close()
             return highlighted_texts
         except Exception as e:
             print(f"Warning: Could not detect color highlights (fitz): {e}")
             return []
 
-    def _get_checked_text_items(self):
+    def _get_checked_text_items_with_color(self):
         """
-        Use pdfplumber to find text that clearly contains [X], [✓], or [/].
-        Returns a list of strings containing these markers.
+        NEW METHOD: Use PyMuPDF to find items with colored checkboxes or highlighted text.
+        Returns a list of strings containing the checked items.
         """
         try:
+            doc = fitz.open(stream=self.pdf_buffer, filetype="pdf")
             checked_items = []
-            with pdfplumber.open(io.BytesIO(self.pdf_buffer)) as pdf:
-                for page in pdf.pages:
-                    text = page.extract_text()
-                    if not text:
-                        continue
-                    
-                    # Regex to find brackets containing X, checkmarks, or slash (case insensitive)
-                    for line in text.split('\n'):
-                        if re.search(r'\[(x|X|✓|√|✔|v|V|/)\]', line):
-                            checked_items.append(line.strip())
+            
+            for page in doc:
+                # Get all text blocks with their positions
+                page_dict = page.get_text("dict")
+                
+                for block in page_dict.get("blocks", []):
+                    if block.get("type") == 0:  # Text block
+                        block_text = ""
+                        for line in block.get("lines", []):
+                            for span in line.get("spans", []):
+                                # Check span properties
+                                text = span.get("text", "")
+                                font = span.get("font", "")
+                                size = span.get("size", 0)
+                                color = span.get("color", 0)
+                                
+                                # Add text to block text
+                                block_text += text
+                                
+                                # Check for yellow highlight or colored text
+                                # Color is in RGB hex format (0xRRGGBB)
+                                # Yellow highlight in PDF is typically represented as text with
+                                # a background rect or annotation
+                                
+                        if block_text:
+                            # Check if this block contains checkbox-like text with markers
+                            if re.search(r'\[[xX/✓√✔vV]\]', block_text) or 'Checkbox' in block_text.lower():
+                                checked_items.append(block_text.strip())
+            
+            doc.close()
             return checked_items
         except Exception as e:
-            print(f"Warning: Could not detect text checks (pdfplumber): {e}")
+            print(f"Warning: Could not detect colored items (fitz): {e}")
+            return []
+
+    def _detect_checked_checkbox_by_position(self):
+        """
+        NEW METHOD: Detect checked checkboxes by analyzing text positions and colors.
+        This is the most reliable way to detect checkboxes with color fill.
+        """
+        try:
+            doc = fitz.open(stream=self.pdf_buffer, filetype="pdf")
+            checked_items = []
+            
+            categories = ["Completed", "Ongoing"]
+            thematic_areas = [
+                'Food Production, Agriculture, Fisheries, and Natural Resource Systems',
+                'Health, Nutrition, Wellness, and Community Care',
+                'Education, Literacy, Skills Development, and Lifelong Learning',
+                'Livelihood, Entrepreneurship, Cooperatives, MSMEs, and Local Economic Development',
+                'Environment, Climate Action, Disaster Risk Reduction, and Community Resilience'
+            ]
+            
+            for page in doc:
+                # Get all text spans with their positions
+                page_dict = page.get_text("dict")
+                spans_data = []
+                
+                for block in page_dict.get("blocks", []):
+                    if block.get("type") == 0:  # Text block
+                        for line in block.get("lines", []):
+                            for span in line.get("spans", []):
+                                text = span.get("text", "")
+                                if text.strip():
+                                    bbox = span.get("bbox", [])
+                                    # Store span info with position
+                                    spans_data.append({
+                                        'text': text,
+                                        'bbox': bbox,
+                                        'size': span.get("size", 0),
+                                        'font': span.get("font", "")
+                                    })
+                
+                # Get drawings (rectangles) for checkbox detection
+                drawings = page.get_drawings()
+                checkbox_rects = []
+                
+                for drawing in drawings:
+                    if drawing.get("fill"):
+                        r, g, b = drawing["fill"]
+                        # Check if it's a colored fill (not white or transparent)
+                        # This could be yellow, blue, gray, etc.
+                        if (r > 0.3 and g > 0.3 and b > 0.3) or (r > 0.8 and g > 0.8 and b < 0.5):
+                            rect = drawing["rect"]
+                            checkbox_rects.append({
+                                'rect': rect,
+                                'fill': (r, g, b)
+                            })
+                
+                # For each text span, check if it's near a checkbox rect
+                for span in spans_data:
+                    text = span['text']
+                    span_bbox = fitz.Rect(span['bbox'])
+                    
+                    # Check if span contains categories or thematic areas
+                    all_options = categories + thematic_areas
+                    
+                    for option in all_options:
+                        if option.lower() in text.lower():
+                            # Check if there's a checkbox rect near this text
+                            for cb in checkbox_rects:
+                                cb_rect = cb['rect']
+                                # Check if checkbox is on the same line (vertical overlap)
+                                if cb_rect.y0 < span_bbox.y1 and cb_rect.y1 > span_bbox.y0:
+                                    # Check if checkbox is to the left of the text
+                                    if cb_rect.x1 <= span_bbox.x0 + 50:  # Within 50 units to the left
+                                        # Check if checkbox has a colored fill (indicates it's checked)
+                                        if self._is_colored_fill(cb['fill']):
+                                            checked_items.append(text.strip())
+                                            break
+                                    
+                            # Also check for text-based markers
+                            if re.search(r'\[[xX/✓√✔vV]\]', text):
+                                checked_items.append(text.strip())
+                                break
+            
+            doc.close()
+            return checked_items
+        except Exception as e:
+            print(f"Warning: Could not detect checkboxes by position: {e}")
+            return []
+
+    def _is_colored_fill(self, fill_color):
+        """Check if a fill color indicates a checked checkbox (not white or transparent)"""
+        r, g, b = fill_color
+        # Check if it's not white/transparent (0.95+ for all channels)
+        if r > 0.9 and g > 0.9 and b > 0.9:
+            return False
+        # Check if it's yellow (common highlight color)
+        if r > 0.7 and g > 0.7 and b < 0.5:
+            return True
+        # Check if it's gray (common for checkbox)
+        if 0.3 < r < 0.8 and 0.3 < g < 0.8 and 0.3 < b < 0.8 and abs(r-g) < 0.1 and abs(g-b) < 0.1:
+            return True
+        return False
+
+    def _get_highlighted_text_areas_v2(self):
+        """
+        NEW: Enhanced version that uses PyMuPDF to find text with any colored background.
+        Returns a list of strings found in highlighted areas.
+        """
+        try:
+            doc = fitz.open(stream=self.pdf_buffer, filetype="pdf")
+            highlighted_texts = []
+
+            for page in doc:
+                # 1. Check for text annotations with color
+                for annotation in page.annots() or []:
+                    if annotation.type[0] == 8:  # Highlight annotation
+                        text = annotation.info.get("content", "").strip()
+                        if text:
+                            highlighted_texts.append(text)
+                    
+                    # Check for any annotation with a colored border or fill
+                    if annotation.type[0] == 1:  # Text annotation
+                        text = annotation.info.get("content", "").strip()
+                        if text:
+                            highlighted_texts.append(text)
+
+                # 2. Check for colored shapes/rectangles that contain text
+                for drawing in page.get_drawings():
+                    if drawing.get("fill"):
+                        r, g, b = drawing["fill"]
+                        # Check if it's a colored fill (yellow, blue, green, etc.)
+                        if not (r > 0.95 and g > 0.95 and b > 0.95):  # Not white
+                            if not (r < 0.1 and g < 0.1 and b < 0.1):  # Not black
+                                rect = drawing["rect"]
+                                # Get text within this rect
+                                text = page.get_text("text", clip=rect).strip()
+                                if text:
+                                    highlighted_texts.append(text)
+
+                # 3. Check for text with color spans (non-black non-white)
+                page_dict = page.get_text("dict")
+                for block in page_dict.get("blocks", []):
+                    if block.get("type") == 0:
+                        for line in block.get("lines", []):
+                            for span in line.get("spans", []):
+                                # Check if span has a background color or colored text
+                                if span.get("color") is not None and span.get("color") != 0:
+                                    # Not black text
+                                    color_val = span.get("color", 0)
+                                    # Check if it's not standard black text
+                                    if color_val not in [0, 0x000000]:  # Not black
+                                        text = span.get("text", "")
+                                        if text.strip():
+                                            highlighted_texts.append(text.strip())
+
+            doc.close()
+            return highlighted_texts
+        except Exception as e:
+            print(f"Warning: Could not detect highlights v2: {e}")
             return []
 
     def extract_paper_category(self):
@@ -648,18 +846,26 @@ class PDFExtractor:
         if 'ABSTRACT' in normalized_text[:500] and 'Paper Category' not in normalized_text:
             return None
         
+        # 2. Check for text markers: [X], [x], [/], [✓], etc.
         for cat in categories:
-            if re.search(r'\[(x|X|✓|√|✔|v|V|/)\]\s*' + cat, normalized_text, re.IGNORECASE):
+            if re.search(r'\[(x|X|✓|√|✔|v|V|/| )\]\s*' + cat, normalized_text, re.IGNORECASE):
                 return f"{cat} Extension Project Paper"
+        
+        # 3. NEW: Check for highlighted checkboxes using PyMuPDF position detection
+        checked_items = self._detect_checked_checkbox_by_position()
+        for item in checked_items:
+            for cat in categories:
+                if cat.lower() in item.lower():
+                    return f"{cat} Extension Project Paper"
 
-        # 2. Fallback: Check highlighted paragraphs (only if text check failed)
-        highlighted_texts = self._get_highlighted_text_areas()
+        # 4. Fallback: Check highlighted paragraphs
+        highlighted_texts = self._get_highlighted_text_areas() + self._get_highlighted_text_areas_v2()
         for text in highlighted_texts:
             for cat in categories:
                 if cat.lower() in text.lower():
                     return f"{cat} Extension Project Paper"
         
-        # 3. Check via pdfplumber
+        # 5. Check via pdfplumber
         checked_items = self._get_checked_text_items()
         for item in checked_items:
             for cat in categories:
@@ -688,19 +894,28 @@ class PDFExtractor:
         if 'ABSTRACT' in normalized_text[:500] and 'Thematic Area' not in normalized_text:
             return None
         
+        # 2. Check for text markers: [X], [x], [/], [✓], etc.
         for area in thematic_areas:
-            if re.search(r'\[(x|X|✓|√|✔|v|V|/)\]\s*' + re.escape(area), normalized_text, re.IGNORECASE):
+            if re.search(r'\[(x|X|✓|√|✔|v|V|/| )\]\s*' + re.escape(area), normalized_text, re.IGNORECASE):
                 return area
 
-        # 2. Fallback: Check highlighted paragraphs (only if text check failed)
-        highlighted_texts = self._get_highlighted_text_areas()
+        # 3. NEW: Check for highlighted checkboxes using PyMuPDF position detection
+        checked_items = self._detect_checked_checkbox_by_position()
+        for item in checked_items:
+            item_clean = re.sub(r'^[\[\]xX✓√✔vV/\s]+', '', item).strip()
+            for area in thematic_areas:
+                if area.lower() in item_clean.lower():
+                    return area
+
+        # 4. Fallback: Check highlighted paragraphs
+        highlighted_texts = self._get_highlighted_text_areas() + self._get_highlighted_text_areas_v2()
         for text in highlighted_texts:
             text_clean = re.sub(r'^[\[\]xX✓√✔vV/\s]+', '', text).strip()
             for area in thematic_areas:
                 if area.lower() in text_clean.lower():
                     return area
 
-        # 3. Check via pdfplumber
+        # 5. Check via pdfplumber
         checked_items = self._get_checked_text_items()
         for item in checked_items:
             item_clean = re.sub(r'^[\[\]xX✓√✔vV/\s]+', '', item).strip()

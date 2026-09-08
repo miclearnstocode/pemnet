@@ -130,7 +130,7 @@ export default function MasterReviewPage() {
     setEmailExtractedData(null);
     setSelectedStatus(sub.evaluation_status || 'pending');
     setShowEndorsement(false);
-    setSendEmailConfirmation(true); // Reset email preference
+    setSendEmailConfirmation(true);
     setIsModalOpen(true);
     
     try {
@@ -161,7 +161,7 @@ export default function MasterReviewPage() {
           status: status,
           master_approver_id: currentUser.id,
           notes: notes || document.getElementById('masterNotes')?.value || '',
-          send_email: sendEmailConfirmation // Pass email preference
+          send_email: sendEmailConfirmation
         }),
       });
 
@@ -249,24 +249,20 @@ export default function MasterReviewPage() {
   const confirmStatusChange = (status) => {
     setSelectedStatus(status);
     setPendingStatusAction(status);
-    // Only show email option for endorse action
     setSendEmailConfirmation(status === 'endorse');
     setShowConfirmModal(true);
   };
 
-  // Downgrade Logic - Step 1: Open downgrade modal
   const handleOpenDowngradeModal = () => {
     setShowDowngradeModal(true);
   };
 
-  // Downgrade Logic - Step 2: Select downgrade type, show confirmation
   const handleDowngradeWithConfirm = (downgradeType) => {
     setPendingDowngradeType(downgradeType);
     setShowDowngradeModal(false);
     setShowDowngradeConfirm(true);
   };
 
-  // Downgrade Logic - Step 3: Confirm and submit
   const confirmDowngradeVote = async () => {
     if (!pendingDowngradeType) return;
     setDowngradeConfirmLoading(true);
@@ -279,10 +275,8 @@ export default function MasterReviewPage() {
     }
   };
 
-  // Return to Sender - Direct action
   const handleReturnToSender = () => {
     setPendingStatusAction('return_to_sender');
-    // Don't show email option for return to sender
     setSendEmailConfirmation(false);
     setShowConfirmModal(true);
   };
@@ -334,29 +328,68 @@ export default function MasterReviewPage() {
     }
   };
 
+  // Helper functions to get data from either submission or extracted data
   const getTitle = () => {
-    if (activeTab === 'system') return selectedSubmission?.extension_project_title;
-    return emailExtractedData?.title || selectedSubmission?.subject;
+    if (activeTab === 'system') {
+      return selectedSubmission?.extension_project_title || 'Untitled';
+    }
+    return emailExtractedData?.title || selectedSubmission?.subject || 'Untitled';
   };
 
-  const getAuthor = () => {
-    if (activeTab === 'system') return selectedSubmission?.author;
-    return emailExtractedData?.project_leader || selectedSubmission?.sender_name;
+  const getProjectLeader = () => {
+    if (activeTab === 'system') {
+      return selectedSubmission?.author || 'Unknown';
+    }
+    return emailExtractedData?.project_leader || selectedSubmission?.sender_name || 'Unknown';
   };
 
-  const getSuc = () => {
-    if (activeTab === 'system') return selectedSubmission?.suc_agencies;
-    return selectedSubmission?.sender_name;
+  const getAuthorsList = () => {
+    if (activeTab === 'system') {
+      return selectedSubmission?.co_authors || 'N/A';
+    }
+    return emailExtractedData?.authors_list || 'N/A';
   };
 
-  const getThematicArea = () => {
-    if (activeTab === 'system') return selectedSubmission?.thematic_area;
-    return emailExtractedData?.thematic_area || 'Not specified';
+  const getSUCs = () => {
+    if (activeTab === 'system') {
+      return selectedSubmission?.suc_agencies || 'N/A';
+    }
+    return emailExtractedData?.sucs || 'N/A';
+  };
+
+  const getCorrespondingAuthorName = () => {
+    if (activeTab === 'system') {
+      return selectedSubmission?.corresponding_author_name || 'N/A';
+    }
+    return emailExtractedData?.corresponding_author_name || 'N/A';
+  };
+
+  const getCorrespondingAuthorEmail = () => {
+    if (activeTab === 'system') {
+      return selectedSubmission?.corresponding_author_email || 'N/A';
+    }
+    return emailExtractedData?.corresponding_author_email || 'N/A';
+  };
+
+  const getCorrespondingAuthorPosition = () => {
+    if (activeTab === 'system') {
+      return selectedSubmission?.corresponding_author_position || 'N/A';
+    }
+    return emailExtractedData?.corresponding_author_position || 'N/A';
   };
 
   const getPaperCategory = () => {
-    if (activeTab === 'system') return selectedSubmission?.paper_category;
+    if (activeTab === 'system') {
+      return selectedSubmission?.paper_category || 'Not specified';
+    }
     return emailExtractedData?.paper_category || 'Not specified';
+  };
+
+  const getThematicArea = () => {
+    if (activeTab === 'system') {
+      return selectedSubmission?.thematic_area || 'Not specified';
+    }
+    return emailExtractedData?.thematic_area || 'Not specified';
   };
 
   const extractGoogleDriveId = (url) => {
@@ -524,7 +557,7 @@ export default function MasterReviewPage() {
                     <h3 className="text-lg font-bold text-slate-900">
                       {activeTab === 'system' ? 'Submission Details' : 'Email Details'}
                     </h3>
-                    <p className="text-sm text-slate-500 truncate max-w-md">{getTitle() || 'Untitled'}</p>
+                    <p className="text-sm text-slate-500 truncate max-w-md">{getTitle()}</p>
                   </div>
                 </div>
                 <button 
@@ -543,30 +576,65 @@ export default function MasterReviewPage() {
                 <div className="p-6 overflow-y-auto border-r border-slate-200">
                   <h4 className="text-base font-bold text-slate-700 uppercase mb-4">Submission Information</h4>
                   <div className="space-y-4">
+                    {/* Title */}
                     <div>
                       <p className="text-sm text-slate-600 font-medium">Title</p>
-                      <p className="text-lg font-semibold text-slate-900">{getTitle() || 'Untitled'}</p>
+                      <p className="text-lg font-semibold text-slate-900">{getTitle()}</p>
                     </div>
+                    
+                    {/* Project Leader */}
                     <div>
-                      <p className="text-sm text-slate-600 font-medium">Author(s)</p>
-                      <p className="text-lg font-semibold text-slate-900">{getAuthor() || 'Unknown'}</p>
+                      <p className="text-sm text-slate-600 font-medium">Project Leader</p>
+                      <p className="text-lg font-semibold text-slate-900">{getProjectLeader()}</p>
                     </div>
+                    
+                    {/* Authors List */}
+                    <div>
+                      <p className="text-sm text-slate-600 font-medium">Authors</p>
+                      <p className="text-lg font-semibold text-slate-900">{getAuthorsList()}</p>
+                    </div>
+                    
+                    {/* SUCs */}
                     <div>
                       <p className="text-sm text-slate-600 font-medium">SUC / Agency</p>
-                      <p className="text-lg font-semibold text-slate-900">{getSuc() || 'N/A'}</p>
+                      <p className="text-lg font-semibold text-slate-900">{getSUCs()}</p>
                     </div>
+                    
+                    {/* Corresponding Author Name */}
                     <div>
-                      <p className="text-sm text-slate-600 font-medium">Thematic Area</p>
-                      <p className="text-lg font-semibold text-slate-900">{getThematicArea() || 'Not specified'}</p>
+                      <p className="text-sm text-slate-600 font-medium">Corresponding Author</p>
+                      <p className="text-lg font-semibold text-slate-900">{getCorrespondingAuthorName()}</p>
                     </div>
+                    
+                    {/* Corresponding Author Email */}
+                    <div>
+                      <p className="text-sm text-slate-600 font-medium">Corresponding Author Email</p>
+                      <p className="text-lg font-semibold text-slate-900">{getCorrespondingAuthorEmail()}</p>
+                    </div>
+                    
+                    {/* Corresponding Author Position */}
+                    <div>
+                      <p className="text-sm text-slate-600 font-medium">Corresponding Author Position</p>
+                      <p className="text-lg font-semibold text-slate-900">{getCorrespondingAuthorPosition()}</p>
+                    </div>
+                    
+                    {/* Paper Category */}
                     <div>
                       <p className="text-sm text-slate-600 font-medium">Paper Category</p>
                       <span className={`inline-flex px-3 py-1.5 rounded-full text-sm font-medium ${getCategoryColor(getPaperCategory())}`}>
                         {getPaperCategory()?.includes('Completed') ? 'Completed' : 
                          getPaperCategory()?.includes('Ongoing') ? 'Ongoing' : 
-                         'N/A'}
+                         getPaperCategory() || 'N/A'}
                       </span>
                     </div>
+                    
+                    {/* Thematic Area */}
+                    <div>
+                      <p className="text-sm text-slate-600 font-medium">Thematic Area</p>
+                      <p className="text-lg font-semibold text-slate-900">{getThematicArea()}</p>
+                    </div>
+                    
+                    {/* Source */}
                     <div>
                       <p className="text-sm text-slate-600 font-medium">Source</p>
                       <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium ${
@@ -575,6 +643,8 @@ export default function MasterReviewPage() {
                         {activeTab === 'email' ? '📧 Email Submission' : '📝 System Submission'}
                       </span>
                     </div>
+                    
+                    {/* Current Status */}
                     <div>
                       <p className="text-sm text-slate-600 font-medium">Current Status</p>
                       <span className={`inline-flex px-3 py-1.5 rounded-full text-sm font-medium ${getStatusColor(selectedSubmission.evaluation_status || 'pending')}`}>

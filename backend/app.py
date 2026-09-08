@@ -1091,56 +1091,67 @@ def is_abstract_submission(subject, body, sender_email):
     body_lower = body.lower() if body else ''
     sender_lower = sender_email.lower() if sender_email else ''
     
-    # Skip delivery status notifications
+    # 1. Skip delivery status notifications
     if 'delivery status notification' in subject_lower or 'mail delivery subsystem' in sender_lower:
         return False
     
-    # Skip failure notifications
+    # 2. Skip failure notifications
     if 'failure' in subject_lower or 'undelivered' in subject_lower:
         return False
     
-    # Skip meeting/planning requests
+    # 3. Skip meeting/planning requests
     meeting_keywords = [
         'request to allow',
         'planning meeting',
         'courtesy visit',
         'board member',
         'meeting request',
-        'planning/meeting'
+        'planning/meeting',
+        'pemnet officer'
     ]
     for keyword in meeting_keywords:
         if keyword in subject_lower:
             return False
     
-    # Skip interested participant (not abstract submission)
+    # 4. Skip interested participant (not abstract submission)
     if 'interested participant' in subject_lower:
         return False
     
-    # Check for abstract-related keywords
-    abstract_keywords = [
-        'abstract',
-        'abstract_',
-        'extension project',
-        'research paper',
-        'submission',
-        'submitting',
-        'papers',
-        'conference paper',
-        'presentation',
-        'paper for',
-        'manuscript'
+    # 5. Skip invitation emails
+    invitation_keywords = [
+        'invitation',
+        'invite',
+        'you are invited',
+        'you have been invited',
+        'you\'re invited',
+        'cordially invite',
+        'pleasure to invite',
+        'please join us',
+        'welcome to the',
+        'register now for',
+        'registration is now open',
+        'conference registration',
+        'registration link',
+        'confirm your attendance',
+        'rsvp for',
+        'reserve your seat',
+        'early bird registration',
+        'invitation to the pemnet',
+        'pemnet 1st national extension conference',
+        'reminder'
     ]
     
-    # Check subject
-    for keyword in abstract_keywords:
-        if keyword in subject_lower:
-            # If it has abstract keywords AND doesn't have failure/delivery keywords
-            if not any(x in subject_lower for x in ['delivery', 'failure', 'undelivered']):
-                return True
+    for keyword in invitation_keywords:
+        if keyword in subject_lower or keyword in body_lower:
+            print(f"⏭️  Skipping invitation/reminder email: {subject}")
+            return False
     
-    # Check body for abstract indicators
-    abstract_body_keywords = [
+    # 6. Check for abstract-related keywords (MORE SPECIFIC)
+    abstract_keywords = [
         'abstract submission',
+        'submission of abstract',
+        'submitting abstract',
+        'abstract for submission',
         'submit abstract',
         'abstract entitled',
         'my abstract',
@@ -1148,7 +1159,8 @@ def is_abstract_submission(subject, body, sender_email):
         'extension project abstract',
         'research abstract',
         'attached is our abstract',
-        'please find attached',
+        'attached is my abstract',
+        'please find attached the abstract',
         'here is our abstract',
         'enclosed is our abstract',
         'submitted for presentation',
@@ -1162,16 +1174,29 @@ def is_abstract_submission(subject, body, sender_email):
         'conference committee',
         'extension project',
         'research project',
-        'project abstract'
+        'project abstract',
+        'abstract_',
+        'pemnet abstract',
+        'abstract -',
+        'abstract:',
+        'submission of two extension project',
+        'submitting two extension project'
     ]
     
-    for keyword in abstract_body_keywords:
+    # Check subject for abstract indicators
+    for keyword in abstract_keywords:
+        if keyword in subject_lower:
+            return True
+    
+    # Check body for abstract indicators
+    for keyword in abstract_keywords:
         if keyword in body_lower:
             return True
     
     return False
 
 def is_invitation_email(subject, body):
+    """Check if an email is an invitation or reminder."""
     subject_lower = subject.lower() if subject else ''
     body_lower = body.lower() if body else ''
     
@@ -1194,7 +1219,11 @@ def is_invitation_email(subject, body):
         'reserve your seat',
         'early bird registration',
         'pemnet 1st national extension conference',
-        'invitation to the pemnet'
+        'invitation to the pemnet',
+        'reminder',
+        'registration reminder',
+        'conference reminder',
+        'abstract reminder'
     ]
     
     # Check for invitation phrases
@@ -1202,8 +1231,8 @@ def is_invitation_email(subject, body):
         if phrase in subject_lower or phrase in body_lower:
             return True
     
-    # Check if it has abstract submission keywords (NOT an invitation)
-    abstract_keywords = [
+    # Check for abstract submission keywords (these indicate it's NOT an invitation)
+    abstract_submission_keywords = [
         'abstract submission',
         'submit abstract',
         'abstract entitled',
@@ -1216,10 +1245,13 @@ def is_invitation_email(subject, body):
         'here is our abstract',
         'enclosed is our abstract',
         'submitted for presentation',
-        'for presentation at the'
+        'for presentation at the',
+        'submission of abstract',
+        'submitting abstract',
+        'submission of two extension project'
     ]
     
-    for keyword in abstract_keywords:
+    for keyword in abstract_submission_keywords:
         if keyword in body_lower:
             return False
     
@@ -1273,7 +1305,25 @@ def should_skip_email(subject, body, sender_email):
     if 'auto-reply' in subject_lower or 'out of office' in subject_lower:
         return True, "Auto-Reply"
     
-    # 5. Skip if it doesn't have abstract indicators
+    # 5. Skip invitation and reminder emails
+    invitation_keywords = [
+        'invitation',
+        'invite',
+        'reminder',
+        'registration reminder',
+        'conference reminder',
+        'abstract reminder',
+        'you are invited',
+        'you have been invited',
+        'register now',
+        'early bird',
+        'rsvp'
+    ]
+    for keyword in invitation_keywords:
+        if keyword in subject_lower:
+            return True, "Invitation/Reminder Email"
+    
+    # 6. Skip if it doesn't have abstract indicators
     if not is_abstract_submission(subject, body, sender_email):
         return True, "Not an Abstract Submission"
     

@@ -2,7 +2,7 @@ import io
 import re
 import PyPDF2
 from pdfminer.high_level import extract_text as pdfminer_extract_text
-import fitz  
+import pymupdf as fitz  
 import pdfplumber
 
 class PDFExtractor:
@@ -630,47 +630,27 @@ class PDFExtractor:
             print(f"Warning: Could not detect color highlights (fitz): {e}")
             return []
 
-    def _get_checked_text_items_with_color(self):
+    def _get_checked_text_items(self):
         """
-        NEW METHOD: Use PyMuPDF to find items with colored checkboxes or highlighted text.
-        Returns a list of strings containing the checked items.
+        Use pdfplumber to find text that clearly contains [X], [✓], or [/].
+        Returns a list of strings containing these markers.
         """
         try:
-            doc = fitz.open(stream=self.pdf_buffer, filetype="pdf")
             checked_items = []
-            
-            for page in doc:
-                # Get all text blocks with their positions
-                page_dict = page.get_text("dict")
-                
-                for block in page_dict.get("blocks", []):
-                    if block.get("type") == 0:  # Text block
-                        block_text = ""
-                        for line in block.get("lines", []):
-                            for span in line.get("spans", []):
-                                # Check span properties
-                                text = span.get("text", "")
-                                font = span.get("font", "")
-                                size = span.get("size", 0)
-                                color = span.get("color", 0)
-                                
-                                # Add text to block text
-                                block_text += text
-                                
-                                # Check for yellow highlight or colored text
-                                # Color is in RGB hex format (0xRRGGBB)
-                                # Yellow highlight in PDF is typically represented as text with
-                                # a background rect or annotation
-                                
-                        if block_text:
-                            # Check if this block contains checkbox-like text with markers
-                            if re.search(r'\[[xX/✓√✔vV]\]', block_text) or 'Checkbox' in block_text.lower():
-                                checked_items.append(block_text.strip())
-            
-            doc.close()
+            with pdfplumber.open(io.BytesIO(self.pdf_buffer)) as pdf:
+                for page in pdf.pages:
+                    text = page.extract_text()
+                    if not text:
+                        continue
+                    
+                    # Regex to find brackets containing X, checkmarks, or slash (case insensitive)
+                    # This now handles [ /] with spaces
+                    for line in text.split('\n'):
+                        if re.search(r'\[(\s*)(x|X|✓|√|✔|v|V|/)(\s*)\]', line):
+                            checked_items.append(line.strip())
             return checked_items
         except Exception as e:
-            print(f"Warning: Could not detect colored items (fitz): {e}")
+            print(f"Warning: Could not detect text checks (pdfplumber): {e}")
             return []
 
     def _detect_checked_checkbox_by_position(self):
@@ -749,8 +729,8 @@ class PDFExtractor:
                                             checked_items.append(text.strip())
                                             break
                                     
-                            # Also check for text-based markers
-                            if re.search(r'\[[xX/✓√✔vV]\]', text):
+                            # Also check for text-based markers (including [ /] with space)
+                            if re.search(r'\[(\s*)(x|X|✓|√|✔|v|V|/)(\s*)\]', text):
                                 checked_items.append(text.strip())
                                 break
             
@@ -833,7 +813,7 @@ class PDFExtractor:
             return []
 
     def extract_paper_category(self):
-        """Extract paper category - Handles [X], [✓], [/], and other markups, then fallback to highlighted color."""
+        """Extract paper category - Handles [X], [✓], [/], [ /], and other markups, then fallback to highlighted color."""
         if not self.text:
             return None
         
@@ -846,9 +826,10 @@ class PDFExtractor:
         if 'ABSTRACT' in normalized_text[:500] and 'Paper Category' not in normalized_text:
             return None
         
-        # 2. Check for text markers: [X], [x], [/], [✓], etc.
+        # 2. Check for text markers: [X], [x], [/], [ /], [✓], etc. - This now handles spaces
+        # Updated regex to allow spaces inside brackets: [ /], [x ], [ x], etc.
         for cat in categories:
-            if re.search(r'\[(x|X|✓|√|✔|v|V|/| )\]\s*' + cat, normalized_text, re.IGNORECASE):
+            if re.search(r'\[(\s*)(x|X|✓|√|✔|v|V|/)(\s*)\]\s*' + cat, normalized_text, re.IGNORECASE):
                 return f"{cat} Extension Project Paper"
         
         # 3. NEW: Check for highlighted checkboxes using PyMuPDF position detection
@@ -875,7 +856,7 @@ class PDFExtractor:
         return None
 
     def extract_thematic_area(self):
-        """Extract thematic area - Handles [X], [✓], [/], and other markups, then fallback to highlighted color."""
+        """Extract thematic area - Handles [X], [✓], [/], [ /], and other markups, then fallback to highlighted color."""
         if not self.text:
             return None
 
@@ -894,9 +875,10 @@ class PDFExtractor:
         if 'ABSTRACT' in normalized_text[:500] and 'Thematic Area' not in normalized_text:
             return None
         
-        # 2. Check for text markers: [X], [x], [/], [✓], etc.
+        # 2. Check for text markers: [X], [x], [/], [ /], [✓], etc. - This now handles spaces
+        # Updated regex to allow spaces inside brackets: [ /], [x ], [ x], etc.
         for area in thematic_areas:
-            if re.search(r'\[(x|X|✓|√|✔|v|V|/| )\]\s*' + re.escape(area), normalized_text, re.IGNORECASE):
+            if re.search(r'\[(\s*)(x|X|✓|√|✔|v|V|/)(\s*)\]\s*' + re.escape(area), normalized_text, re.IGNORECASE):
                 return area
 
         # 3. NEW: Check for highlighted checkboxes using PyMuPDF position detection

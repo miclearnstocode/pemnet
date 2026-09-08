@@ -400,8 +400,7 @@ export default function ReviewPage() {
       }
       return true;
     } else {
-      // EMAIL TAB - Include ALL emails including uncategorized
-      // Only filter by status if a specific status is selected (excluding 'rejected')
+      // EMAIL TAB - Filter by status
       if (statusFilter !== 'all' && sub.status !== statusFilter) return false;
       
       if (searchTerm) {
@@ -433,7 +432,7 @@ export default function ReviewPage() {
       
       const total = filtered.length;
       const pending = filtered.filter(s => s.status === 'pending' || !s.status).length;
-      const endorsed = filtered.filter(s => s.status === 'endorse' || s.status === 'accepted').length;
+      const endorsed = filtered.filter(s => s.status === 'endorse').length;
       const downgraded = filtered.filter(s => s.status === 'downgraded').length;
       
       return { total, pending, endorsed, downgraded, uncategorized: 0 };
@@ -446,22 +445,21 @@ export default function ReviewPage() {
       
       const total = filtered.length;
       const pending = filtered.filter(s => s.status === 'pending').length;
-      const accepted = filtered.filter(s => s.status === 'endorse' || s.status === 'processed').length;
+      const endorsed = filtered.filter(s => s.status === 'endorse').length;
       const uncategorized = filtered.filter(s => s.status === 'uncategorized').length;
+      const downgraded = filtered.filter(s => s.status === 'downgraded').length;
       
-      return { total, pending, endorsed: accepted, downgraded: 0, uncategorized };
+      return { total, pending, endorsed, downgraded, uncategorized };
     }
   };
 
   const stats = getFilteredStats();
 
-  // FIXED: Status display functions use status field
+  // Status display functions - Only use statuses from models
   const getStatusColor = (status) => {
     const safeStatus = status || 'pending';
     switch (safeStatus) {
       case 'endorse':
-      case 'accepted':
-      case 'processed':
         return 'bg-emerald-50 text-emerald-700 border-emerald-200';
       case 'downgraded':
         return 'bg-amber-50 text-amber-700 border-amber-200';
@@ -477,7 +475,6 @@ export default function ReviewPage() {
   const getStatusDisplay = (status) => {
     switch (status) {
       case 'endorse':
-      case 'accepted':
         return 'Endorsed';
       case 'downgraded':
         return 'Downgraded';
@@ -485,8 +482,6 @@ export default function ReviewPage() {
         return 'Pending Review';
       case 'uncategorized':
         return 'Uncategorized';
-      case 'processed':
-        return 'Processed';
       default:
         return status || 'Pending';
     }
@@ -495,8 +490,6 @@ export default function ReviewPage() {
   const getStatusIcon = (status) => {
     switch (status) {
       case 'endorse':
-      case 'accepted':
-      case 'processed':
         return faCheckCircle;
       case 'downgraded':
         return faExclamationTriangle;
@@ -537,7 +530,7 @@ export default function ReviewPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-50 to-blue-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent mx-auto mb-4"></div>
           <p className="text-slate-600 font-medium">Loading submissions...</p>
@@ -604,7 +597,7 @@ export default function ReviewPage() {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-brrom-slate-50 via-white to-blue-50/30">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
       {toast && (
         <div className="fixed top-6 right-6 z-50 animate-slide-in">
           <div className={`relative w-96 p-5 rounded-2xl border shadow-xl backdrop-blur-sm ${
@@ -705,9 +698,9 @@ export default function ReviewPage() {
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setSelectedSubmission(null)}></div>
           <div className="relative min-h-full flex items-center justify-center p-4">
             <div className="relative w-full max-w-7xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100">
-              <div className="flex items-center justify-between px-8 py-5 border-b border-slate-100 bg-linear-to-r from-blue-50/50 to-white">
+              <div className="flex items-center justify-between px-8 py-5 border-b border-slate-100 bg-gradient-to-r from-blue-50/50 to-white">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-linear-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/25">
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/25">
                     <FontAwesomeIcon icon={activeTab === 'system' ? faFileAlt : faEnvelope} className="w-6 h-6 text-white" />
                   </div>
                   <div>
@@ -725,7 +718,7 @@ export default function ReviewPage() {
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 h-full min-h-150">
+              <div className="grid grid-cols-1 lg:grid-cols-2 h-full min-h-[600px]">
                 <div className="p-8 overflow-y-auto max-h-[80vh] border-r border-slate-100 bg-white">
                   <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-3">
@@ -775,7 +768,7 @@ export default function ReviewPage() {
                   </div>
 
                   {showRevisions && activeTab === 'email' && (
-                    <div className="mb-6 max-h-48 overflow-y-auto bg-linear-to-br from-slate-50 to-blue-50/30 border border-slate-200 rounded-2xl p-5">
+                    <div className="mb-6 max-h-48 overflow-y-auto bg-gradient-to-br from-slate-50 to-blue-50/30 border border-slate-200 rounded-2xl p-5">
                       <h5 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2">
                         <FontAwesomeIcon icon={faHistory} className="text-blue-600" />
                         Change History
@@ -983,7 +976,7 @@ export default function ReviewPage() {
                     <div className="mt-8 pt-6 border-t border-slate-200 space-y-3">
                       <button 
                         onClick={handleEndorseWithConfirm} 
-                        className="w-full inline-flex items-center justify-center gap-3 bg-linear-to-r from-emerald-500 to-emerald-600 text-white py-3.5 rounded-2xl font-semibold text-sm hover:from-emerald-600 hover:to-emerald-700 transition-all shadow-lg shadow-emerald-500/25"
+                        className="w-full inline-flex items-center justify-center gap-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white py-3.5 rounded-2xl font-semibold text-sm hover:from-emerald-600 hover:to-emerald-700 transition-all shadow-lg shadow-emerald-500/25"
                       >
                         <FontAwesomeIcon icon={faThumbsUp} className="w-5 h-5" />
                         Endorse for Presentation
@@ -1007,7 +1000,7 @@ export default function ReviewPage() {
                     </div>
                     <div className="space-y-3">
                       {(votes.votes || []).map((vote, idx) => (
-                        <div key={idx} className="p-4 bg-linear-to-br from-slate-50 to-white border border-slate-200 rounded-2xl shadow-sm">
+                        <div key={idx} className="p-4 bg-gradient-to-br from-slate-50 to-white border border-slate-200 rounded-2xl shadow-sm">
                           <div className="flex justify-between items-center">
                             <p className="text-sm font-semibold text-slate-900 flex items-center gap-2">
                               <FontAwesomeIcon icon={faUserCircle} className="w-4 h-4 text-slate-400" />
@@ -1040,7 +1033,7 @@ export default function ReviewPage() {
                       <FontAwesomeIcon icon={faComment} className="w-5 h-5 text-indigo-600" />
                       <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Evaluator Discussion</h4>
                     </div>
-                    <div className="max-h-48 overflow-y-auto bg-linear-to-br from-slate-50 to-blue-50/20 border border-slate-200 rounded-2xl p-4 mb-4 space-y-3">
+                    <div className="max-h-48 overflow-y-auto bg-gradient-to-br from-slate-50 to-blue-50/20 border border-slate-200 rounded-2xl p-4 mb-4 space-y-3">
                       {Array.isArray(discussions) && discussions.length > 0 ? (
                         discussions.map((msg) => {
                           const isCurrentUser = msg.evaluator_id === currentEvaluatorId;
@@ -1056,7 +1049,7 @@ export default function ReviewPage() {
                                 </div>
                                 <div className={`px-4 py-2.5 rounded-2xl text-sm ${
                                   isCurrentUser 
-                                    ? 'bg-linear-to-r from-blue-500 to-blue-600 text-white rounded-br-none shadow-md shadow-blue-500/20' 
+                                    ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-br-none shadow-md shadow-blue-500/20' 
                                     : 'bg-white border border-slate-200 text-slate-900 rounded-bl-none shadow-sm'
                                 }`}>
                                   <p>{msg.message || msg.text || 'No message'}</p>
@@ -1080,7 +1073,7 @@ export default function ReviewPage() {
                       />
                       <button 
                         onClick={postMessage} 
-                        className="inline-flex items-center gap-2 bg-linear-to-r from-blue-500 to-blue-600 text-white px-5 py-2.5 rounded-2xl font-semibold text-sm hover:from-blue-600 hover:to-blue-700 transition-all shadow-lg shadow-blue-500/25"
+                        className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-5 py-2.5 rounded-2xl font-semibold text-sm hover:from-blue-600 hover:to-blue-700 transition-all shadow-lg shadow-blue-500/25"
                       >
                         <FontAwesomeIcon icon={faPaperPlane} className="w-4 h-4" />
                         Send
@@ -1089,7 +1082,7 @@ export default function ReviewPage() {
                   </div>
                 </div>
 
-                <div className="bg-linear-to-br from-slate-50 to-blue-50/20 p-6 overflow-y-auto max-h-[80vh]">
+                <div className="bg-gradient-to-br from-slate-50 to-blue-50/20 p-6 overflow-y-auto max-h-[80vh]">
                   <div className="flex items-center gap-3 mb-4">
                     <FontAwesomeIcon icon={faEye} className="w-5 h-5 text-indigo-600" />
                     <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider">File Viewer</h4>
@@ -1191,8 +1184,8 @@ export default function ReviewPage() {
           </div>
           
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-3 px-4 py-2 bg-linear-to-br from-slate-50 to-white border border-slate-200 rounded-2xl shadow-sm">
-              <div className="w-9 h-9 rounded-full bg-linear-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-blue-500/25">
+            <div className="flex items-center gap-3 px-4 py-2 bg-gradient-to-br from-slate-50 to-white border border-slate-200 rounded-2xl shadow-sm">
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-blue-500/25">
                 {currentUser?.full_name?.charAt(0) || 'E'}
               </div>
               <div className="leading-tight">
@@ -1215,7 +1208,7 @@ export default function ReviewPage() {
               onClick={() => { setActiveTab('system'); setStatusFilter('all'); setCategoryFilter('all'); setSearchTerm(''); }} 
               className={`inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-sm transition-all ${
                 activeTab === 'system' 
-                  ? 'bg-linear-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25' 
+                  ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25' 
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
               }`}
             >
@@ -1226,7 +1219,7 @@ export default function ReviewPage() {
               onClick={() => { setActiveTab('email'); setCategoryFilter('all'); setSearchTerm(''); }} 
               className={`inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-sm transition-all ${
                 activeTab === 'email' 
-                  ? 'bg-linear-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25' 
+                  ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25' 
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
               }`}
             >
@@ -1238,7 +1231,7 @@ export default function ReviewPage() {
             <button 
               onClick={checkEmails} 
               disabled={checkingEmails} 
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-linear-to-r from-blue-500 to-blue-600 text-white rounded-2xl font-semibold hover:from-blue-600 hover:to-blue-700 transition-all disabled:opacity-50 shadow-lg shadow-blue-500/25"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-2xl font-semibold hover:from-blue-600 hover:to-blue-700 transition-all disabled:opacity-50 shadow-lg shadow-blue-500/25"
             >
               {checkingEmails ? (
                 <><FontAwesomeIcon icon={faSpinner} className="w-4 h-4 animate-spin" />Checking...</>
@@ -1249,7 +1242,7 @@ export default function ReviewPage() {
           )}
         </div>
 
-        {/* FIXED: Stat Cards - Now dynamically update based on the current filter */}
+        {/* Stat Cards - Now dynamically update based on the current filter */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all">
             <div className="flex items-center justify-between">
@@ -1283,7 +1276,7 @@ export default function ReviewPage() {
               <div>
                 <p className="text-3xl font-bold text-emerald-600">{stats.endorsed}</p>
                 <p className="text-sm text-slate-500">
-                  {activeTab === 'system' ? 'Endorsed' : 'Accepted/Processed'}
+                  {activeTab === 'system' ? 'Endorsed' : 'Endorsed'}
                 </p>
               </div>
               <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600">
@@ -1328,7 +1321,7 @@ export default function ReviewPage() {
             <select 
               value={statusFilter} 
               onChange={(e) => setStatusFilter(e.target.value)} 
-              className="pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none appearance-none cursor-pointer min-w-40"
+              className="pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none appearance-none cursor-pointer min-w-[160px]"
             >
               <option value="all">All Status</option>
               <option value="pending">Pending</option>
@@ -1339,7 +1332,7 @@ export default function ReviewPage() {
                 </>
               ) : (
                 <>
-                  <option value="accepted">Endorse</option>
+                  <option value="endorse">Endorsed</option>
                   <option value="uncategorized">Uncategorized</option>
                 </>
               )}
@@ -1353,7 +1346,7 @@ export default function ReviewPage() {
               <select 
                 value={categoryFilter} 
                 onChange={(e) => setCategoryFilter(e.target.value)} 
-                className="pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none appearance-none cursor-pointer min-w-50"
+                className="pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none appearance-none cursor-pointer min-w-[200px]"
               >
                 <option value="all">All Categories</option>
                 <option value="Completed Extension Project Papers">Completed Extension</option>
@@ -1367,7 +1360,7 @@ export default function ReviewPage() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="bg-linear-to-r from-slate-50 to-blue-50/50 border-b border-slate-200">
+                <tr className="bg-gradient-to-r from-slate-50 to-blue-50/50 border-b border-slate-200">
                   {activeTab === 'system' ? (
                     <>
                       <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">

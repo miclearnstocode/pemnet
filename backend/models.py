@@ -39,7 +39,7 @@ class Submission(db.Model):
     corresponding_author_name = db.Column(db.String(255), nullable=True)  
     corresponding_author_position = db.Column(db.String(255), nullable=True)
     corresponding_author_email = db.Column(db.String(255), nullable=True) 
-    status = db.Column(db.Enum('pending', 'endorse', 'downgraded'), nullable=False, default='pending')
+    status = db.Column(db.Enum('pending', 'endorse', 'downgraded-non_competitive', 'downgraded-poster_only'), nullable=False, default='pending')
     evaluation_status = db.Column(db.Enum('pending', 'endorse', 'downgraded-non_competitive', 'downgraded-poster_only'), nullable=False, default='pending')
     co_authors = db.Column(db.Text, nullable=True)
     abstract_view_url = db.Column(db.String(500), nullable=True)
@@ -88,7 +88,7 @@ class EmailSubmission(db.Model):
     attachment_filename = db.Column(db.String(255), nullable=True)
     attachment_view_url = db.Column(db.String(500), nullable=True)
     attachment_download_url = db.Column(db.String(500), nullable=True)
-    status = db.Column(db.Enum('endorse','downgraded','pending'), nullable=False, default='pending')
+    status = db.Column(db.Enum('pending', 'endorse', 'downgraded-non_competitive', 'downgraded-poster_only'), nullable=False, default='pending')
     processed_submission_id = db.Column(db.Integer, db.ForeignKey('submissions.id'), nullable=True)
     email_received_at = db.Column(db.DateTime, nullable=False)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
@@ -243,4 +243,42 @@ class Payment(db.Model):
             'rejection_reason': self.rejection_reason,
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None,
             'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S') if self.updated_at else None
+        }
+
+class EmailNotificationLog(db.Model):
+    __tablename__ = 'email_notification_logs'
+    id = db.Column(db.Integer, primary_key=True)
+    submission_id = db.Column(db.String(50), nullable=False, index=True)
+    email_type = db.Column(db.Enum('endorsement', 'status_update', 'confirmation'), nullable=False)
+    status = db.Column(db.Enum('pending', 'sent', 'failed'), nullable=False, default='pending')
+    recipient_email = db.Column(db.String(255), nullable=False)
+    cc_emails = db.Column(db.Text, nullable=True)  # Store as comma-separated list
+    subject = db.Column(db.String(500), nullable=True)
+    body_preview = db.Column(db.Text, nullable=True)  # First 500 chars of email body
+    action_performed = db.Column(db.Enum('endorse', 'downgraded-non_competitive', 'downgraded-poster_only', 'pending'), nullable=False)
+    error_message = db.Column(db.Text, nullable=True)
+    sent_at = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    
+    # For tracking who sent the email
+    master_approver_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    
+    # Relationships
+    master_approver = db.relationship('User', foreign_keys=[master_approver_id])
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'submission_id': self.submission_id,
+            'email_type': self.email_type,
+            'status': self.status,
+            'recipient_email': self.recipient_email,
+            'cc_emails': self.cc_emails,
+            'subject': self.subject,
+            'body_preview': self.body_preview,
+            'action_performed': self.action_performed,
+            'error_message': self.error_message,
+            'sent_at': self.sent_at.strftime('%Y-%m-%d %H:%M:%S') if self.sent_at else None,
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None,
+            'master_approver_id': self.master_approver_id
         }

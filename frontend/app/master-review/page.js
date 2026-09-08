@@ -2,6 +2,43 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+  faCheckCircle,
+  faTimesCircle,
+  faClock,
+  faFileAlt,
+  faEnvelope,
+  faUsers,
+  faSearch,
+  faFilter,
+  faSync,
+  faUserCircle,
+  faSignOutAlt,
+  faGavel,
+  faInfoCircle,
+  faFolderOpen,
+  faInbox,
+  faSpinner,
+  faEye,
+  faFilePdf,
+  faCalendarAlt,
+  faTag,
+  faUser,
+  faSchool,
+  faFlag,
+  faExclamationTriangle,
+  faWarning,
+  faPaperPlane,
+  faComment,
+  faThumbsUp,
+  faThumbsDown,
+  faArrowDown,
+  faClipboard,
+  faBookOpen,
+  faLayerGroup,
+  faCertificate
+} from '@fortawesome/free-solid-svg-icons';
 import ConfirmModal from '../components/ConfirmModal';
 import DowngradeModal from '../components/DowngradeModal';
 
@@ -30,6 +67,8 @@ export default function MasterReviewPage() {
   const [submissionDetails, setSubmissionDetails] = useState(null);
   const [emailExtractedData, setEmailExtractedData] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [emailLogs, setEmailLogs] = useState([]);
+  const [loadingEmailLogs, setLoadingEmailLogs] = useState(false);
   
   // Email sending preference
   const [sendEmailConfirmation, setSendEmailConfirmation] = useState(true);
@@ -89,15 +128,9 @@ export default function MasterReviewPage() {
       const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
-        // Process submissions - ensure we have submission_id for all
         const processedData = data.map(sub => {
-          const displayStatus = sub.status || 'pending';
           return {
             ...sub,
-            display_status: displayStatus,
-            filter_status: sub.status || 'pending',
-            // Ensure submission_id exists (it should for system submissions)
-            // For email submissions, it comes from extracted_data
             submission_id: sub.submission_id || null
           };
         });
@@ -136,13 +169,28 @@ export default function MasterReviewPage() {
     return null;
   };
 
+  const fetchEmailLogs = async (submissionId) => {
+    if (!submissionId) return;
+    setLoadingEmailLogs(true);
+    try {
+      const res = await fetch(`http://localhost:5000/api/email-logs/${submissionId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setEmailLogs(data);
+      }
+    } catch (error) {
+      console.error('Error fetching email logs:', error);
+    } finally {
+      setLoadingEmailLogs(false);
+    }
+  };
+
   const selectSubmission = async (sub) => {
     setSelectedSubmission(sub);
     setSubmissionDetails(null);
     setEmailExtractedData(null);
+    setEmailLogs([]);
     
-    // CRITICAL: Use submission_id (string format like 'pemnet-024-2026') for API calls
-    // This is the unique identifier across both system and email submissions
     const submissionId = sub.submission_id;
     
     if (!submissionId) {
@@ -151,13 +199,15 @@ export default function MasterReviewPage() {
       return;
     }
     
+    // Fetch email logs for this submission
+    await fetchEmailLogs(submissionId);
+    
     // For email submissions, get the status from extracted_abstract_data
     if (activeTab === 'email' && sub.id) {
       const extractedData = await fetchExtractedData(sub.id);
       if (extractedData) {
         sub.status = extractedData.status || 'pending';
         sub.evaluation_status = extractedData.evaluation_status || 'pending';
-        // Use the submission_id from extracted data (it's the string format)
         sub.submission_id = extractedData.submission_id || sub.submission_id;
         setSelectedSubmission(prev => ({
           ...prev,
@@ -175,7 +225,6 @@ export default function MasterReviewPage() {
     setIsModalOpen(true);
     
     try {
-      // Use the submission_id (string) for the API calls - this is unique across both tables
       const res = await fetch(`http://localhost:5000/api/submissions/${submissionId}/master-details`);
       if (res.ok) {
         const data = await res.json();
@@ -194,7 +243,6 @@ export default function MasterReviewPage() {
     
     setIsSettingStatus(true);
     try {
-      // Use the submission_id (string) for the API call - this is unique across both tables
       const submissionId = selectedSubmission.submission_id;
       
       if (!submissionId) {
@@ -220,15 +268,19 @@ export default function MasterReviewPage() {
         const emailMessage = data.email_sent ? ' Confirmation email sent to the corresponding author.' : '';
         showToast(`Status updated to ${getStatusDisplay(status)}.${emailMessage}`, 'success');
         
+        // Refresh email logs after sending
+        if (sendEmailConfirmation) {
+          await fetchEmailLogs(submissionId);
+        }
+        
         // Update the submissions list using submission_id
         setSubmissions(prev => 
           prev.map(sub => {
             if (sub.submission_id === submissionId) {
               return { 
                 ...sub, 
-                status: status,
-                display_status: status,
-                filter_status: status
+                status: status, // Master Approver decision
+                // Keep evaluation_status as is
               };
             }
             return sub;
@@ -237,7 +289,7 @@ export default function MasterReviewPage() {
         
         setSelectedSubmission(prev => ({
           ...prev,
-          status: status
+          status: status // Update Master Approver decision
         }));
         
         if (emailExtractedData) {
@@ -324,6 +376,7 @@ export default function MasterReviewPage() {
       case 'endorse': return 'bg-emerald-100 text-emerald-700';
       case 'downgraded-non_competitive': return 'bg-yellow-100 text-yellow-700';
       case 'downgraded-poster_only': return 'bg-orange-100 text-orange-700';
+      case 'downgraded': return 'bg-yellow-100 text-yellow-700';
       case 'pending': return 'bg-slate-100 text-slate-700';
       case 'return_to_sender': return 'bg-red-100 text-red-700';
       default: return 'bg-slate-100 text-slate-700';
@@ -335,6 +388,7 @@ export default function MasterReviewPage() {
       case 'endorse': return 'Endorsed';
       case 'downgraded-non_competitive': return 'Non-Competitive (Poster)';
       case 'downgraded-poster_only': return 'Poster Only';
+      case 'downgraded': return 'Downgraded';
       case 'pending': return 'Pending';
       case 'return_to_sender': return 'Return to Sender';
       default: return status || 'Pending';
@@ -358,10 +412,10 @@ export default function MasterReviewPage() {
 
   const getVoteIcon = (status) => {
     switch (status) {
-      case 'endorse': return '✅';
-      case 'downgrade': return '⬇️';
-      case 'reassign': return '🔄';
-      default: return '❓';
+      case 'endorse': return faCheckCircle;
+      case 'downgrade': return faArrowDown;
+      case 'reassign': return faSync;
+      default: return faInfoCircle;
     }
   };
 
@@ -483,6 +537,32 @@ export default function MasterReviewPage() {
   const nonCompetitiveCount = submissions.filter(s => s.status === 'downgraded-non_competitive' || s.evaluation_status === 'downgraded-non_competitive').length;
   const posterOnlyCount = submissions.filter(s => s.status === 'downgraded-poster_only' || s.evaluation_status === 'downgraded-poster_only').length;
 
+  // Get the latest email log status
+  const getEmailStatus = () => {
+    if (emailLogs.length === 0) return null;
+    const latestLog = emailLogs[0];
+    return latestLog.status; // 'sent', 'failed', 'pending'
+  };
+
+  const getEmailStatusBadge = () => {
+    const status = getEmailStatus();
+    if (!status) return null;
+    
+    const statusConfig = {
+      'sent': { color: 'bg-emerald-100 text-emerald-700 border-emerald-200', icon: faCheckCircle, label: 'Email Sent' },
+      'failed': { color: 'bg-red-100 text-red-700 border-red-200', icon: faTimesCircle, label: 'Email Failed' },
+      'pending': { color: 'bg-yellow-100 text-yellow-700 border-yellow-200', icon: faClock, label: 'Email Pending' }
+    };
+    
+    const config = statusConfig[status] || statusConfig['pending'];
+    return (
+      <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border ${config.color}`}>
+        <FontAwesomeIcon icon={config.icon} className="w-3.5 h-3.5" />
+        {config.label}
+      </span>
+    );
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -501,9 +581,7 @@ export default function MasterReviewPage() {
           }`}>
             <div className="flex items-start gap-3">
               <div className={`shrink-0 mt-0.5 ${toast.type === 'success' ? 'text-emerald-700' : 'text-red-700'}`}>
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+                <FontAwesomeIcon icon={toast.type === 'success' ? faCheckCircle : faTimesCircle} className="w-5 h-5" />
               </div>
               <div className={`flex-1 ${toast.type === 'success' ? 'text-emerald-700' : 'text-red-700'}`}>
                 <p className="font-semibold text-sm">{toast.type === 'success' ? 'Success!' : 'Error!'}</p>
@@ -574,9 +652,7 @@ export default function MasterReviewPage() {
               <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-purple-50 to-blue-50 sticky top-0 z-10">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-purple-600">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-                    </svg>
+                    <FontAwesomeIcon icon={faFileAlt} className="w-5 h-5 text-purple-600" />
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-slate-900">
@@ -585,14 +661,18 @@ export default function MasterReviewPage() {
                     <p className="text-sm text-slate-500 truncate max-w-md">{getTitle()}</p>
                   </div>
                 </div>
-                <button 
-                  onClick={() => setIsModalOpen(false)} 
-                  className="w-10 h-10 flex items-center justify-center rounded-lg bg-white text-slate-600 hover:bg-slate-100 transition shadow-sm"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+                <div className="flex items-center gap-3">
+                  {/* Email Status Badge */}
+                  {getEmailStatusBadge()}
+                  <button 
+                    onClick={() => setIsModalOpen(false)} 
+                    className="w-10 h-10 flex items-center justify-center rounded-lg bg-white text-slate-600 hover:bg-slate-100 transition shadow-sm"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
               </div>
 
               {/* Modal Body - Scrollable */}
@@ -669,20 +749,55 @@ export default function MasterReviewPage() {
                       </span>
                     </div>
                     
-                    {/* Current Status - Use status (master approver decision) */}
-                    <div>
-                      <p className="text-sm text-slate-600 font-medium">Current Status</p>
-                      <span className={`inline-flex px-3 py-1.5 rounded-full text-sm font-medium ${getStatusColor(selectedSubmission.status || 'pending')}`}>
-                        {getStatusDisplay(selectedSubmission.status || 'pending')}
-                      </span>
-                    </div>
-                    
-                    {/* Evaluator Decision - Show evaluation_status for reference */}
+                    {/* Evaluator Decision - Show evaluation_status */}
                     <div>
                       <p className="text-sm text-slate-600 font-medium">Evaluator Decision</p>
                       <span className={`inline-flex px-3 py-1.5 rounded-full text-sm font-medium ${getStatusColor(selectedSubmission.evaluation_status || 'pending')}`}>
                         {getStatusDisplay(selectedSubmission.evaluation_status || 'pending')}
                       </span>
+                    </div>
+                    
+                    {/* Master Status - Show status (Master Approver decision) */}
+                    <div>
+                      <p className="text-sm text-slate-600 font-medium">Master Status</p>
+                      <span className={`inline-flex px-3 py-1.5 rounded-full text-sm font-medium ${getStatusColor(selectedSubmission.status || 'pending')}`}>
+                        {getStatusDisplay(selectedSubmission.status || 'pending')}
+                      </span>
+                    </div>
+
+                    {/* Email Notification Status */}
+                    <div>
+                      <p className="text-sm text-slate-600 font-medium">Email Notification</p>
+                      {loadingEmailLogs ? (
+                        <span className="inline-flex items-center gap-2 text-sm text-slate-500">
+                          <FontAwesomeIcon icon={faSpinner} className="w-4 h-4 animate-spin" />
+                          Loading...
+                        </span>
+                      ) : emailLogs.length > 0 ? (
+                        <div className="space-y-2">
+                          {emailLogs.map((log) => (
+                            <div key={log.id} className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg border border-slate-200 text-sm">
+                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+                                log.status === 'sent' ? 'bg-emerald-100 text-emerald-700' :
+                                log.status === 'failed' ? 'bg-red-100 text-red-700' :
+                                'bg-yellow-100 text-yellow-700'
+                              }`}>
+                                <FontAwesomeIcon 
+                                  icon={log.status === 'sent' ? faCheckCircle : log.status === 'failed' ? faTimesCircle : faClock} 
+                                  className="w-3 h-3" 
+                                />
+                                {log.status === 'sent' ? 'Sent' : log.status === 'failed' ? 'Failed' : 'Pending'}
+                              </span>
+                              <span className="text-xs text-slate-500 truncate max-w-[150px]">{log.recipient_email}</span>
+                              <span className="text-xs text-slate-400 ml-auto">
+                                {log.sent_at ? new Date(log.sent_at).toLocaleString() : 'Not sent'}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-sm text-slate-400">No email sent</span>
+                      )}
                     </div>
                   </div>
 
@@ -697,20 +812,28 @@ export default function MasterReviewPage() {
                           <div key={idx} className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
                             <div className="flex justify-between items-center">
                               <span className="font-semibold text-sm text-slate-900">
+                                <FontAwesomeIcon icon={faUserCircle} className="w-4 h-4 text-slate-400 mr-2" />
                                 {getEvaluatorName(vote.evaluator_id)}
                               </span>
                               <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(vote.vote_status)}`}>
-                                {getVoteIcon(vote.vote_status)} {vote.vote_status.charAt(0).toUpperCase() + vote.vote_status.slice(1)}
+                                <FontAwesomeIcon icon={getVoteIcon(vote.vote_status)} className="w-3 h-3 mr-1" />
+                                {vote.vote_status.charAt(0).toUpperCase() + vote.vote_status.slice(1)}
                               </span>
                             </div>
                             {vote.vote_notes && (
                               <p className="text-sm text-slate-500 mt-2 italic">"{vote.vote_notes}"</p>
                             )}
                             {vote.vote_reassign_to && (
-                              <p className="text-sm text-blue-600 mt-1">Reassigned to: {vote.vote_reassign_to}</p>
+                              <p className="text-sm text-blue-600 mt-1">
+                                <FontAwesomeIcon icon={faSync} className="w-3 h-3 mr-1" />
+                                Reassigned to: {vote.vote_reassign_to}
+                              </p>
                             )}
                             {vote.vote_downgrade_to && (
-                              <p className="text-sm text-orange-600 mt-1">Downgrade type: {vote.vote_downgrade_to}</p>
+                              <p className="text-sm text-orange-600 mt-1">
+                                <FontAwesomeIcon icon={faArrowDown} className="w-3 h-3 mr-1" />
+                                Downgrade type: {vote.vote_downgrade_to}
+                              </p>
                             )}
                           </div>
                         ))}
@@ -737,10 +860,7 @@ export default function MasterReviewPage() {
                   {/* Master Approver Controls */}
                   <div className="mt-6 pt-6 border-t-2 border-purple-200">
                     <h4 className="text-base font-bold text-purple-700 uppercase mb-3 flex items-center gap-2">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 019 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003.001 2.48z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 18a3.75 3.75 0 00.495-7.467 5.99 5.99 0 00-1.925 3.546 5.974 5.974 0 01-2.133-1A3.75 3.75 0 0012 18z" />
-                      </svg>
+                      <FontAwesomeIcon icon={faGavel} className="w-5 h-5" />
                       Master Approver Control
                     </h4>
                     <p className="text-xs text-slate-500 mb-3">Set the final decision for this abstract</p>
@@ -752,9 +872,7 @@ export default function MasterReviewPage() {
                         disabled={selectedSubmission.status === 'endorse'}
                         className="w-full bg-emerald-600 text-white py-3 rounded-xl font-semibold hover:bg-emerald-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
+                        <FontAwesomeIcon icon={faThumbsUp} className="w-5 h-5" />
                         Endorse for Presentation
                         <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">📧</span>
                       </button>
@@ -762,12 +880,10 @@ export default function MasterReviewPage() {
                       {/* Downgrade - Yellow/Orange */}
                       <button
                         onClick={handleOpenDowngradeModal}
-                        disabled={selectedSubmission.status === 'downgraded-non_competitive' || selectedSubmission.status === 'downgraded-poster_only'}
+                        disabled={selectedSubmission.status === 'downgraded-non_competitive' || selectedSubmission.status === 'downgraded-poster_only' || selectedSubmission.status === 'downgraded'}
                         className="w-full bg-yellow-500 text-white py-3 rounded-xl font-semibold hover:bg-yellow-600 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                        </svg>
+                        <FontAwesomeIcon icon={faThumbsDown} className="w-5 h-5" />
                         Downgrade
                       </button>
                       
@@ -794,7 +910,10 @@ export default function MasterReviewPage() {
                     <div className="space-y-6">
                       {/* Abstract PDF - Always visible */}
                       <div>
-                        <p className="text-sm font-semibold text-slate-700 mb-3">Abstract PDF</p>
+                        <p className="text-sm font-semibold text-slate-700 mb-3">
+                          <FontAwesomeIcon icon={faFilePdf} className="w-4 h-4 text-red-500 mr-2" />
+                          Abstract PDF
+                        </p>
                         {selectedSubmission.abstract_view_url ? (
                           <div className="border rounded-lg bg-white overflow-hidden" style={{ height: '450px' }}>
                             <iframe 
@@ -815,7 +934,10 @@ export default function MasterReviewPage() {
                             onClick={() => setShowEndorsement(!showEndorsement)}
                             className="w-full flex items-center justify-between p-3 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition"
                           >
-                            <span className="text-sm font-semibold text-slate-700">Endorsement PDF</span>
+                            <span className="text-sm font-semibold text-slate-700">
+                              <FontAwesomeIcon icon={faFilePdf} className="w-4 h-4 text-emerald-500 mr-2" />
+                              Endorsement PDF
+                            </span>
                             <div className="flex items-center gap-2">
                               <span className="text-xs text-slate-500">
                                 {showEndorsement ? 'Hide' : 'Show'}
@@ -847,9 +969,15 @@ export default function MasterReviewPage() {
                     </div>
                   ) : (
                     <div>
-                      <p className="text-sm font-semibold text-slate-700 mb-3">Attachment</p>
+                      <p className="text-sm font-semibold text-slate-700 mb-3">
+                        <FontAwesomeIcon icon={faFilePdf} className="w-4 h-4 text-rose-500 mr-2" />
+                        Attachment
+                      </p>
                       {selectedSubmission.attachment_filename && (
-                        <p className="text-sm text-slate-500 mb-3">{selectedSubmission.attachment_filename}</p>
+                        <p className="text-sm text-slate-500 mb-3 flex items-center gap-2 bg-white px-4 py-2 rounded-xl border border-slate-200">
+                          <FontAwesomeIcon icon={faFileAlt} className="w-4 h-4 text-slate-400" />
+                          {selectedSubmission.attachment_filename}
+                        </p>
                       )}
                       {selectedSubmission.attachment_view_url ? (
                         <div className="border rounded-lg bg-white overflow-hidden" style={{ height: '550px' }}>
@@ -875,8 +1003,14 @@ export default function MasterReviewPage() {
       <div className="bg-white border-b border-slate-200 px-8 py-6">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">Master Approver Dashboard</h1>
-            <p className="text-slate-500 text-sm mt-1">Final decision authority for all abstract submissions</p>
+            <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
+              <FontAwesomeIcon icon={faGavel} className="w-6 h-6 text-blue-600" />
+              Master Approver Dashboard
+            </h1>
+            <p className="text-slate-500 text-sm mt-0.5 flex items-center gap-2">
+              <FontAwesomeIcon icon={faInfoCircle} className="w-3.5 h-3.5 text-slate-400" />
+              Final decision authority for all abstract submissions
+            </p>
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2.5 px-3 py-1.5 bg-slate-100 border border-slate-200 rounded-full">
@@ -927,12 +1061,14 @@ export default function MasterReviewPage() {
               onClick={() => { setActiveTab('system'); setStatusFilter('all'); setCategoryFilter('all'); setSearchTerm(''); }} 
               className={`px-6 py-2.5 rounded-lg font-semibold text-sm transition ${activeTab === 'system' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-600 hover:text-slate-900'}`}
             >
+              <FontAwesomeIcon icon={faFileAlt} className="w-4 h-4 mr-2" />
               System Submissions
             </button>
             <button 
               onClick={() => { setActiveTab('email'); setCategoryFilter('all'); setSearchTerm(''); }} 
               className={`px-6 py-2.5 rounded-lg font-semibold text-sm transition ${activeTab === 'email' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-600 hover:text-slate-900'}`}
             >
+              <FontAwesomeIcon icon={faEnvelope} className="w-4 h-4 mr-2" />
               Email Submissions
             </button>
           </div>
@@ -940,9 +1076,7 @@ export default function MasterReviewPage() {
             onClick={fetchSubmissions}
             className="px-4 py-2.5 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition flex items-center gap-2"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
-            </svg>
+            <FontAwesomeIcon icon={faSync} className="w-5 h-5" />
             Refresh
           </button>
         </div>
@@ -950,6 +1084,9 @@ export default function MasterReviewPage() {
         {/* Filters */}
         <div className="flex gap-4 mb-6 flex-wrap">
           <div className="flex-1 min-w-50 relative">
+            <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400">
+              <FontAwesomeIcon icon={faSearch} className="w-4 h-4" />
+            </div>
             <input
               type="text"
               placeholder={activeTab === 'system' ? "Search by title, author, or SUC..." : "Search by subject, sender, or email..."}
@@ -957,31 +1094,38 @@ export default function MasterReviewPage() {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full px-4 py-2.5 pl-10 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
             />
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-            </svg>
           </div>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-          >
-            <option value="all">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="endorse">Endorsed</option>
-            <option value="downgraded-non_competitive">Non-Competitive</option>
-            <option value="downgraded-poster_only">Poster Only</option>
-          </select>
-          {activeTab === 'system' && (
+          <div className="relative">
+            <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400">
+              <FontAwesomeIcon icon={faFilter} className="w-4 h-4" />
+            </div>
             <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none appearance-none cursor-pointer min-w-[160px]"
             >
-              <option value="all">All Categories</option>
-              <option value="Completed Extension Project Papers">Completed Extension</option>
-              <option value="Ongoing Extension Project Papers">Ongoing Extension</option>
+              <option value="all">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="endorse">Endorsed</option>
+              <option value="downgraded-non_competitive">Non-Competitive</option>
+              <option value="downgraded-poster_only">Poster Only</option>
             </select>
+          </div>
+          {activeTab === 'system' && (
+            <div className="relative">
+              <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400">
+                <FontAwesomeIcon icon={faTag} className="w-4 h-4" />
+              </div>
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none appearance-none cursor-pointer min-w-[200px]"
+              >
+                <option value="all">All Categories</option>
+                <option value="Completed Extension Project Papers">Completed Extension</option>
+                <option value="Ongoing Extension Project Papers">Ongoing Extension</option>
+              </select>
+            </div>
           )}
         </div>
 
@@ -993,25 +1137,69 @@ export default function MasterReviewPage() {
                 <tr className="bg-slate-50 border-b border-slate-200">
                   {activeTab === 'system' ? (
                     <>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Title & Author</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Category</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Date</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Evaluator Decision</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Master Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
+                        <div className="flex items-center gap-2">
+                          <FontAwesomeIcon icon={faFileAlt} className="w-3.5 h-3.5 text-blue-500" />
+                          Title & Author
+                        </div>
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
+                        <div className="flex items-center gap-2">
+                          <FontAwesomeIcon icon={faTag} className="w-3.5 h-3.5 text-purple-500" />
+                          Category
+                        </div>
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
+                        <div className="flex items-center gap-2">
+                          <FontAwesomeIcon icon={faCalendarAlt} className="w-3.5 h-3.5 text-slate-400" />
+                          Date
+                        </div>
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
+                        <div className="flex items-center gap-2">
+                          <FontAwesomeIcon icon={faUserCircle} className="w-3.5 h-3.5 text-blue-400" />
+                          Evaluator Decision
+                        </div>
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
+                        <div className="flex items-center gap-2">
+                          <FontAwesomeIcon icon={faGavel} className="w-3.5 h-3.5 text-purple-500" />
+                          Master Status
+                        </div>
+                      </th>
                     </>
                   ) : (
                     <>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Subject / Sender</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Project Leader</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Received</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
+                        <div className="flex items-center gap-2">
+                          <FontAwesomeIcon icon={faEnvelope} className="w-3.5 h-3.5 text-blue-500" />
+                          Subject / Sender
+                        </div>
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
+                        <div className="flex items-center gap-2">
+                          <FontAwesomeIcon icon={faUser} className="w-3.5 h-3.5 text-emerald-500" />
+                          Project Leader
+                        </div>
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
+                        <div className="flex items-center gap-2">
+                          <FontAwesomeIcon icon={faCalendarAlt} className="w-3.5 h-3.5 text-slate-400" />
+                          Received
+                        </div>
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
+                        <div className="flex items-center gap-2">
+                          <FontAwesomeIcon icon={faFlag} className="w-3.5 h-3.5 text-rose-500" />
+                          Status
+                        </div>
+                      </th>
                     </>
                   )}
                 </tr>
               </thead>
               <tbody>
                 {filteredSubmissions.map((sub) => {
-                  // For system submissions: show both evaluator decision and master status
                   const evaluatorStatus = sub.evaluation_status || 'pending';
                   const masterStatus = sub.status || 'pending';
                   
@@ -1070,9 +1258,7 @@ export default function MasterReviewPage() {
                             </span>
                             {sub.extraction_status === 'failed' && (
                               <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-50 text-red-600 border border-red-200">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3 h-3">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-                                </svg>
+                                <FontAwesomeIcon icon={faExclamationTriangle} className="w-2.5 h-2.5" />
                                 Needs Review
                               </span>
                             )}
@@ -1086,6 +1272,7 @@ export default function MasterReviewPage() {
             </table>
             {filteredSubmissions.length === 0 && (
               <div className="text-center py-12 text-slate-500">
+                <FontAwesomeIcon icon={activeTab === 'system' ? faFolderOpen : faInbox} className="w-12 h-12 text-slate-300 mb-4" />
                 <p>No {activeTab === 'system' ? 'submissions' : 'email submissions'} found</p>
               </div>
             )}

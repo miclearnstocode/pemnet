@@ -1,6 +1,5 @@
-# master_approver.py
-from models import db, Submission, EmailSubmission, ExtractedAbstractData, SubmissionVote, User
-from email_service import send_status_update_email
+from models import db, Submission, EmailSubmission, ExtractedAbstractData, SubmissionVote, User, EmailNotificationLog
+from email_service import send_status_update_email, send_endorsement_confirmation_email
 import traceback
 import json
 
@@ -10,12 +9,12 @@ class MasterApproverService:
     def get_status_summary():
         """Get status summary for master approver dashboard."""
         try:
-            # Count system submissions
+            # Count system submissions by status (master approver decision)
             system_total = Submission.query.count()
-            system_pending = Submission.query.filter_by(evaluation_status='pending').count()
-            system_endorsed = Submission.query.filter_by(evaluation_status='endorse').count()
-            system_non_competitive = Submission.query.filter_by(evaluation_status='downgraded-non_competitive').count()
-            system_poster_only = Submission.query.filter_by(evaluation_status='downgraded-poster_only').count()
+            system_pending = Submission.query.filter_by(status='pending').count()
+            system_endorsed = Submission.query.filter_by(status='endorse').count()
+            system_non_competitive = Submission.query.filter_by(status='downgraded-non_competitive').count()
+            system_poster_only = Submission.query.filter_by(status='downgraded-poster_only').count()
             
             # Count email submissions from extracted_abstract_data
             email_pending = ExtractedAbstractData.query.filter_by(evaluation_status='pending').count()
@@ -48,8 +47,8 @@ class MasterApproverService:
         try:
             results = []
             
-            # Get system submissions
-            system_submissions = Submission.query.filter_by(evaluation_status='pending').all()
+            # Get system submissions with status 'pending' (master approver hasn't decided yet)
+            system_submissions = Submission.query.filter_by(status='pending').all()
             for sub in system_submissions:
                 votes = SubmissionVote.query.filter_by(submission_id=sub.submission_id).all()
                 vote_stats = {
@@ -65,6 +64,7 @@ class MasterApproverService:
                     'suc_agencies': sub.suc_agencies,
                     'paper_category': sub.paper_category,
                     'thematic_area': sub.thematic_area,
+                    'status': sub.status,
                     'evaluation_status': sub.evaluation_status,
                     'created_at': sub.created_at,
                     'vote_stats': vote_stats,
@@ -90,6 +90,7 @@ class MasterApproverService:
                         'suc_agencies': extracted.sucs or email_sub.sender_name,
                         'paper_category': extracted.paper_category or 'Not specified',
                         'thematic_area': extracted.thematic_area or 'Not specified',
+                        'status': email_sub.status,
                         'evaluation_status': extracted.evaluation_status,
                         'created_at': email_sub.email_received_at,
                         'vote_stats': {'endorse': 0, 'downgrade': 0, 'reassign': 0},
@@ -128,8 +129,8 @@ class MasterApproverService:
                         'corresponding_author_name': submission.corresponding_author_name,
                         'corresponding_author_email': submission.corresponding_author_email,
                         'corresponding_author_position': submission.corresponding_author_position,
-                        'evaluation_status': submission.evaluation_status,
                         'status': submission.status,
+                        'evaluation_status': submission.evaluation_status,
                         'abstract_view_url': submission.abstract_view_url,
                         'endorsement_view_url': submission.endorsement_view_url,
                         'created_at': submission.created_at
@@ -162,8 +163,8 @@ class MasterApproverService:
                             'corresponding_author_name': extracted.corresponding_author_name or 'N/A',
                             'corresponding_author_email': extracted.corresponding_author_email or email_sub.sender_email,
                             'corresponding_author_position': extracted.corresponding_author_position or 'N/A',
-                            'evaluation_status': extracted.evaluation_status,
                             'status': email_sub.status,
+                            'evaluation_status': extracted.evaluation_status,
                             'abstract_view_url': email_sub.attachment_view_url,
                             'endorsement_view_url': None,
                             'created_at': email_sub.email_received_at
@@ -182,8 +183,13 @@ class MasterApproverService:
     
     @staticmethod
     def set_final_status(submission_id, data):
-        """Set final status for a submission."""
+        """Set final status for a submission.
+        
+        IMPORTANT: Master Approver updates the 'status' column with the full status value.
+        The 'evaluation_status' is for evaluators' decisions and should not be modified.
+        """
         try:
+            # The frontend sends: 'endorse', 'downgraded-non_competitive', 'downgraded-poster_only', 'pending'
             status = data.get('status')
             master_approver_id = data.get('master_approver_id')
             notes = data.get('notes', '')
@@ -192,72 +198,123 @@ class MasterApproverService:
             if not status or not master_approver_id:
                 return {"detail": "Status and master_approver_id are required"}, 400
             
-            if status not in ['endorse', 'downgraded-non_competitive', 'downgraded-poster_only', 'pending']:
-                return {"detail": "Invalid status"}, 400
+            # Validate status is one of the allowed values
+            allowed_statuses = ['endorse', 'downgraded-non_competitive', 'downgraded-poster_only', 'pending']
+            if status not in allowed_statuses:
+                return {"detail": f"Invalid status: {status}. Must be one of: {', '.join(allowed_statuses)}"}, 400
             
             email_sent = False
             
             # First try to find in system submissions
             submission = Submission.query.filter_by(submission_id=submission_id).first()
             if submission:
-                # Update system submission
-                submission.evaluation_status = status
-                if status == 'endorse':
-                    submission.status = 'endorse'
-                elif 'downgraded' in status:
-                    submission.status = 'downgraded'
-                else:
-                    submission.status = 'pending'
+                # Update the status column directly with the full status value
+                submission.status = status
+                # evaluation_status remains unchanged (evaluators' decision)
                 
                 db.session.commit()
                 
                 # Send email if requested
-                if send_email and status == 'endorse':
-                    email_sent = send_status_update_email(
-                        submission.corresponding_author_email,
-                        submission,
-                        status
-                    )
+                if send_email:
+                    if status == 'endorse':
+                        # Use the detailed endorsement email
+                        submission_dict = {
+                            'submission_id': submission.submission_id,
+                            'extension_project_title': submission.extension_project_title,
+                            'author': submission.author,
+                            'corresponding_author_name': submission.corresponding_author_name,
+                            'corresponding_author_email': submission.corresponding_author_email,
+                            'corresponding_author_position': submission.corresponding_author_position,
+                            'suc_agencies': submission.suc_agencies,
+                            'paper_category': submission.paper_category,
+                            'thematic_area': submission.thematic_area
+                        }
+                        email_sent = send_endorsement_confirmation_email(
+                            submission_dict,
+                            master_approver_id=master_approver_id
+                        )
+                    else:
+                        # Use the status update email
+                        author_name = submission.corresponding_author_name or submission.author
+                        cc_emails = [submission.corresponding_author_email] if submission.corresponding_author_email else None
+                        email_sent = send_status_update_email(
+                            submission.corresponding_author_email,
+                            author_name,
+                            submission.extension_project_title,
+                            status,
+                            notes,
+                            submission_id=submission.submission_id,
+                            master_approver_id=master_approver_id,
+                            cc_emails=cc_emails
+                        )
                 
                 return {
                     "message": f"Status updated to {status}",
                     "email_sent": email_sent,
                     "status": status,
+                    "evaluation_status": submission.evaluation_status,
                     "type": "system"
                 }, 200
             
             # If not found, try email submission (extracted_abstract_data)
             extracted = ExtractedAbstractData.query.filter_by(submission_id=submission_id).first()
             if extracted:
-                # Update extracted_abstract_data evaluation_status
-                extracted.evaluation_status = status
-                
-                # Also update the email_submission status
+                # For email submissions, we update both the email_submission status and extracted_data evaluation_status
                 email_sub = EmailSubmission.query.get(extracted.email_submission_id)
                 if email_sub:
-                    if status == 'endorse':
-                        email_sub.status = 'endorse'
-                    elif 'downgraded' in status:
-                        email_sub.status = 'downgraded'
-                    else:
-                        email_sub.status = 'pending'
+                    # Update email_submission status
+                    email_sub.status = status
+                    
+                    # For email submissions, also update the evaluation_status to match
+                    # since email submissions don't have separate evaluator/master statuses
+                    extracted.evaluation_status = status
                 
                 db.session.commit()
                 
                 # Send email if requested
-                if send_email and status == 'endorse' and email_sub:
+                if send_email and email_sub:
                     # Get the corresponding author email from extracted data
                     corr_email = extracted.corresponding_author_email or email_sub.sender_email
-                    email_sent = send_status_update_email(
-                        corr_email,
-                        extracted,
-                        status
-                    )
+                    author_name = extracted.corresponding_author_name or email_sub.project_leader_name or email_sub.sender_name
+                    project_title = extracted.title or email_sub.subject
+                    
+                    if status == 'endorse':
+                        # Use the detailed endorsement email
+                        submission_dict = {
+                            'submission_id': submission_id,
+                            'extension_project_title': project_title,
+                            'author': author_name,
+                            'corresponding_author_name': extracted.corresponding_author_name or author_name,
+                            'corresponding_author_email': corr_email,
+                            'corresponding_author_position': extracted.corresponding_author_position or '',
+                            'suc_agencies': extracted.sucs or email_sub.sender_name,
+                            'paper_category': extracted.paper_category or 'Not specified',
+                            'thematic_area': extracted.thematic_area or 'Not specified',
+                            'sender_email': email_sub.sender_email
+                        }
+                        email_sent = send_endorsement_confirmation_email(
+                            submission_dict,
+                            extracted_data=extracted,
+                            master_approver_id=master_approver_id
+                        )
+                    else:
+                        cc_emails = [email_sub.sender_email] if email_sub.sender_email and email_sub.sender_email != corr_email else None
+                        email_sent = send_status_update_email(
+                            corr_email,
+                            author_name,
+                            project_title,
+                            status,
+                            notes,
+                            submission_id=submission_id,
+                            master_approver_id=master_approver_id,
+                            cc_emails=cc_emails
+                        )
                 
                 return {
                     "message": f"Status updated to {status}",
                     "email_sent": email_sent,
                     "status": status,
+                    "evaluation_status": extracted.evaluation_status,
                     "type": "email"
                 }, 200
             
@@ -286,10 +343,13 @@ class MasterApproverService:
                 # Try system submissions first
                 submission = Submission.query.filter_by(submission_id=submission_id).first()
                 if submission:
+                    author_name = submission.corresponding_author_name or submission.author
                     email_sent = send_status_update_email(
                         submission.corresponding_author_email,
-                        submission,
-                        status
+                        author_name,
+                        submission.extension_project_title,
+                        status,
+                        submission_id=submission.submission_id
                     )
                     if email_sent:
                         sent_count += 1
@@ -303,10 +363,14 @@ class MasterApproverService:
                     email_sub = EmailSubmission.query.get(extracted.email_submission_id)
                     if email_sub:
                         corr_email = extracted.corresponding_author_email or email_sub.sender_email
+                        author_name = extracted.corresponding_author_name or email_sub.project_leader_name or email_sub.sender_name
+                        project_title = extracted.title or email_sub.subject
                         email_sent = send_status_update_email(
                             corr_email,
-                            extracted,
-                            status
+                            author_name,
+                            project_title,
+                            status,
+                            submission_id=submission_id
                         )
                         if email_sent:
                             sent_count += 1

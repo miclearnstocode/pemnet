@@ -71,7 +71,7 @@ class GmailService:
                 
                 # Run local server - this will open a browser
                 creds = flow.run_local_server(
-                    port=8080,
+                    port=8087,
                     open_browser=True,
                     success_message='Authentication successful! You can close this window.'
                 )
@@ -275,18 +275,41 @@ class GmailService:
             print(f'An error occurred: {error}')
             return []
         
-    def send_email(self, to, subject, body, attachments=None):
-        """Send an email with optional attachments."""
+    def send_email(self, to, subject, body, attachments=None, is_html=False, cc=None):
+        """Send an email with optional attachments and CC."""
         try:
-            message = MIMEMultipart()
-            message['to'] = to
-            message['subject'] = subject
+            if is_html:
+                # Create multipart/alternative message for HTML email
+                message = MIMEMultipart('alternative')
+                message['to'] = to
+                message['subject'] = subject
+                
+                # Add CC if provided
+                if cc:
+                    message['cc'] = ', '.join(cc) if isinstance(cc, list) else cc
+                
+                # Create plain text version
+                plain_text = self.html_to_text(body)
+                text_part = MIMEText(plain_text, 'plain', 'utf-8')
+                message.attach(text_part)
+                
+                # Create HTML version
+                html_part = MIMEText(body, 'html', 'utf-8')
+                message.attach(html_part)
+            else:
+                # Create plain text message
+                message = MIMEMultipart()
+                message['to'] = to
+                message['subject'] = subject
+                
+                # Add CC if provided
+                if cc:
+                    message['cc'] = ', '.join(cc) if isinstance(cc, list) else cc
+                
+                msg_body = MIMEText(body, 'plain', 'utf-8')
+                message.attach(msg_body)
             
-            # Add body
-            msg_body = MIMEText(body)
-            message.attach(msg_body)
-            
-            # Add attachments
+            # Add attachments if any
             if attachments:
                 for attachment in attachments:
                     part = MIMEApplication(attachment['data'])
@@ -295,24 +318,13 @@ class GmailService:
             
             # Encode and send
             raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode('utf-8')
-            body = {'raw': raw_message}
+            body_payload = {'raw': raw_message}
             
             sent_message = self.service.users().messages().send(
-                userId='me', body=body
+                userId='me', body=body_payload
             ).execute()
             
             return sent_message
         except HttpError as error:
             print(f'An error occurred sending email: {error}')
             return None
-    
-    def delete_email(self, msg_id):
-        """Delete an email."""
-        try:
-            self.service.users().messages().delete(
-                userId='me', id=msg_id
-            ).execute()
-            return True
-        except HttpError as error:
-            print(f'Error deleting email: {error}')
-            return False

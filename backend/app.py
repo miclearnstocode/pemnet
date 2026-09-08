@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 from google_drive import upload_file_to_drive
 from functools import wraps
 from gmail_service import GmailService
-from models import db, User, Submission, EmailSubmission, ExtractedAbstractData, SUC, SubmissionVote, EvaluatorDiscussion, Payment, ExtractedDataRevision
+from models import db, User, Submission, EmailSubmission, ExtractedAbstractData, SUC, SubmissionVote, EvaluatorDiscussion, Payment, ExtractedDataRevision, EmailNotificationLog
 from master_approver import MasterApproverService
 from email_service import gmail_service, send_status_update_email, send_confirmation_email
 
@@ -2394,6 +2394,40 @@ def bulk_send_status_emails():
         traceback.print_exc()
         return jsonify({"detail": str(e)}), 500
 
+@app.route('/api/email-logs/<string:submission_id>', methods=['GET', 'OPTIONS'])
+def get_email_logs(submission_id):
+    """Get email notification logs for a submission."""
+    if request.method == 'OPTIONS':
+        return jsonify({})
+    
+    try:
+        logs = EmailNotificationLog.query.filter_by(submission_id=submission_id).order_by(EmailNotificationLog.created_at.desc()).all()
+        return jsonify([log.to_dict() for log in logs]), 200
+    except Exception as e:
+        print(f"Error fetching email logs: {e}")
+        return jsonify({"detail": str(e)}), 500
+
+@app.route('/api/email-logs/all', methods=['GET', 'OPTIONS'])
+def get_all_email_logs():
+    """Get all email notification logs."""
+    if request.method == 'OPTIONS':
+        return jsonify({})
+    
+    try:
+        limit = request.args.get('limit', 100, type=int)
+        status_filter = request.args.get('status', 'all')
+        
+        query = EmailNotificationLog.query
+        
+        if status_filter != 'all':
+            query = query.filter_by(status=status_filter)
+        
+        logs = query.order_by(EmailNotificationLog.created_at.desc()).limit(limit).all()
+        return jsonify([log.to_dict() for log in logs]), 200
+    except Exception as e:
+        print(f"Error fetching all email logs: {e}")
+        return jsonify({"detail": str(e)}), 500
+    
 @app.route('/api/payments/upload', methods=['POST', 'OPTIONS'])
 def upload_payment_proof():
     """Upload payment proof for a submission."""

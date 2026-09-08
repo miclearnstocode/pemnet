@@ -13,12 +13,12 @@ export default function DowngradeModal({
 
   const downgradeOptions = [
     { 
-      value: 'non_competitive', 
+      value: 'downgraded-non_competitive', 
       label: 'Non-Competitive Presentation with Poster',
       description: 'Abstract is accepted as a poster presentation only (non-competitive)'
     },
     { 
-      value: 'poster_only', 
+      value: 'downgraded-poster_only', 
       label: 'Poster Only',
       description: 'Abstract is accepted as a poster presentation only'
     }

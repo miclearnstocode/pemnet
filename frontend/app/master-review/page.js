@@ -83,16 +83,24 @@ export default function MasterReviewPage() {
       if (activeTab === 'system') {
         url = 'http://localhost:5000/api/submissions';
       } else {
-        url = `http://localhost:5000/api/email-submissions?status=${statusFilter}`;
+        url = 'http://localhost:5000/api/email-submissions?status=all';
       }
       
       const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
-        const processedData = data.map(sub => ({
-          ...sub,
-          evaluation_status: sub.evaluation_status || sub.status || 'pending'
-        }));
+        // Process submissions - ensure we have submission_id for all
+        const processedData = data.map(sub => {
+          const displayStatus = sub.status || 'pending';
+          return {
+            ...sub,
+            display_status: displayStatus,
+            filter_status: sub.status || 'pending',
+            // Ensure submission_id exists (it should for system submissions)
+            // For email submissions, it comes from extracted_data
+            submission_id: sub.submission_id || null
+          };
+        });
         setSubmissions(processedData);
       }
       
@@ -115,11 +123,15 @@ export default function MasterReviewPage() {
   };
 
   const fetchExtractedData = async (emailSubmissionId) => {
-    const res = await fetch(`http://localhost:5000/api/email-submissions/${emailSubmissionId}/extracted-data`);
-    if (res.ok) {
-      const data = await res.json();
-      setEmailExtractedData(data);
-      return data;
+    try {
+      const res = await fetch(`http://localhost:5000/api/email-submissions/${emailSubmissionId}/extracted-data`);
+      if (res.ok) {
+        const data = await res.json();
+        setEmailExtractedData(data);
+        return data;
+      }
+    } catch (error) {
+      console.error('Error fetching extracted data:', error);
     }
     return null;
   };
@@ -128,20 +140,48 @@ export default function MasterReviewPage() {
     setSelectedSubmission(sub);
     setSubmissionDetails(null);
     setEmailExtractedData(null);
-    setSelectedStatus(sub.evaluation_status || 'pending');
+    
+    // CRITICAL: Use submission_id (string format like 'pemnet-024-2026') for API calls
+    // This is the unique identifier across both system and email submissions
+    const submissionId = sub.submission_id;
+    
+    if (!submissionId) {
+      console.error('No submission_id found for submission:', sub);
+      showToast('Invalid submission data - missing submission_id', 'error');
+      return;
+    }
+    
+    // For email submissions, get the status from extracted_abstract_data
+    if (activeTab === 'email' && sub.id) {
+      const extractedData = await fetchExtractedData(sub.id);
+      if (extractedData) {
+        sub.status = extractedData.status || 'pending';
+        sub.evaluation_status = extractedData.evaluation_status || 'pending';
+        // Use the submission_id from extracted data (it's the string format)
+        sub.submission_id = extractedData.submission_id || sub.submission_id;
+        setSelectedSubmission(prev => ({
+          ...prev,
+          status: extractedData.status || 'pending',
+          evaluation_status: extractedData.evaluation_status || 'pending',
+          submission_id: extractedData.submission_id || prev.submission_id
+        }));
+      }
+    }
+    
+    // For system submissions, use 'status' (master approver decision)
+    setSelectedStatus(sub.status || 'pending');
     setShowEndorsement(false);
     setSendEmailConfirmation(true);
     setIsModalOpen(true);
     
     try {
-      const res = await fetch(`http://localhost:5000/api/submissions/${sub.id}/master-details`);
+      // Use the submission_id (string) for the API calls - this is unique across both tables
+      const res = await fetch(`http://localhost:5000/api/submissions/${submissionId}/master-details`);
       if (res.ok) {
         const data = await res.json();
         setSubmissionDetails(data);
-      }
-      
-      if (activeTab === 'email' && sub.id) {
-        await fetchExtractedData(sub.id);
+      } else {
+        console.error('Failed to fetch submission details for:', submissionId);
       }
     } catch (error) {
       console.error('Error fetching submission details:', error);
@@ -154,14 +194,24 @@ export default function MasterReviewPage() {
     
     setIsSettingStatus(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/submissions/${selectedSubmission.id}/master-status`, {
+      // Use the submission_id (string) for the API call - this is unique across both tables
+      const submissionId = selectedSubmission.submission_id;
+      
+      if (!submissionId) {
+        showToast('Invalid submission - missing submission_id', 'error');
+        setIsSettingStatus(false);
+        return;
+      }
+      
+      const res = await fetch(`http://localhost:5000/api/submissions/${submissionId}/master-status`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           status: status,
           master_approver_id: currentUser.id,
           notes: notes || document.getElementById('masterNotes')?.value || '',
-          send_email: sendEmailConfirmation
+          send_email: sendEmailConfirmation,
+          submission_type: activeTab
         }),
       });
 
@@ -170,58 +220,45 @@ export default function MasterReviewPage() {
         const emailMessage = data.email_sent ? ' Confirmation email sent to the corresponding author.' : '';
         showToast(`Status updated to ${getStatusDisplay(status)}.${emailMessage}`, 'success');
         
-        const statusMapping = {
-          'endorse': 'endorse',
-          'downgraded-non_competitive': 'downgraded',
-          'downgraded-poster_only': 'downgraded',
-          'pending': 'pending'
-        };
-        
+        // Update the submissions list using submission_id
         setSubmissions(prev => 
-          prev.map(sub => 
-            sub.id === selectedSubmission.id 
-              ? { 
-                  ...sub, 
-                  evaluation_status: status,
-                  status: statusMapping[status] || 'pending'
-                }
-              : sub
-          )
+          prev.map(sub => {
+            if (sub.submission_id === submissionId) {
+              return { 
+                ...sub, 
+                status: status,
+                display_status: status,
+                filter_status: status
+              };
+            }
+            return sub;
+          })
         );
         
         setSelectedSubmission(prev => ({
           ...prev,
-          evaluation_status: status,
-          status: statusMapping[status] || 'pending'
+          status: status
         }));
         
-        setSubmissionDetails(prev => {
-          if (prev) {
-            return {
-              ...prev,
-              evaluation_status: status,
-              submission: {
-                ...prev.submission,
-                evaluation_status: status,
-                status: statusMapping[status] || 'pending'
-              }
-            };
-          }
-          return prev;
-        });
+        if (emailExtractedData) {
+          setEmailExtractedData(prev => ({
+            ...prev,
+            status: status
+          }));
+        }
         
+        // Update stats based on status
         setStats(prev => {
           const newStats = { ...prev };
           if (status === 'endorse') {
             newStats.pending = Math.max(0, (prev.pending || 0) - 1);
             newStats.endorsed = (prev.endorsed || 0) + 1;
-          } else if (status === 'downgraded-non_competitive' || status === 'downgraded-poster_only') {
+          } else if (status === 'downgraded-non_competitive') {
             newStats.pending = Math.max(0, (prev.pending || 0) - 1);
-            if (status === 'downgraded-non_competitive') {
-              newStats.non_competitive = (prev.non_competitive || 0) + 1;
-            } else {
-              newStats.poster_only = (prev.poster_only || 0) + 1;
-            }
+            newStats.non_competitive = (prev.non_competitive || 0) + 1;
+          } else if (status === 'downgraded-poster_only') {
+            newStats.pending = Math.max(0, (prev.pending || 0) - 1);
+            newStats.poster_only = (prev.poster_only || 0) + 1;
           }
           return newStats;
         });
@@ -328,7 +365,7 @@ export default function MasterReviewPage() {
     }
   };
 
-  // Helper functions to get data from either submission or extracted data
+  // Helper functions to get data from selectedSubmission
   const getTitle = () => {
     if (activeTab === 'system') {
       return selectedSubmission?.extension_project_title || 'Untitled';
@@ -340,7 +377,7 @@ export default function MasterReviewPage() {
     if (activeTab === 'system') {
       return selectedSubmission?.author || 'Unknown';
     }
-    return emailExtractedData?.project_leader || selectedSubmission?.sender_name || 'Unknown';
+    return emailExtractedData?.project_leader || selectedSubmission?.project_leader_name || selectedSubmission?.sender_name || 'Unknown';
   };
 
   const getAuthorsList = () => {
@@ -354,7 +391,7 @@ export default function MasterReviewPage() {
     if (activeTab === 'system') {
       return selectedSubmission?.suc_agencies || 'N/A';
     }
-    return emailExtractedData?.sucs || 'N/A';
+    return emailExtractedData?.sucs || selectedSubmission?.sender_name || 'N/A';
   };
 
   const getCorrespondingAuthorName = () => {
@@ -368,7 +405,7 @@ export default function MasterReviewPage() {
     if (activeTab === 'system') {
       return selectedSubmission?.corresponding_author_email || 'N/A';
     }
-    return emailExtractedData?.corresponding_author_email || 'N/A';
+    return emailExtractedData?.corresponding_author_email || selectedSubmission?.sender_email || 'N/A';
   };
 
   const getCorrespondingAuthorPosition = () => {
@@ -408,9 +445,11 @@ export default function MasterReviewPage() {
     return null;
   };
 
+  // Filter submissions - for master approver, use 'status' field
   const filteredSubmissions = submissions.filter(sub => {
     if (activeTab === 'system') {
-      if (statusFilter !== 'all' && sub.evaluation_status !== statusFilter) return false;
+      // Use status for filtering (master approver decision)
+      if (statusFilter !== 'all' && sub.status !== statusFilter) return false;
       if (categoryFilter !== 'all' && sub.paper_category !== categoryFilter) return false;
       if (searchTerm) {
         const search = searchTerm.toLowerCase();
@@ -422,26 +461,27 @@ export default function MasterReviewPage() {
       }
       return true;
     } else {
-      if (statusFilter !== 'all' && sub.evaluation_status !== statusFilter) return false;
+      // For email submissions, use status
+      if (statusFilter !== 'all' && sub.status !== statusFilter) return false;
       if (searchTerm) {
         const search = searchTerm.toLowerCase();
         return (
           (sub.subject && sub.subject.toLowerCase().includes(search)) ||
           (sub.sender_name && sub.sender_name.toLowerCase().includes(search)) ||
-          (sub.sender_email && sub.sender_email.toLowerCase().includes(search))
+          (sub.sender_email && sub.sender_email.toLowerCase().includes(search)) ||
+          (sub.project_leader_name && sub.project_leader_name.toLowerCase().includes(search))
         );
       }
       return true;
     }
   });
 
+  // Calculate stats based on status (master approver decision)
   const totalSubmissions = submissions.length;
-  const pendingCount = submissions.filter(s => s.evaluation_status === 'pending').length;
-  const endorsedCount = submissions.filter(s => s.evaluation_status === 'endorse').length;
-  const downgradedCount = submissions.filter(s => 
-    s.evaluation_status === 'downgraded-non_competitive' || 
-    s.evaluation_status === 'downgraded-poster_only'
-  ).length;
+  const pendingCount = submissions.filter(s => s.status === 'pending').length;
+  const endorsedCount = submissions.filter(s => s.status === 'endorse').length;
+  const nonCompetitiveCount = submissions.filter(s => s.status === 'downgraded-non_competitive' || s.evaluation_status === 'downgraded-non_competitive').length;
+  const posterOnlyCount = submissions.filter(s => s.status === 'downgraded-poster_only' || s.evaluation_status === 'downgraded-poster_only').length;
 
   if (loading) {
     return (
@@ -486,36 +526,21 @@ export default function MasterReviewPage() {
           }
         }}
         title={pendingStatusAction === 'return_to_sender' ? 'Return to Sender' : 
-               pendingStatusAction === 'endorse' ? 'Endorse for Presentation' : 
-               'Confirm Status Change'}
+              pendingStatusAction === 'endorse' ? 'Endorse for Presentation' : 
+              'Confirm Status Change'}
         message={pendingStatusAction === 'return_to_sender' 
           ? 'Are you sure you want to return this submission to the sender for revisions?'
           : pendingStatusAction === 'endorse'
-            ? `
-              <div>
-                <p class="mb-2">Are you sure you want to endorse this submission for presentation?</p>
-                <div class="mt-4 p-3 bg-emerald-50 rounded-lg border border-emerald-200">
-                  <label class="flex items-center gap-2 text-sm text-emerald-800 cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      ${sendEmailConfirmation ? 'checked' : ''}
-                      onChange={(e) => setSendEmailConfirmation(e.target.checked)}
-                      class="w-4 h-4 text-emerald-600 rounded border-emerald-300 focus:ring-emerald-500"
-                    />
-                    <span>Send confirmation email to corresponding author</span>
-                  </label>
-                  <p class="text-xs text-emerald-600 mt-1 ml-6">
-                    An email will be sent to the corresponding author with the acceptance details.
-                  </p>
-                </div>
-              </div>
-            `
-          : `Are you sure you want to change the status to <strong>${getStatusDisplay(pendingStatusAction)}</strong>?`
+            ? 'Are you sure you want to endorse this submission for presentation?'
+            : `Are you sure you want to change the status to <strong>${getStatusDisplay(pendingStatusAction)}</strong>?`
         }
         confirmText={pendingStatusAction === 'return_to_sender' ? 'Yes, Return' : 'Yes, Confirm'}
         cancelText="No, Cancel"
         isLoading={isSettingStatus}
-        type={pendingStatusAction === 'return_to_sender' ? 'warning' : 'info'}
+        type={pendingStatusAction === 'return_to_sender' ? 'warning' : pendingStatusAction === 'endorse' ? 'info' : 'info'}
+        showEmailCheckbox={pendingStatusAction === 'endorse'}
+        emailChecked={sendEmailConfirmation}
+        onEmailToggle={setSendEmailConfirmation}
       />
 
       {/* Downgrade Selection Modal */}
@@ -546,7 +571,7 @@ export default function MasterReviewPage() {
           <div className="relative min-h-full flex items-center justify-center p-4">
             <div className="relative w-full max-w-6xl bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[95vh]">
               {/* Modal Header - Fixed */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-linear-to-r from-purple-50 to-blue-50 sticky top-0 z-10">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-purple-50 to-blue-50 sticky top-0 z-10">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-purple-600">
@@ -644,9 +669,17 @@ export default function MasterReviewPage() {
                       </span>
                     </div>
                     
-                    {/* Current Status */}
+                    {/* Current Status - Use status (master approver decision) */}
                     <div>
                       <p className="text-sm text-slate-600 font-medium">Current Status</p>
+                      <span className={`inline-flex px-3 py-1.5 rounded-full text-sm font-medium ${getStatusColor(selectedSubmission.status || 'pending')}`}>
+                        {getStatusDisplay(selectedSubmission.status || 'pending')}
+                      </span>
+                    </div>
+                    
+                    {/* Evaluator Decision - Show evaluation_status for reference */}
+                    <div>
+                      <p className="text-sm text-slate-600 font-medium">Evaluator Decision</p>
                       <span className={`inline-flex px-3 py-1.5 rounded-full text-sm font-medium ${getStatusColor(selectedSubmission.evaluation_status || 'pending')}`}>
                         {getStatusDisplay(selectedSubmission.evaluation_status || 'pending')}
                       </span>
@@ -716,7 +749,7 @@ export default function MasterReviewPage() {
                       {/* Endorse for Presentation - Green */}
                       <button
                         onClick={() => confirmStatusChange('endorse')}
-                        disabled={selectedSubmission.evaluation_status === 'endorse'}
+                        disabled={selectedSubmission.status === 'endorse'}
                         className="w-full bg-emerald-600 text-white py-3 rounded-xl font-semibold hover:bg-emerald-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
@@ -729,7 +762,7 @@ export default function MasterReviewPage() {
                       {/* Downgrade - Yellow/Orange */}
                       <button
                         onClick={handleOpenDowngradeModal}
-                        disabled={selectedSubmission.evaluation_status === 'downgraded-non_competitive' || selectedSubmission.evaluation_status === 'downgraded-poster_only'}
+                        disabled={selectedSubmission.status === 'downgraded-non_competitive' || selectedSubmission.status === 'downgraded-poster_only'}
                         className="w-full bg-yellow-500 text-white py-3 rounded-xl font-semibold hover:bg-yellow-600 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
@@ -741,7 +774,7 @@ export default function MasterReviewPage() {
                       {/* Return to Sender - Red */}
                       <button
                         onClick={handleReturnToSender}
-                        disabled={selectedSubmission.evaluation_status === 'pending'}
+                        disabled={selectedSubmission.status === 'pending'}
                         className="w-full bg-red-500 text-white py-3 rounded-xl font-semibold hover:bg-red-600 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
@@ -863,7 +896,7 @@ export default function MasterReviewPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-8 py-6">
-        {/* Stats Cards */}
+        {/* Stats Cards - Use status for master approver stats */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
           <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
             <p className="text-2xl font-bold text-slate-900">{totalSubmissions}</p>
@@ -878,15 +911,11 @@ export default function MasterReviewPage() {
             <p className="text-sm text-slate-500">Endorsed</p>
           </div>
           <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-            <p className="text-2xl font-bold text-yellow-600">
-              {submissions.filter(s => s.evaluation_status === 'downgraded-non_competitive').length}
-            </p>
+            <p className="text-2xl font-bold text-yellow-600">{nonCompetitiveCount}</p>
             <p className="text-sm text-slate-500">Non-Competitive</p>
           </div>
           <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-            <p className="text-2xl font-bold text-orange-600">
-              {submissions.filter(s => s.evaluation_status === 'downgraded-poster_only').length}
-            </p>
+            <p className="text-2xl font-bold text-orange-600">{posterOnlyCount}</p>
             <p className="text-sm text-slate-500">Poster Only</p>
           </div>
         </div>
@@ -967,7 +996,8 @@ export default function MasterReviewPage() {
                       <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Title & Author</th>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Category</th>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Date</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Evaluator Decision</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Master Status</th>
                     </>
                   ) : (
                     <>
@@ -980,59 +1010,78 @@ export default function MasterReviewPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredSubmissions.map((sub) => (
-                  <tr
-                    key={sub.id}
-                    onClick={() => selectSubmission(sub)}
-                    className="cursor-pointer border-b border-slate-100 hover:bg-purple-50/50 transition"
-                  >
-                    {activeTab === 'system' ? (
-                      <>
-                        <td className="px-6 py-4">
-                          <p className="text-sm font-semibold text-slate-900">{sub.extension_project_title || 'Untitled'}</p>
-                          <p className="text-xs text-slate-500 mt-1">{sub.author || 'Unknown Author'}</p>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${getCategoryColor(sub.paper_category)}`}>
-                            {sub.paper_category?.includes('Completed') ? 'Completed' : 'Ongoing'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-slate-600">
-                          {new Date(sub.created_at).toLocaleDateString('en-US', { 
-                            month: 'short', 
-                            day: '2-digit', 
-                            year: 'numeric' 
-                          })}
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(sub.evaluation_status || 'pending')}`}>
-                            {getStatusDisplay(sub.evaluation_status || 'pending')}
-                          </span>
-                        </td>
-                      </>
-                    ) : (
-                      <>
-                        <td className="px-6 py-4">
-                          <p className="text-sm font-semibold text-slate-900">{sub.subject || 'No Subject'}</p>
-                          <p className="text-xs text-slate-500 mt-1">{sub.sender_name} ({sub.sender_email})</p>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-slate-600">{sub.project_leader_name || sub.sender_name}</td>
-                        <td className="px-6 py-4 text-sm text-slate-600">
-                          {new Date(sub.email_received_at || sub.created_at).toLocaleDateString('en-US', { 
-                            month: 'short', 
-                            day: '2-digit', 
-                            year: 'numeric' 
-                          })}
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(sub.evaluation_status || 'pending')}`}>
-                            {getStatusDisplay(sub.evaluation_status || 'pending')}
-                          </span>
-                        </td>
-                      </>
-                    )}
-                  </tr>
-                ))}
+                {filteredSubmissions.map((sub) => {
+                  // For system submissions: show both evaluator decision and master status
+                  const evaluatorStatus = sub.evaluation_status || 'pending';
+                  const masterStatus = sub.status || 'pending';
+                  
+                  return (
+                    <tr
+                      key={sub.submission_id || sub.id}
+                      onClick={() => selectSubmission(sub)}
+                      className="cursor-pointer border-b border-slate-100 hover:bg-purple-50/50 transition"
+                    >
+                      {activeTab === 'system' ? (
+                        <>
+                          <td className="px-6 py-4">
+                            <p className="text-sm font-semibold text-slate-900">{sub.extension_project_title || 'Untitled'}</p>
+                            <p className="text-xs text-slate-500 mt-1">{sub.author || 'Unknown Author'}</p>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${getCategoryColor(sub.paper_category)}`}>
+                              {sub.paper_category?.includes('Completed') ? 'Completed' : 'Ongoing'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-slate-600">
+                            {new Date(sub.created_at).toLocaleDateString('en-US', { 
+                              month: 'short', 
+                              day: '2-digit', 
+                              year: 'numeric' 
+                            })}
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(evaluatorStatus)}`}>
+                              {getStatusDisplay(evaluatorStatus)}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(masterStatus)}`}>
+                              {getStatusDisplay(masterStatus)}
+                            </span>
+                          </td>
+                        </>
+                      ) : (
+                        <>
+                          <td className="px-6 py-4">
+                            <p className="text-sm font-semibold text-slate-900">{sub.subject || 'No Subject'}</p>
+                            <p className="text-xs text-slate-500 mt-1">{sub.sender_name} ({sub.sender_email})</p>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-slate-600">{sub.project_leader_name || sub.sender_name}</td>
+                          <td className="px-6 py-4 text-sm text-slate-600">
+                            {new Date(sub.email_received_at || sub.created_at).toLocaleDateString('en-US', { 
+                              month: 'short', 
+                              day: '2-digit', 
+                              year: 'numeric' 
+                            })}
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(masterStatus)}`}>
+                              {getStatusDisplay(masterStatus)}
+                            </span>
+                            {sub.extraction_status === 'failed' && (
+                              <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-50 text-red-600 border border-red-200">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3 h-3">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                                </svg>
+                                Needs Review
+                              </span>
+                            )}
+                          </td>
+                        </>
+                      )}
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
             {filteredSubmissions.length === 0 && (

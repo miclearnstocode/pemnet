@@ -561,6 +561,7 @@ def get_user_submissions(user_id):
         
         result = [{
             'id': s.id,
+            'submission_id': s.submission_id,
             'user_id': s.user_id,
             'extension_project_title': s.extension_project_title,
             'thematic_area': s.thematic_area,
@@ -572,6 +573,7 @@ def get_user_submissions(user_id):
             'corresponding_author_email': s.corresponding_author_email,
             'corresponding_author_position': s.corresponding_author_position, 
             'status': s.status,
+            'evaluation_status': s.evaluation_status,  # ADD THIS
             'co_authors': s.co_authors,
             'abstract_view_url': s.abstract_view_url,
             'abstract_download_url': s.abstract_download_url,
@@ -588,7 +590,6 @@ def get_user_submissions(user_id):
         print(f"Error fetching user submissions: {e}")
         traceback.print_exc()
         return jsonify({"detail": str(e)}), 500
-    
 
 @app.route('/api/submissions', methods=['GET', 'OPTIONS'])
 def get_submissions():
@@ -600,6 +601,7 @@ def get_submissions():
         
         result = [{
             'id': s.id,
+            'submission_id': s.submission_id,  # ADD THIS - the unique string ID
             'user_id': s.user_id,
             'extension_project_title': s.extension_project_title,
             'thematic_area': s.thematic_area,
@@ -607,7 +609,11 @@ def get_submissions():
             'suc_agencies': s.suc_agencies,
             'author': s.author,
             'presenter': s.presenter,
+            'corresponding_author_name': s.corresponding_author_name,
+            'corresponding_author_email': s.corresponding_author_email,
+            'corresponding_author_position': s.corresponding_author_position,
             'status': s.status,
+            'evaluation_status': s.evaluation_status,  # ADD THIS too
             'co_authors': s.co_authors,
             'abstract_view_url': s.abstract_view_url,
             'abstract_download_url': s.abstract_download_url,
@@ -1450,6 +1456,8 @@ def get_email_submissions():
             
             result.append({
                 'id': s.id,
+                # IMPORTANT: Use the submission_id from extracted_data
+                'submission_id': extracted_data.submission_id if extracted_data else None,
                 'sender_email': s.sender_email,
                 'sender_name': s.sender_name,
                 'project_leader_name': extracted_data.project_leader if extracted_data else s.project_leader_name,
@@ -1460,6 +1468,7 @@ def get_email_submissions():
                 'attachment_download_url': s.attachment_download_url,
                 'status': display_status,
                 'extraction_status': extracted_data.extraction_status if extracted_data else 'pending',
+                'evaluation_status': extracted_data.evaluation_status if extracted_data else 'pending',
                 'processed_submission_id': s.processed_submission_id,
                 'email_received_at': s.email_received_at.strftime('%Y-%m-%d %H:%M:%S') if s.email_received_at else None,
                 'created_at': s.created_at.strftime('%Y-%m-%d %H:%M:%S') if s.created_at else None
@@ -1719,47 +1728,6 @@ def sync_all_emails():
         return jsonify({"detail": str(e)}), 500
 
 # ========== EVALUATOR ROUTES ==========
-def evaluate_final_decision(submission_id):
-    """Automatically evaluates the submission based on majority votes."""
-    submission = Submission.query.get(submission_id)
-    votes = SubmissionVote.query.filter_by(submission_id=submission_id).all()
-    
-    endorse_count = 0
-    downgrade_count = 0
-    reassign_count = 0
-    downgrade_type = None
-
-    for vote in votes:
-        if vote.vote_status == 'endorse':
-            endorse_count += 1
-        elif vote.vote_status == 'downgrade':
-            downgrade_count += 1
-            # Store the downgrade type from the vote
-            if vote.vote_downgrade_to:
-                downgrade_type = vote.vote_downgrade_to
-        elif vote.vote_status == 'reassign':
-            reassign_count += 1
-
-    # Final decision logic based on 3 evaluators
-    if endorse_count >= 2:  # 2 or more endorse votes
-        submission.evaluation_status = 'endorse'
-        submission.status = 'endorse'  # Update status as well
-    elif downgrade_count >= 2:  # 2 or more downgrade votes
-        # Use the downgrade type from the votes
-        if downgrade_type:
-            submission.evaluation_status = downgrade_type
-        else:
-            submission.evaluation_status = 'downgraded-non_competitive'  # default
-        submission.status = 'downgraded'  # Update status as well
-    elif reassign_count >= 2:  # 2 or more reassign votes
-        submission.evaluation_status = 'pending'  # Keep pending for reassign
-        # Update thematic area is handled elsewhere
-    else:
-        submission.evaluation_status = 'pending'
-
-    db.session.commit()
-
-# ========== EVALUATOR ROUTES ==========
 
 def get_submission_data(submission_id):
     """Get submission data from either submissions or email_submissions table."""
@@ -1844,7 +1812,7 @@ def get_submission_data(submission_id):
 def evaluate_final_decision(submission_id, submission_type='system'):
     """Automatically evaluates the submission based on majority votes."""
     if submission_type == 'system':
-        submission = Submission.query.get(submission_id)
+        submission = Submission.query.filter_by(submission_id=submission_id).first()
         if not submission:
             return
     else:
@@ -2354,8 +2322,13 @@ def master_approver_status_summary():
     if request.method == 'OPTIONS':
         return jsonify({})
     
-    result, status_code = MasterApproverService.get_status_summary()
-    return jsonify(result), status_code
+    try:
+        result, status_code = MasterApproverService.get_status_summary()
+        return jsonify(result), status_code
+    except Exception as e:
+        print(f"Error in master_approver_status_summary: {e}")
+        traceback.print_exc()
+        return jsonify({"detail": str(e)}), 500
 
 @app.route('/api/master-approver/pending-submissions', methods=['GET', 'OPTIONS'])
 def master_approver_pending_submissions():
@@ -2363,18 +2336,13 @@ def master_approver_pending_submissions():
     if request.method == 'OPTIONS':
         return jsonify({})
     
-    result, status_code = MasterApproverService.get_pending_submissions()
-    return jsonify(result), status_code
-
-@app.route('/api/submissions/<string:submission_id>/master-status', methods=['POST', 'OPTIONS'])
-def set_master_status(submission_id):
-    """Master approver sets the final status of a submission."""
-    if request.method == 'OPTIONS':
-        return jsonify({})
-    
-    data = request.get_json()
-    result, status_code = MasterApproverService.set_final_status(submission_id, data)
-    return jsonify(result), status_code
+    try:
+        result, status_code = MasterApproverService.get_pending_submissions()
+        return jsonify(result), status_code
+    except Exception as e:
+        print(f"Error in master_approver_pending_submissions: {e}")
+        traceback.print_exc()
+        return jsonify({"detail": str(e)}), 500
 
 @app.route('/api/submissions/<string:submission_id>/master-details', methods=['GET', 'OPTIONS'])
 def get_submission_with_votes(submission_id):
@@ -2382,8 +2350,31 @@ def get_submission_with_votes(submission_id):
     if request.method == 'OPTIONS':
         return jsonify({})
     
-    result, status_code = MasterApproverService.get_submission_with_votes(submission_id)
-    return jsonify(result), status_code
+    try:
+        result, status_code = MasterApproverService.get_submission_with_votes(submission_id)
+        return jsonify(result), status_code
+    except Exception as e:
+        print(f"Error in get_submission_with_votes: {e}")
+        traceback.print_exc()
+        return jsonify({"detail": str(e)}), 500
+
+@app.route('/api/submissions/<string:submission_id>/master-status', methods=['POST', 'OPTIONS'])
+def set_master_status(submission_id):
+    """Master approver sets the final status of a submission."""
+    if request.method == 'OPTIONS':
+        return jsonify({})
+    
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"detail": "Request body is required"}), 400
+        
+        result, status_code = MasterApproverService.set_final_status(submission_id, data)
+        return jsonify(result), status_code
+    except Exception as e:
+        print(f"Error in set_master_status: {e}")
+        traceback.print_exc()
+        return jsonify({"detail": str(e)}), 500
 
 @app.route('/api/master-approver/bulk-email', methods=['POST', 'OPTIONS'])
 def bulk_send_status_emails():
@@ -2391,9 +2382,17 @@ def bulk_send_status_emails():
     if request.method == 'OPTIONS':
         return jsonify({})
     
-    data = request.get_json()
-    result, status_code = MasterApproverService.bulk_send_status_emails(data)
-    return jsonify(result), status_code
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"detail": "Request body is required"}), 400
+        
+        result, status_code = MasterApproverService.bulk_send_status_emails(data)
+        return jsonify(result), status_code
+    except Exception as e:
+        print(f"Error in bulk_send_status_emails: {e}")
+        traceback.print_exc()
+        return jsonify({"detail": str(e)}), 500
 
 @app.route('/api/payments/upload', methods=['POST', 'OPTIONS'])
 def upload_payment_proof():

@@ -1008,8 +1008,8 @@ def process_email_submission(email_data):
                     project_leader=authors_data.get('project_leader') if authors_data else None,
                     corresponding_author_name=corresponding_author.get('name') if corresponding_author else None,
                     corresponding_author_email=corresponding_author.get('email') if corresponding_author else None,
-                    corresponding_author_position=extracted_data.get('corresponding_author_position'),  # NEW
-                    sucs=extracted_data.get('sucs'),  # NEW
+                    corresponding_author_position=extracted_data.get('corresponding_author_position'),
+                    sucs=extracted_data.get('sucs'),
                     paper_category=extracted_data.get('paper_category'),
                     thematic_area=extracted_data.get('thematic_area'),
                     theme=extracted_data.get('theme'),
@@ -1034,6 +1034,8 @@ def process_email_submission(email_data):
                     extraction_error='No data could be extracted from the attachment'
                 )
                 db.session.add(extracted_record)
+                # Update the email submission status to 'uncategorized'
+                email_submission.status = 'uncategorized'
                 print(f"⚠️  Created failed extraction record for email_submission_id: {email_submission.id}")
             except Exception as e:
                 print(f"⚠️  Error saving failed extraction record: {e}")
@@ -1428,17 +1430,25 @@ def get_email_submissions():
             # Fetch the extracted data for this email submission
             extracted_data = ExtractedAbstractData.query.filter_by(email_submission_id=s.id).first()
             
+            # Determine the display status - use email submission status
+            display_status = s.status
+            
+            # If extraction failed, mark as uncategorized
+            if extracted_data and extracted_data.extraction_status == 'failed':
+                display_status = 'uncategorized'
+            
             result.append({
                 'id': s.id,
                 'sender_email': s.sender_email,
                 'sender_name': s.sender_name,
-                'project_leader_name': extracted_data.project_leader if extracted_data else s.project_leader_name,  # FIXED HERE
+                'project_leader_name': extracted_data.project_leader if extracted_data else s.project_leader_name,
                 'subject': s.subject,
                 'body': s.body[:500] if s.body else '',
                 'attachment_filename': s.attachment_filename,
                 'attachment_view_url': s.attachment_view_url,
                 'attachment_download_url': s.attachment_download_url,
-                'status': s.status,
+                'status': display_status,  # Use the determined status
+                'extraction_status': extracted_data.extraction_status if extracted_data else 'pending',
                 'processed_submission_id': s.processed_submission_id,
                 'email_received_at': s.email_received_at.strftime('%Y-%m-%d %H:%M:%S') if s.email_received_at else None,
                 'created_at': s.created_at.strftime('%Y-%m-%d %H:%M:%S') if s.created_at else None
@@ -1737,7 +1747,120 @@ def evaluate_final_decision(submission_id):
         submission.evaluation_status = 'pending'
 
     db.session.commit()
+
+# ========== EVALUATOR ROUTES ==========
+
+# Helper function to get submission data from either system or email
+def get_submission_data(submission_id):
+    """Get submission data from either submissions or email_submissions table."""
+    # First try to find in submissions table
+    submission = Submission.query.get(submission_id)
+    if submission:
+        return {
+            'type': 'system',
+            'data': submission,
+            'id': submission.id,
+            'user_id': submission.user_id,
+            'title': submission.extension_project_title,
+            'status': submission.status,
+            'evaluation_status': submission.evaluation_status,
+            'thematic_area': submission.thematic_area,
+            'paper_category': submission.paper_category,
+            'author': submission.author,
+            'suc_agencies': submission.suc_agencies,
+            'corresponding_author_name': submission.corresponding_author_name,
+            'corresponding_author_email': submission.corresponding_author_email,
+            'corresponding_author_position': submission.corresponding_author_position,
+            'abstract_view_url': submission.abstract_view_url,
+            'endorsement_view_url': submission.endorsement_view_url,
+            'created_at': submission.created_at
+        }
     
+    # If not found, try email_submissions with extracted data
+    email_sub = EmailSubmission.query.get(submission_id)
+    if email_sub:
+        # Get extracted data
+        extracted = ExtractedAbstractData.query.filter_by(email_submission_id=email_sub.id).first()
+        
+        return {
+            'type': 'email',
+            'data': email_sub,
+            'id': email_sub.id,
+            'user_id': 0,  # No user associated with email submissions
+            'title': extracted.title if extracted else email_sub.subject,
+            'status': email_sub.status,
+            'evaluation_status': 'pending',  # Email submissions don't have evaluation status
+            'thematic_area': extracted.thematic_area if extracted else 'Not specified',
+            'paper_category': extracted.paper_category if extracted else 'Not specified',
+            'author': extracted.project_leader if extracted else email_sub.project_leader_name,
+            'suc_agencies': extracted.sucs if extracted else email_sub.sender_name,
+            'corresponding_author_name': extracted.corresponding_author_name if extracted else None,
+            'corresponding_author_email': extracted.corresponding_author_email if extracted else None,
+            'corresponding_author_position': extracted.corresponding_author_position if extracted else None,
+            'abstract_view_url': email_sub.attachment_view_url,
+            'endorsement_view_url': None,
+            'created_at': email_sub.email_received_at
+        }
+    
+    return None
+
+def evaluate_final_decision(submission_id, submission_type='system'):
+    """Automatically evaluates the submission based on majority votes."""
+    if submission_type == 'system':
+        submission = Submission.query.get(submission_id)
+    else:
+        # For email submissions, update the email submission status
+        email_sub = EmailSubmission.query.get(submission_id)
+        if not email_sub:
+            return
+    
+    votes = SubmissionVote.query.filter_by(submission_id=submission_id).all()
+    
+    endorse_count = 0
+    downgrade_count = 0
+    reassign_count = 0
+    downgrade_type = None
+
+    for vote in votes:
+        if vote.vote_status == 'endorse':
+            endorse_count += 1
+        elif vote.vote_status == 'downgrade':
+            downgrade_count += 1
+            if vote.vote_downgrade_to:
+                downgrade_type = vote.vote_downgrade_to
+        elif vote.vote_status == 'reassign':
+            reassign_count += 1
+
+    # Final decision logic based on 3 evaluators
+    if endorse_count >= 2:  # 2 or more endorse votes
+        if submission_type == 'system':
+            submission.evaluation_status = 'endorse'
+            submission.status = 'endorse'
+        else:
+            email_sub.status = 'accepted'
+    elif downgrade_count >= 2:  # 2 or more downgrade votes
+        if downgrade_type:
+            if submission_type == 'system':
+                submission.evaluation_status = downgrade_type
+                submission.status = 'downgraded'
+            else:
+                email_sub.status = 'rejected'
+        else:
+            if submission_type == 'system':
+                submission.evaluation_status = 'downgraded-non_competitive'
+                submission.status = 'downgraded'
+            else:
+                email_sub.status = 'rejected'
+    elif reassign_count >= 2:  # 2 or more reassign votes
+        if submission_type == 'system':
+            submission.evaluation_status = 'pending'
+        # For email submissions, keep as pending
+    else:
+        if submission_type == 'system':
+            submission.evaluation_status = 'pending'
+
+    db.session.commit()
+
 @app.route('/api/submissions/<int:submission_id>/evaluate', methods=['POST', 'OPTIONS'])
 def evaluate_submission(submission_id):
     if request.method == 'OPTIONS':
@@ -1758,12 +1881,16 @@ def evaluate_submission(submission_id):
         if vote_status not in ['endorse', 'downgrade', 'reassign']:
             return jsonify({"detail": "Invalid vote status"}), 400
 
-        submission = Submission.query.get(submission_id)
-        if not submission:
+        # Get submission data (system or email)
+        submission_data = get_submission_data(submission_id)
+        if not submission_data:
             return jsonify({"detail": "Submission not found"}), 404
 
         # Check if evaluator already voted
-        existing_vote = SubmissionVote.query.filter_by(submission_id=submission_id, evaluator_id=evaluator_id).first()
+        existing_vote = SubmissionVote.query.filter_by(
+            submission_id=submission_id, 
+            evaluator_id=evaluator_id
+        ).first()
         
         if existing_vote:
             existing_vote.vote_status = vote_status
@@ -1783,19 +1910,35 @@ def evaluate_submission(submission_id):
 
         # IMMEDIATELY update the submission's thematic area if reassign is selected
         if vote_status == 'reassign' and vote_reassign_to:
-            submission.thematic_area = vote_reassign_to
+            if submission_data['type'] == 'system':
+                submission_data['data'].thematic_area = vote_reassign_to
+            else:
+                # For email submissions, update the extracted data
+                extracted = ExtractedAbstractData.query.filter_by(
+                    email_submission_id=submission_id
+                ).first()
+                if extracted:
+                    extracted.thematic_area = vote_reassign_to
 
         db.session.commit()
 
         # Automatically update status based on all votes
-        evaluate_final_decision(submission_id)
+        evaluate_final_decision(submission_id, submission_data['type'])
 
         # Fetch updated votes
         votes = SubmissionVote.query.filter_by(submission_id=submission_id).all()
+        
+        # Get the evaluation status based on submission type
+        if submission_data['type'] == 'system':
+            evaluation_status = submission_data['data'].evaluation_status
+        else:
+            # For email submissions, use the email status
+            evaluation_status = submission_data['data'].status
+
         return jsonify({
             "message": "Vote recorded successfully",
-            "evaluation_status": submission.evaluation_status,
-            "thematic_area": submission.thematic_area,
+            "evaluation_status": evaluation_status,
+            "thematic_area": submission_data['thematic_area'],
             "votes": [{
                 "evaluator_id": v.evaluator_id,
                 "vote_status": v.vote_status,
@@ -1810,21 +1953,28 @@ def evaluate_submission(submission_id):
         traceback.print_exc()
         return jsonify({"detail": str(e)}), 500
     
-#Get votes for a submission
+# Get votes for a submission (supports both system and email submissions)
 @app.route('/api/submissions/<int:submission_id>/evaluate', methods=['GET', 'OPTIONS'])
 def get_submission_votes(submission_id):
     if request.method == 'OPTIONS':
         return jsonify({})
 
     try:
-        submission = Submission.query.get(submission_id)
-        if not submission:
+        # Get submission data (system or email)
+        submission_data = get_submission_data(submission_id)
+        if not submission_data:
             return jsonify({"detail": "Submission not found"}), 404
 
         votes = SubmissionVote.query.filter_by(submission_id=submission_id).all()
 
+        # Get evaluation status
+        if submission_data['type'] == 'system':
+            evaluation_status = submission_data['data'].evaluation_status
+        else:
+            evaluation_status = submission_data['data'].status
+
         return jsonify({
-            "evaluation_status": submission.evaluation_status,
+            "evaluation_status": evaluation_status,
             "votes": [{
                 "id": v.id,
                 "evaluator_id": v.evaluator_id,
@@ -1839,8 +1989,7 @@ def get_submission_votes(submission_id):
     except Exception as e:
         return jsonify({"detail": str(e)}), 500
 
-
-#Post a message in the evaluator discussion
+# Post a message in the evaluator discussion (supports both system and email submissions)
 @app.route('/api/submissions/<int:submission_id>/discussions', methods=['POST', 'OPTIONS'])
 def post_discussion(submission_id):
     if request.method == 'OPTIONS':
@@ -1854,8 +2003,9 @@ def post_discussion(submission_id):
         if not evaluator_id or not message:
             return jsonify({"detail": "Evaluator ID and message are required"}), 400
 
-        submission = Submission.query.get(submission_id)
-        if not submission:
+        # Check if submission exists (system or email)
+        submission_data = get_submission_data(submission_id)
+        if not submission_data:
             return jsonify({"detail": "Submission not found"}), 404
 
         new_message = EvaluatorDiscussion(
@@ -1870,7 +2020,7 @@ def post_discussion(submission_id):
             "message": "Discussion posted successfully",
             "id": new_message.id,
             "evaluator_id": new_message.evaluator_id,
-            "message": new_message.message,  # Changed from 'text' to 'message'
+            "message": new_message.message,
             "created_at": new_message.created_at.strftime('%Y-%m-%d %H:%M:%S') if new_message.created_at else None
         }), 201
 
@@ -1878,14 +2028,21 @@ def post_discussion(submission_id):
         db.session.rollback()
         return jsonify({"detail": str(e)}), 500
 
-#Get discussion for a submission
+# Get discussion for a submission (supports both system and email submissions)
 @app.route('/api/submissions/<int:submission_id>/discussions', methods=['GET', 'OPTIONS'])
 def get_discussions(submission_id):
     if request.method == 'OPTIONS':
         return jsonify({})
 
     try:
-        discussions = EvaluatorDiscussion.query.filter_by(submission_id=submission_id).order_by(EvaluatorDiscussion.created_at.asc()).all()
+        # Check if submission exists (system or email)
+        submission_data = get_submission_data(submission_id)
+        if not submission_data:
+            return jsonify({"detail": "Submission not found"}), 404
+
+        discussions = EvaluatorDiscussion.query.filter_by(
+            submission_id=submission_id
+        ).order_by(EvaluatorDiscussion.created_at.asc()).all()
 
         return jsonify([{
             "id": d.id,
@@ -1896,7 +2053,6 @@ def get_discussions(submission_id):
 
     except Exception as e:
         return jsonify({"detail": str(e)}), 500
-    
     
 @app.route('/api/users/<int:user_id>/thematic-areas', methods=['GET', 'OPTIONS'])
 def get_user_thematic_areas_simple(user_id):
@@ -1967,6 +2123,10 @@ def get_extracted_data(email_submission_id):
         if not extracted:
             return jsonify({}), 200 
         
+        # Get the email submission to get its status
+        email_sub = EmailSubmission.query.get(email_submission_id)
+        email_status = email_sub.status if email_sub else 'pending'
+        
         return jsonify({
             'id': extracted.id,
             'email_submission_id': extracted.email_submission_id,
@@ -1977,12 +2137,12 @@ def get_extracted_data(email_submission_id):
             'sucs': extracted.sucs,
             'corresponding_author_name': extracted.corresponding_author_name,
             'corresponding_author_email': extracted.corresponding_author_email,
-            'corresponding_author_position': extracted.corresponding_author_position,  # NEW
+            'corresponding_author_position': extracted.corresponding_author_position,
             'paper_category': extracted.paper_category,
             'thematic_area': extracted.thematic_area,
             'theme': extracted.theme,
-            'status': extracted.status,
-            'evaluation_status': extracted.evaluation_status,
+            # Use email submission status
+            'status': email_status,
             'extraction_status': extracted.extraction_status,
             'extraction_error': extracted.extraction_error,
             'extracted_at': extracted.extracted_at.strftime('%Y-%m-%d %H:%M:%S') if extracted.extracted_at else None
@@ -1991,7 +2151,7 @@ def get_extracted_data(email_submission_id):
     except Exception as e:
         print(f"Error fetching extracted data: {e}")
         return jsonify({"detail": str(e)}), 500
-    
+
 @app.route('/api/extracted-data/<int:extracted_data_id>/edit', methods=['PUT', 'OPTIONS'])
 def edit_extracted_data(extracted_data_id):
     """Edit extracted data and log the changes."""

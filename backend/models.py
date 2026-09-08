@@ -130,7 +130,6 @@ class ExtractedAbstractData(db.Model):
     paper_category = db.Column(db.String(255), nullable=True)
     thematic_area = db.Column(db.String(255), nullable=True)
     theme = db.Column(db.String(500), nullable=True)
-    status = db.Column(db.Enum('pending', 'endorse', 'downgraded'), nullable=False, default='pending')
     evaluation_status = db.Column(db.Enum('pending', 'endorse', 'downgraded-non_competitive', 'downgraded-poster_only'), nullable=False, default='pending')
     extraction_status = db.Column(db.Enum('pending', 'extracted', 'failed'), nullable=False, default='pending')
     extraction_error = db.Column(db.Text, nullable=True)

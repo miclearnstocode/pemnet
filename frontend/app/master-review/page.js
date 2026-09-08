@@ -546,7 +546,7 @@ export default function MasterReviewPage() {
           <div className="relative min-h-full flex items-center justify-center p-4">
             <div className="relative w-full max-w-6xl bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[95vh]">
               {/* Modal Header - Fixed */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-purple-50 to-blue-50 sticky top-0 z-10">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-linear-to-r from-purple-50 to-blue-50 sticky top-0 z-10">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-purple-600">
@@ -920,7 +920,7 @@ export default function MasterReviewPage() {
 
         {/* Filters */}
         <div className="flex gap-4 mb-6 flex-wrap">
-          <div className="flex-1 min-w-[200px] relative">
+          <div className="flex-1 min-w-50 relative">
             <input
               type="text"
               placeholder={activeTab === 'system' ? "Search by title, author, or SUC..." : "Search by subject, sender, or email..."}

@@ -1,4 +1,3 @@
-# models.py
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 
@@ -55,7 +54,7 @@ class Submission(db.Model):
     def to_dict(self):
         return {
             'id': self.id,
-            'submission_id': self.submission_id,  # NEW
+            'submission_id': self.submission_id,
             'user_id': self.user_id,
             'extension_project_title': self.extension_project_title,
             'thematic_area': self.thematic_area,
@@ -187,7 +186,7 @@ class SUC(db.Model):
 class SubmissionVote(db.Model):
     __tablename__ = 'submission_votes'
     id = db.Column(db.Integer, primary_key=True)
-    submission_id = db.Column(db.Integer, db.ForeignKey('submissions.id'), nullable=False)
+    submission_id = db.Column(db.String(50), nullable=False)
     evaluator_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     vote_status = db.Column(db.String(50), nullable=False)
     vote_notes = db.Column(db.Text, nullable=True)
@@ -196,25 +195,37 @@ class SubmissionVote(db.Model):
     created_at = db.Column(db.DateTime, server_default=db.func.now())
     updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
 
-    submission = db.relationship('Submission', foreign_keys=[submission_id], backref='votes')
+    # Fixed: Use primaryjoin to join on submission_id string field
+    submission = db.relationship(
+        'Submission', 
+        foreign_keys=[submission_id],
+        primaryjoin='SubmissionVote.submission_id == Submission.submission_id',
+        backref='votes'
+    )
     evaluator = db.relationship('User', foreign_keys=[evaluator_id])
 
 class EvaluatorDiscussion(db.Model):
     __tablename__ = 'evaluator_discussions'
     id = db.Column(db.Integer, primary_key=True)
-    submission_id = db.Column(db.Integer, db.ForeignKey('submissions.id'), nullable=False)
+    submission_id = db.Column(db.String(50), nullable=False)
     evaluator_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     message = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
 
-    submission = db.relationship('Submission', foreign_keys=[submission_id], backref='discussions')
+    # Fixed: Use primaryjoin to join on submission_id string field
+    submission = db.relationship(
+        'Submission',
+        foreign_keys=[submission_id],
+        primaryjoin='EvaluatorDiscussion.submission_id == Submission.submission_id',
+        backref='discussions'
+    )
     evaluator = db.relationship('User', foreign_keys=[evaluator_id], backref='discussions')
     
 class Payment(db.Model):
     __tablename__ = 'payments'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    submission_id = db.Column(db.Integer, db.ForeignKey('submissions.id'), nullable=False)
+    submission_id = db.Column(db.String(50), nullable=False)
     payment_proof_view_url = db.Column(db.String(500), nullable=True)
     payment_proof_download_url = db.Column(db.String(500), nullable=True)
     payment_status = db.Column(db.Enum('pending', 'verified', 'rejected'), nullable=False, default='pending')
@@ -229,7 +240,12 @@ class Payment(db.Model):
 
     # Relationships
     user = db.relationship('User', foreign_keys=[user_id])
-    submission = db.relationship('Submission', foreign_keys=[submission_id])
+    # Fixed: Use primaryjoin to join on submission_id string field
+    submission = db.relationship(
+        'Submission',
+        foreign_keys=[submission_id],
+        primaryjoin='Payment.submission_id == Submission.submission_id'
+    )
     verifier = db.relationship('User', foreign_keys=[verified_by])
 
     def to_dict(self):

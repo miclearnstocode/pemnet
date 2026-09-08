@@ -626,7 +626,7 @@ def get_submissions():
         return jsonify({"detail": str(e)}), 500
 
 # Update submission status (accept/reject)
-@app.route('/api/submissions/<int:submission_id>/status', methods=['PUT', 'OPTIONS'])
+@app.route('/api/submissions/<string:submission_id>/status', methods=['PUT', 'OPTIONS'])
 def update_submission_status(submission_id):
     if request.method == 'OPTIONS':
         return jsonify({})
@@ -658,7 +658,7 @@ def update_submission_status(submission_id):
         return jsonify({"detail": str(e)}), 500
 
 # Update comp ext project drive URLs
-@app.route('/api/submissions/<int:submission_id>/compextproj', methods=['PUT', 'OPTIONS'])
+@app.route('/api/submissions/<string:submission_id>/compextproj', methods=['PUT', 'OPTIONS'])
 def update_compextproj_urls(submission_id):
     if request.method == 'OPTIONS':
         return jsonify({})
@@ -1761,16 +1761,16 @@ def evaluate_final_decision(submission_id):
 
 # ========== EVALUATOR ROUTES ==========
 
-# Helper function to get submission data from either system or email
 def get_submission_data(submission_id):
     """Get submission data from either submissions or email_submissions table."""
-    # First try to find in submissions table
-    submission = Submission.query.get(submission_id)
+    # First try to find in submissions table by submission_id (VARCHAR)
+    submission = Submission.query.filter_by(submission_id=submission_id).first()
     if submission:
         return {
             'type': 'system',
             'data': submission,
             'id': submission.id,
+            'submission_id': submission.submission_id,
             'user_id': submission.user_id,
             'title': submission.extension_project_title,
             'status': submission.status,
@@ -1788,18 +1788,44 @@ def get_submission_data(submission_id):
         }
     
     # If not found, try email_submissions with extracted data
+    # Check if the submission_id exists in extracted_abstract_data
+    extracted = ExtractedAbstractData.query.filter_by(submission_id=submission_id).first()
+    if extracted:
+        email_sub = EmailSubmission.query.get(extracted.email_submission_id)
+        if email_sub:
+            return {
+                'type': 'email',
+                'data': email_sub,
+                'id': email_sub.id,
+                'submission_id': submission_id,
+                'user_id': 0,
+                'title': extracted.title if extracted else email_sub.subject,
+                'status': email_sub.status,
+                'evaluation_status': extracted.evaluation_status if extracted else 'pending',
+                'thematic_area': extracted.thematic_area if extracted else 'Not specified',
+                'paper_category': extracted.paper_category if extracted else 'Not specified',
+                'author': extracted.project_leader if extracted else email_sub.project_leader_name,
+                'suc_agencies': extracted.sucs if extracted else email_sub.sender_name,
+                'corresponding_author_name': extracted.corresponding_author_name if extracted else None,
+                'corresponding_author_email': extracted.corresponding_author_email if extracted else None,
+                'corresponding_author_position': extracted.corresponding_author_position if extracted else None,
+                'abstract_view_url': email_sub.attachment_view_url,
+                'endorsement_view_url': None,
+                'created_at': email_sub.email_received_at
+            }
+    
+    # If still not found, check if it's a direct email submission ID
     email_sub = EmailSubmission.query.get(submission_id)
     if email_sub:
-        # Get extracted data
         extracted = ExtractedAbstractData.query.filter_by(email_submission_id=email_sub.id).first()
-        
         return {
             'type': 'email',
             'data': email_sub,
             'id': email_sub.id,
-            'user_id': 0,  # No user associated with email submissions
+            'submission_id': extracted.submission_id if extracted else None,
+            'user_id': 0,
             'title': extracted.title if extracted else email_sub.subject,
-            'status': email_sub.status,  # Will be 'pending', 'endorse', or 'downgraded'
+            'status': email_sub.status,
             'evaluation_status': extracted.evaluation_status if extracted else 'pending',
             'thematic_area': extracted.thematic_area if extracted else 'Not specified',
             'paper_category': extracted.paper_category if extracted else 'Not specified',
@@ -1883,7 +1909,7 @@ def evaluate_final_decision(submission_id, submission_type='system'):
 
     db.session.commit()
 
-@app.route('/api/submissions/<int:submission_id>/evaluate', methods=['POST', 'OPTIONS'])
+@app.route('/api/submissions/<string:submission_id>/evaluate', methods=['POST', 'OPTIONS'])
 def evaluate_submission(submission_id):
     if request.method == 'OPTIONS':
         return jsonify({})
@@ -1977,7 +2003,7 @@ def evaluate_submission(submission_id):
         return jsonify({"detail": str(e)}), 500
     
 # Get votes for a submission (supports both system and email submissions)
-@app.route('/api/submissions/<int:submission_id>/evaluate', methods=['GET', 'OPTIONS'])
+@app.route('/api/submissions/<string:submission_id>/evaluate', methods=['GET', 'OPTIONS'])
 def get_submission_votes(submission_id):
     if request.method == 'OPTIONS':
         return jsonify({})
@@ -2014,8 +2040,7 @@ def get_submission_votes(submission_id):
     except Exception as e:
         return jsonify({"detail": str(e)}), 500
 
-# Post a message in the evaluator discussion (supports both system and email submissions)
-@app.route('/api/submissions/<int:submission_id>/discussions', methods=['POST', 'OPTIONS'])
+@app.route('/api/submissions/<string:submission_id>/discussions', methods=['POST', 'OPTIONS'])
 def post_discussion(submission_id):
     if request.method == 'OPTIONS':
         return jsonify({})
@@ -2033,6 +2058,7 @@ def post_discussion(submission_id):
         if not submission_data:
             return jsonify({"detail": "Submission not found"}), 404
 
+        # Use the submission_id (VARCHAR) for the discussion
         new_message = EvaluatorDiscussion(
             submission_id=submission_id,
             evaluator_id=evaluator_id,
@@ -2051,10 +2077,10 @@ def post_discussion(submission_id):
 
     except Exception as e:
         db.session.rollback()
+        traceback.print_exc()
         return jsonify({"detail": str(e)}), 500
 
-# Get discussion for a submission (supports both system and email submissions)
-@app.route('/api/submissions/<int:submission_id>/discussions', methods=['GET', 'OPTIONS'])
+@app.route('/api/submissions/<string:submission_id>/discussions', methods=['GET', 'OPTIONS'])
 def get_discussions(submission_id):
     if request.method == 'OPTIONS':
         return jsonify({})
@@ -2069,16 +2095,23 @@ def get_discussions(submission_id):
             submission_id=submission_id
         ).order_by(EvaluatorDiscussion.created_at.asc()).all()
 
-        return jsonify([{
-            "id": d.id,
-            "evaluator_id": d.evaluator_id,
-            "message": d.message,
-            "created_at": d.created_at.strftime('%Y-%m-%d %H:%M:%S') if d.created_at else None
-        } for d in discussions]), 200
+        result = []
+        for d in discussions:
+            user = User.query.get(d.evaluator_id)
+            result.append({
+                "id": d.id,
+                "evaluator_id": d.evaluator_id,
+                "evaluator_name": user.full_name if user else 'Unknown',
+                "message": d.message,
+                "created_at": d.created_at.strftime('%Y-%m-%d %H:%M:%S') if d.created_at else None
+            })
+
+        return jsonify(result), 200
 
     except Exception as e:
+        traceback.print_exc()
         return jsonify({"detail": str(e)}), 500
-    
+
 @app.route('/api/users/<int:user_id>/thematic-areas', methods=['GET', 'OPTIONS'])
 def get_user_thematic_areas_simple(user_id):
     """Simple endpoint to get thematic areas for a user."""
@@ -2333,7 +2366,7 @@ def master_approver_pending_submissions():
     result, status_code = MasterApproverService.get_pending_submissions()
     return jsonify(result), status_code
 
-@app.route('/api/submissions/<int:submission_id>/master-status', methods=['POST', 'OPTIONS'])
+@app.route('/api/submissions/<string:submission_id>/master-status', methods=['POST', 'OPTIONS'])
 def set_master_status(submission_id):
     """Master approver sets the final status of a submission."""
     if request.method == 'OPTIONS':
@@ -2343,7 +2376,7 @@ def set_master_status(submission_id):
     result, status_code = MasterApproverService.set_final_status(submission_id, data)
     return jsonify(result), status_code
 
-@app.route('/api/submissions/<int:submission_id>/master-details', methods=['GET', 'OPTIONS'])
+@app.route('/api/submissions/<string:submission_id>/master-details', methods=['GET', 'OPTIONS'])
 def get_submission_with_votes(submission_id):
     """Get submission details with all votes and extracted data for master approver."""
     if request.method == 'OPTIONS':
@@ -2465,7 +2498,7 @@ def upload_payment_proof():
         traceback.print_exc()
         return jsonify({"detail": str(e)}), 500
 
-@app.route('/api/payments/submission/<int:submission_id>', methods=['GET', 'OPTIONS'])
+@app.route('/api/payments/submission/<string:submission_id>', methods=['GET', 'OPTIONS'])
 def get_payment_by_submission(submission_id):
     """Get payment details for a submission."""
     if request.method == 'OPTIONS':

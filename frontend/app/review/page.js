@@ -49,7 +49,8 @@ import {
   faLayerGroup,
   faCertificate,
   faFlag,
-  faWarning
+  faWarning,
+  faPlusCircle
 } from '@fortawesome/free-solid-svg-icons';
 import ReassignModal from '../components/ReassignModal';
 import DowngradeModal from '../components/DowngradeModal';
@@ -68,6 +69,12 @@ export default function ReviewPage() {
   
   const [allUsers, setAllUsers] = useState([]);
   const [emailExtractedData, setEmailExtractedData] = useState(null);
+  const [sucList, setSucList] = useState([]);
+  const [sucSearchTerm, setSucSearchTerm] = useState('');
+  const [showSucDropdown, setShowSucDropdown] = useState(false);
+  const [isAddingSuc, setIsAddingSuc] = useState(false);
+  const [newSucName, setNewSucName] = useState('');
+  const [newSucRegion, setNewSucRegion] = useState('');
 
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({});
@@ -109,10 +116,8 @@ export default function ReviewPage() {
       }
     }
 
-    fetch('http://localhost:5000/api/users')
-      .then(res => res.json())
-      .then(data => setAllUsers(data))
-      .catch(err => console.error('Error fetching users:', err));
+    fetchAllUsers();
+    fetchSucs();
   }, []);
 
   useEffect(() => {
@@ -121,6 +126,28 @@ export default function ReviewPage() {
     }
   }, [activeTab, statusFilter, currentEvaluatorId]);
 
+  const fetchAllUsers = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/users');
+      const data = await res.json();
+      setAllUsers(data);
+    } catch (err) {
+      console.error('Error fetching users:', err);
+    }
+  };
+
+  const fetchSucs = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/sucs');
+      if (res.ok) {
+        const data = await res.json();
+        setSucList(data);
+      }
+    } catch (err) {
+      console.error('Error fetching SUCs:', err);
+    }
+  };
+
   const fetchSubmissions = async () => {
     setLoading(true);
     try {
@@ -128,7 +155,6 @@ export default function ReviewPage() {
       if (activeTab === 'system') {
         url = 'http://localhost:5000/api/submissions';
       } else {
-        // For email tab, fetch ALL email submissions including uncategorized
         url = `http://localhost:5000/api/email-submissions?status=all`;
       }
       
@@ -209,6 +235,54 @@ export default function ReviewPage() {
       ...editForm,
       [e.target.name]: e.target.value
     });
+  };
+
+  const handleSucSelect = (sucName) => {
+    setEditForm({
+      ...editForm,
+      sucs: sucName
+    });
+    setShowSucDropdown(false);
+    setSucSearchTerm('');
+  };
+
+  const handleAddNewSuc = async () => {
+    if (!newSucName.trim()) {
+      showToast('Please enter a SUC name', 'error');
+      return;
+    }
+
+    setIsAddingSuc(true);
+    try {
+      const res = await fetch('http://localhost:5000/api/sucs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newSucName.trim(),
+          region: newSucRegion.trim() || 'Other'
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setSucList([...sucList, data]);
+        setEditForm({
+          ...editForm,
+          sucs: data.name
+        });
+        setNewSucName('');
+        setNewSucRegion('');
+        setShowSucDropdown(false);
+        showToast(`SUC "${data.name}" added successfully!`, 'success');
+      } else {
+        const error = await res.json();
+        showToast(error.detail || 'Failed to add SUC', 'error');
+      }
+    } catch (error) {
+      showToast('Failed to add SUC', 'error');
+    } finally {
+      setIsAddingSuc(false);
+    }
   };
 
   const saveEdits = async () => {
@@ -383,7 +457,6 @@ export default function ReviewPage() {
 
   // SAFE FILTERING - Handle null values properly
   const filteredSubmissions = submissions.filter(sub => {
-    // First, check if sub exists
     if (!sub) return false;
     
     if (activeTab === 'system') {
@@ -392,7 +465,6 @@ export default function ReviewPage() {
       
       if (searchTerm) {
         const search = searchTerm.toLowerCase();
-        // SAFE: Use optional chaining and null checks
         const title = (sub.extension_project_title || '').toLowerCase();
         const author = (sub.author || '').toLowerCase();
         const suc = (sub.suc_agencies || '').toLowerCase();
@@ -400,12 +472,10 @@ export default function ReviewPage() {
       }
       return true;
     } else {
-      // EMAIL TAB - Filter by status
       if (statusFilter !== 'all' && sub.status !== statusFilter) return false;
       
       if (searchTerm) {
         const search = searchTerm.toLowerCase();
-        // SAFE: Use optional chaining and null checks for all fields
         const subject = (sub.subject || '').toLowerCase();
         const projectLeader = (sub.project_leader_name || '').toLowerCase();
         const senderEmail = (sub.sender_email || '').toLowerCase();
@@ -423,7 +493,6 @@ export default function ReviewPage() {
   // Calculate stat counts based on the current filter
   const getFilteredStats = () => {
     if (activeTab === 'system') {
-      // System tab stats - based on statusFilter
       const filtered = submissions.filter(sub => {
         if (statusFilter !== 'all' && sub.status !== statusFilter) return false;
         if (categoryFilter !== 'all' && sub.paper_category !== categoryFilter) return false;
@@ -437,7 +506,6 @@ export default function ReviewPage() {
       
       return { total, pending, endorsed, downgraded, uncategorized: 0 };
     } else {
-      // Email tab stats - based on statusFilter
       const filtered = submissions.filter(sub => {
         if (statusFilter !== 'all' && sub.status !== statusFilter) return false;
         return true;
@@ -455,7 +523,7 @@ export default function ReviewPage() {
 
   const stats = getFilteredStats();
 
-  // Status display functions - Only use statuses from models
+  // Status display functions
   const getStatusColor = (status) => {
     const safeStatus = status || 'pending';
     switch (safeStatus) {
@@ -528,6 +596,27 @@ export default function ReviewPage() {
     return null;
   };
 
+  // Paper category options
+  const paperCategoryOptions = [
+    'Completed Extension Project Papers',
+    'Ongoing Extension Project Papers',
+    'Not specified'
+  ];
+
+  // Thematic area options
+  const thematicAreaOptions = [
+    'Agriculture and Natural Resources',
+    'Information and Communication Technology',
+    'Development and Social Change',
+    'Food Safety and Nutrition',
+    'Education and Training',
+    'Health and Wellness',
+    'Engineering and Technology',
+    'Business and Entrepreneurship',
+    'Environment and Sustainability',
+    'Not specified'
+  ];
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50">
@@ -595,6 +684,11 @@ export default function ReviewPage() {
     if (user) return user.full_name;
     return 'Evaluator';
   };
+
+  // Filter SUCs based on search term
+  const filteredSucs = sucList.filter(suc => 
+    suc.name.toLowerCase().includes(sucSearchTerm.toLowerCase())
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
@@ -826,12 +920,16 @@ export default function ReviewPage() {
                           Paper Category
                         </div>
                         {isEditing ? (
-                          <input 
-                            name="paper_category" 
-                            value={editForm.paper_category} 
-                            onChange={handleEditChange} 
-                            className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition-all" 
-                          />
+                          <select
+                            name="paper_category"
+                            value={editForm.paper_category || 'Not specified'}
+                            onChange={handleEditChange}
+                            className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition-all bg-white"
+                          >
+                            {paperCategoryOptions.map(option => (
+                              <option key={option} value={option}>{option}</option>
+                            ))}
+                          </select>
                         ) : (
                           <span className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-sm font-medium border ${getCategoryColor(getPaperCategory())}`}>
                             <FontAwesomeIcon icon={faBookOpen} className="w-3 h-3" />
@@ -857,12 +955,16 @@ export default function ReviewPage() {
                           )}
                         </div>
                         {isEditing ? (
-                          <input 
-                            name="thematic_area" 
-                            value={editForm.thematic_area} 
-                            onChange={handleEditChange} 
-                            className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition-all" 
-                          />
+                          <select
+                            name="thematic_area"
+                            value={editForm.thematic_area || 'Not specified'}
+                            onChange={handleEditChange}
+                            className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition-all bg-white"
+                          >
+                            {thematicAreaOptions.map(option => (
+                              <option key={option} value={option}>{option}</option>
+                            ))}
+                          </select>
                         ) : (
                           <p className="text-base font-semibold text-slate-900">{getThematicArea()}</p>
                         )}
@@ -893,12 +995,63 @@ export default function ReviewPage() {
                           SUC / Agency
                         </div>
                         {isEditing ? (
-                          <input 
-                            name="sucs" 
-                            value={editForm.sucs} 
-                            onChange={handleEditChange} 
-                            className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition-all" 
-                          />
+                          <div className="relative">
+                            <input
+                              type="text"
+                              value={isEditing ? editForm.sucs || '' : getSuc()}
+                              onChange={(e) => {
+                                setEditForm({ ...editForm, sucs: e.target.value });
+                                setSucSearchTerm(e.target.value);
+                                setShowSucDropdown(true);
+                              }}
+                              onFocus={() => setShowSucDropdown(true)}
+                              placeholder="Search or add SUC..."
+                              className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition-all"
+                            />
+                            {showSucDropdown && (
+                              <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                                {filteredSucs.length > 0 ? (
+                                  filteredSucs.map(suc => (
+                                    <div
+                                      key={suc.id}
+                                      className="px-4 py-2 hover:bg-blue-50 cursor-pointer text-sm text-slate-700 flex items-center justify-between"
+                                      onClick={() => handleSucSelect(suc.name)}
+                                    >
+                                      <span>{suc.name}</span>
+                                      <span className="text-xs text-slate-400">{suc.region}</span>
+                                    </div>
+                                  ))
+                                ) : (
+                                  <div className="p-3">
+                                    <p className="text-sm text-slate-500 mb-2">No SUC found. Add new:</p>
+                                    <div className="flex gap-2">
+                                      <input
+                                        type="text"
+                                        placeholder="SUC Name"
+                                        value={newSucName}
+                                        onChange={(e) => setNewSucName(e.target.value)}
+                                        className="flex-1 px-3 py-1.5 border border-slate-200 rounded-lg text-sm"
+                                      />
+                                      <input
+                                        type="text"
+                                        placeholder="Region"
+                                        value={newSucRegion}
+                                        onChange={(e) => setNewSucRegion(e.target.value)}
+                                        className="flex-1 px-3 py-1.5 border border-slate-200 rounded-lg text-sm"
+                                      />
+                                      <button
+                                        onClick={handleAddNewSuc}
+                                        disabled={isAddingSuc}
+                                        className="px-3 py-1.5 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600 transition-all disabled:opacity-50"
+                                      >
+                                        {isAddingSuc ? 'Adding...' : 'Add'}
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         ) : (
                           <p className="text-base font-semibold text-slate-900">{getSuc()}</p>
                         )}
@@ -1242,7 +1395,7 @@ export default function ReviewPage() {
           )}
         </div>
 
-        {/* Stat Cards - Now dynamically update based on the current filter */}
+        {/* Stat Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all">
             <div className="flex items-center justify-between">
@@ -1426,7 +1579,6 @@ export default function ReviewPage() {
               </thead>
               <tbody>
                 {filteredSubmissions.map((sub) => {
-                  // Get the correct status for this submission
                   const displayStatus = activeTab === 'system' ? (sub.status || 'pending') : (sub.status || 'pending');
                   
                   return (
@@ -1475,7 +1627,6 @@ export default function ReviewPage() {
                           </td>
                           <td className="px-6 py-4 text-sm text-slate-600">
                             {sub.project_leader_name || 'Not specified'}
-                            {/* Show uncategorized badge if extraction failed */}
                             {sub.extraction_status === 'failed' && (
                               <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-600 border border-gray-200">
                                 <FontAwesomeIcon icon={faWarning} className="w-2.5 h-2.5" />

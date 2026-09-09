@@ -35,11 +35,6 @@ dynamic change of presenter in the system submission for approval and accepted o
 
 resubmission & revised paper.
 
-
--- Add Evaluator 2
-INSERT INTO `users` (`full_name`, `email`, `hashed_password`, `is_active`, `role`, `created_at`) 
-VALUES ('Evaluator 2', 'evaluator2@gmail.com', '$2b$12$CJrL.nSp3oEDIzA38s0xxuGH.pvQDoQEams4jlK7QZeqiJTeRp0jC', 1, 'evaluator', NOW());
-
--- Add Evaluator 3
-INSERT INTO `users` (`full_name`, `email`, `hashed_password`, `is_active`, `role`, `created_at`) 
-VALUES ('Evaluator 3', 'evaluator3@gmail.com', '$2b$12$XwnjwUvrhTYcVb6Y0YQU/OYnTErRlon5RavZrYjwHg8X.jq3AqJ9m', 1, 'evaluator', NOW());
+need to fix:
+ categorize the submission in the system then the uploading of payment. then the email format for the rejection and review of the payment. 
+ fix the submission_id of the 

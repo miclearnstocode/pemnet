@@ -309,84 +309,112 @@ export default function ReviewPage() {
   };
 
   const selectSubmission = async (sub) => {
-    setSelectedSubmission(sub);
-    setEmailExtractedData(null);
-    setIsEditing(false);
-    setShowRevisions(false);
+      setSelectedSubmission(sub);
+      setEmailExtractedData(null);
+      setIsEditing(false);
+      setShowRevisions(false);
 
-    const votesRes = await fetch(`http://localhost:5000/api/submissions/${sub.id}/evaluate`);
-    const votesData = await votesRes.json();
-    setVotes({ ...votesData, evaluation_status: votesData.evaluation_status || 'pending' });
+      const subId = sub.submission_id || sub.id;
+      
+      console.log('Selecting submission with ID:', subId, 'Type:', typeof subId);
+      
+      try {
+          const votesRes = await fetch(`http://localhost:5000/api/submissions/${subId}/evaluate`);
+          if (votesRes.ok) {
+              const votesData = await votesRes.json();
+              // The evaluation_status will be 'pending' until Master Approver acts
+              setVotes({ 
+                  ...votesData, 
+                  evaluation_status: votesData.evaluation_status || 'pending' 
+              });
+          } else {
+              console.error('Failed to fetch votes:', await votesRes.text());
+          }
 
-    const discRes = await fetch(`http://localhost:5000/api/submissions/${sub.id}/discussions`);
-    const discData = await discRes.json();
-    setDiscussions(Array.isArray(discData) ? discData : []);
+          const discRes = await fetch(`http://localhost:5000/api/submissions/${subId}/discussions`);
+          if (discRes.ok) {
+              const discData = await discRes.json();
+              setDiscussions(Array.isArray(discData) ? discData : []);
+          } else {
+              console.error('Failed to fetch discussions:', await discRes.text());
+          }
 
-    if (activeTab === 'email' && sub.id) {
-      await fetchExtractedData(sub.id);
-    }
+          if (activeTab === 'email' && sub.id) {
+              await fetchExtractedData(sub.id);
+          }
+      } catch (error) {
+          console.error('Error selecting submission:', error);
+          showToast('Failed to load submission details', 'error');
+      }
   };
 
   const handleVote = async (vote_status) => {
-    if (!selectedSubmission) return;
+      if (!selectedSubmission) return;
 
-    try {
-      const res = await fetch(`http://localhost:5000/api/submissions/${selectedSubmission.id}/evaluate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          evaluator_id: currentEvaluatorId,
-          vote_status: vote_status,
-          vote_notes: voteNotes
-        }),
-      });
+      // Use submission_id (string) instead of numeric id
+      const subId = selectedSubmission.submission_id || selectedSubmission.id;
 
-      if (res.ok) {
-        const data = await res.json();
-        setVotes(data);
-        showToast(`Voted: ${vote_status.replace('_', ' ')}`, 'success');
-        setVoteNotes('');
-        if (data.evaluation_status !== 'pending') fetchSubmissions();
-        return true;
-      } else {
-        const error = await res.json();
-        showToast(error.detail || 'Failed to vote', 'error');
-        return false;
+      try {
+          const res = await fetch(`http://localhost:5000/api/submissions/${subId}/evaluate`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                  evaluator_id: currentEvaluatorId,
+                  vote_status: vote_status,
+                  vote_notes: voteNotes
+              }),
+          });
+
+          if (res.ok) {
+              const data = await res.json();
+              setVotes(data);
+              showToast(`Voted: ${vote_status.replace('_', ' ')}`, 'success');
+              setVoteNotes('');
+              if (data.evaluation_status !== 'pending') fetchSubmissions();
+              return true;
+          } else {
+              const error = await res.json();
+              showToast(error.detail || 'Failed to vote', 'error');
+              return false;
+          }
+      } catch (error) {
+          showToast('Failed to vote', 'error');
+          return false;
       }
-    } catch (error) {
-      showToast('Failed to vote', 'error');
-      return false;
-    }
   };
 
   const postMessage = async () => {
-    if (!newMessage.trim() || !selectedSubmission) return;
-    try {
-      const res = await fetch(`http://localhost:5000/api/submissions/${selectedSubmission.id}/discussions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ evaluator_id: currentEvaluatorId, message: newMessage })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        const newDiscussion = {
-          id: data.id || Date.now(),
-          evaluator_id: data.evaluator_id || currentEvaluatorId,
-          message: data.message || newMessage,
-          created_at: data.created_at || new Date().toLocaleString()
-        };
-        setDiscussions([...discussions, newDiscussion]);
-        setNewMessage('');
-        showToast('Message sent successfully!', 'success');
+      if (!newMessage.trim() || !selectedSubmission) return;
+      
+      const subId = selectedSubmission.submission_id || selectedSubmission.id;
+      
+      try {
+          const res = await fetch(`http://localhost:5000/api/submissions/${subId}/discussions`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ evaluator_id: currentEvaluatorId, message: newMessage })
+          });
+          if (res.ok) {
+              const data = await res.json();
+              const newDiscussion = {
+                  id: data.id || Date.now(),
+                  evaluator_id: data.evaluator_id || currentEvaluatorId,
+                  message: data.message || newMessage,
+                  created_at: data.created_at || new Date().toLocaleString()
+              };
+              setDiscussions([...discussions, newDiscussion]);
+              setNewMessage('');
+              showToast('Message sent successfully!', 'success');
+          }
+      } catch (error) {
+          showToast('Failed to send message', 'error');
       }
-    } catch (error) {
-      showToast('Failed to send message', 'error');
-    }
   };
 
   const handleEndorseWithConfirm = () => {
-    setPendingVoteAction('endorse');
-    setShowConfirmModal(true);
+      if (!selectedSubmission) return;
+      setPendingVoteAction('endorse');
+      setShowConfirmModal(true);
   };
 
   const confirmVote = async () => {
@@ -412,35 +440,39 @@ export default function ReviewPage() {
   };
 
   const handleDowngradeVote = async (downgradeType) => {
-    if (!selectedSubmission || !downgradeType) return;
-    setDowngradeLoading(true);
-    try {
-      const res = await fetch(`http://localhost:5000/api/submissions/${selectedSubmission.id}/evaluate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          evaluator_id: currentEvaluatorId,
-          vote_status: 'downgrade',
-          vote_notes: voteNotes,
-          vote_downgrade_to: downgradeType
-        }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setVotes(data);
-        showToast('Submission downgraded', 'success');
-        setVoteNotes('');
-        setDowngradeLoading(false);
-        fetchSubmissions();
-      } else {
-        const error = await res.json();
-        showToast(error.detail || 'Failed to downgrade', 'error');
-        setDowngradeLoading(false);
+      if (!selectedSubmission || !downgradeType) return;
+      setDowngradeLoading(true);
+      
+      const subId = selectedSubmission.submission_id || selectedSubmission.id;
+      
+      try {
+          const res = await fetch(`http://localhost:5000/api/submissions/${subId}/evaluate`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                  evaluator_id: currentEvaluatorId,
+                  // FIX: Pass the actual downgrade type as vote_status
+                  vote_status: downgradeType, // This will be 'downgraded-non_competitive' or 'downgraded-poster_only'
+                  vote_notes: voteNotes,
+                  // vote_downgrade_to: downgradeType // Remove this as it's redundant
+              }),
+          });
+          if (res.ok) {
+              const data = await res.json();
+              setVotes(data);
+              showToast(`Submission downgraded to ${downgradeType === 'downgraded-non_competitive' ? 'Non-Competitive' : 'Poster Only'}`, 'success');
+              setVoteNotes('');
+              setDowngradeLoading(false);
+              fetchSubmissions();
+          } else {
+              const error = await res.json();
+              showToast(error.detail || 'Failed to downgrade', 'error');
+              setDowngradeLoading(false);
+          }
+      } catch (error) {
+          showToast('Failed to downgrade', 'error');
+          setDowngradeLoading(false);
       }
-    } catch (error) {
-      showToast('Failed to downgrade', 'error');
-      setDowngradeLoading(false);
-    }
   };
 
   const confirmDowngradeVote = async () => {
@@ -598,22 +630,18 @@ export default function ReviewPage() {
 
   // Paper category options
   const paperCategoryOptions = [
-    'Completed Extension Project Papers',
-    'Ongoing Extension Project Papers',
+    'Completed Extension Project Paper',
+    'Ongoing Extension Project Paper',
     'Not specified'
   ];
 
   // Thematic area options
   const thematicAreaOptions = [
-    'Agriculture and Natural Resources',
-    'Information and Communication Technology',
-    'Development and Social Change',
-    'Food Safety and Nutrition',
-    'Education and Training',
-    'Health and Wellness',
-    'Engineering and Technology',
-    'Business and Entrepreneurship',
-    'Environment and Sustainability',
+    'Food Production, Agriculture, Fisheries, and Natural Resource Systems',
+    'Health, Nutrition, Wellness, and Community Care',
+    'Education, Literacy, Skills Development, and Lifelong Learning',
+    'Livelihood, Entrepreneurship, Cooperatives, MSMEs, and Local Economic Development',
+    'Environment, Climate Action, Disaster Risk Reduction, and Community Resilience',
     'Not specified'
   ];
 
@@ -1125,25 +1153,39 @@ export default function ReviewPage() {
                     </div>
                   </div>
 
-                  {votes.evaluation_status === 'pending' && (
-                    <div className="mt-8 pt-6 border-t border-slate-200 space-y-3">
+                  {/* Vote Buttons - Always visible for evaluators to vote */}
+                  <div className="mt-8 pt-6 border-t border-slate-200 space-y-3">
+                      <div className="flex items-center gap-2 mb-2">
+                          <FontAwesomeIcon icon={faGavel} className="w-4 h-4 text-slate-400" />
+                          <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Cast Your Vote</span>
+                          {votes.evaluation_status !== 'pending' && (
+                              <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-50 text-blue-600 border border-blue-200">
+                                  <FontAwesomeIcon icon={faCheckCircle} className="w-2.5 h-2.5" />
+                                  Finalized by Master Approver
+                              </span>
+                          )}
+                      </div>
+                      
                       <button 
-                        onClick={handleEndorseWithConfirm} 
-                        className="w-full inline-flex items-center justify-center gap-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white py-3.5 rounded-2xl font-semibold text-sm hover:from-emerald-600 hover:to-emerald-700 transition-all shadow-lg shadow-emerald-500/25"
+                          onClick={handleEndorseWithConfirm} 
+                          className="w-full inline-flex items-center justify-center gap-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white py-3.5 rounded-2xl font-semibold text-sm hover:from-emerald-600 hover:to-emerald-700 transition-all shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                          disabled={votes.evaluation_status !== 'pending'}
+                          title={votes.evaluation_status !== 'pending' ? 'This submission has been finalized by the Master Approver' : ''}
                       >
-                        <FontAwesomeIcon icon={faThumbsUp} className="w-5 h-5" />
-                        Endorse for Presentation
+                          <FontAwesomeIcon icon={faThumbsUp} className="w-5 h-5" />
+                          Endorse for Presentation
                       </button>
                       
                       <button 
-                        onClick={handleOpenDowngradeModal} 
-                        className="w-full inline-flex items-center justify-center gap-3 bg-amber-50 text-amber-700 py-3.5 rounded-2xl font-semibold text-sm hover:bg-amber-100 transition-all border border-amber-200"
+                          onClick={handleOpenDowngradeModal} 
+                          className="w-full inline-flex items-center justify-center gap-3 bg-amber-50 text-amber-700 py-3.5 rounded-2xl font-semibold text-sm hover:bg-amber-100 transition-all border border-amber-200 hover:border-amber-300 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                          disabled={votes.evaluation_status !== 'pending'}
+                          title={votes.evaluation_status !== 'pending' ? 'This submission has been finalized by the Master Approver' : ''}
                       >
-                        <FontAwesomeIcon icon={faThumbsDown} className="w-5 h-5" />
-                        Downgrade
+                          <FontAwesomeIcon icon={faThumbsDown} className="w-5 h-5" />
+                          Downgrade
                       </button>
-                    </div>
-                  )}
+                  </div>
 
                   <div className="mt-8 pt-6 border-t border-slate-200">
                     <div className="flex items-center gap-3 mb-4">
@@ -1584,7 +1626,9 @@ export default function ReviewPage() {
                   return (
                     <tr 
                       key={sub.id} 
-                      onClick={() => selectSubmission(sub)} 
+                          onClick={() => { selectSubmission({...sub,id: sub.id,nsubmission_id: sub.submission_id // This is the string ID
+                          });
+                        }} 
                       className="cursor-pointer border-b border-slate-100 hover:bg-blue-50/40 transition-all group"
                     >
                       {activeTab === 'system' ? (

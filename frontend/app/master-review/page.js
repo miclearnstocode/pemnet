@@ -844,13 +844,6 @@ export default function MasterReviewPage() {
                 <div className="flex items-center gap-3">
                   {/* Email Status Badge */}
                   {getEmailStatusBadge()}
-                  <button
-                    onClick={() => setShowHistoryModal(true)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-all font-medium"
-                  >
-                    <FontAwesomeIcon icon={faHistory} className="w-3 h-3" />
-                    View History
-                  </button>
                   <button 
                     onClick={() => setIsModalOpen(false)} 
                     className="w-10 h-10 flex items-center justify-center rounded-lg bg-white text-slate-600 hover:bg-slate-100 transition shadow-sm"
@@ -875,6 +868,13 @@ export default function MasterReviewPage() {
                     >
                       <FontAwesomeIcon icon={faEdit} className="w-3 h-3" />
                       Edit Details
+                    </button>
+                    <button
+                      onClick={() => setShowHistoryModal(true)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-all font-medium"
+                    >
+                      <FontAwesomeIcon icon={faHistory} className="w-3 h-3" />
+                      View History
                     </button>
                   </div>
                   <div className="space-y-4">

@@ -572,7 +572,7 @@ export default function MasterReviewPage() {
         const search = searchTerm.toLowerCase();
         return (
           (sub.extension_project_title && sub.extension_project_title.toLowerCase().includes(search)) ||
-          (sub.author && sub.author.toLowerCase().includes(search)) ||
+          (sub.project_leader && sub.project_leader.toLowerCase().includes(search)) ||
           (sub.suc_agencies && sub.suc_agencies.toLowerCase().includes(search))
         );
       }

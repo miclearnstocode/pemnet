@@ -9,7 +9,6 @@ import {
   faClock,
   faFileAlt,
   faEnvelope,
-  faUsers,
   faSearch,
   faFilter,
   faSync,
@@ -34,16 +33,18 @@ import {
   faThumbsUp,
   faThumbsDown,
   faArrowDown,
-  faClipboard,
+  faUsers,
   faBookOpen,
   faLayerGroup,
   faCertificate,
-  faEdit
+  faEdit,
+  faHistory
 } from '@fortawesome/free-solid-svg-icons';
 import ConfirmModal from '../components/ConfirmModal';
 import DowngradeModal from '../components/DowngradeModal';
 import EditSubmission from '../components/EditSubmission';
 import DiscussionSection from '../components/DiscussionSection';
+import ViewHistory from '../components/ViewHistory';
 
 export default function MasterReviewPage() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -82,6 +83,9 @@ export default function MasterReviewPage() {
   // Edit Modal States
   const [showEditModal, setShowEditModal] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
+  
+  // History Modal States
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
   
   // Downgrade Modal States
   const [showDowngradeModal, setShowDowngradeModal] = useState(false);
@@ -258,24 +262,8 @@ export default function MasterReviewPage() {
         ? `http://localhost:5000/api/extracted-data/${emailExtractedData.id}/edit`
         : `http://localhost:5000/api/submissions/${submissionId}/edit`;
       
-      // Map form fields to match the expected field names
+      // Send the form data directly - no field mapping needed now
       const payload = { ...formData };
-      
-      // For system submissions, map fields to match the submission table
-      if (!isEmailSubmission) {
-        if (payload.title) {
-          payload.extension_project_title = payload.title;
-          delete payload.title;
-        }
-        if (payload.authors) {
-          payload.author = payload.authors;
-          delete payload.authors;
-        }
-        if (payload.project_leader) {
-          payload.author = payload.project_leader;
-          delete payload.project_leader;
-        }
-      }
       
       const res = await fetch(url, {
         method: 'PUT',
@@ -497,7 +485,7 @@ export default function MasterReviewPage() {
 
   const getProjectLeader = () => {
     if (activeTab === 'system') {
-      return selectedSubmission?.author || 'Unknown';
+      return selectedSubmission?.project_leader || 'Unknown';
     }
     return emailExtractedData?.project_leader || selectedSubmission?.project_leader_name || selectedSubmission?.sender_name || 'Unknown';
   };
@@ -640,16 +628,17 @@ export default function MasterReviewPage() {
 
   // Field configuration for EditSubmission component
   const editFields = {
-    title: { label: 'Title', icon: faFileAlt, type: 'text' },
-    authors: { label: 'Authors', icon: faUserCircle, type: 'text' },
+    extension_project_title: { label: 'Title', icon: faFileAlt, type: 'text' },
     project_leader: { label: 'Project Leader', icon: faUser, type: 'text' },
-    sucs: { label: 'SUC / Agency', icon: faSchool, type: 'suc' },
+    presenter: { label: 'Presenter', icon: faUserCircle, type: 'text' },
+    suc_agencies: { label: 'SUC / Agency', icon: faSchool, type: 'suc' },
     corresponding_author_name: { label: 'Corresponding Author', icon: faUserCircle, type: 'text' },
     corresponding_author_email: { label: 'Corresponding Email', icon: faEnvelope, type: 'email' },
     corresponding_author_position: { label: 'Corresponding Position', icon: faTag, type: 'text' },
+    co_authors: { label: 'Co-Authors', icon: faUsers, type: 'text' },
     paper_category: { label: 'Paper Category', icon: faBookOpen, type: 'select', options: [
-      'Completed Extension Project Paper',
-      'Ongoing Extension Project Paper',
+      'Completed Extension Project Papers',
+      'Ongoing Extension Project Papers',
       'Not specified'
     ]},
     thematic_area: { label: 'Thematic Area', icon: faLayerGroup, type: 'select', options: [
@@ -659,8 +648,7 @@ export default function MasterReviewPage() {
       'Livelihood, Entrepreneurship, Cooperatives, MSMEs, and Local Economic Development',
       'Environment, Climate Action, Disaster Risk Reduction, and Community Resilience',
       'Not specified'
-    ]},
-    theme: { label: 'Theme', icon: faFlag, type: 'text' }
+    ]}
   };
 
   if (loading) {
@@ -755,6 +743,16 @@ export default function MasterReviewPage() {
         fields={editFields}
       />
 
+      {/* View History Modal */}
+      <ViewHistory
+        isOpen={showHistoryModal}
+        onClose={() => setShowHistoryModal(false)}
+        submissionId={selectedSubmission?.submission_id}
+        extractedDataId={emailExtractedData?.id}
+        isMasterApprover={true}
+        title="Edit History"
+      />
+
       {/* Details Modal */}
       {isModalOpen && selectedSubmission && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -762,7 +760,7 @@ export default function MasterReviewPage() {
           <div className="relative min-h-full flex items-center justify-center p-4">
             <div className="relative w-full max-w-6xl bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[95vh]">
               {/* Modal Header - Fixed */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-linear-to-r from-purple-50 to-blue-50 sticky top-0 z-10">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-purple-50 to-blue-50 sticky top-0 z-10">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
                     <FontAwesomeIcon icon={faFileAlt} className="w-5 h-5 text-purple-600" />
@@ -777,6 +775,13 @@ export default function MasterReviewPage() {
                 <div className="flex items-center gap-3">
                   {/* Email Status Badge */}
                   {getEmailStatusBadge()}
+                  <button
+                    onClick={() => setShowHistoryModal(true)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-all font-medium"
+                  >
+                    <FontAwesomeIcon icon={faHistory} className="w-3 h-3" />
+                    View History
+                  </button>
                   <button 
                     onClick={() => setIsModalOpen(false)} 
                     className="w-10 h-10 flex items-center justify-center rounded-lg bg-white text-slate-600 hover:bg-slate-100 transition shadow-sm"
@@ -981,7 +986,7 @@ export default function MasterReviewPage() {
                   {/* Evaluator Discussion Section */}
                   <div className="mt-6 pt-6 border-t border-slate-200">
                     <DiscussionSection
-                      submissionId={selectedSubmission?.submission_id}  // This should be the string ID like "pemnet-025-2026"
+                      submissionId={selectedSubmission?.submission_id}
                       currentUserId={currentUser?.id}
                       currentUserName={currentUser?.full_name}
                       isMasterApprover={true}
@@ -1347,7 +1352,7 @@ export default function MasterReviewPage() {
                         <>
                           <td className="px-6 py-4">
                             <p className="text-sm font-semibold text-slate-900">{sub.extension_project_title || 'Untitled'}</p>
-                            <p className="text-xs text-slate-500 mt-1">{sub.author || 'Unknown Author'}</p>
+                            <p className="text-xs text-slate-500 mt-1">{sub.project_leader || 'Unknown Project Leader'}</p>
                           </td>
                           <td className="px-6 py-4">
                             <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${getCategoryColor(sub.paper_category)}`}>

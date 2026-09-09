@@ -1,5 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+import json
 
 db = SQLAlchemy()
 
@@ -34,7 +35,7 @@ class Submission(db.Model):
     thematic_area = db.Column(db.String(255), nullable=False)
     paper_category = db.Column(db.String(255), nullable=False)
     suc_agencies = db.Column(db.String(255), nullable=True)
-    author = db.Column(db.String(255), nullable=False)
+    project_leader = db.Column(db.String(255), nullable=False)
     presenter = db.Column(db.String(255), nullable=False)
     corresponding_author_name = db.Column(db.String(255), nullable=True)  
     corresponding_author_position = db.Column(db.String(255), nullable=True)
@@ -50,6 +51,10 @@ class Submission(db.Model):
     compextproj_drive_download_url = db.Column(db.String(500), nullable=True)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
 
+    revisions = db.relationship('SubmissionRevision', foreign_keys='SubmissionRevision.submission_id',
+                                    primaryjoin='Submission.submission_id == SubmissionRevision.submission_id',
+                                    backref='submission_ref')
+
     def to_dict(self):
         return {
             'id': self.id,
@@ -59,7 +64,7 @@ class Submission(db.Model):
             'thematic_area': self.thematic_area,
             'paper_category': self.paper_category,
             'suc_agencies': self.suc_agencies,
-            'author': self.author,
+            'project_leader': self.project_leader,
             'presenter': self.presenter,
             'corresponding_author_name': self.corresponding_author_name,  
             'corresponding_author_position': self.corresponding_author_position,
@@ -281,4 +286,52 @@ class EmailNotificationLog(db.Model):
             'sent_at': self.sent_at.strftime('%Y-%m-%d %H:%M:%S') if self.sent_at else None,
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None,
             'master_approver_id': self.master_approver_id
+        }
+
+class SubmissionRevision(db.Model):
+    __tablename__ = 'submission_revisions'
+    id = db.Column(db.Integer, primary_key=True)
+    submission_id = db.Column(db.String(50), nullable=False, index=True)
+    edited_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    edited_by_name = db.Column(db.String(100), nullable=True)
+    is_master_approver = db.Column(db.Boolean, default=False)
+    changes = db.Column(db.Text, nullable=True)  # JSON string of changed fields
+    
+    # Snapshot of the data AFTER the edit
+    extension_project_title = db.Column(db.String(255), nullable=True)
+    thematic_area = db.Column(db.String(255), nullable=True)
+    paper_category = db.Column(db.String(255), nullable=True)
+    suc_agencies = db.Column(db.String(255), nullable=True)
+    project_leader = db.Column(db.String(255), nullable=True)
+    presenter = db.Column(db.String(255), nullable=True)
+    corresponding_author_name = db.Column(db.String(255), nullable=True)
+    corresponding_author_email = db.Column(db.String(255), nullable=True)
+    corresponding_author_position = db.Column(db.String(255), nullable=True)
+    co_authors = db.Column(db.Text, nullable=True)
+    
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    
+    editor = db.relationship('User', foreign_keys=[edited_by])
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'submission_id': self.submission_id,
+            'edited_by': self.edited_by,
+            'edited_by_name': self.edited_by_name,
+            'is_master_approver': self.is_master_approver,
+            'changes': json.loads(self.changes) if self.changes else {},
+            'snapshot': {
+                'extension_project_title': self.extension_project_title,
+                'thematic_area': self.thematic_area,
+                'paper_category': self.paper_category,
+                'suc_agencies': self.suc_agencies,
+                'project_leader': self.project_leader,
+                'presenter': self.presenter,
+                'corresponding_author_name': self.corresponding_author_name,
+                'corresponding_author_email': self.corresponding_author_email,
+                'corresponding_author_position': self.corresponding_author_position,
+                'co_authors': self.co_authors
+            },
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None
         }

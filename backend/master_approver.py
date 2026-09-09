@@ -60,7 +60,7 @@ class MasterApproverService:
                     'id': sub.submission_id,
                     'type': 'system',
                     'title': sub.extension_project_title,
-                    'author': sub.author,
+                    'project_leader': sub.project_leader,  # FIXED: Use project_leader instead of author
                     'suc_agencies': sub.suc_agencies,
                     'paper_category': sub.paper_category,
                     'thematic_area': sub.thematic_area,
@@ -93,7 +93,7 @@ class MasterApproverService:
                         'id': extracted.submission_id,
                         'type': 'email',
                         'title': extracted.title or email_sub.subject,
-                        'author': extracted.project_leader or email_sub.project_leader_name,
+                        'project_leader': extracted.project_leader or email_sub.project_leader_name,  # FIXED: Use project_leader
                         'suc_agencies': extracted.sucs or email_sub.sender_name,
                         'paper_category': extracted.paper_category or 'Not specified',
                         'thematic_area': extracted.thematic_area or 'Not specified',
@@ -135,7 +135,7 @@ class MasterApproverService:
                         'id': submission.id,
                         'submission_id': submission.submission_id,
                         'title': submission.extension_project_title,
-                        'author': submission.author,
+                        'project_leader': submission.project_leader,  # FIXED: Use project_leader
                         'suc_agencies': submission.suc_agencies,
                         'paper_category': submission.paper_category,
                         'thematic_area': submission.thematic_area,
@@ -179,7 +179,7 @@ class MasterApproverService:
                             'id': email_sub.id,
                             'submission_id': extracted.submission_id,
                             'title': extracted.title or email_sub.subject,
-                            'author': extracted.project_leader or email_sub.project_leader_name,
+                            'project_leader': extracted.project_leader or email_sub.project_leader_name,  # FIXED: Use project_leader
                             'suc_agencies': extracted.sucs or email_sub.sender_name,
                             'paper_category': extracted.paper_category or 'Not specified',
                             'thematic_area': extracted.thematic_area or 'Not specified',
@@ -250,7 +250,7 @@ class MasterApproverService:
                         submission_dict = {
                             'submission_id': submission.submission_id,
                             'extension_project_title': submission.extension_project_title,
-                            'author': submission.author,
+                            'project_leader': submission.project_leader,  # FIXED: Use project_leader
                             'corresponding_author_name': submission.corresponding_author_name,
                             'corresponding_author_email': submission.corresponding_author_email,
                             'corresponding_author_position': submission.corresponding_author_position,
@@ -264,10 +264,11 @@ class MasterApproverService:
                         )
                     else:
                         # Use the status update email
-                        author_name = submission.corresponding_author_name or submission.author
+                        project_leader = submission.project_leader  # FIXED: Use project_leader
+                        author_name = submission.corresponding_author_name or project_leader
                         cc_emails = [submission.corresponding_author_email] if submission.corresponding_author_email else None
                         email_sent = send_status_update_email(
-                            submission.corresponding_author_email,
+                            submission.corresponding_author_email or submission.corresponding_author_email,
                             author_name,
                             submission.extension_project_title,
                             status,
@@ -312,7 +313,7 @@ class MasterApproverService:
                         submission_dict = {
                             'submission_id': submission_id,
                             'extension_project_title': project_title,
-                            'author': author_name,
+                            'project_leader': author_name,  # FIXED: Use project_leader
                             'corresponding_author_name': extracted.corresponding_author_name or author_name,
                             'corresponding_author_email': corr_email,
                             'corresponding_author_position': extracted.corresponding_author_position or '',
@@ -372,9 +373,9 @@ class MasterApproverService:
                 # Try system submissions first
                 submission = Submission.query.filter_by(submission_id=submission_id).first()
                 if submission:
-                    author_name = submission.corresponding_author_name or submission.author
+                    author_name = submission.corresponding_author_name or submission.project_leader  # FIXED: Use project_leader
                     email_sent = send_status_update_email(
-                        submission.corresponding_author_email,
+                        submission.corresponding_author_email or submission.corresponding_author_email,
                         author_name,
                         submission.extension_project_title,
                         status,

@@ -433,7 +433,7 @@ export default function SubmitPage() {
     submitData.append('thematic_area', formData.get('thematicArea'));
     submitData.append('paper_category', formData.get('paperCategory'));
     submitData.append('suc_agencies', finalSuc);
-    submitData.append('author', formData.get('author'));
+    submitData.append('project_leader', formData.get('project_leader'));
     submitData.append('presenter', formData.get('presenter'));
     submitData.append('corresponding_author_name', formData.get('correspondingAuthorName'));
     submitData.append('corresponding_author_email', formData.get('correspondingAuthorEmail'));
@@ -573,7 +573,7 @@ export default function SubmitPage() {
                   </span>
                 </div>
                 <div className="flex flex-wrap gap-4 mt-3 text-sm text-slate-600">
-                  <span><span className="font-medium">Project Leader:</span> {submission.author}</span>
+                  <span><span className="font-medium">Project Leader:</span> {submission.project_leader}</span>
                   <span><span className="font-medium">Presenter:</span> {submission.presenter}</span>
                   {submission.corresponding_author_name && (
                     <span><span className="font-medium">Corresponding Author:</span> {submission.corresponding_author_name}</span>
@@ -925,7 +925,7 @@ export default function SubmitPage() {
                         <div>
                           <label className="block text-sm font-semibold text-slate-700 mb-1.5">Project Leader</label>
                           <input 
-                            name="author" 
+                            name="project_leader" 
                             type="text" 
                             required 
                             placeholder="Project Leader Name"

@@ -19,7 +19,8 @@ import {
   faEnvelope,
   faFlag,
   faPlus,
-  faSpinner
+  faSpinner,
+  faUsers
 } from '@fortawesome/free-solid-svg-icons';
 
 export default function EditSubmission({
@@ -41,18 +42,19 @@ export default function EditSubmission({
   const [newSucName, setNewSucName] = useState('');
   const [newSucRegion, setNewSucRegion] = useState('');
 
-  // Default field configurations
+  // Default field configurations - Updated to match database fields
   const defaultFields = {
-    title: { label: 'Title', icon: faFileAlt, type: 'text' },
-    authors: { label: 'Authors', icon: faUserCircleIcon, type: 'text' },
+    extension_project_title: { label: 'Title', icon: faFileAlt, type: 'text' },
     project_leader: { label: 'Project Leader', icon: faUser, type: 'text' },
-    sucs: { label: 'SUC / Agency', icon: faSchool, type: 'suc' },
+    presenter: { label: 'Presenter', icon: faUserCircleIcon, type: 'text' },
+    suc_agencies: { label: 'SUC / Agency', icon: faSchool, type: 'suc' },
     corresponding_author_name: { label: 'Corresponding Author', icon: faUserCircleIcon, type: 'text' },
     corresponding_author_email: { label: 'Corresponding Email', icon: faEnvelope, type: 'email' },
     corresponding_author_position: { label: 'Corresponding Position', icon: faTag, type: 'text' },
+    co_authors: { label: 'Co-Authors', icon: faUsers, type: 'text' },
     paper_category: { label: 'Paper Category', icon: faBookOpen, type: 'select', options: [
-      'Completed Extension Project Paper',
-      'Ongoing Extension Project Paper',
+      'Completed Extension Project Papers',
+      'Ongoing Extension Project Papers',
       'Not specified'
     ]},
     thematic_area: { label: 'Thematic Area', icon: faLayerGroup, type: 'select', options: [
@@ -62,8 +64,7 @@ export default function EditSubmission({
       'Livelihood, Entrepreneurship, Cooperatives, MSMEs, and Local Economic Development',
       'Environment, Climate Action, Disaster Risk Reduction, and Community Resilience',
       'Not specified'
-    ]},
-    theme: { label: 'Theme', icon: faFlag, type: 'text' }
+    ]}
   };
 
   // Merge custom fields with defaults
@@ -104,14 +105,13 @@ export default function EditSubmission({
   };
 
   const handleSucSelect = (sucName) => {
-    setEditForm(prev => ({ ...prev, sucs: sucName }));
+    setEditForm(prev => ({ ...prev, suc_agencies: sucName }));
     setShowSucDropdown(false);
     setSucSearchTerm('');
   };
 
   const handleAddNewSuc = async () => {
     if (!newSucName.trim()) {
-      // Show toast or alert
       return;
     }
 
@@ -129,7 +129,7 @@ export default function EditSubmission({
       if (res.ok) {
         const data = await res.json();
         setSucList(prev => [...prev, data]);
-        setEditForm(prev => ({ ...prev, sucs: data.name }));
+        setEditForm(prev => ({ ...prev, suc_agencies: data.name }));
         setNewSucName('');
         setNewSucRegion('');
         setShowSucDropdown(false);
@@ -313,17 +313,6 @@ export default function EditSubmission({
                   className="w-full px-4 py-2.5 border border-purple-200 rounded-xl text-sm text-slate-900 focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none transition-all bg-white"
                   rows="3"
                 />
-              </div>
-            )}
-
-            {/* History Indicator */}
-            {data?.edited_at && (
-              <div className="mt-4 p-3 bg-slate-50 border border-slate-200 rounded-xl">
-                <div className="flex items-center gap-2 text-xs text-slate-500">
-                  <FontAwesomeIcon icon={faHistory} className="w-3 h-3" />
-                  Last edited: {new Date(data.edited_at).toLocaleString()}
-                  {data.edited_by && ` by ${data.edited_by}`}
-                </div>
               </div>
             )}
           </div>

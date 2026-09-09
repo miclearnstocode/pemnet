@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 from google_drive import upload_file_to_drive
 from functools import wraps
 from gmail_service import GmailService
-from models import db, User, Submission, EmailSubmission, ExtractedAbstractData, SUC, SubmissionVote, EvaluatorDiscussion, Payment, ExtractedDataRevision, EmailNotificationLog
+from models import SubmissionRevision, db, User, Submission, EmailSubmission, ExtractedAbstractData, SUC, SubmissionVote, EvaluatorDiscussion, Payment, ExtractedDataRevision, EmailNotificationLog
 from master_approver import MasterApproverService
 from email_service import gmail_service, send_status_update_email, send_confirmation_email
 
@@ -372,7 +372,7 @@ def submit():
         thematic_area = request.form.get('thematic_area', '')
         paper_category = request.form.get('paper_category', '')
         suc_agencies = request.form.get('suc_agencies', '')
-        author = request.form.get('author', '')
+        project_leader = request.form.get('project_leader', '')
         presenter = request.form.get('presenter', '')
         corresponding_author_name = request.form.get('corresponding_author_name', '')  
         corresponding_author_position = request.form.get('corresponding_author_position', '')
@@ -392,8 +392,8 @@ def submit():
             missing_fields.append('thematic_area')
         if not paper_category:
             missing_fields.append('paper_category')
-        if not author:
-            missing_fields.append('author')
+        if not project_leader:
+            missing_fields.append('project_leader')
         if not presenter:
             missing_fields.append('presenter')
         
@@ -490,7 +490,7 @@ def submit():
             thematic_area=thematic_area,
             paper_category=paper_category,
             suc_agencies=suc_agencies,
-            author=author,
+            project_leader=project_leader,
             presenter=presenter,
             corresponding_author_name=corresponding_author_name, 
             corresponding_author_position=corresponding_author_position,
@@ -567,7 +567,7 @@ def get_user_submissions(user_id):
             'thematic_area': s.thematic_area,
             'paper_category': s.paper_category,
             'suc_agencies': s.suc_agencies,
-            'author': s.author,
+            'project_leader': s.project_leader,
             'presenter': s.presenter,
             'corresponding_author_name': s.corresponding_author_name,
             'corresponding_author_email': s.corresponding_author_email,
@@ -607,7 +607,7 @@ def get_submissions():
             'thematic_area': s.thematic_area,
             'paper_category': s.paper_category,
             'suc_agencies': s.suc_agencies,
-            'author': s.author,
+            'project_leader': s.project_leader,
             'presenter': s.presenter,
             'corresponding_author_name': s.corresponding_author_name,
             'corresponding_author_email': s.corresponding_author_email,
@@ -1582,7 +1582,7 @@ def send_confirmation_email(to_email, submission, action, notes=''):
         subject = f"Abstract Submission {action.capitalize()} - {submission.extension_project_title if hasattr(submission, 'extension_project_title') else submission.subject}"
         
         body = f"""
-Dear {submission.author if hasattr(submission, 'author') else submission.sender_name},
+Dear {submission.project_leader if hasattr(submission, 'project_leader') else submission.sender_name},
 
 Your abstract submission has been {action}d.
 
@@ -1746,7 +1746,7 @@ def get_submission_data(submission_id):
             'evaluation_status': submission.evaluation_status,
             'thematic_area': submission.thematic_area,
             'paper_category': submission.paper_category,
-            'author': submission.author,
+            'project_leader': submission.project_leader,
             'suc_agencies': submission.suc_agencies,
             'corresponding_author_name': submission.corresponding_author_name,
             'corresponding_author_email': submission.corresponding_author_email,
@@ -1772,7 +1772,7 @@ def get_submission_data(submission_id):
                 'evaluation_status': submission.evaluation_status,
                 'thematic_area': submission.thematic_area,
                 'paper_category': submission.paper_category,
-                'author': submission.author,
+                'project_leader': submission.project_leader,
                 'suc_agencies': submission.suc_agencies,
                 'corresponding_author_name': submission.corresponding_author_name,
                 'corresponding_author_email': submission.corresponding_author_email,
@@ -2158,6 +2158,14 @@ def edit_extracted_data(extracted_data_id):
         data = request.get_json()
         evaluator_id = data.get('evaluator_id')
         
+        if not evaluator_id:
+            return jsonify({"detail": "Evaluator ID is required"}), 400
+        
+        # Get the user who is making the edit
+        user = User.query.get(evaluator_id)
+        user_name = user.full_name if user else 'Unknown'
+        is_master_approver = user.role in ['admin', 'master_approver'] if user else False
+        
         # Fetch the original data
         extracted = ExtractedAbstractData.query.get(extracted_data_id)
         if not extracted:
@@ -2167,13 +2175,16 @@ def edit_extracted_data(extracted_data_id):
         changes = {}
         
         # Helper to compare and update
-        def update_field(field_name, column, max_length=None):
+        def update_field(field_name, column):
             if field_name in data:
                 new_value = data[field_name]
                 old_value = getattr(extracted, column)
                 
                 # Convert to string for comparison
-                if new_value != old_value:
+                old_str = str(old_value) if old_value is not None else ''
+                new_str = str(new_value) if new_value is not None else ''
+                
+                if old_str != new_str:
                     changes[field_name] = {
                         'old': old_value,
                         'new': new_value
@@ -2197,12 +2208,16 @@ def edit_extracted_data(extracted_data_id):
         if changes:
             db.session.commit()
 
-            # Create a revision log
+            # Create a revision log with user info
             import json
             revision = ExtractedDataRevision(
                 extracted_data_id=extracted_data_id,
                 edited_by=evaluator_id,
-                changes=json.dumps(changes),
+                changes=json.dumps({
+                    'changes': changes,
+                    'edited_by_name': user_name,
+                    'is_master_approver': is_master_approver
+                }),
                 title=extracted.title,
                 authors=extracted.authors,
                 authors_list=extracted.authors_list,
@@ -2242,7 +2257,6 @@ def edit_extracted_data(extracted_data_id):
         traceback.print_exc()
         return jsonify({"detail": str(e)}), 500
 
-
 @app.route('/api/extracted-data/<int:extracted_data_id>/revisions', methods=['GET', 'OPTIONS'])
 def get_extracted_data_revisions(extracted_data_id):
     """Get all revisions for an extracted data record."""
@@ -2257,11 +2271,29 @@ def get_extracted_data_revisions(extracted_data_id):
         result = []
         for rev in revisions:
             user = User.query.get(rev.edited_by)
+            # Parse changes to extract metadata
+            changes_data = {}
+            is_master_approver = False
+            edited_by_name = user.full_name if user else 'Unknown'
+            
+            try:
+                if rev.changes:
+                    parsed = json.loads(rev.changes)
+                    if isinstance(parsed, dict) and 'changes' in parsed:
+                        changes_data = parsed.get('changes', {})
+                        edited_by_name = parsed.get('edited_by_name', edited_by_name)
+                        is_master_approver = parsed.get('is_master_approver', False)
+                    else:
+                        changes_data = parsed
+            except:
+                changes_data = {}
+            
             result.append({
                 'id': rev.id,
                 'edited_by': rev.edited_by,
-                'edited_by_name': user.full_name if user else 'Unknown',
-                'changes': json.loads(rev.changes) if rev.changes else {},
+                'edited_by_name': edited_by_name,
+                'is_master_approver': is_master_approver,
+                'changes': changes_data,
                 'snapshot': {
                     'title': rev.title,
                     'authors': rev.authors,
@@ -2282,6 +2314,121 @@ def get_extracted_data_revisions(extracted_data_id):
 
     except Exception as e:
         print(f"Error fetching revisions: {e}")
+        return jsonify({"detail": str(e)}), 500
+    
+@app.route('/api/submissions/<string:submission_id>/edit-history', methods=['GET', 'OPTIONS'])
+def get_submission_edit_history(submission_id):
+    """Get edit history for a system submission."""
+    if request.method == 'OPTIONS':
+        return jsonify({})
+    
+    try:
+        # Query the submission revisions table
+        revisions = SubmissionRevision.query.filter_by(
+            submission_id=submission_id
+        ).order_by(SubmissionRevision.created_at.desc()).all()
+        
+        return jsonify([rev.to_dict() for rev in revisions]), 200
+        
+    except Exception as e:
+        print(f"Error fetching edit history: {e}")
+        traceback.print_exc()
+        return jsonify({"detail": str(e)}), 500
+    
+@app.route('/api/submissions/<string:submission_id>/edit', methods=['PUT', 'OPTIONS'])
+def edit_system_submission(submission_id):
+    """Edit a system submission and log the changes."""
+    if request.method == 'OPTIONS':
+        return jsonify({})
+    
+    try:
+        data = request.get_json()
+        evaluator_id = data.get('evaluator_id')
+        
+        if not evaluator_id:
+            return jsonify({"detail": "Evaluator ID is required"}), 400
+        
+        # Find the submission
+        submission = Submission.query.filter_by(submission_id=submission_id).first()
+        if not submission:
+            return jsonify({"detail": "Submission not found"}), 404
+        
+        # Get the user who is making the edit
+        user = User.query.get(evaluator_id)
+        user_name = user.full_name if user else 'Unknown'
+        is_master_approver = user.role in ['admin', 'master_approver'] if user else False
+        
+        # Fields that can be updated - matching the database columns
+        editable_fields = {
+            'extension_project_title': 'extension_project_title',
+            'thematic_area': 'thematic_area',
+            'paper_category': 'paper_category',
+            'suc_agencies': 'suc_agencies',
+            'project_leader': 'project_leader',
+            'presenter': 'presenter',
+            'corresponding_author_name': 'corresponding_author_name',
+            'corresponding_author_email': 'corresponding_author_email',
+            'corresponding_author_position': 'corresponding_author_position',
+            'co_authors': 'co_authors'
+        }
+        
+        changes = {}
+        
+        # Update fields and track changes
+        for field_name, db_field in editable_fields.items():
+            if field_name in data:
+                old_value = getattr(submission, db_field)
+                new_value = data[field_name]
+                
+                # Convert to string for comparison
+                old_str = str(old_value) if old_value is not None else ''
+                new_str = str(new_value) if new_value is not None else ''
+                
+                if old_str != new_str:
+                    changes[field_name] = {
+                        'old': old_value,
+                        'new': new_value
+                    }
+                    setattr(submission, db_field, new_value)
+        
+        # Only create revision if there are changes
+        if changes:
+            db.session.commit()
+            
+            # Create revision record with all fields
+            revision = SubmissionRevision(
+                submission_id=submission_id,
+                edited_by=evaluator_id,
+                edited_by_name=user_name,
+                is_master_approver=is_master_approver,
+                changes=json.dumps(changes),
+                extension_project_title=submission.extension_project_title,
+                thematic_area=submission.thematic_area,
+                paper_category=submission.paper_category,
+                suc_agencies=submission.suc_agencies,
+                project_leader=submission.project_leader,
+                presenter=submission.presenter,
+                corresponding_author_name=submission.corresponding_author_name,
+                corresponding_author_email=submission.corresponding_author_email,
+                corresponding_author_position=submission.corresponding_author_position,
+                co_authors=submission.co_authors
+            )
+            
+            db.session.add(revision)
+            db.session.commit()
+            
+            return jsonify({
+                "message": "Submission updated successfully",
+                "changes": changes,
+                "revision_id": revision.id
+            }), 200
+        else:
+            return jsonify({"message": "No changes made"}), 200
+            
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error editing submission: {e}")
+        traceback.print_exc()
         return jsonify({"detail": str(e)}), 500
     
 # ========== MASTER APPROVER ROUTES ==========

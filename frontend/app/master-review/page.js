@@ -37,10 +37,13 @@ import {
   faClipboard,
   faBookOpen,
   faLayerGroup,
-  faCertificate
+  faCertificate,
+  faEdit
 } from '@fortawesome/free-solid-svg-icons';
 import ConfirmModal from '../components/ConfirmModal';
 import DowngradeModal from '../components/DowngradeModal';
+import EditSubmission from '../components/EditSubmission';
+import DiscussionSection from '../components/DiscussionSection';
 
 export default function MasterReviewPage() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -75,6 +78,10 @@ export default function MasterReviewPage() {
   
   // Collapsible sections
   const [showEndorsement, setShowEndorsement] = useState(false);
+  
+  // Edit Modal States
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
   
   // Downgrade Modal States
   const [showDowngradeModal, setShowDowngradeModal] = useState(false);
@@ -238,6 +245,66 @@ export default function MasterReviewPage() {
     }
   };
 
+  const handleEditSave = async (formData) => {
+    if (!selectedSubmission) return;
+    setEditLoading(true);
+    
+    try {
+      const submissionId = selectedSubmission.submission_id;
+      const isEmailSubmission = activeTab === 'email' && emailExtractedData?.id;
+      
+      // For email submissions, use the extracted data endpoint
+      const url = isEmailSubmission
+        ? `http://localhost:5000/api/extracted-data/${emailExtractedData.id}/edit`
+        : `http://localhost:5000/api/submissions/${submissionId}/edit`;
+      
+      // Map form fields to match the expected field names
+      const payload = { ...formData };
+      
+      // For system submissions, map fields to match the submission table
+      if (!isEmailSubmission) {
+        if (payload.title) {
+          payload.extension_project_title = payload.title;
+          delete payload.title;
+        }
+        if (payload.authors) {
+          payload.author = payload.authors;
+          delete payload.authors;
+        }
+        if (payload.project_leader) {
+          payload.author = payload.project_leader;
+          delete payload.project_leader;
+        }
+      }
+      
+      const res = await fetch(url, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          evaluator_id: currentUser.id,
+          ...payload
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        showToast(data.message || 'Submission updated successfully!', 'success');
+        setShowEditModal(false);
+        // Refresh the submission details
+        await selectSubmission(selectedSubmission);
+        await fetchSubmissions();
+      } else {
+        const error = await res.json();
+        showToast(error.detail || 'Failed to update submission', 'error');
+      }
+    } catch (error) {
+      console.error('Error updating submission:', error);
+      showToast('Failed to update submission', 'error');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
   const handleSetStatus = async (status, notes = '') => {
     if (!selectedSubmission || !status) return;
     
@@ -280,7 +347,6 @@ export default function MasterReviewPage() {
               return { 
                 ...sub, 
                 status: status, // Master Approver decision
-                // Keep evaluation_status as is
               };
             }
             return sub;
@@ -406,7 +472,9 @@ export default function MasterReviewPage() {
   };
 
   const getEvaluatorName = (id) => {
-    const user = allUsers.find(u => u.id === id);
+    // If id is a string, try to convert to number
+    const userId = typeof id === 'string' ? parseInt(id) : id;
+    const user = allUsers.find(u => u.id === userId);
     return user ? user.full_name : `Evaluator ${id}`;
   };
 
@@ -481,6 +549,13 @@ export default function MasterReviewPage() {
       return selectedSubmission?.thematic_area || 'Not specified';
     }
     return emailExtractedData?.thematic_area || 'Not specified';
+  };
+
+  const getTheme = () => {
+    if (activeTab === 'system') {
+      return 'Not specified';
+    }
+    return emailExtractedData?.theme || 'Not specified';
   };
 
   const extractGoogleDriveId = (url) => {
@@ -563,6 +638,31 @@ export default function MasterReviewPage() {
     );
   };
 
+  // Field configuration for EditSubmission component
+  const editFields = {
+    title: { label: 'Title', icon: faFileAlt, type: 'text' },
+    authors: { label: 'Authors', icon: faUserCircle, type: 'text' },
+    project_leader: { label: 'Project Leader', icon: faUser, type: 'text' },
+    sucs: { label: 'SUC / Agency', icon: faSchool, type: 'suc' },
+    corresponding_author_name: { label: 'Corresponding Author', icon: faUserCircle, type: 'text' },
+    corresponding_author_email: { label: 'Corresponding Email', icon: faEnvelope, type: 'email' },
+    corresponding_author_position: { label: 'Corresponding Position', icon: faTag, type: 'text' },
+    paper_category: { label: 'Paper Category', icon: faBookOpen, type: 'select', options: [
+      'Completed Extension Project Paper',
+      'Ongoing Extension Project Paper',
+      'Not specified'
+    ]},
+    thematic_area: { label: 'Thematic Area', icon: faLayerGroup, type: 'select', options: [
+      'Food Production, Agriculture, Fisheries, and Natural Resource Systems',
+      'Health, Nutrition, Wellness, and Community Care',
+      'Education, Literacy, Skills Development, and Lifelong Learning',
+      'Livelihood, Entrepreneurship, Cooperatives, MSMEs, and Local Economic Development',
+      'Environment, Climate Action, Disaster Risk Reduction, and Community Resilience',
+      'Not specified'
+    ]},
+    theme: { label: 'Theme', icon: faFlag, type: 'text' }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -575,7 +675,7 @@ export default function MasterReviewPage() {
     <div className="min-h-screen bg-slate-50">
       {/* Toast Notification */}
       {toast && (
-        <div className="fixed top-4 right-4 z-50 animate-slide-in">
+        <div className="fixed top-4 right-4 z-[9999] animate-slide-in">
           <div className={`relative w-96 p-4 rounded-xl border shadow-lg ${
             toast.type === 'success' ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'
           }`}>
@@ -642,6 +742,19 @@ export default function MasterReviewPage() {
         type="warning"
       />
 
+      {/* Edit Submission Modal */}
+      <EditSubmission
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        data={emailExtractedData || selectedSubmission}
+        onSave={handleEditSave}
+        isLoading={editLoading}
+        currentUser={currentUser}
+        isMasterApprover={true}
+        title="Edit Submission Details"
+        fields={editFields}
+      />
+
       {/* Details Modal */}
       {isModalOpen && selectedSubmission && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -649,7 +762,7 @@ export default function MasterReviewPage() {
           <div className="relative min-h-full flex items-center justify-center p-4">
             <div className="relative w-full max-w-6xl bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[95vh]">
               {/* Modal Header - Fixed */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-purple-50 to-blue-50 sticky top-0 z-10">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-linear-to-r from-purple-50 to-blue-50 sticky top-0 z-10">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
                     <FontAwesomeIcon icon={faFileAlt} className="w-5 h-5 text-purple-600" />
@@ -679,7 +792,17 @@ export default function MasterReviewPage() {
               <div className="grid grid-cols-1 lg:grid-cols-2 h-[calc(95vh-80px)]">
                 {/* Left Column - Submission Information */}
                 <div className="p-6 overflow-y-auto border-r border-slate-200">
-                  <h4 className="text-base font-bold text-slate-700 uppercase mb-4">Submission Information</h4>
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-base font-bold text-slate-700 uppercase">Submission Information</h4>
+                    <button
+                      onClick={() => setShowEditModal(true)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-all font-medium"
+                      disabled={!selectedSubmission}
+                    >
+                      <FontAwesomeIcon icon={faEdit} className="w-3 h-3" />
+                      Edit Details
+                    </button>
+                  </div>
                   <div className="space-y-4">
                     {/* Title */}
                     <div>
@@ -714,13 +837,19 @@ export default function MasterReviewPage() {
                     {/* Corresponding Author Email */}
                     <div>
                       <p className="text-sm text-slate-600 font-medium">Corresponding Author Email</p>
-                      <p className="text-lg font-semibold text-slate-900">{getCorrespondingAuthorEmail()}</p>
+                      <p className="text-lg font-semibold text-slate-900 break-all">{getCorrespondingAuthorEmail()}</p>
                     </div>
                     
                     {/* Corresponding Author Position */}
                     <div>
                       <p className="text-sm text-slate-600 font-medium">Corresponding Author Position</p>
                       <p className="text-lg font-semibold text-slate-900">{getCorrespondingAuthorPosition()}</p>
+                    </div>
+                    
+                    {/* Theme */}
+                    <div>
+                      <p className="text-sm text-slate-600 font-medium">Theme</p>
+                      <p className="text-lg font-semibold text-slate-900">{getTheme()}</p>
                     </div>
                     
                     {/* Paper Category */}
@@ -749,17 +878,9 @@ export default function MasterReviewPage() {
                       </span>
                     </div>
                     
-                    {/* Evaluator Decision - Show evaluation_status */}
-                    <div>
-                      <p className="text-sm text-slate-600 font-medium">Evaluator Decision</p>
-                      <span className={`inline-flex px-3 py-1.5 rounded-full text-sm font-medium ${getStatusColor(selectedSubmission.evaluation_status || 'pending')}`}>
-                        {getStatusDisplay(selectedSubmission.evaluation_status || 'pending')}
-                      </span>
-                    </div>
-                    
                     {/* Master Status - Show status (Master Approver decision) */}
                     <div>
-                      <p className="text-sm text-slate-600 font-medium">Master Status</p>
+                      <p className="text-sm text-slate-600 font-medium">Master Approver Status</p>
                       <span className={`inline-flex px-3 py-1.5 rounded-full text-sm font-medium ${getStatusColor(selectedSubmission.status || 'pending')}`}>
                         {getStatusDisplay(selectedSubmission.status || 'pending')}
                       </span>
@@ -856,6 +977,18 @@ export default function MasterReviewPage() {
                       </div>
                     </div>
                   )}
+
+                  {/* Evaluator Discussion Section */}
+                  <div className="mt-6 pt-6 border-t border-slate-200">
+                    <DiscussionSection
+                      submissionId={selectedSubmission?.submission_id}  // This should be the string ID like "pemnet-025-2026"
+                      currentUserId={currentUser?.id}
+                      currentUserName={currentUser?.full_name}
+                      isMasterApprover={true}
+                      title="Evaluator Discussion"
+                      maxHeight="200px"
+                    />
+                  </div>
 
                   {/* Master Approver Controls */}
                   <div className="mt-6 pt-6 border-t-2 border-purple-200">
@@ -1022,8 +1155,9 @@ export default function MasterReviewPage() {
                 <p className="text-[10px] text-slate-500 uppercase tracking-wider font-medium">Master Approver</p>
               </div>
             </div>
-            <Link href="/login" className="text-red-600 hover:text-red-700 font-semibold text-sm transition">
-              ← Logout
+            <Link href="/login" className="inline-flex items-center gap-2 text-red-600 hover:text-red-700 font-medium text-sm transition-all hover:bg-red-50 px-4 py-2 rounded-xl">
+              <FontAwesomeIcon icon={faSignOutAlt} className="w-4 h-4" />
+              Logout
             </Link>
           </div>
         </div>

@@ -53,7 +53,7 @@ class MasterApproverService:
                 votes = SubmissionVote.query.filter_by(submission_id=sub.submission_id).all()
                 vote_stats = {
                     'endorse': sum(1 for v in votes if v.vote_status == 'endorse'),
-                    'downgrade': sum(1 for v in votes if v.vote_status == 'downgrade'),
+                    'downgrade': sum(1 for v in votes if v.vote_status in ['downgraded-non_competitive', 'downgraded-poster_only', 'downgrade']),
                     'reassign': sum(1 for v in votes if v.vote_status == 'reassign')
                 }
                 results.append({
@@ -82,6 +82,13 @@ class MasterApproverService:
             for extracted in email_data:
                 email_sub = EmailSubmission.query.get(extracted.email_submission_id)
                 if email_sub:
+                    # IMPORTANT FIX: Also fetch votes for email submissions
+                    votes = SubmissionVote.query.filter_by(submission_id=extracted.submission_id).all()
+                    vote_stats = {
+                        'endorse': sum(1 for v in votes if v.vote_status == 'endorse'),
+                        'downgrade': sum(1 for v in votes if v.vote_status in ['downgraded-non_competitive', 'downgraded-poster_only', 'downgrade']),
+                        'reassign': sum(1 for v in votes if v.vote_status == 'reassign')
+                    }
                     results.append({
                         'id': extracted.submission_id,
                         'type': 'email',
@@ -93,8 +100,14 @@ class MasterApproverService:
                         'status': email_sub.status,
                         'evaluation_status': extracted.evaluation_status,
                         'created_at': email_sub.email_received_at,
-                        'vote_stats': {'endorse': 0, 'downgrade': 0, 'reassign': 0},
-                        'votes': []
+                        'vote_stats': vote_stats,
+                        'votes': [{
+                            'evaluator_id': v.evaluator_id,
+                            'vote_status': v.vote_status,
+                            'vote_notes': v.vote_notes,
+                            'vote_reassign_to': v.vote_reassign_to,
+                            'vote_downgrade_to': v.vote_downgrade_to
+                        } for v in votes]
                     })
             
             return results, 200
@@ -114,7 +127,7 @@ class MasterApproverService:
                 votes = SubmissionVote.query.filter_by(submission_id=submission_id).all()
                 vote_stats = {
                     'endorse': sum(1 for v in votes if v.vote_status == 'endorse'),
-                    'downgrade': sum(1 for v in votes if v.vote_status == 'downgrade'),
+                    'downgrade': sum(1 for v in votes if v.vote_status in ['downgraded-non_competitive', 'downgraded-poster_only', 'downgrade']),
                     'reassign': sum(1 for v in votes if v.vote_status == 'reassign')
                 }
                 return {
@@ -146,11 +159,21 @@ class MasterApproverService:
                     'type': 'system'
                 }, 200
             
-            # If not found, try email submission
+            # If not found, try email submission (extracted_abstract_data)
             extracted = ExtractedAbstractData.query.filter_by(submission_id=submission_id).first()
             if extracted:
                 email_sub = EmailSubmission.query.get(extracted.email_submission_id)
                 if email_sub:
+                    # IMPORTANT FIX: Also fetch votes for email submissions using the same submission_id
+                    votes = SubmissionVote.query.filter_by(submission_id=submission_id).all()
+                    
+                    # Fix vote stats to handle both 'downgrade' and specific downgrade types
+                    vote_stats = {
+                        'endorse': sum(1 for v in votes if v.vote_status == 'endorse'),
+                        'downgrade': sum(1 for v in votes if v.vote_status in ['downgraded-non_competitive', 'downgraded-poster_only', 'downgrade']),
+                        'reassign': sum(1 for v in votes if v.vote_status == 'reassign')
+                    }
+                    
                     return {
                         'submission': {
                             'id': email_sub.id,
@@ -169,8 +192,14 @@ class MasterApproverService:
                             'endorsement_view_url': None,
                             'created_at': email_sub.email_received_at
                         },
-                        'votes': [],  # Email submissions don't have votes
-                        'vote_stats': {'endorse': 0, 'downgrade': 0, 'reassign': 0},
+                        'votes': [{
+                            'evaluator_id': v.evaluator_id,
+                            'vote_status': v.vote_status,
+                            'vote_notes': v.vote_notes,
+                            'vote_reassign_to': v.vote_reassign_to,
+                            'vote_downgrade_to': v.vote_downgrade_to
+                        } for v in votes],
+                        'vote_stats': vote_stats,
                         'type': 'email'
                     }, 200
             

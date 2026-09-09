@@ -721,7 +721,7 @@ export default function ReviewPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
       {toast && (
-        <div className="fixed top-6 right-6 z-50 animate-slide-in">
+        <div className="fixed top-6 right-6 z-100 animate-slide-in">
           <div className={`relative w-96 p-5 rounded-2xl border shadow-xl backdrop-blur-sm ${
             toast.type === 'success' 
               ? 'bg-emerald-50/90 border-emerald-200' 

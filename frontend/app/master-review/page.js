@@ -262,8 +262,27 @@ export default function MasterReviewPage() {
         ? `http://localhost:5000/api/extracted-data/${emailExtractedData.id}/edit`
         : `http://localhost:5000/api/submissions/${submissionId}/edit`;
       
-      // Send the form data directly - no field mapping needed now
-      const payload = { ...formData };
+      // For email submissions, map the fields to match the extracted data table
+      let payload = { ...formData };
+      
+      // For email submissions, we need to map some fields
+      if (isEmailSubmission) {
+        // If the form has extension_project_title, map it to title
+        if (payload.extension_project_title) {
+          payload.title = payload.extension_project_title;
+          delete payload.extension_project_title;
+        }
+        // If the form has suc_agencies, map it to sucs
+        if (payload.suc_agencies) {
+          payload.sucs = payload.suc_agencies;
+          delete payload.suc_agencies;
+        }
+        // If the form has co_authors, map it to authors
+        if (payload.co_authors) {
+          payload.authors = payload.co_authors;
+          delete payload.co_authors;
+        }
+      }
       
       const res = await fetch(url, {
         method: 'PUT',
@@ -418,12 +437,6 @@ export default function MasterReviewPage() {
     }
   };
 
-  const handleReturnToSender = () => {
-    setPendingStatusAction('return_to_sender');
-    setSendEmailConfirmation(false);
-    setShowConfirmModal(true);
-  };
-
   const getStatusColor = (status) => {
     const safeStatus = status || 'pending';
     switch (safeStatus) {
@@ -475,19 +488,18 @@ export default function MasterReviewPage() {
     }
   };
 
-  // Helper functions to get data from selectedSubmission
   const getTitle = () => {
     if (activeTab === 'system') {
       return selectedSubmission?.extension_project_title || 'Untitled';
     }
-    return emailExtractedData?.title || selectedSubmission?.subject || 'Untitled';
+    return emailExtractedData?.title || 'Untitled';
   };
 
   const getProjectLeader = () => {
     if (activeTab === 'system') {
       return selectedSubmission?.project_leader || 'Unknown';
     }
-    return emailExtractedData?.project_leader || selectedSubmission?.project_leader_name || selectedSubmission?.sender_name || 'Unknown';
+    return emailExtractedData?.project_leader || 'Unknown';
   };
 
   const getAuthorsList = () => {
@@ -510,25 +522,25 @@ export default function MasterReviewPage() {
       return selectedSubmission?.project_leader || 'N/A';
     }
     // For email submissions
-    if (emailExtractedData?.authors_list) {
+    if (emailExtractedData?.authors) {
       try {
-        const parsed = JSON.parse(emailExtractedData.authors_list);
+        const parsed = JSON.parse(emailExtractedData.authors);
         if (Array.isArray(parsed)) {
           return parsed.join(', ');
         }
-        return emailExtractedData.authors_list;
+        return emailExtractedData.authors;
       } catch {
-        return emailExtractedData.authors_list;
+        return emailExtractedData.authors;
       }
     }
-    return emailExtractedData?.project_leader || selectedSubmission?.project_leader_name || selectedSubmission?.sender_name || 'N/A';
+    return 'N/A';
   };
 
   const getSUCs = () => {
     if (activeTab === 'system') {
-      return selectedSubmission?.suc_agencies || 'N/A';
+      return selectedSubmission?.suc_agencies || 'Unknown';
     }
-    return emailExtractedData?.sucs || selectedSubmission?.sender_name || 'N/A';
+    return emailExtractedData?.sucs || 'Unknown';
   };
 
   const getCorrespondingAuthorName = () => {
@@ -653,29 +665,58 @@ export default function MasterReviewPage() {
     );
   };
 
-  // Field configuration for EditSubmission component
-  const editFields = {
-    extension_project_title: { label: 'Title', icon: faFileAlt, type: 'text' },
-    project_leader: { label: 'Project Leader', icon: faUser, type: 'text' },
-    presenter: { label: 'Presenter', icon: faUserCircle, type: 'text' },
-    suc_agencies: { label: 'SUC / Agency', icon: faSchool, type: 'suc' },
-    corresponding_author_name: { label: 'Corresponding Author', icon: faUserCircle, type: 'text' },
-    corresponding_author_email: { label: 'Corresponding Email', icon: faEnvelope, type: 'email' },
-    corresponding_author_position: { label: 'Corresponding Position', icon: faTag, type: 'text' },
-    co_authors: { label: 'Co-Authors', icon: faUsers, type: 'text' },
-    paper_category: { label: 'Paper Category', icon: faBookOpen, type: 'select', options: [
-      'Completed Extension Project Papers',
-      'Ongoing Extension Project Papers',
-      'Not specified'
-    ]},
-    thematic_area: { label: 'Thematic Area', icon: faLayerGroup, type: 'select', options: [
-      'Food Production, Agriculture, Fisheries, and Natural Resource Systems',
-      'Health, Nutrition, Wellness, and Community Care',
-      'Education, Literacy, Skills Development, and Lifelong Learning',
-      'Livelihood, Entrepreneurship, Cooperatives, MSMEs, and Local Economic Development',
-      'Environment, Climate Action, Disaster Risk Reduction, and Community Resilience',
-      'Not specified'
-    ]}
+  // Field configuration for EditSubmission component - Dynamic based on submission type
+  const getEditFields = (submissionType) => {
+    if (submissionType === 'email') {
+      return {
+        title: { label: 'Title', icon: faFileAlt, type: 'text' },
+        project_leader: { label: 'Project Leader', icon: faUser, type: 'text' },
+        sucs: { label: 'SUC / Agency', icon: faSchool, type: 'suc' },
+        corresponding_author_name: { label: 'Corresponding Author', icon: faUserCircle, type: 'text' },
+        corresponding_author_email: { label: 'Corresponding Email', icon: faEnvelope, type: 'email' },
+        corresponding_author_position: { label: 'Corresponding Position', icon: faTag, type: 'text' },
+        authors_list: { label: 'Authors List', icon: faUsers, type: 'text' },
+        paper_category: { label: 'Paper Category', icon: faBookOpen, type: 'select', options: [
+          'Completed Extension Project Papers',
+          'Ongoing Extension Project Papers',
+          'Not specified'
+        ]},
+        thematic_area: { label: 'Thematic Area', icon: faLayerGroup, type: 'select', options: [
+          'Food Production, Agriculture, Fisheries, and Natural Resource Systems',
+          'Health, Nutrition, Wellness, and Community Care',
+          'Education, Literacy, Skills Development, and Lifelong Learning',
+          'Livelihood, Entrepreneurship, Cooperatives, MSMEs, and Local Economic Development',
+          'Environment, Climate Action, Disaster Risk Reduction, and Community Resilience',
+          'Not specified'
+        ]},
+        theme: { label: 'Theme', icon: faFlag, type: 'text' }
+      };
+    }
+    
+    // System submission fields
+    return {
+      extension_project_title: { label: 'Title', icon: faFileAlt, type: 'text' },
+      project_leader: { label: 'Project Leader', icon: faUser, type: 'text' },
+      presenter: { label: 'Presenter', icon: faUserCircle, type: 'text' },
+      suc_agencies: { label: 'SUC / Agency', icon: faSchool, type: 'suc' },
+      corresponding_author_name: { label: 'Corresponding Author', icon: faUserCircle, type: 'text' },
+      corresponding_author_email: { label: 'Corresponding Email', icon: faEnvelope, type: 'email' },
+      corresponding_author_position: { label: 'Corresponding Position', icon: faTag, type: 'text' },
+      co_authors: { label: 'Co-Authors', icon: faUsers, type: 'text' },
+      paper_category: { label: 'Paper Category', icon: faBookOpen, type: 'select', options: [
+        'Completed Extension Project Papers',
+        'Ongoing Extension Project Papers',
+        'Not specified'
+      ]},
+      thematic_area: { label: 'Thematic Area', icon: faLayerGroup, type: 'select', options: [
+        'Food Production, Agriculture, Fisheries, and Natural Resource Systems',
+        'Health, Nutrition, Wellness, and Community Care',
+        'Education, Literacy, Skills Development, and Lifelong Learning',
+        'Livelihood, Entrepreneurship, Cooperatives, MSMEs, and Local Economic Development',
+        'Environment, Climate Action, Disaster Risk Reduction, and Community Resilience',
+        'Not specified'
+      ]}
+    };
   };
 
   if (loading) {
@@ -766,8 +807,9 @@ export default function MasterReviewPage() {
         isLoading={editLoading}
         currentUser={currentUser}
         isMasterApprover={true}
-        title="Edit Submission Details"
-        fields={editFields}
+        title={activeTab === 'email' ? 'Edit Email Submission Details' : 'Edit Submission Details'}
+        fields={getEditFields(activeTab === 'email' ? 'email' : 'system')}
+        submissionType={activeTab === 'email' ? 'email' : 'system'}
       />
 
       {/* View History Modal */}
@@ -1050,18 +1092,6 @@ export default function MasterReviewPage() {
                       >
                         <FontAwesomeIcon icon={faThumbsDown} className="w-5 h-5" />
                         Downgrade
-                      </button>
-                      
-                      {/* Return to Sender - Red */}
-                      <button
-                        onClick={handleReturnToSender}
-                        disabled={selectedSubmission.status === 'pending'}
-                        className="w-full bg-red-500 text-white py-3 rounded-xl font-semibold hover:bg-red-600 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
-                        </svg>
-                        Return to Sender
                       </button>
                     </div>
                   </div>

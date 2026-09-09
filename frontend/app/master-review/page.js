@@ -492,9 +492,36 @@ export default function MasterReviewPage() {
 
   const getAuthorsList = () => {
     if (activeTab === 'system') {
-      return selectedSubmission?.co_authors || 'N/A';
+      // Check co_authors first
+      if (selectedSubmission?.co_authors) {
+        try {
+          // Try to parse as JSON if it's an array
+          const parsed = JSON.parse(selectedSubmission.co_authors);
+          if (Array.isArray(parsed)) {
+            return parsed.join(', ');
+          }
+          return selectedSubmission.co_authors;
+        } catch {
+          // If not valid JSON, return as is
+          return selectedSubmission.co_authors;
+        }
+      }
+      // If no co_authors, show project_leader
+      return selectedSubmission?.project_leader || 'N/A';
     }
-    return emailExtractedData?.authors_list || 'N/A';
+    // For email submissions
+    if (emailExtractedData?.authors_list) {
+      try {
+        const parsed = JSON.parse(emailExtractedData.authors_list);
+        if (Array.isArray(parsed)) {
+          return parsed.join(', ');
+        }
+        return emailExtractedData.authors_list;
+      } catch {
+        return emailExtractedData.authors_list;
+      }
+    }
+    return emailExtractedData?.project_leader || selectedSubmission?.project_leader_name || selectedSubmission?.sender_name || 'N/A';
   };
 
   const getSUCs = () => {
@@ -663,7 +690,7 @@ export default function MasterReviewPage() {
     <div className="min-h-screen bg-slate-50">
       {/* Toast Notification */}
       {toast && (
-        <div className="fixed top-4 right-4 z-[9999] animate-slide-in">
+        <div className="fixed top-4 right-4 z-9999 animate-slide-in">
           <div className={`relative w-96 p-4 rounded-xl border shadow-lg ${
             toast.type === 'success' ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'
           }`}>
@@ -760,7 +787,7 @@ export default function MasterReviewPage() {
           <div className="relative min-h-full flex items-center justify-center p-4">
             <div className="relative w-full max-w-6xl bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[95vh]">
               {/* Modal Header - Fixed */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-purple-50 to-blue-50 sticky top-0 z-10">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-linear-to-r from-purple-50 to-blue-50 sticky top-0 z-10">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
                     <FontAwesomeIcon icon={faFileAlt} className="w-5 h-5 text-purple-600" />
@@ -914,7 +941,7 @@ export default function MasterReviewPage() {
                                 />
                                 {log.status === 'sent' ? 'Sent' : log.status === 'failed' ? 'Failed' : 'Pending'}
                               </span>
-                              <span className="text-xs text-slate-500 truncate max-w-[150px]">{log.recipient_email}</span>
+                              <span className="text-xs text-slate-500 truncate max-w-37.5">{log.recipient_email}</span>
                               <span className="text-xs text-slate-400 ml-auto">
                                 {log.sent_at ? new Date(log.sent_at).toLocaleString() : 'Not sent'}
                               </span>
@@ -1241,7 +1268,7 @@ export default function MasterReviewPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none appearance-none cursor-pointer min-w-[160px]"
+              className="pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none appearance-none cursor-pointer min-w-40"
             >
               <option value="all">All Status</option>
               <option value="pending">Pending</option>
@@ -1258,7 +1285,7 @@ export default function MasterReviewPage() {
               <select
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
-                className="pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none appearance-none cursor-pointer min-w-[200px]"
+                className="pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none appearance-none cursor-pointer min-w-50"
               >
                 <option value="all">All Categories</option>
                 <option value="Completed Extension Project Papers">Completed Extension</option>

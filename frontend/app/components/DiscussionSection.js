@@ -157,7 +157,7 @@ export default function DiscussionSection({
   };
 
   return (
-    <div className={`bg-gradient-to-br from-slate-50 to-blue-50/20 border border-slate-200 rounded-2xl p-4 ${isMasterApprover ? 'border-purple-200' : ''}`}>
+    <div className={`bg-linear-to-br from-slate-50 to-blue-50/20 border border-slate-200 rounded-2xl p-4 ${isMasterApprover ? 'border-purple-200' : ''}`}>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
@@ -256,10 +256,10 @@ export default function DiscussionSection({
                   </div>
                   <div className={`px-4 py-2.5 rounded-2xl text-sm ${
                     isCurrentUser 
-                      ? `bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-br-none shadow-md ${isMasterApprover ? 'shadow-blue-500/30' : 'shadow-blue-500/20'}`
+                      ? `bg-linear-to-r from-blue-500 to-blue-600 text-white rounded-br-none shadow-md ${isMasterApprover ? 'shadow-blue-500/30' : 'shadow-blue-500/20'}`
                       : 'bg-white border border-slate-200 text-slate-900 rounded-bl-none shadow-sm'
                   }`}>
-                    <p className="whitespace-pre-wrap break-words">{msg.message || msg.text || 'No message'}</p>
+                    <p className="whitespace-pre-wrap wrap-break-word">{msg.message || msg.text || 'No message'}</p>
                   </div>
                 </div>
               </div>
@@ -290,8 +290,8 @@ export default function DiscussionSection({
           disabled={!newMessage.trim() || isSending || !submissionId}
           className={`inline-flex items-center gap-2 text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition-all ${
             isMasterApprover
-              ? 'bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 shadow-lg shadow-purple-500/25'
-              : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-lg shadow-blue-500/25'
+              ? 'bg-linear-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 shadow-lg shadow-purple-500/25'
+              : 'bg-linear-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-lg shadow-blue-500/25'
           } disabled:opacity-50 disabled:cursor-not-allowed`}
         >
           {isSending ? (

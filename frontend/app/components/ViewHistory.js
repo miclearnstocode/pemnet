@@ -179,7 +179,7 @@ export default function ViewHistory({
         <div className="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh]">
           {/* Header */}
           <div className={`flex items-center justify-between px-6 py-4 border-b border-slate-200 ${
-            isMasterApprover ? 'bg-gradient-to-r from-purple-50 to-blue-50' : 'bg-gradient-to-r from-blue-50 to-white'
+            isMasterApprover ? 'bg-linear-to-r from-purple-50 to-blue-50' : 'bg-linear-to-r from-blue-50 to-white'
           }`}>
             <div className="flex items-center gap-3">
               <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
@@ -292,13 +292,13 @@ export default function ViewHistory({
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                     <div className="bg-red-50 rounded-lg p-2 border border-red-100">
                                       <p className="text-xs text-red-600 font-medium mb-1">Old Value</p>
-                                      <p className="text-sm text-red-800 line-through break-words">
+                                      <p className="text-sm text-red-800 line-through wrap-break-word">
                                         {oldValue || <span className="text-red-400 italic">Not set</span>}
                                       </p>
                                     </div>
                                     <div className="bg-emerald-50 rounded-lg p-2 border border-emerald-100">
                                       <p className="text-xs text-emerald-600 font-medium mb-1">New Value</p>
-                                      <p className="text-sm text-emerald-800 font-medium break-words">
+                                      <p className="text-sm text-emerald-800 font-medium wrap-break-word">
                                         {newValue || <span className="text-emerald-400 italic">Not set</span>}
                                       </p>
                                     </div>
@@ -328,7 +328,7 @@ export default function ViewHistory({
                                           <span className="font-medium text-slate-600 block mb-0.5">
                                             {getFieldLabel(key)}:
                                           </span>
-                                          <span className="text-slate-800 break-words">
+                                          <span className="text-slate-800 wrap-break-word">
                                             {String(value)}
                                           </span>
                                         </div>

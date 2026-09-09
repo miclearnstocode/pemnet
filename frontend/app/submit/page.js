@@ -33,7 +33,7 @@ const Toast = ({ message, type, onClose }) => {
   const progressColor = type === 'success' ? 'bg-emerald-500' : 'bg-red-500';
 
   return (
-    <div className="fixed top-20 right-4 z-[9999] animate-slide-in">
+    <div className="fixed top-20 right-4 z-9999 animate-slide-in">
       <div className={`relative w-96 max-w-[calc(100vw-2rem)] p-4 rounded-xl border shadow-2xl ${bgColor}`}>
         <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-100 rounded-b-xl overflow-hidden">
           <div className={`h-full ${progressColor} animate-progress-shrink`}></div>

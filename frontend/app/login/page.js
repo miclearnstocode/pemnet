@@ -151,7 +151,7 @@ export default function LoginPage() {
       } else {
         const errData = await res.json().catch(() => ({}));
         // Generic error message for security
-        setError('Invalid credentials. Please check your email and password.');
+        setError('Invalid credentials. Please check your credentials properly.');
         handleFailedAttempt();
       }
     } catch (err) {

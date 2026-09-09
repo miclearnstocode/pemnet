@@ -760,12 +760,12 @@ export default function MasterReviewPage() {
           }
         }}
         title={pendingStatusAction === 'return_to_sender' ? 'Return to Sender' : 
-              pendingStatusAction === 'endorse' ? 'Endorse for Presentation' : 
+              pendingStatusAction === 'endorse' ? 'Accept Abstract for Paper Presentation' : 
               'Confirm Status Change'}
         message={pendingStatusAction === 'return_to_sender' 
           ? 'Are you sure you want to return this submission to the sender for revisions?'
           : pendingStatusAction === 'endorse'
-            ? 'Are you sure you want to endorse this submission for presentation?'
+            ? 'Are you sure you want to accept this abstract for paper presentation?'
             : `Are you sure you want to change the status to <strong>${getStatusDisplay(pendingStatusAction)}</strong>?`
         }
         confirmText={pendingStatusAction === 'return_to_sender' ? 'Yes, Return' : 'Yes, Confirm'}

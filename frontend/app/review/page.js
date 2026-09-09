@@ -55,6 +55,10 @@ import {
 import ReassignModal from '../components/ReassignModal';
 import DowngradeModal from '../components/DowngradeModal';
 import ConfirmModal from '../components/ConfirmModal';
+// Import the reusable components
+import EditSubmission from '../components/EditSubmission';
+import ViewHistory from '../components/ViewHistory';
+import DiscussionSection from '../components/DiscussionSection';
 
 export default function ReviewPage() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -69,22 +73,14 @@ export default function ReviewPage() {
   
   const [allUsers, setAllUsers] = useState([]);
   const [emailExtractedData, setEmailExtractedData] = useState(null);
-  const [sucList, setSucList] = useState([]);
-  const [sucSearchTerm, setSucSearchTerm] = useState('');
-  const [showSucDropdown, setShowSucDropdown] = useState(false);
-  const [isAddingSuc, setIsAddingSuc] = useState(false);
-  const [newSucName, setNewSucName] = useState('');
-  const [newSucRegion, setNewSucRegion] = useState('');
 
-  const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState({});
-  const [revisions, setRevisions] = useState([]);
-  const [showRevisions, setShowRevisions] = useState(false);
+  const [sucList, setSucList] = useState([]); 
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
 
   const [toast, setToast] = useState(null);
   const [votes, setVotes] = useState({ votes: [], evaluation_status: 'pending' });
-  const [discussions, setDiscussions] = useState([]);
-  const [newMessage, setNewMessage] = useState('');
   const [voteNotes, setVoteNotes] = useState('');
 
   const [showReassignModal, setShowReassignModal] = useState(false);
@@ -192,127 +188,19 @@ export default function ReviewPage() {
     setTimeout(() => setToast(null), 5000);
   };
 
-  const fetchRevisions = async (extractedDataId) => {
-    const res = await fetch(`http://localhost:5000/api/extracted-data/${extractedDataId}/revisions`);
-    if (res.ok) {
-      const data = await res.json();
-      setRevisions(data);
-    }
-  };
-
   const fetchExtractedData = async (emailSubmissionId) => {
     const res = await fetch(`http://localhost:5000/api/email-submissions/${emailSubmissionId}/extracted-data`);
     if (res.ok) {
       const data = await res.json();
       setEmailExtractedData(data);
-      if (data.id) {
-        fetchRevisions(data.id);
-      }
       return data;
     }
     return null;
   };
 
-  const startEditing = () => {
-    setEditForm({
-      title: getTitle(),
-      authors: getAuthor(),
-      authors_list: emailExtractedData?.authors_list || '',
-      project_leader: getProjectLeader(),
-      sucs: getSuc(),
-      corresponding_author_name: getCorrespondingAuthorName(),
-      corresponding_author_email: getCorrespondingAuthorEmail(),
-      corresponding_author_position: getCorrespondingAuthorPosition(),
-      paper_category: getPaperCategory(),
-      thematic_area: getThematicArea(),
-      theme: getTheme()
-    });
-    setIsEditing(true);
-  };
-
-  const handleEditChange = (e) => {
-    setEditForm({
-      ...editForm,
-      [e.target.name]: e.target.value
-    });
-  };
-
-  const handleSucSelect = (sucName) => {
-    setEditForm({
-      ...editForm,
-      sucs: sucName
-    });
-    setShowSucDropdown(false);
-    setSucSearchTerm('');
-  };
-
-  const handleAddNewSuc = async () => {
-    if (!newSucName.trim()) {
-      showToast('Please enter a SUC name', 'error');
-      return;
-    }
-
-    setIsAddingSuc(true);
-    try {
-      const res = await fetch('http://localhost:5000/api/sucs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: newSucName.trim(),
-          region: newSucRegion.trim() || 'Other'
-        })
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setSucList([...sucList, data]);
-        setEditForm({
-          ...editForm,
-          sucs: data.name
-        });
-        setNewSucName('');
-        setNewSucRegion('');
-        setShowSucDropdown(false);
-        showToast(`SUC "${data.name}" added successfully!`, 'success');
-      } else {
-        const error = await res.json();
-        showToast(error.detail || 'Failed to add SUC', 'error');
-      }
-    } catch (error) {
-      showToast('Failed to add SUC', 'error');
-    } finally {
-      setIsAddingSuc(false);
-    }
-  };
-
-  const saveEdits = async () => {
-    if (!emailExtractedData?.id) return;
-    
-    const res = await fetch(`http://localhost:5000/api/extracted-data/${emailExtractedData.id}/edit`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        evaluator_id: currentEvaluatorId,
-        ...editForm
-      })
-    });
-
-    if (res.ok) {
-      showToast('Data updated successfully', 'success');
-      setIsEditing(false);
-      await fetchExtractedData(selectedSubmission.id);
-      fetchSubmissions();
-    } else {
-      const error = await res.json();
-      showToast(error.detail || 'Failed to update data', 'error');
-    }
-  };
-
   const selectSubmission = async (sub) => {
       setSelectedSubmission(sub);
       setEmailExtractedData(null);
-      setIsEditing(false);
-      setShowRevisions(false);
 
       const subId = sub.submission_id || sub.id;
       
@@ -322,21 +210,12 @@ export default function ReviewPage() {
           const votesRes = await fetch(`http://localhost:5000/api/submissions/${subId}/evaluate`);
           if (votesRes.ok) {
               const votesData = await votesRes.json();
-              // The evaluation_status will be 'pending' until Master Approver acts
               setVotes({ 
                   ...votesData, 
                   evaluation_status: votesData.evaluation_status || 'pending' 
               });
           } else {
               console.error('Failed to fetch votes:', await votesRes.text());
-          }
-
-          const discRes = await fetch(`http://localhost:5000/api/submissions/${subId}/discussions`);
-          if (discRes.ok) {
-              const discData = await discRes.json();
-              setDiscussions(Array.isArray(discData) ? discData : []);
-          } else {
-              console.error('Failed to fetch discussions:', await discRes.text());
           }
 
           if (activeTab === 'email' && sub.id) {
@@ -351,7 +230,6 @@ export default function ReviewPage() {
   const handleVote = async (vote_status) => {
       if (!selectedSubmission) return;
 
-      // Use submission_id (string) instead of numeric id
       const subId = selectedSubmission.submission_id || selectedSubmission.id;
 
       try {
@@ -380,34 +258,6 @@ export default function ReviewPage() {
       } catch (error) {
           showToast('Failed to vote', 'error');
           return false;
-      }
-  };
-
-  const postMessage = async () => {
-      if (!newMessage.trim() || !selectedSubmission) return;
-      
-      const subId = selectedSubmission.submission_id || selectedSubmission.id;
-      
-      try {
-          const res = await fetch(`http://localhost:5000/api/submissions/${subId}/discussions`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ evaluator_id: currentEvaluatorId, message: newMessage })
-          });
-          if (res.ok) {
-              const data = await res.json();
-              const newDiscussion = {
-                  id: data.id || Date.now(),
-                  evaluator_id: data.evaluator_id || currentEvaluatorId,
-                  message: data.message || newMessage,
-                  created_at: data.created_at || new Date().toLocaleString()
-              };
-              setDiscussions([...discussions, newDiscussion]);
-              setNewMessage('');
-              showToast('Message sent successfully!', 'success');
-          }
-      } catch (error) {
-          showToast('Failed to send message', 'error');
       }
   };
 
@@ -451,10 +301,8 @@ export default function ReviewPage() {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                   evaluator_id: currentEvaluatorId,
-                  // FIX: Pass the actual downgrade type as vote_status
-                  vote_status: downgradeType, // This will be 'downgraded-non_competitive' or 'downgraded-poster_only'
+                  vote_status: downgradeType,
                   vote_notes: voteNotes,
-                  // vote_downgrade_to: downgradeType // Remove this as it's redundant
               }),
           });
           if (res.ok) {
@@ -487,6 +335,109 @@ export default function ReviewPage() {
     }
   };
 
+  const handleEditSave = async (formData) => {
+    if (!selectedSubmission) return;
+    setEditLoading(true);
+    
+    try {
+      const submissionId = selectedSubmission.submission_id || selectedSubmission.id;
+      
+      let url;
+      let payload = { ...formData };
+
+      if (activeTab === 'email' && emailExtractedData) {
+        // Email submissions use the extracted-data endpoint
+        url = `http://localhost:5000/api/extracted-data/${emailExtractedData.id}/edit`;
+        payload.evaluator_id = currentEvaluatorId;
+      } else {
+        // System submissions use the submission-id endpoint
+        url = `http://localhost:5000/api/submissions/${submissionId}/edit`;
+        payload.evaluator_id = currentEvaluatorId;
+      }
+      
+      const res = await fetch(url, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        showToast(data.message || 'Submission updated successfully!', 'success');
+        setShowEditModal(false);
+        
+        // Refresh extracted data if applicable
+        if (activeTab === 'email' && selectedSubmission.id) {
+          await fetchExtractedData(selectedSubmission.id);
+        }
+        
+        fetchSubmissions();
+      } else {
+        const error = await res.json();
+        showToast(error.detail || 'Failed to update submission', 'error');
+      }
+    } catch (error) {
+      console.error('Error updating submission:', error);
+      showToast('Failed to update submission', 'error');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  // Helper to configure fields for the EditSubmission component based on activeTab
+  const getEditFields = (submissionType) => {
+    if (submissionType === 'email') {
+      return {
+        title: { label: 'Title', icon: faFileAlt, type: 'text' },
+        project_leader: { label: 'Project Leader', icon: faUser, type: 'text' },
+        sucs: { label: 'SUC / Agency', icon: faSchool, type: 'suc' },
+        corresponding_author_name: { label: 'Corresponding Author', icon: faUserCircle, type: 'text' },
+        corresponding_author_email: { label: 'Corresponding Email', icon: faEnvelope, type: 'email' },
+        corresponding_author_position: { label: 'Corresponding Position', icon: faTag, type: 'text' },
+        authors_list: { label: 'Authors List', icon: faUsers, type: 'text' },
+        paper_category: { label: 'Paper Category', icon: faBookOpen, type: 'select', options: [
+          'Completed Extension Project Papers',
+          'Ongoing Extension Project Papers',
+          'Not specified'
+        ]},
+        thematic_area: { label: 'Thematic Area', icon: faLayerGroup, type: 'select', options: [
+          'Food Production, Agriculture, Fisheries, and Natural Resource Systems',
+          'Health, Nutrition, Wellness, and Community Care',
+          'Education, Literacy, Skills Development, and Lifelong Learning',
+          'Livelihood, Entrepreneurship, Cooperatives, MSMEs, and Local Economic Development',
+          'Environment, Climate Action, Disaster Risk Reduction, and Community Resilience',
+          'Not specified'
+        ]},
+        theme: { label: 'Theme', icon: faFlag, type: 'text' }
+      };
+    }
+    
+    // System submission fields
+    return {
+      extension_project_title: { label: 'Title', icon: faFileAlt, type: 'text' },
+      project_leader: { label: 'Project Leader', icon: faUser, type: 'text' },
+      presenter: { label: 'Presenter', icon: faUserCircle, type: 'text' },
+      suc_agencies: { label: 'SUC / Agency', icon: faSchool, type: 'suc' },
+      corresponding_author_name: { label: 'Corresponding Author', icon: faUserCircle, type: 'text' },
+      corresponding_author_email: { label: 'Corresponding Email', icon: faEnvelope, type: 'email' },
+      corresponding_author_position: { label: 'Corresponding Position', icon: faTag, type: 'text' },
+      co_authors: { label: 'Authors', icon: faUsers, type: 'text' },
+      paper_category: { label: 'Paper Category', icon: faBookOpen, type: 'select', options: [
+        'Completed Extension Project Papers',
+        'Ongoing Extension Project Papers',
+        'Not specified'
+      ]},
+      thematic_area: { label: 'Thematic Area', icon: faLayerGroup, type: 'select', options: [
+        'Food Production, Agriculture, Fisheries, and Natural Resource Systems',
+        'Health, Nutrition, Wellness, and Community Care',
+        'Education, Literacy, Skills Development, and Lifelong Learning',
+        'Livelihood, Entrepreneurship, Cooperatives, MSMEs, and Local Economic Development',
+        'Environment, Climate Action, Disaster Risk Reduction, and Community Resilience',
+        'Not specified'
+      ]}
+    };
+  };
+
   // SAFE FILTERING - Handle null values properly
   const filteredSubmissions = submissions.filter(sub => {
     if (!sub) return false;
@@ -498,9 +449,9 @@ export default function ReviewPage() {
       if (searchTerm) {
         const search = searchTerm.toLowerCase();
         const title = (sub.extension_project_title || '').toLowerCase();
-        const author = (sub.author || '').toLowerCase();
+        const leader = (sub.project_leader || '').toLowerCase(); // FIX: Use project_leader
         const suc = (sub.suc_agencies || '').toLowerCase();
-        return title.includes(search) || author.includes(search) || suc.includes(search);
+        return title.includes(search) || leader.includes(search) || suc.includes(search);
       }
       return true;
     } else {
@@ -656,25 +607,46 @@ export default function ReviewPage() {
     );
   }
 
-  // Helper functions with safe null handling
   const getTitle = () => {
     if (activeTab === 'system') return selectedSubmission?.extension_project_title || 'No title';
-    return emailExtractedData?.title || selectedSubmission?.subject || 'No title';
+    return emailExtractedData?.title || 'No title';
   };
 
   const getProjectLeader = () => {
-    if (activeTab === 'system') return selectedSubmission?.author || 'Not specified';
+    if (activeTab === 'system') return selectedSubmission?.project_leader || 'Not specified';
     return emailExtractedData?.project_leader || selectedSubmission?.project_leader_name || 'Not specified';
   };
 
-  const getAuthor = () => {
-    if (activeTab === 'system') return selectedSubmission?.author || 'Not specified';
-    return emailExtractedData?.project_leader || selectedSubmission?.project_leader_name || selectedSubmission?.sender_name || 'Not specified';
+  const getAuthorsList = () => {
+    if (activeTab === 'system') {
+      // Check co_authors first, but if empty, fall back to project_leader
+      if (selectedSubmission?.co_authors) {
+        try {
+          const parsed = JSON.parse(selectedSubmission.co_authors);
+          if (Array.isArray(parsed)) return parsed.join(', ');
+          return selectedSubmission.co_authors;
+        } catch {
+          return selectedSubmission.co_authors;
+        }
+      }
+      return 'N/A';
+    }
+    // For email submissions
+    if (emailExtractedData?.authors) {
+      try {
+        const parsed = JSON.parse(emailExtractedData.authors);
+        if (Array.isArray(parsed)) return parsed.join(', ');
+        return emailExtractedData.authors;
+      } catch {
+        return emailExtractedData.authors;
+      }
+    }
+    return 'N/A';
   };
 
   const getSuc = () => {
     if (activeTab === 'system') return selectedSubmission?.suc_agencies || 'Not specified';
-    return emailExtractedData?.sucs || selectedSubmission?.sender_name || 'Not specified';
+    return emailExtractedData?.sucs || 'Not specified';
   };
 
   const getThematicArea = () => {
@@ -713,11 +685,6 @@ export default function ReviewPage() {
     return 'Evaluator';
   };
 
-  // Filter SUCs based on search term
-  const filteredSucs = sucList.filter(suc => 
-    suc.name.toLowerCase().includes(sucSearchTerm.toLowerCase())
-  );
-
   return (
     <div className="min-h-screen bg-linear-to-br from-slate-50 via-white to-blue-50/30">
       {toast && (
@@ -753,7 +720,8 @@ export default function ReviewPage() {
         onSubmit={async (newThematicArea) => {
           setReassignLoading(true);
           try {
-            const res = await fetch(`http://localhost:5000/api/submissions/${selectedSubmission.id}/evaluate`, {
+            // FIX: Use submission_id for all submissions
+            const res = await fetch(`http://localhost:5000/api/submissions/${selectedSubmission.submission_id || selectedSubmission.id}/evaluate`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -814,6 +782,30 @@ export default function ReviewPage() {
         isLoading={downgradeConfirmLoading}
         type="warning"
       />
+
+      {/* MODAL: Reusable EditSubmission Component */}
+      <EditSubmission
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        data={emailExtractedData || selectedSubmission}
+        onSave={handleEditSave}
+        isLoading={editLoading}
+        currentUser={currentUser}
+        isMasterApprover={false}
+        title={activeTab === 'email' ? 'Edit Email Submission Details' : 'Edit Submission Details'}
+        fields={getEditFields(activeTab === 'email' ? 'email' : 'system')}
+        submissionType={activeTab === 'email' ? 'email' : 'system'}
+      />
+
+      {/* MODAL: Reusable ViewHistory Component */}
+      <ViewHistory
+        isOpen={showHistoryModal}
+        onClose={() => setShowHistoryModal(false)}
+        submissionId={selectedSubmission?.submission_id}
+        extractedDataId={emailExtractedData?.id}
+        isMasterApprover={false}
+        title="Edit History"
+      />
       
       {selectedSubmission && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -832,12 +824,14 @@ export default function ReviewPage() {
                     <p className="text-sm text-slate-500 truncate max-w-md">{getTitle()}</p>
                   </div>
                 </div>
-                <button 
-                  onClick={() => setSelectedSubmission(null)} 
-                  className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 transition-all"
-                >
-                  <FontAwesomeIcon icon={faTimes} className="w-5 h-5" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button 
+                    onClick={() => setSelectedSubmission(null)} 
+                    className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 transition-all"
+                  >
+                    <FontAwesomeIcon icon={faTimes} className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 h-full min-h-150">
@@ -847,81 +841,27 @@ export default function ReviewPage() {
                       <FontAwesomeIcon icon={faClipboard} className="w-5 h-5 text-blue-600" />
                       <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Submission Information</h4>
                     </div>
-                    {activeTab === 'email' && emailExtractedData?.id && (
-                      <div className="flex gap-2">
-                        {!isEditing && (
-                          <button 
-                            onClick={() => setShowRevisions(!showRevisions)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-all font-medium"
-                          >
-                            <FontAwesomeIcon icon={faHistory} className="w-3 h-3" />
-                            {showRevisions ? 'Hide' : 'View'} History
-                          </button>
-                        )}
-                        {!isEditing && (
-                          <button 
-                            onClick={startEditing}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-all font-medium"
-                          >
-                            <FontAwesomeIcon icon={faEdit} className="w-3 h-3" />
-                            Edit
-                          </button>
-                        )}
-                        {isEditing && (
-                          <>
-                            <button 
-                              onClick={saveEdits}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all font-medium"
-                            >
-                              <FontAwesomeIcon icon={faSave} className="w-3 h-3" />
-                              Save
-                            </button>
-                            <button 
-                              onClick={() => setIsEditing(false)}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-all font-medium"
-                            >
-                              <FontAwesomeIcon icon={faTimes} className="w-3 h-3" />
-                              Cancel
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    )}
-                  </div>
 
-                  {showRevisions && activeTab === 'email' && (
-                    <div className="mb-6 max-h-48 overflow-y-auto bg-linear-to-br from-slate-50 to-blue-50/30 border border-slate-200 rounded-2xl p-5">
-                      <h5 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2">
-                        <FontAwesomeIcon icon={faHistory} className="text-blue-600" />
-                        Change History
-                      </h5>
-                      {revisions.length > 0 ? (
-                        <div className="space-y-3">
-                          {revisions.map((rev) => (
-                            <div key={rev.id} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                              <div className="flex justify-between items-center mb-2">
-                                <span className="text-xs font-semibold text-blue-600 flex items-center gap-1.5">
-                                  <FontAwesomeIcon icon={faUserCircle} className="w-3 h-3" />
-                                  {rev.edited_by_name} edited this
-                                </span>
-                                <span className="text-xs text-slate-400">{rev.created_at}</span>
-                              </div>
-                              {Object.keys(rev.changes).map((field) => (
-                                <div key={field} className="text-xs text-slate-600 mb-1 flex items-center gap-2">
-                                  <span className="font-medium capitalize">{field.replace('_', ' ')}:</span>
-                                  <span className="line-through text-red-400">{rev.changes[field].old || 'None'}</span>
-                                  <FontAwesomeIcon icon={faArrowRight} className="w-3 h-3 text-slate-400" />
-                                  <span className="text-emerald-600 font-medium">{rev.changes[field].new || 'None'}</span>
-                                </div>
-                              ))}
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-xs text-slate-500 text-center py-4">No edits made yet</p>
-                      )}
+                    {/* Fixed Buttons with Labels */}
+                    <div className="flex items-center gap-2">
+                      <button 
+                        onClick={() => setShowHistoryModal(true)}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-all text-xs font-semibold"
+                        title="View History"
+                      >
+                        <FontAwesomeIcon icon={faHistory} className="w-4 h-4" />
+                        View History
+                      </button>
+                      <button 
+                        onClick={() => setShowEditModal(true)}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-all text-xs font-semibold"
+                        title="Edit Details"
+                      >
+                        <FontAwesomeIcon icon={faEdit} className="w-4 h-4" />
+                        Edit Details
+                      </button>
                     </div>
-                  )}
+                  </div>
 
                   <div className="space-y-6">
                     <div className="group">
@@ -929,74 +869,7 @@ export default function ReviewPage() {
                         <FontAwesomeIcon icon={faFileAlt} className="w-4 h-4 text-blue-400" />
                         Title
                       </div>
-                      {isEditing ? (
-                        <input 
-                          name="title" 
-                          value={editForm.title} 
-                          onChange={handleEditChange} 
-                          className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition-all" 
-                        />
-                      ) : (
-                        <p className="text-base font-semibold text-slate-900 leading-relaxed">{getTitle() || 'No title'}</p>
-                      )}
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="group">
-                        <div className="flex items-center gap-2 text-sm font-medium text-slate-500 mb-1.5">
-                          <FontAwesomeIcon icon={faTag} className="w-4 h-4 text-purple-400" />
-                          Paper Category
-                        </div>
-                        {isEditing ? (
-                          <select
-                            name="paper_category"
-                            value={editForm.paper_category || 'Not specified'}
-                            onChange={handleEditChange}
-                            className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition-all bg-white"
-                          >
-                            {paperCategoryOptions.map(option => (
-                              <option key={option} value={option}>{option}</option>
-                            ))}
-                          </select>
-                        ) : (
-                          <span className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-sm font-medium border ${getCategoryColor(getPaperCategory())}`}>
-                            <FontAwesomeIcon icon={faBookOpen} className="w-3 h-3" />
-                            {getPaperCategory()?.includes('Completed') ? 'Completed' : getPaperCategory() || 'Not specified'}
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="group">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2 text-sm font-medium text-slate-500 mb-1.5">
-                            <FontAwesomeIcon icon={faLayerGroup} className="w-4 h-4 text-indigo-400" />
-                            Thematic Area
-                          </div>
-                          {votes.evaluation_status === 'pending' && !isEditing && (
-                            <button 
-                              onClick={() => setShowReassignModal(true)} 
-                              className="inline-flex items-center gap-1 text-xs bg-blue-50 text-blue-600 px-3 py-1 rounded-lg hover:bg-blue-100 transition-all font-medium"
-                            >
-                              <FontAwesomeIcon icon={faSync} className="w-3 h-3" />
-                              Reassign
-                            </button>
-                          )}
-                        </div>
-                        {isEditing ? (
-                          <select
-                            name="thematic_area"
-                            value={editForm.thematic_area || 'Not specified'}
-                            onChange={handleEditChange}
-                            className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition-all bg-white"
-                          >
-                            {thematicAreaOptions.map(option => (
-                              <option key={option} value={option}>{option}</option>
-                            ))}
-                          </select>
-                        ) : (
-                          <p className="text-base font-semibold text-slate-900">{getThematicArea()}</p>
-                        )}
-                      </div>
+                      <p className="text-base font-semibold text-slate-900 leading-relaxed">{getTitle() || 'No title'}</p>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
@@ -1005,120 +878,51 @@ export default function ReviewPage() {
                           <FontAwesomeIcon icon={faUser} className="w-4 h-4 text-emerald-400" />
                           Project Leader
                         </div>
-                        {isEditing ? (
-                          <input 
-                            name="project_leader" 
-                            value={editForm.project_leader} 
-                            onChange={handleEditChange} 
-                            className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition-all" 
-                          />
-                        ) : (
-                          <p className="text-base font-semibold text-slate-900">{getProjectLeader()}</p>
-                        )}
+                        <p className="text-base font-semibold text-slate-900">{getProjectLeader()}</p>
                       </div>
 
                       <div className="group">
                         <div className="flex items-center gap-2 text-sm font-medium text-slate-500 mb-1.5">
-                          <FontAwesomeIcon icon={faSchool} className="w-4 h-4 text-amber-400" />
-                          SUC / Agency
+                          <FontAwesomeIcon icon={faUsers} className="w-4 h-4 text-blue-400" />
+                          Authors
                         </div>
-                        {isEditing ? (
-                          <div className="relative">
-                            <input
-                              type="text"
-                              value={isEditing ? editForm.sucs || '' : getSuc()}
-                              onChange={(e) => {
-                                setEditForm({ ...editForm, sucs: e.target.value });
-                                setSucSearchTerm(e.target.value);
-                                setShowSucDropdown(true);
-                              }}
-                              onFocus={() => setShowSucDropdown(true)}
-                              placeholder="Search or add SUC..."
-                              className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition-all"
-                            />
-                            {showSucDropdown && (
-                              <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
-                                {filteredSucs.length > 0 ? (
-                                  filteredSucs.map(suc => (
-                                    <div
-                                      key={suc.id}
-                                      className="px-4 py-2 hover:bg-blue-50 cursor-pointer text-sm text-slate-700 flex items-center justify-between"
-                                      onClick={() => handleSucSelect(suc.name)}
-                                    >
-                                      <span>{suc.name}</span>
-                                      <span className="text-xs text-slate-400">{suc.region}</span>
-                                    </div>
-                                  ))
-                                ) : (
-                                  <div className="p-3">
-                                    <p className="text-sm text-slate-500 mb-2">No SUC found. Add new:</p>
-                                    <div className="flex gap-2">
-                                      <input
-                                        type="text"
-                                        placeholder="SUC Name"
-                                        value={newSucName}
-                                        onChange={(e) => setNewSucName(e.target.value)}
-                                        className="flex-1 px-3 py-1.5 border border-slate-200 rounded-lg text-sm"
-                                      />
-                                      <input
-                                        type="text"
-                                        placeholder="Region"
-                                        value={newSucRegion}
-                                        onChange={(e) => setNewSucRegion(e.target.value)}
-                                        className="flex-1 px-3 py-1.5 border border-slate-200 rounded-lg text-sm"
-                                      />
-                                      <button
-                                        onClick={handleAddNewSuc}
-                                        disabled={isAddingSuc}
-                                        className="px-3 py-1.5 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600 transition-all disabled:opacity-50"
-                                      >
-                                        {isAddingSuc ? 'Adding...' : 'Add'}
-                                      </button>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <p className="text-base font-semibold text-slate-900">{getSuc()}</p>
-                        )}
+                        <p className="text-base font-semibold text-slate-900">{getAuthorsList()}</p>
                       </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                       <div className="group">
                         <div className="flex items-center gap-2 text-sm font-medium text-slate-500 mb-1.5">
-                          <FontAwesomeIcon icon={faUserCircle} className="w-4 h-4 text-cyan-400" />
-                          Corresponding Author
+                          <FontAwesomeIcon icon={faSchool} className="w-4 h-4 text-amber-400" />
+                          SUC / Agency
                         </div>
-                        {isEditing ? (
-                          <input 
-                            name="corresponding_author_name" 
-                            value={editForm.corresponding_author_name} 
-                            onChange={handleEditChange} 
-                            className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition-all" 
-                          />
-                        ) : (
-                          <p className="text-sm font-medium text-slate-900">{getCorrespondingAuthorName()}</p>
-                        )}
+                        <p className="text-base font-semibold text-slate-900">{getSuc()}</p>
                       </div>
 
                       <div className="group">
                         <div className="flex items-center gap-2 text-sm font-medium text-slate-500 mb-1.5">
-                          <FontAwesomeIcon icon={faEnvelope} className="w-4 h-4 text-red-400" />
-                          Corresponding Email
+                          <FontAwesomeIcon icon={faUserCircle} className="w-4 h-4 text-cyan-400" />
+                          Corresponding Author
                         </div>
-                        {isEditing ? (
-                          <input 
-                            name="corresponding_author_email" 
-                            value={editForm.corresponding_author_email} 
-                            onChange={handleEditChange} 
-                            className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition-all" 
-                          />
-                        ) : (
-                          <p className="text-sm font-medium text-slate-900 break-all">{getCorrespondingAuthorEmail()}</p>
-                        )}
+                        <p className="text-sm font-medium text-slate-900">{getCorrespondingAuthorName()}</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="group">
+                        <div className="flex items-center gap-2 text-sm font-medium text-slate-500 mb-1.5">
+                          <FontAwesomeIcon icon={faEnvelope} className="w-4 h-4 text-red-400" />
+                          Corresponding Author Email
+                        </div>
+                        <p className="text-sm font-medium text-slate-900 break-all">{getCorrespondingAuthorEmail()}</p>
+                      </div>
+
+                      <div className="group">
+                        <div className="flex items-center gap-2 text-sm font-medium text-slate-500 mb-1.5">
+                          <FontAwesomeIcon icon={faTag} className="w-4 h-4 text-purple-400" />
+                          Corresponding Author Position
+                        </div>
+                        <p className="text-sm font-medium text-slate-900">{getCorrespondingAuthorPosition()}</p>
                       </div>
                     </div>
 
@@ -1128,16 +932,28 @@ export default function ReviewPage() {
                           <FontAwesomeIcon icon={faFlag} className="w-4 h-4 text-rose-400" />
                           Theme
                         </div>
-                        {isEditing ? (
-                          <input 
-                            name="theme" 
-                            value={editForm.theme} 
-                            onChange={handleEditChange} 
-                            className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition-all" 
-                          />
-                        ) : (
-                          <p className="text-base font-semibold text-slate-900">{getTheme()}</p>
-                        )}
+                        <p className="text-base font-semibold text-slate-900">{getTheme()}</p>
+                      </div>
+
+                      <div className="group">
+                        <div className="flex items-center gap-2 text-sm font-medium text-slate-500 mb-1.5">
+                          <FontAwesomeIcon icon={faBookOpen} className="w-4 h-4 text-purple-400" />
+                          Paper Category
+                        </div>
+                        <span className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-sm font-medium border ${getCategoryColor(getPaperCategory())}`}>
+                          <FontAwesomeIcon icon={faBookOpen} className="w-3 h-3" />
+                          {getPaperCategory()?.includes('Completed') ? 'Completed' : getPaperCategory() || 'Not specified'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="group">
+                        <div className="flex items-center gap-2 text-sm font-medium text-slate-500 mb-1.5">
+                          <FontAwesomeIcon icon={faLayerGroup} className="w-4 h-4 text-indigo-400" />
+                          Thematic Area
+                        </div>
+                        <p className="text-base font-semibold text-slate-900">{getThematicArea()}</p>
                       </div>
 
                       <div className="group">
@@ -1223,57 +1039,16 @@ export default function ReviewPage() {
                     </div>
                   </div>
 
+                  {/* REPLACED: Reusable DiscussionSection Component */}
                   <div className="mt-8 pt-6 border-t border-slate-200">
-                    <div className="flex items-center gap-3 mb-4">
-                      <FontAwesomeIcon icon={faComment} className="w-5 h-5 text-indigo-600" />
-                      <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Evaluator Discussion</h4>
-                    </div>
-                    <div className="max-h-48 overflow-y-auto bg-linear-to-br from-slate-50 to-blue-50/20 border border-slate-200 rounded-2xl p-4 mb-4 space-y-3">
-                      {Array.isArray(discussions) && discussions.length > 0 ? (
-                        discussions.map((msg) => {
-                          const isCurrentUser = msg.evaluator_id === currentEvaluatorId;
-                          return (
-                            <div key={msg.id || Math.random()} className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
-                              <div className={`max-w-[80%] ${isCurrentUser ? 'items-end' : 'items-start'}`}>
-                                <div className="flex items-center gap-2 mb-1">
-                                  <FontAwesomeIcon icon={faUserCircle} className={`w-3 h-3 ${isCurrentUser ? 'text-blue-500' : 'text-slate-400'}`} />
-                                  <span className={`text-xs font-bold ${isCurrentUser ? 'text-blue-700' : 'text-slate-600'}`}>
-                                    {isCurrentUser ? 'You' : getEvaluatorName(msg.evaluator_id)}
-                                  </span>
-                                  <span className="text-[10px] text-slate-400">{msg.created_at}</span>
-                                </div>
-                                <div className={`px-4 py-2.5 rounded-2xl text-sm ${
-                                  isCurrentUser 
-                                    ? 'bg-linear-to-r from-blue-500 to-blue-600 text-white rounded-br-none shadow-md shadow-blue-500/20' 
-                                    : 'bg-white border border-slate-200 text-slate-900 rounded-bl-none shadow-sm'
-                                }`}>
-                                  <p>{msg.message || msg.text || 'No message'}</p>
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })
-                      ) : (
-                        <p className="text-center text-slate-400 text-sm py-6">No discussions yet</p>
-                      )}
-                    </div>
-                    <div className="flex gap-3">
-                      <input 
-                        type="text" 
-                        value={newMessage} 
-                        onChange={(e) => setNewMessage(e.target.value)} 
-                        onKeyDown={(e) => e.key === 'Enter' && postMessage()} 
-                        placeholder="Write a message to other evaluators..." 
-                        className="flex-1 px-4 py-2.5 border border-slate-200 rounded-2xl text-sm text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition-all" 
-                      />
-                      <button 
-                        onClick={postMessage} 
-                        className="inline-flex items-center gap-2 bg-linear-to-r from-blue-500 to-blue-600 text-white px-5 py-2.5 rounded-2xl font-semibold text-sm hover:from-blue-600 hover:to-blue-700 transition-all shadow-lg shadow-blue-500/25"
-                      >
-                        <FontAwesomeIcon icon={faPaperPlane} className="w-4 h-4" />
-                        Send
-                      </button>
-                    </div>
+                    <DiscussionSection
+                      submissionId={selectedSubmission?.submission_id || selectedSubmission?.id}
+                      currentUserId={currentEvaluatorId}
+                      currentUserName={currentUser?.full_name}
+                      isMasterApprover={false}
+                      title="Evaluator Discussion"
+                      maxHeight="300px"
+                    />
                   </div>
                 </div>
 
@@ -1503,7 +1278,7 @@ export default function ReviewPage() {
             </div>
             <input 
               type="text" 
-              placeholder={activeTab === 'system' ? "Search by title, author, or SUC..." : "Search by subject, sender, or email..."} 
+              placeholder={activeTab === 'system' ? "Search by title, leader, or SUC..." : "Search by subject, sender, or email..."} 
               value={searchTerm} 
               onChange={(e) => setSearchTerm(e.target.value)} 
               className="w-full px-4 py-3 pl-11 bg-white border border-slate-200 rounded-2xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition-all" 
@@ -1561,7 +1336,7 @@ export default function ReviewPage() {
                       <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                         <div className="flex items-center gap-2">
                           <FontAwesomeIcon icon={faFileAlt} className="w-3.5 h-3.5 text-blue-500" />
-                          Title & Author
+                          Title & Leader
                         </div>
                       </th>
                       <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
@@ -1626,7 +1401,7 @@ export default function ReviewPage() {
                   return (
                     <tr 
                       key={sub.id} 
-                          onClick={() => { selectSubmission({...sub,id: sub.id,nsubmission_id: sub.submission_id // This is the string ID
+                          onClick={() => { selectSubmission({...sub,id: sub.id,nsubmission_id: sub.submission_id
                           });
                         }} 
                       className="cursor-pointer border-b border-slate-100 hover:bg-blue-50/40 transition-all group"
@@ -1637,7 +1412,7 @@ export default function ReviewPage() {
                             <p className="text-sm font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">{sub.extension_project_title}</p>
                             <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1.5">
                               <FontAwesomeIcon icon={faUserCircle} className="w-3 h-3 text-slate-400" />
-                              {sub.author}
+                              {sub.project_leader} {/* FIX: Use project_leader */}
                             </p>
                           </td>
                           <td className="px-6 py-4 text-sm text-slate-600">{sub.suc_agencies}</td>

@@ -1,22 +1,18 @@
 import os
 import base64
 import pickle
-import re
-from datetime import datetime, timedelta
+from datetime import datetime
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
 from google.auth.transport.requests import Request
-from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from bs4 import BeautifulSoup
-import tempfile
-import webbrowser
-from http.server import HTTPServer, BaseHTTPRequestHandler
 import threading
 import urllib.parse
+import smtplib
 
 # If modifying these scopes, delete the file token.pickle.
 SCOPES = [
@@ -276,33 +272,35 @@ class GmailService:
             return []
         
     def send_email(self, to, subject, body, attachments=None, is_html=False, cc=None):
-        """Send an email with optional attachments and CC."""
+        """Send an email using SMTP (Bypasses Gmail API weirdness)."""
         try:
+            # Validate recipient
+            if not to or '@' not in to:
+                print(f"❌ Invalid recipient email: {to}")
+                return None
+
+            # Create MIME message
             if is_html:
-                # Create multipart/alternative message for HTML email
                 message = MIMEMultipart('alternative')
                 message['to'] = to
                 message['subject'] = subject
                 
-                # Add CC if provided
                 if cc:
                     message['cc'] = ', '.join(cc) if isinstance(cc, list) else cc
                 
-                # Create plain text version
+                # Plain text version
                 plain_text = self.html_to_text(body)
                 text_part = MIMEText(plain_text, 'plain', 'utf-8')
                 message.attach(text_part)
                 
-                # Create HTML version
+                # HTML version
                 html_part = MIMEText(body, 'html', 'utf-8')
                 message.attach(html_part)
             else:
-                # Create plain text message
                 message = MIMEMultipart()
                 message['to'] = to
                 message['subject'] = subject
                 
-                # Add CC if provided
                 if cc:
                     message['cc'] = ', '.join(cc) if isinstance(cc, list) else cc
                 
@@ -315,16 +313,17 @@ class GmailService:
                     part = MIMEApplication(attachment['data'])
                     part['Content-Disposition'] = f'attachment; filename="{attachment["filename"]}"'
                     message.attach(part)
+
+            # SMTP SEND (REQUIRED FOR DELIVERY)
+            print(f"📨 Attempting to send email to {to} via SMTP...")
+            smtp_server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+            smtp_server.login('pemnet26@gmail.com', 'klhyurwtyduggkde')  # Your App Password
+            smtp_server.send_message(message)
+            smtp_server.quit()
             
-            # Encode and send
-            raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode('utf-8')
-            body_payload = {'raw': raw_message}
-            
-            sent_message = self.service.users().messages().send(
-                userId='me', body=body_payload
-            ).execute()
-            
-            return sent_message
-        except HttpError as error:
-            print(f'An error occurred sending email: {error}')
+            print(f"✅ Email successfully sent to {to} via SMTP")
+            return {'id': 'smtp_success'}
+
+        except Exception as e:
+            print(f'❌ SMTP failed to send email to {to}: {e}')
             return None

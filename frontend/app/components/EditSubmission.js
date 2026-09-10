@@ -59,17 +59,17 @@ export default function EditSubmission({
     corresponding_author_position: { label: 'Corresponding Position', icon: faTag, type: 'text' },
     co_authors: { label: 'Co-Authors', icon: faUsers, type: 'text' },
     paper_category: { label: 'Paper Category', icon: faBookOpen, type: 'select', options: [
+      'Not specified',
       'Completed Extension Project Papers',
-      'Ongoing Extension Project Papers',
-      'Not specified'
+      'Ongoing Extension Project Papers'
     ]},
     thematic_area: { label: 'Thematic Area', icon: faLayerGroup, type: 'select', options: [
+      'Not specified',
       'Food Production, Agriculture, Fisheries, and Natural Resource Systems',
       'Health, Nutrition, Wellness, and Community Care',
       'Education, Literacy, Skills Development, and Lifelong Learning',
       'Livelihood, Entrepreneurship, Cooperatives, MSMEs, and Local Economic Development',
-      'Environment, Climate Action, Disaster Risk Reduction, and Community Resilience',
-      'Not specified'
+      'Environment, Climate Action, Disaster Risk Reduction, and Community Resilience'
     ]}
   };
 
@@ -103,10 +103,16 @@ export default function EditSubmission({
 
   useEffect(() => {
     if (isOpen && data) {
-      // Initialize form with data
       const initialForm = {};
       Object.keys(fieldConfig).forEach(key => {
-        initialForm[key] = data[key] || '';
+        const value = data[key];
+        const field = fieldConfig[key];
+
+        if (field && field.type === 'select') {
+          initialForm[key] = value && value.trim() !== '' ? value : 'Not specified';
+        } else {
+          initialForm[key] = value || '';
+        }
       });
       setEditForm(initialForm);
       setHasChanges(false);

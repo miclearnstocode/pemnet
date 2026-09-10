@@ -1,12 +1,9 @@
 import os
-import io
 import re
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
-from googleapiclient.http import MediaFileUpload, MediaIoBaseUpload
+from googleapiclient.http import MediaFileUpload
 from googleapiclient.errors import HttpError
-
-# Load your .env variables
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -36,7 +33,6 @@ def sanitize_folder_name(name):
     """Sanitize folder name to be valid for Google Drive."""
     if not name or not isinstance(name, str):
         return "Untitled"
-    # Remove invalid characters, limit to 100 chars
     sanitized = re.sub(r'[<>:"/\\|?*\x00-\x1f]', '_', name)
     sanitized = sanitized.strip()
     return sanitized[:100] if sanitized else "Untitled"
@@ -67,7 +63,6 @@ def get_or_create_folder(service, folder_name, parent_id=None):
         
         if files:
             folder_id = files[0]['id']
-            print(f"📁 Found existing folder: {folder_name}")
             return folder_id
         
         # Create new folder
@@ -85,7 +80,6 @@ def get_or_create_folder(service, folder_name, parent_id=None):
         ).execute()
         
         folder_id = folder.get('id')
-        print(f"✅ Created new folder: {folder_name}")
         return folder_id
         
     except HttpError as e:
@@ -97,7 +91,6 @@ def get_paper_category_folder_name(category):
     if not category:
         return "Uncategorized"
     
-    # Map categories to standardized names
     category_map = {
         'Completed Extension Project Paper': 'Completed Extension Projects',
         'Ongoing Extension Project Paper': 'Ongoing Extension Projects',
@@ -105,20 +98,17 @@ def get_paper_category_folder_name(category):
         'Ongoing': 'Ongoing Extension Projects',
     }
     
-    # Check if it matches any key
     for key, value in category_map.items():
         if key.lower() in category.lower():
             return value
     
-    # If no match, return sanitized category
     return sanitize_folder_name(category)
 
 def get_thematic_area_folder_name(area):
     """Get standardized thematic area folder name."""
     if not area:
         return "Uncategorized"
-    
-    # Map thematic areas to standardized names
+
     area_map = {
         'Food Production, Agriculture, Fisheries, and Natural Resource Systems': 'Food Production & Agriculture',
         'Health, Nutrition, Wellness, and Community Care': 'Health & Community Care',
@@ -127,12 +117,10 @@ def get_thematic_area_folder_name(area):
         'Environment, Climate Action, Disaster Risk Reduction, and Community Resilience': 'Environment & Climate Action',
     }
     
-    # Check if it matches any key
     for key, value in area_map.items():
         if key.lower() in area.lower():
             return value
     
-    # If no match, return sanitized area
     return sanitize_folder_name(area)
 
 def upload_file_to_drive(file_path, filename, project_title=None, sender_name=None, paper_category=None, thematic_area=None):
@@ -146,9 +134,6 @@ def upload_file_to_drive(file_path, filename, project_title=None, sender_name=No
                 └── [Sender Name]
                     └── file.pdf
     """
-    print("=" * 50)
-    print("📤 Starting upload to Google Drive...")
-    
     # Validate inputs
     if not file_path or not os.path.exists(file_path):
         raise Exception(f"File not found: {file_path}")
@@ -169,7 +154,6 @@ def upload_file_to_drive(file_path, filename, project_title=None, sender_name=No
         EVENT_NAME,
         ROOT_FOLDER_ID
     )
-    print(f"📁 Event folder: {EVENT_NAME} (ID: {event_folder_id})")
     
     # Step 2: Get or create Paper Category folder
     category_folder_name = get_paper_category_folder_name(paper_category)
@@ -178,7 +162,6 @@ def upload_file_to_drive(file_path, filename, project_title=None, sender_name=No
         category_folder_name,
         event_folder_id
     )
-    print(f"📁 Category folder: {category_folder_name} (ID: {category_folder_id})")
     
     # Step 3: Get or create Thematic Area folder
     thematic_folder_name = get_thematic_area_folder_name(thematic_area)
@@ -187,7 +170,6 @@ def upload_file_to_drive(file_path, filename, project_title=None, sender_name=No
         thematic_folder_name,
         category_folder_id
     )
-    print(f"📁 Thematic folder: {thematic_folder_name} (ID: {thematic_folder_id})")
     
     # Step 4: Get or create Sender folder
     if sender_name:
@@ -197,7 +179,6 @@ def upload_file_to_drive(file_path, filename, project_title=None, sender_name=No
             safe_sender_name,
             thematic_folder_id
         )
-        print(f"📁 Sender folder: {safe_sender_name} (ID: {sender_folder_id})")
         final_folder_id = sender_folder_id
     else:
         # If no sender name, use a default folder
@@ -207,10 +188,6 @@ def upload_file_to_drive(file_path, filename, project_title=None, sender_name=No
             thematic_folder_id
         )
         final_folder_id = default_folder_id
-        print(f"📁 Default folder: Unidentified Sender (ID: {default_folder_id})")
-    
-    # Step 5: Upload file directly to the sender folder
-    print(f"📄 Uploading: {filename}")
     
     # Create file metadata
     file_metadata = {
@@ -238,10 +215,6 @@ def upload_file_to_drive(file_path, filename, project_title=None, sender_name=No
         
         if not file_id:
             raise Exception("No file ID returned")
-        
-        print(f"✅ Uploaded: {filename}")
-        print(f"📂 Location: {EVENT_NAME} → {category_folder_name} → {thematic_folder_name} → {safe_sender_name if sender_name else 'Unidentified Sender'}")
-        print("=" * 50)
         
         view_url = f"https://drive.google.com/file/d/{file_id}/view"
         download_url = f"https://drive.google.com/uc?export=download&id={file_id}"
@@ -320,7 +293,6 @@ def move_file_to_folder(service, file_id, new_parent_folder_id):
         dict: Updated file metadata
     """
     try:
-        # Get current parents
         file = service.files().get(
             fileId=file_id,
             fields='id, name, parents',
@@ -329,13 +301,10 @@ def move_file_to_folder(service, file_id, new_parent_folder_id):
         
         current_parents = file.get('parents', [])
         
-        # If already in the target folder, no need to move
         if new_parent_folder_id in current_parents:
             print(f"📁 File already in target folder, skipping move")
             return file
         
-        # Remove from all current parents and add to new parent
-        # Use 'removeParents' and 'addParents' parameters
         old_parents_str = ','.join(current_parents) if current_parents else ''
         
         updated_file = service.files().update(
@@ -430,9 +399,6 @@ def move_submission_files(file_urls, paper_category, thematic_area, sender_name)
     Returns:
         dict: Mapping of old URL to new URL + cleanup info
     """
-    print("=" * 50)
-    print("📦 Starting file move operation...")
-    
     result = {
         'moved': [],
         'failed': [],
@@ -448,16 +414,8 @@ def move_submission_files(file_urls, paper_category, thematic_area, sender_name)
         service = get_drive_service()
         
         # Get target folder
-        target_folder_id = get_folder_path_for_submission(
-            service,
-            paper_category,
-            thematic_area,
-            sender_name
-        )
+        target_folder_id = get_folder_path_for_submission( service, paper_category, thematic_area, sender_name)
         
-        print(f"📁 Target folder ID: {target_folder_id}")
-        
-        # Track old parent folders so we can clean them up after
         old_parent_ids = set()
         
         for url in file_urls:
@@ -471,7 +429,6 @@ def move_submission_files(file_urls, paper_category, thematic_area, sender_name)
                 continue
             
             try:
-                # Get current parents BEFORE moving
                 file_before = service.files().get(
                     fileId=file_id,
                     fields='id, name, parents',
@@ -479,14 +436,11 @@ def move_submission_files(file_urls, paper_category, thematic_area, sender_name)
                 ).execute()
                 current_parents = file_before.get('parents', [])
                 
-                # Record old parents for later cleanup
                 for parent_id in current_parents:
                     old_parent_ids.add(parent_id)
                 
-                # Move the file
                 updated_file = move_file_to_folder(service, file_id, target_folder_id)
                 
-                # Generate new URLs (they stay the same since file ID doesn't change)
                 new_view_url = f"https://drive.google.com/file/d/{file_id}/view"
                 new_download_url = f"https://drive.google.com/uc?export=download&id={file_id}"
                 
@@ -509,12 +463,7 @@ def move_submission_files(file_urls, paper_category, thematic_area, sender_name)
         
         print(f"✅ Moved {len(result['moved'])} files, {len(result['failed'])} failed")
         
-        # Now clean up empty old parent folders
-        # This walks up the tree from each old parent and trashes empty folders
         if old_parent_ids:
-            print(f"🧹 Cleaning up {len(old_parent_ids)} old parent folder(s)...")
-            
-            # Get the event folder ID so we don't delete it
             event_folder_id = get_or_create_folder(
                 service,
                 EVENT_NAME,
@@ -523,7 +472,6 @@ def move_submission_files(file_urls, paper_category, thematic_area, sender_name)
             
             all_trashed = []
             for old_parent_id in old_parent_ids:
-                # Skip if the old parent IS the new target folder
                 if old_parent_id == target_folder_id:
                     continue
                 
@@ -620,12 +568,7 @@ def cleanup_empty_folders(service, file_id, stop_at_folder_id=None):
     trashed_folders = []
     
     try:
-        # Get the file's OLD parents (the file was already moved, so we need to
-        # look at where it came from — we can't easily get that, so we walk up
-        # from the current parent and clean up any empty folders we find)
-        # Actually, we need to pass the old parent. Let's get it from the file's
-        # current state BEFORE moving. This function is called AFTER moving, so
-        # we'll receive the old parent chain separately.
+        
         pass
     except Exception as e:
         print(f"⚠️ Error in cleanup_empty_folders: {e}")
@@ -650,42 +593,32 @@ def cleanup_empty_folders_from_parent(service, start_parent_id, stop_at_folder_i
     current_id = start_parent_id
     depth = 0
     
-    # These are system folders we should NEVER delete
     PROTECTED_FOLDER_IDS = {ROOT_FOLDER_ID}
     
-    print(f"🧹 Starting cleanup from folder ID: {current_id}")
-    
     while current_id and depth < max_depth:
-        # Don't delete protected folders
         if current_id in PROTECTED_FOLDER_IDS:
             print(f"🛑 Reached protected folder (ROOT), stopping cleanup")
             break
         
-        # Don't delete the stop folder
         if stop_at_folder_id and current_id == stop_at_folder_id:
             print(f"🛑 Reached stop folder, stopping cleanup")
             break
         
-        # Check if this folder is empty
         if not is_folder_empty(service, current_id):
             print(f"📁 Folder {current_id} is not empty, stopping cleanup")
             break
         
-        # Get folder name and parent BEFORE deleting
         folder_name = get_folder_name(service, current_id)
         parent_id = get_folder_parent(service, current_id)
         
-        # Don't delete the event folder
         if folder_name == EVENT_NAME:
             print(f"🛑 Reached event folder '{EVENT_NAME}', stopping cleanup")
             break
         
-        # Delete (trash) the empty folder
         if delete_folder(service, current_id):
             trashed_folders.append(folder_name or current_id)
             print(f"🗑️  Trashed empty folder: {folder_name}")
         
-        # Move up to parent
         current_id = parent_id
         depth += 1
     

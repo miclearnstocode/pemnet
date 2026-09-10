@@ -47,7 +47,7 @@ export default function EmailReviewPage() {
     const fetchSubmissions = async () => {
     setLoading(true);
     try {
-        const res = await fetch(`http://localhost:5000/api/email-submissions?status=${statusFilter}`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/email-submissions?status=${statusFilter}`);
         if (res.ok) {
         const data = await res.json();
         setSubmissions(data);
@@ -69,21 +69,21 @@ export default function EmailReviewPage() {
     };
 
     const fetchVotesAndDiscussions = async (submissionId) => {
-        const votesRes = await fetch(`http://localhost:5000/api/submissions/${submissionId}/evaluate`);
+        const votesRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/submissions/${submissionId}/evaluate`);
         const votesData = await votesRes.json();
         setVotes({
             ...votesData,
             evaluation_status: votesData.evaluation_status || 'pending'
         });
 
-        const discRes = await fetch(`http://localhost:5000/api/submissions/${submissionId}/discussions`);
+        const discRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/submissions/${submissionId}/discussions`);
         const discData = await discRes.json();
         setDiscussions(Array.isArray(discData) ? discData : []);
     };
 
     // ADDED: Fetch extracted data
     const fetchExtractedData = async (emailSubmissionId) => {
-        const res = await fetch(`http://localhost:5000/api/email-submissions/${emailSubmissionId}/extracted-data`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/email-submissions/${emailSubmissionId}/extracted-data`);
         if (res.ok) {
             const data = await res.json();
             setExtractedData(data);
@@ -104,7 +104,7 @@ export default function EmailReviewPage() {
     const syncAllEmails = async () => {
         setSyncing(true);
         try {
-            const res = await fetch('http://localhost:5000/api/email-submissions/sync-all', { method: 'POST' });
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/email-submissions/sync-all`, { method: 'POST' });
             if (res.ok) {
                 const data = await res.json();
                 showToast(`Synced ${data.processed} new email submissions`, 'success');
@@ -121,7 +121,7 @@ export default function EmailReviewPage() {
     const checkEmails = async () => {
         setChecking(true);
         try {
-            const res = await fetch('http://localhost:5000/api/email-submissions/check', { method: 'POST' });
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/email-submissions/check`, { method: 'POST' });
             if (res.ok) {
                 const data = await res.json();
                 showToast(`Found ${data.processed} new email submissions`, 'success');
@@ -154,7 +154,7 @@ export default function EmailReviewPage() {
     const handleVote = async (vote_status) => {
         if (!selectedSubmission) return;
         try {
-            const res = await fetch(`http://localhost:5000/api/submissions/${selectedSubmission.id}/evaluate`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/submissions/${selectedSubmission.id}/evaluate`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -181,7 +181,7 @@ export default function EmailReviewPage() {
     const postMessage = async () => {
         if (!newMessage.trim() || !selectedSubmission) return;
         try {
-            const res = await fetch(`http://localhost:5000/api/submissions/${selectedSubmission.id}/discussions`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/submissions/${selectedSubmission.id}/discussions`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ evaluator_id: currentEvaluatorId, message: newMessage })
@@ -206,7 +206,7 @@ export default function EmailReviewPage() {
         setIsReassignLoading(true);
 
         try {
-            const res = await fetch(`http://localhost:5000/api/submissions/${selectedSubmission.id}/evaluate`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/submissions/${selectedSubmission.id}/evaluate`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

@@ -266,6 +266,7 @@ __turbopack_context__.s([
     "default",
     ()=>DiscussionSection
 ]);
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$polyfills$2f$process$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = /*#__PURE__*/ __turbopack_context__.i("[project]/node_modules/next/dist/build/polyfills/process.js [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/compiled/react/jsx-dev-runtime.js [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/compiled/react/index.js [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$fortawesome$2f$react$2d$fontawesome$2f$dist$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/@fortawesome/react-fontawesome/dist/index.js [app-client] (ecmascript)");
@@ -327,7 +328,7 @@ function DiscussionSection({ submissionId, currentUserId, currentUserName, onNew
     ]);
     const fetchUsers = async ()=>{
         try {
-            const res = await fetch('http://localhost:5000/api/users');
+            const res = await fetch(`${("TURBOPACK compile-time value", "http://localhost:5000")}/api/users`);
             if (res.ok) {
                 const data = await res.json();
                 setAllUsers(data);
@@ -345,7 +346,7 @@ function DiscussionSection({ submissionId, currentUserId, currentUserName, onNew
         setError(null);
         try {
             console.log('Fetching discussions for submissionId:', submissionId);
-            const res = await fetch(`http://localhost:5000/api/submissions/${submissionId}/discussions`);
+            const res = await fetch(`${("TURBOPACK compile-time value", "http://localhost:5000")}/api/submissions/${submissionId}/discussions`);
             if (res.ok) {
                 const data = await res.json();
                 console.log('Discussions fetched:', data);
@@ -371,7 +372,7 @@ function DiscussionSection({ submissionId, currentUserId, currentUserName, onNew
         setError(null);
         try {
             console.log('Posting message to submissionId:', submissionId);
-            const res = await fetch(`http://localhost:5000/api/submissions/${submissionId}/discussions`, {
+            const res = await fetch(`${("TURBOPACK compile-time value", "http://localhost:5000")}/api/submissions/${submissionId}/discussions`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -1203,6 +1204,7 @@ __turbopack_context__.s([
     "default",
     ()=>EditSubmission
 ]);
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$polyfills$2f$process$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = /*#__PURE__*/ __turbopack_context__.i("[project]/node_modules/next/dist/build/polyfills/process.js [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/compiled/react/jsx-dev-runtime.js [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/compiled/react/index.js [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$fortawesome$2f$react$2d$fontawesome$2f$dist$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/@fortawesome/react-fontawesome/dist/index.js [app-client] (ecmascript)");
@@ -1395,7 +1397,7 @@ function EditSubmission({ isOpen, onClose, data, onSave, isLoading = false, curr
     ]);
     const fetchSucs = async ()=>{
         try {
-            const res = await fetch('http://localhost:5000/api/sucs');
+            const res = await fetch(`${("TURBOPACK compile-time value", "http://localhost:5000")}/api/sucs`);
             if (res.ok) {
                 const data = await res.json();
                 setSucList(data);
@@ -1426,7 +1428,7 @@ function EditSubmission({ isOpen, onClose, data, onSave, isLoading = false, curr
         if (!newSucName.trim()) return;
         setIsAddingSuc(true);
         try {
-            const res = await fetch('http://localhost:5000/api/sucs', {
+            const res = await fetch(`${("TURBOPACK compile-time value", "http://localhost:5000")}/api/sucs`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -2555,6 +2557,7 @@ __turbopack_context__.s([
     "default",
     ()=>ViewHistory
 ]);
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$polyfills$2f$process$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = /*#__PURE__*/ __turbopack_context__.i("[project]/node_modules/next/dist/build/polyfills/process.js [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/compiled/react/jsx-dev-runtime.js [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/compiled/react/index.js [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$fortawesome$2f$react$2d$fontawesome$2f$dist$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/@fortawesome/react-fontawesome/dist/index.js [app-client] (ecmascript)");
@@ -2585,7 +2588,7 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
     ]);
     const fetchUsers = async ()=>{
         try {
-            const res = await fetch('http://localhost:5000/api/users');
+            const res = await fetch(`${("TURBOPACK compile-time value", "http://localhost:5000")}/api/users`);
             if (res.ok) {
                 const data = await res.json();
                 setAllUsers(data);
@@ -2598,13 +2601,10 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
         setLoading(true);
         try {
             let url;
-            // If we have extractedDataId, fetch revisions for email submission
             if (extractedDataId) {
-                url = `http://localhost:5000/api/extracted-data/${extractedDataId}/revisions`;
+                url = `${"TURBOPACK compile-time value", "http://localhost:5000"}/api/extracted-data/${extractedDataId}/revisions`;
             } else if (submissionId) {
-                // For system submissions, we need to fetch from a different endpoint
-                // We'll use the submissions/edit-history endpoint
-                url = `http://localhost:5000/api/submissions/${submissionId}/edit-history`;
+                url = `${"TURBOPACK compile-time value", "http://localhost:5000"}/api/submissions/${submissionId}/edit-history`;
             } else {
                 setRevisions([]);
                 setLoading(false);
@@ -2690,7 +2690,7 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                 children: "Master Approver"
             }, void 0, false, {
                 fileName: "[project]/app/components/ViewHistory.js",
-                lineNumber: 158,
+                lineNumber: 155,
                 columnNumber: 9
             }, this);
         }
@@ -2700,7 +2700,7 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                 children: "Evaluator"
             }, void 0, false, {
                 fileName: "[project]/app/components/ViewHistory.js",
-                lineNumber: 165,
+                lineNumber: 162,
                 columnNumber: 9
             }, this);
         }
@@ -2715,7 +2715,7 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                 onClick: onClose
             }, void 0, false, {
                 fileName: "[project]/app/components/ViewHistory.js",
-                lineNumber: 177,
+                lineNumber: 174,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2736,12 +2736,12 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                 className: "w-5 h-5"
                                             }, void 0, false, {
                                                 fileName: "[project]/app/components/ViewHistory.js",
-                                                lineNumber: 188,
+                                                lineNumber: 185,
                                                 columnNumber: 17
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/app/components/ViewHistory.js",
-                                            lineNumber: 185,
+                                            lineNumber: 182,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2751,7 +2751,7 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                     children: title
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/components/ViewHistory.js",
-                                                    lineNumber: 191,
+                                                    lineNumber: 188,
                                                     columnNumber: 17
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2764,19 +2764,19 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/app/components/ViewHistory.js",
-                                                    lineNumber: 192,
+                                                    lineNumber: 189,
                                                     columnNumber: 17
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/app/components/ViewHistory.js",
-                                            lineNumber: 190,
+                                            lineNumber: 187,
                                             columnNumber: 15
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/app/components/ViewHistory.js",
-                                    lineNumber: 184,
+                                    lineNumber: 181,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -2787,18 +2787,18 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                         className: "w-5 h-5"
                                     }, void 0, false, {
                                         fileName: "[project]/app/components/ViewHistory.js",
-                                        lineNumber: 201,
+                                        lineNumber: 198,
                                         columnNumber: 15
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/app/components/ViewHistory.js",
-                                    lineNumber: 197,
+                                    lineNumber: 194,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/app/components/ViewHistory.js",
-                            lineNumber: 181,
+                            lineNumber: 178,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2810,12 +2810,12 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                     className: "w-8 h-8 text-blue-500 animate-spin"
                                 }, void 0, false, {
                                     fileName: "[project]/app/components/ViewHistory.js",
-                                    lineNumber: 209,
+                                    lineNumber: 206,
                                     columnNumber: 17
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/app/components/ViewHistory.js",
-                                lineNumber: 208,
+                                lineNumber: 205,
                                 columnNumber: 15
                             }, this) : revisions.length > 0 ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                 className: "space-y-4",
@@ -2842,7 +2842,7 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                                         className: "w-5 h-5 text-slate-400"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/components/ViewHistory.js",
-                                                                        lineNumber: 235,
+                                                                        lineNumber: 232,
                                                                         columnNumber: 29
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -2850,7 +2850,7 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                                         children: rev.edited_by_name || getUserName(rev.edited_by)
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/components/ViewHistory.js",
-                                                                        lineNumber: 239,
+                                                                        lineNumber: 236,
                                                                         columnNumber: 29
                                                                     }, this),
                                                                     getRoleBadge(rev.edited_by),
@@ -2859,13 +2859,13 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                                         children: "Latest Edit"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/components/ViewHistory.js",
-                                                                        lineNumber: 244,
+                                                                        lineNumber: 241,
                                                                         columnNumber: 31
                                                                     }, this)
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/app/components/ViewHistory.js",
-                                                                lineNumber: 234,
+                                                                lineNumber: 231,
                                                                 columnNumber: 27
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -2876,14 +2876,14 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                                         className: "w-3 h-3"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/components/ViewHistory.js",
-                                                                        lineNumber: 250,
+                                                                        lineNumber: 247,
                                                                         columnNumber: 29
                                                                     }, this),
                                                                     rev.created_at
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/app/components/ViewHistory.js",
-                                                                lineNumber: 249,
+                                                                lineNumber: 246,
                                                                 columnNumber: 27
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -2897,13 +2897,13 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/app/components/ViewHistory.js",
-                                                                lineNumber: 253,
+                                                                lineNumber: 250,
                                                                 columnNumber: 27
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/app/components/ViewHistory.js",
-                                                        lineNumber: 233,
+                                                        lineNumber: 230,
                                                         columnNumber: 25
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2917,7 +2917,7 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/app/components/ViewHistory.js",
-                                                                lineNumber: 258,
+                                                                lineNumber: 255,
                                                                 columnNumber: 27
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$fortawesome$2f$react$2d$fontawesome$2f$dist$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["FontAwesomeIcon"], {
@@ -2925,19 +2925,19 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                                 className: "w-4 h-4 text-slate-400"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/app/components/ViewHistory.js",
-                                                                lineNumber: 261,
+                                                                lineNumber: 258,
                                                                 columnNumber: 27
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/app/components/ViewHistory.js",
-                                                        lineNumber: 257,
+                                                        lineNumber: 254,
                                                         columnNumber: 25
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/app/components/ViewHistory.js",
-                                                lineNumber: 227,
+                                                lineNumber: 224,
                                                 columnNumber: 23
                                             }, this),
                                             isExpanded && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2961,7 +2961,7 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                                                 className: "w-4 h-4 text-blue-500"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/app/components/ViewHistory.js",
-                                                                                lineNumber: 284,
+                                                                                lineNumber: 281,
                                                                                 columnNumber: 37
                                                                             }, this),
                                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -2969,13 +2969,13 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                                                 children: getFieldLabel(field)
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/app/components/ViewHistory.js",
-                                                                                lineNumber: 288,
+                                                                                lineNumber: 285,
                                                                                 columnNumber: 37
                                                                             }, this)
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/app/components/ViewHistory.js",
-                                                                        lineNumber: 283,
+                                                                        lineNumber: 280,
                                                                         columnNumber: 35
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2989,7 +2989,7 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                                                         children: "Old Value"
                                                                                     }, void 0, false, {
                                                                                         fileName: "[project]/app/components/ViewHistory.js",
-                                                                                        lineNumber: 294,
+                                                                                        lineNumber: 291,
                                                                                         columnNumber: 39
                                                                                     }, this),
                                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2999,18 +2999,18 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                                                             children: "Not set"
                                                                                         }, void 0, false, {
                                                                                             fileName: "[project]/app/components/ViewHistory.js",
-                                                                                            lineNumber: 296,
+                                                                                            lineNumber: 293,
                                                                                             columnNumber: 54
                                                                                         }, this)
                                                                                     }, void 0, false, {
                                                                                         fileName: "[project]/app/components/ViewHistory.js",
-                                                                                        lineNumber: 295,
+                                                                                        lineNumber: 292,
                                                                                         columnNumber: 39
                                                                                     }, this)
                                                                                 ]
                                                                             }, void 0, true, {
                                                                                 fileName: "[project]/app/components/ViewHistory.js",
-                                                                                lineNumber: 293,
+                                                                                lineNumber: 290,
                                                                                 columnNumber: 37
                                                                             }, this),
                                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3021,7 +3021,7 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                                                         children: "New Value"
                                                                                     }, void 0, false, {
                                                                                         fileName: "[project]/app/components/ViewHistory.js",
-                                                                                        lineNumber: 300,
+                                                                                        lineNumber: 297,
                                                                                         columnNumber: 39
                                                                                     }, this),
                                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -3031,24 +3031,24 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                                                             children: "Not set"
                                                                                         }, void 0, false, {
                                                                                             fileName: "[project]/app/components/ViewHistory.js",
-                                                                                            lineNumber: 302,
+                                                                                            lineNumber: 299,
                                                                                             columnNumber: 54
                                                                                         }, this)
                                                                                     }, void 0, false, {
                                                                                         fileName: "[project]/app/components/ViewHistory.js",
-                                                                                        lineNumber: 301,
+                                                                                        lineNumber: 298,
                                                                                         columnNumber: 39
                                                                                     }, this)
                                                                                 ]
                                                                             }, void 0, true, {
                                                                                 fileName: "[project]/app/components/ViewHistory.js",
-                                                                                lineNumber: 299,
+                                                                                lineNumber: 296,
                                                                                 columnNumber: 37
                                                                             }, this)
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/app/components/ViewHistory.js",
-                                                                        lineNumber: 292,
+                                                                        lineNumber: 289,
                                                                         columnNumber: 35
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3059,7 +3059,7 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                                                 className: "w-3 h-3"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/app/components/ViewHistory.js",
-                                                                                lineNumber: 307,
+                                                                                lineNumber: 304,
                                                                                 columnNumber: 37
                                                                             }, this),
                                                                             "Changed from ",
@@ -3072,7 +3072,7 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                                                 ]
                                                                             }, void 0, true, {
                                                                                 fileName: "[project]/app/components/ViewHistory.js",
-                                                                                lineNumber: 308,
+                                                                                lineNumber: 305,
                                                                                 columnNumber: 50
                                                                             }, this),
                                                                             "to ",
@@ -3085,19 +3085,19 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                                                 ]
                                                                             }, void 0, true, {
                                                                                 fileName: "[project]/app/components/ViewHistory.js",
-                                                                                lineNumber: 309,
+                                                                                lineNumber: 306,
                                                                                 columnNumber: 40
                                                                             }, this)
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/app/components/ViewHistory.js",
-                                                                        lineNumber: 306,
+                                                                        lineNumber: 303,
                                                                         columnNumber: 35
                                                                     }, this)
                                                                 ]
                                                             }, field, true, {
                                                                 fileName: "[project]/app/components/ViewHistory.js",
-                                                                lineNumber: 279,
+                                                                lineNumber: 276,
                                                                 columnNumber: 33
                                                             }, this);
                                                         }),
@@ -3114,7 +3114,7 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                                                 className: "w-3 h-3"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/app/components/ViewHistory.js",
-                                                                                lineNumber: 320,
+                                                                                lineNumber: 317,
                                                                                 columnNumber: 37
                                                                             }, this),
                                                                             "View Full Snapshot After Edit",
@@ -3123,13 +3123,13 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                                                 className: "w-3 h-3 group-open:rotate-180 transition-transform"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/app/components/ViewHistory.js",
-                                                                                lineNumber: 322,
+                                                                                lineNumber: 319,
                                                                                 columnNumber: 37
                                                                             }, this)
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/app/components/ViewHistory.js",
-                                                                        lineNumber: 319,
+                                                                        lineNumber: 316,
                                                                         columnNumber: 35
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3145,7 +3145,7 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                                                         ]
                                                                                     }, void 0, true, {
                                                                                         fileName: "[project]/app/components/ViewHistory.js",
-                                                                                        lineNumber: 328,
+                                                                                        lineNumber: 325,
                                                                                         columnNumber: 43
                                                                                     }, this),
                                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -3153,52 +3153,52 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                                                         children: String(value)
                                                                                     }, void 0, false, {
                                                                                         fileName: "[project]/app/components/ViewHistory.js",
-                                                                                        lineNumber: 331,
+                                                                                        lineNumber: 328,
                                                                                         columnNumber: 43
                                                                                     }, this)
                                                                                 ]
                                                                             }, key, true, {
                                                                                 fileName: "[project]/app/components/ViewHistory.js",
-                                                                                lineNumber: 327,
+                                                                                lineNumber: 324,
                                                                                 columnNumber: 41
                                                                             }, this))
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/components/ViewHistory.js",
-                                                                        lineNumber: 324,
+                                                                        lineNumber: 321,
                                                                         columnNumber: 35
                                                                     }, this)
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/app/components/ViewHistory.js",
-                                                                lineNumber: 318,
+                                                                lineNumber: 315,
                                                                 columnNumber: 33
                                                             }, this)
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/components/ViewHistory.js",
-                                                            lineNumber: 317,
+                                                            lineNumber: 314,
                                                             columnNumber: 31
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/app/components/ViewHistory.js",
-                                                    lineNumber: 271,
+                                                    lineNumber: 268,
                                                     columnNumber: 27
                                                 }, this)
                                             }, void 0, false, {
                                                 fileName: "[project]/app/components/ViewHistory.js",
-                                                lineNumber: 270,
+                                                lineNumber: 267,
                                                 columnNumber: 25
                                             }, this)
                                         ]
                                     }, rev.id, true, {
                                         fileName: "[project]/app/components/ViewHistory.js",
-                                        lineNumber: 220,
+                                        lineNumber: 217,
                                         columnNumber: 21
                                     }, this);
                                 })
                             }, void 0, false, {
                                 fileName: "[project]/app/components/ViewHistory.js",
-                                lineNumber: 212,
+                                lineNumber: 209,
                                 columnNumber: 15
                             }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                 className: "text-center py-12 text-slate-400",
@@ -3208,7 +3208,7 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                         className: "w-12 h-12 text-slate-300 mb-4"
                                     }, void 0, false, {
                                         fileName: "[project]/app/components/ViewHistory.js",
-                                        lineNumber: 350,
+                                        lineNumber: 347,
                                         columnNumber: 17
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -3216,7 +3216,7 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                         children: "No edit history found"
                                     }, void 0, false, {
                                         fileName: "[project]/app/components/ViewHistory.js",
-                                        lineNumber: 351,
+                                        lineNumber: 348,
                                         columnNumber: 17
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -3224,18 +3224,18 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                         children: "This submission has not been edited yet"
                                     }, void 0, false, {
                                         fileName: "[project]/app/components/ViewHistory.js",
-                                        lineNumber: 352,
+                                        lineNumber: 349,
                                         columnNumber: 17
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/components/ViewHistory.js",
-                                lineNumber: 349,
+                                lineNumber: 346,
                                 columnNumber: 15
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/app/components/ViewHistory.js",
-                            lineNumber: 206,
+                            lineNumber: 203,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3249,7 +3249,7 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                             className: "w-3 h-3"
                                         }, void 0, false, {
                                             fileName: "[project]/app/components/ViewHistory.js",
-                                            lineNumber: 360,
+                                            lineNumber: 357,
                                             columnNumber: 15
                                         }, this),
                                         revisions.length > 0 ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
@@ -3262,13 +3262,13 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/app/components/ViewHistory.js",
-                                            lineNumber: 362,
+                                            lineNumber: 359,
                                             columnNumber: 17
                                         }, this) : 'No edits recorded'
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/app/components/ViewHistory.js",
-                                    lineNumber: 359,
+                                    lineNumber: 356,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -3282,14 +3282,14 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                 className: "w-4 h-4 animate-spin"
                                             }, void 0, false, {
                                                 fileName: "[project]/app/components/ViewHistory.js",
-                                                lineNumber: 377,
+                                                lineNumber: 374,
                                                 columnNumber: 19
                                             }, this),
                                             "Loading..."
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/app/components/ViewHistory.js",
-                                        lineNumber: 376,
+                                        lineNumber: 373,
                                         columnNumber: 17
                                     }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
                                         children: [
@@ -3298,42 +3298,42 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                 className: "w-4 h-4"
                                             }, void 0, false, {
                                                 fileName: "[project]/app/components/ViewHistory.js",
-                                                lineNumber: 382,
+                                                lineNumber: 379,
                                                 columnNumber: 19
                                             }, this),
                                             "Refresh"
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/app/components/ViewHistory.js",
-                                        lineNumber: 381,
+                                        lineNumber: 378,
                                         columnNumber: 17
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/app/components/ViewHistory.js",
-                                    lineNumber: 370,
+                                    lineNumber: 367,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/app/components/ViewHistory.js",
-                            lineNumber: 358,
+                            lineNumber: 355,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/app/components/ViewHistory.js",
-                    lineNumber: 179,
+                    lineNumber: 176,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/app/components/ViewHistory.js",
-                lineNumber: 178,
+                lineNumber: 175,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/app/components/ViewHistory.js",
-        lineNumber: 176,
+        lineNumber: 173,
         columnNumber: 5
     }, this);
 }
@@ -3352,6 +3352,7 @@ __turbopack_context__.s([
     "default",
     ()=>ReviewPage
 ]);
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$polyfills$2f$process$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = /*#__PURE__*/ __turbopack_context__.i("[project]/node_modules/next/dist/build/polyfills/process.js [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/compiled/react/jsx-dev-runtime.js [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$styled$2d$jsx$2f$style$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/styled-jsx/style.js [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/compiled/react/index.js [app-client] (ecmascript)");
@@ -3443,7 +3444,7 @@ function ReviewPage() {
     ]);
     const fetchAllUsers = async ()=>{
         try {
-            const res = await fetch('http://localhost:5000/api/users');
+            const res = await fetch(`${("TURBOPACK compile-time value", "http://localhost:5000")}/api/users`);
             const data = await res.json();
             setAllUsers(data);
         } catch (err) {
@@ -3452,7 +3453,7 @@ function ReviewPage() {
     };
     const fetchSucs = async ()=>{
         try {
-            const res = await fetch('http://localhost:5000/api/sucs');
+            const res = await fetch(`${("TURBOPACK compile-time value", "http://localhost:5000")}/api/sucs`);
             if (res.ok) {
                 const data = await res.json();
                 setSucList(data);
@@ -3466,9 +3467,9 @@ function ReviewPage() {
         try {
             let url;
             if (activeTab === 'system') {
-                url = 'http://localhost:5000/api/submissions';
+                url = `${"TURBOPACK compile-time value", "http://localhost:5000"}/api/submissions`;
             } else {
-                url = `http://localhost:5000/api/email-submissions?status=all`;
+                url = `${"TURBOPACK compile-time value", "http://localhost:5000"}/api/email-submissions?status=all`;
             }
             const res = await fetch(url);
             if (res.ok) {
@@ -3485,7 +3486,7 @@ function ReviewPage() {
     const checkEmails = async ()=>{
         setCheckingEmails(true);
         try {
-            const res = await fetch('http://localhost:5000/api/email-submissions/check', {
+            const res = await fetch(`${("TURBOPACK compile-time value", "http://localhost:5000")}/api/email-submissions/check`, {
                 method: 'POST'
             });
             if (res.ok) {
@@ -3507,7 +3508,7 @@ function ReviewPage() {
         setTimeout(()=>setToast(null), 5000);
     };
     const fetchExtractedData = async (emailSubmissionId)=>{
-        const res = await fetch(`http://localhost:5000/api/email-submissions/${emailSubmissionId}/extracted-data`);
+        const res = await fetch(`${("TURBOPACK compile-time value", "http://localhost:5000")}/api/email-submissions/${emailSubmissionId}/extracted-data`);
         if (res.ok) {
             const data = await res.json();
             setEmailExtractedData(data);
@@ -3521,7 +3522,7 @@ function ReviewPage() {
         const subId = sub.submission_id || sub.id;
         console.log('Selecting submission with ID:', subId, 'Type:', typeof subId);
         try {
-            const votesRes = await fetch(`http://localhost:5000/api/submissions/${subId}/evaluate`);
+            const votesRes = await fetch(`${("TURBOPACK compile-time value", "http://localhost:5000")}/api/submissions/${subId}/evaluate`);
             if (votesRes.ok) {
                 const votesData = await votesRes.json();
                 setVotes({
@@ -3543,7 +3544,7 @@ function ReviewPage() {
         if (!selectedSubmission) return;
         const subId = selectedSubmission.submission_id || selectedSubmission.id;
         try {
-            const res = await fetch(`http://localhost:5000/api/submissions/${subId}/evaluate`, {
+            const res = await fetch(`${("TURBOPACK compile-time value", "http://localhost:5000")}/api/submissions/${subId}/evaluate`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -3600,7 +3601,7 @@ function ReviewPage() {
         setDowngradeLoading(true);
         const subId = selectedSubmission.submission_id || selectedSubmission.id;
         try {
-            const res = await fetch(`http://localhost:5000/api/submissions/${subId}/evaluate`, {
+            const res = await fetch(`${("TURBOPACK compile-time value", "http://localhost:5000")}/api/submissions/${subId}/evaluate`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -3649,10 +3650,10 @@ function ReviewPage() {
                 ...formData
             };
             if (activeTab === 'email' && emailExtractedData) {
-                url = `http://localhost:5000/api/extracted-data/${emailExtractedData.id}/edit`;
+                url = `${"TURBOPACK compile-time value", "http://localhost:5000"}/api/extracted-data/${emailExtractedData.id}/edit`;
                 payload.evaluator_id = currentEvaluatorId;
             } else {
-                url = `http://localhost:5000/api/submissions/${submissionId}/edit`;
+                url = `${"TURBOPACK compile-time value", "http://localhost:5000"}/api/submissions/${submissionId}/edit`;
                 payload.evaluator_id = currentEvaluatorId;
             }
             const res = await fetch(url, {
@@ -4247,7 +4248,7 @@ function ReviewPage() {
                     setReassignLoading(true);
                     try {
                         // FIX: Use submission_id for all submissions
-                        const res = await fetch(`http://localhost:5000/api/submissions/${selectedSubmission.submission_id || selectedSubmission.id}/evaluate`, {
+                        const res = await fetch(`${("TURBOPACK compile-time value", "http://localhost:5000")}/api/submissions/${selectedSubmission.submission_id || selectedSubmission.id}/evaluate`, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json'

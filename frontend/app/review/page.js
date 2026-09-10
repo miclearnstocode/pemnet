@@ -124,7 +124,7 @@ export default function ReviewPage() {
 
   const fetchAllUsers = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/users');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users`);
       const data = await res.json();
       setAllUsers(data);
     } catch (err) {
@@ -134,7 +134,7 @@ export default function ReviewPage() {
 
   const fetchSucs = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/sucs');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/sucs`);
       if (res.ok) {
         const data = await res.json();
         setSucList(data);
@@ -149,9 +149,9 @@ export default function ReviewPage() {
     try {
       let url;
       if (activeTab === 'system') {
-        url = 'http://localhost:5000/api/submissions';
+        url = `${process.env.NEXT_PUBLIC_API_URL}/api/submissions`;
       } else {
-        url = `http://localhost:5000/api/email-submissions?status=all`;
+        url = `${process.env.NEXT_PUBLIC_API_URL}/api/email-submissions?status=all`;
       }
       
       const res = await fetch(url);
@@ -170,7 +170,7 @@ export default function ReviewPage() {
   const checkEmails = async () => {
     setCheckingEmails(true);
     try {
-      const res = await fetch('http://localhost:5000/api/email-submissions/check', { method: 'POST' });
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/email-submissions/check`, { method: 'POST' });
       if (res.ok) {
         const data = await res.json();
         showToast(`Found ${data.processed} new email submissions`, 'success');
@@ -189,7 +189,7 @@ export default function ReviewPage() {
   };
 
   const fetchExtractedData = async (emailSubmissionId) => {
-    const res = await fetch(`http://localhost:5000/api/email-submissions/${emailSubmissionId}/extracted-data`);
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/email-submissions/${emailSubmissionId}/extracted-data`);
     if (res.ok) {
       const data = await res.json();
       setEmailExtractedData(data);
@@ -207,7 +207,7 @@ export default function ReviewPage() {
       console.log('Selecting submission with ID:', subId, 'Type:', typeof subId);
       
       try {
-          const votesRes = await fetch(`http://localhost:5000/api/submissions/${subId}/evaluate`);
+          const votesRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/submissions/${subId}/evaluate`);
           if (votesRes.ok) {
               const votesData = await votesRes.json();
               setVotes({ 
@@ -233,7 +233,7 @@ export default function ReviewPage() {
       const subId = selectedSubmission.submission_id || selectedSubmission.id;
 
       try {
-          const res = await fetch(`http://localhost:5000/api/submissions/${subId}/evaluate`, {
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/submissions/${subId}/evaluate`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -296,7 +296,7 @@ export default function ReviewPage() {
       const subId = selectedSubmission.submission_id || selectedSubmission.id;
       
       try {
-          const res = await fetch(`http://localhost:5000/api/submissions/${subId}/evaluate`, {
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/submissions/${subId}/evaluate`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -346,10 +346,10 @@ export default function ReviewPage() {
         let payload = { ...formData };
 
         if (activeTab === 'email' && emailExtractedData) {
-          url = `http://localhost:5000/api/extracted-data/${emailExtractedData.id}/edit`;
+          url = `${process.env.NEXT_PUBLIC_API_URL}/api/extracted-data/${emailExtractedData.id}/edit`;
           payload.evaluator_id = currentEvaluatorId;
         } else {
-          url = `http://localhost:5000/api/submissions/${submissionId}/edit`;
+          url = `${process.env.NEXT_PUBLIC_API_URL}/api/submissions/${submissionId}/edit`;
           payload.evaluator_id = currentEvaluatorId;
         }
         
@@ -781,7 +781,7 @@ export default function ReviewPage() {
           setReassignLoading(true);
           try {
             // FIX: Use submission_id for all submissions
-            const res = await fetch(`http://localhost:5000/api/submissions/${selectedSubmission.submission_id || selectedSubmission.id}/evaluate`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/submissions/${selectedSubmission.submission_id || selectedSubmission.id}/evaluate`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({

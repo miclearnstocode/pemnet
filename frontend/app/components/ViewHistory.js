@@ -45,7 +45,7 @@ export default function ViewHistory({
 
   const fetchUsers = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/users');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users`);
       if (res.ok) {
         const data = await res.json();
         setAllUsers(data);
@@ -60,13 +60,10 @@ export default function ViewHistory({
     try {
       let url;
       
-      // If we have extractedDataId, fetch revisions for email submission
       if (extractedDataId) {
-        url = `http://localhost:5000/api/extracted-data/${extractedDataId}/revisions`;
+        url = `${process.env.NEXT_PUBLIC_API_URL}/api/extracted-data/${extractedDataId}/revisions`;
       } else if (submissionId) {
-        // For system submissions, we need to fetch from a different endpoint
-        // We'll use the submissions/edit-history endpoint
-        url = `http://localhost:5000/api/submissions/${submissionId}/edit-history`;
+        url = `${process.env.NEXT_PUBLIC_API_URL}/api/submissions/${submissionId}/edit-history`;
       } else {
         setRevisions([]);
         setLoading(false);

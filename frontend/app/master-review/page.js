@@ -131,7 +131,7 @@ export default function MasterReviewPage() {
 
   const fetchUsers = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/users');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users`);
       if (res.ok) {
         const data = await res.json();
         setAllUsers(data);
@@ -146,9 +146,9 @@ export default function MasterReviewPage() {
     try {
       let url;
       if (activeTab === 'system') {
-        url = 'http://localhost:5000/api/submissions';
+        url = `${process.env.NEXT_PUBLIC_API_URL}/api/submissions`;
       } else {
-        url = 'http://localhost:5000/api/email-submissions?status=all';
+        url = `${process.env.NEXT_PUBLIC_API_URL}/api/email-submissions?status=all`;
       }
 
       const res = await fetch(url);
@@ -163,7 +163,7 @@ export default function MasterReviewPage() {
         setSubmissions(processedData);
       }
 
-      const statsRes = await fetch('http://localhost:5000/api/master-approver/status-summary');
+      const statsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/master-approver/status-summary`);
       if (statsRes.ok) {
         const statsData = await statsRes.json();
         setStats(statsData);
@@ -183,7 +183,7 @@ export default function MasterReviewPage() {
 
   const fetchExtractedData = async (emailSubmissionId) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/email-submissions/${emailSubmissionId}/extracted-data`);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/email-submissions/${emailSubmissionId}/extracted-data`);
       if (res.ok) {
         const data = await res.json();
         setEmailExtractedData(data);
@@ -199,7 +199,7 @@ export default function MasterReviewPage() {
     if (!submissionId) return;
     setLoadingEmailLogs(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/email-logs/${submissionId}`);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/email-logs/${submissionId}`);
       if (res.ok) {
         const data = await res.json();
         setEmailLogs(data);
@@ -250,7 +250,7 @@ export default function MasterReviewPage() {
     setIsModalOpen(true);
 
     try {
-      const res = await fetch(`http://localhost:5000/api/submissions/${submissionId}/master-details`);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/submissions/${submissionId}/master-details`);
       if (res.ok) {
         const data = await res.json();
         setSubmissionDetails(data);
@@ -332,8 +332,8 @@ export default function MasterReviewPage() {
       const isEmailSubmission = activeTab === 'email' && emailExtractedData?.id;
 
       const url = isEmailSubmission
-        ? `http://localhost:5000/api/extracted-data/${emailExtractedData.id}/edit`
-        : `http://localhost:5000/api/submissions/${submissionId}/edit`;
+        ? `${process.env.NEXT_PUBLIC_API_URL}/api/extracted-data/${emailExtractedData.id}/edit`
+        : `${process.env.NEXT_PUBLIC_API_URL}/api/submissions/${submissionId}/edit`;
 
       // For email submissions, the form uses email-field names already (title, sucs, etc.)
       // so no remapping is needed. Pass payload as-is.
@@ -396,7 +396,7 @@ export default function MasterReviewPage() {
         return;
       }
 
-      const res = await fetch(`http://localhost:5000/api/submissions/${submissionId}/master-status`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/submissions/${submissionId}/master-status`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

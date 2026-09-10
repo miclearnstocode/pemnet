@@ -107,7 +107,7 @@ export default function SubmitPage() {
     const fetchSUCs = async () => {
       try {
         console.log('Fetching SUCs...');
-        const response = await fetch('http://localhost:5000/api/sucs');
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/sucs`);
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -164,7 +164,7 @@ export default function SubmitPage() {
   const fetchUserSubmissions = async (userId) => {
     setIsLoadingSubmissions(true);
     try {
-      const response = await fetch(`http://localhost:5000/api/submissions/user/${userId}`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/submissions/user/${userId}`);
       if (response.ok) {
         const data = await response.json();
         setUserSubmissions(data);
@@ -180,7 +180,7 @@ export default function SubmitPage() {
 
   const fetchUserPayments = async (userId) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/payments/user/${userId}`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/payments/user/${userId}`);
       if (response.ok) {
         const data = await response.json();
         setUserPayments(data);
@@ -217,7 +217,7 @@ export default function SubmitPage() {
 
   const checkPaymentStatus = async (submissionId) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/payments/submission/${submissionId}`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/payments/submission/${submissionId}`);
       if (response.ok) {
         const data = await response.json();
         setPaymentData(data);
@@ -252,7 +252,7 @@ export default function SubmitPage() {
       formData.append('payment_date', paymentDate);
       formData.append('payment_proof', paymentFile);
       
-      const response = await fetch('http://localhost:5000/api/payments/upload', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/payments/upload`, {
         method: 'POST',
         body: formData
       });
@@ -404,7 +404,7 @@ export default function SubmitPage() {
     const existingSuc = sucList.find(s => s.name.toLowerCase() === finalSuc.toLowerCase());
     if (!existingSuc && showOtherSuc) {
       try {
-        const addResponse = await fetch('http://localhost:5000/api/sucs', {
+        const addResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/sucs`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -473,7 +473,7 @@ export default function SubmitPage() {
     }
 
     try {
-      const res = await fetch('http://localhost:5000/api/submit', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/submit`, {
         method: 'POST',
         body: submitData,
       });

@@ -107,9 +107,9 @@ export default function LoginPage() {
     try {
       // Sanitize inputs - trim and validate
       const sanitizedEmail = email.trim().toLowerCase();
-      const sanitizedPassword = password; // Password will be hashed on server
-
-      const res = await fetch('http://localhost:5000/api/login', {
+      const sanitizedPassword = password;
+      
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/login`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

@@ -46,7 +46,7 @@ export default function TreasurerPage() {
 
   const fetchUsers = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/users');
+      const res = await fetch('${process.env.NEXT_PUBLIC_API_URL}/api/users');
       if (res.ok) {
         const data = await res.json();
         setAllUsers(data);
@@ -61,8 +61,8 @@ export default function TreasurerPage() {
     try {
       const token = localStorage.getItem('pemnet_token');
       const url = statusFilter === 'all' 
-        ? 'http://localhost:5000/api/payments/all'
-        : `http://localhost:5000/api/payments/all?status=${statusFilter}`;
+        ? `${process.env.NEXT_PUBLIC_API_URL}/api/payments/all`
+        : `${process.env.NEXT_PUBLIC_API_URL}/api/payments/all?status=${statusFilter}`;
       
       const res = await fetch(url, {
         headers: {
@@ -98,7 +98,7 @@ export default function TreasurerPage() {
     setActionLoading(true);
     try {
       const token = localStorage.getItem('pemnet_token');
-      const res = await fetch(`http://localhost:5000/api/payments/${paymentId}/verify`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/payments/${paymentId}/verify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -137,7 +137,7 @@ export default function TreasurerPage() {
     setActionLoading(true);
     try {
       const token = localStorage.getItem('pemnet_token');
-      const res = await fetch(`http://localhost:5000/api/payments/${paymentId}/verify`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/payments/${paymentId}/verify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

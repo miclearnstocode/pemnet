@@ -455,34 +455,45 @@ export default function ReviewPage() {
     };
   };
 
-  // SAFE FILTERING - Handle null values properly
   const filteredSubmissions = submissions.filter(sub => {
     if (!sub) return false;
-    
+
+    const matchesStatusFilter = (() => {
+      if (statusFilter === 'all') return true;
+      const s = String(sub.status || '').toLowerCase();
+
+      // "downgraded" is a GROUP filter — matches all downgrade variants
+      if (statusFilter === 'downgraded') {
+        return s === 'downgraded' || s === 'downgrade' || s.startsWith('downgraded');
+      }
+
+      // Exact match for everything else
+      return s === String(statusFilter).toLowerCase();
+    })();
+
+    if (!matchesStatusFilter) return false;
+
     if (activeTab === 'system') {
-      if (statusFilter !== 'all' && sub.status !== statusFilter) return false;
       if (categoryFilter !== 'all' && sub.paper_category !== categoryFilter) return false;
-      
+
       if (searchTerm) {
         const search = searchTerm.toLowerCase();
         const title = (sub.extension_project_title || '').toLowerCase();
-        const leader = (sub.project_leader || '').toLowerCase(); // FIX: Use project_leader
+        const leader = (sub.project_leader || '').toLowerCase();
         const suc = (sub.suc_agencies || '').toLowerCase();
         return title.includes(search) || leader.includes(search) || suc.includes(search);
       }
       return true;
     } else {
-      if (statusFilter !== 'all' && sub.status !== statusFilter) return false;
-      
       if (searchTerm) {
         const search = searchTerm.toLowerCase();
         const subject = (sub.subject || '').toLowerCase();
         const projectLeader = (sub.project_leader_name || '').toLowerCase();
         const senderEmail = (sub.sender_email || '').toLowerCase();
         const senderName = (sub.sender_name || '').toLowerCase();
-        
-        return subject.includes(search) || 
-               projectLeader.includes(search) || 
+
+        return subject.includes(search) ||
+               projectLeader.includes(search) ||
                senderEmail.includes(search) ||
                senderName.includes(search);
       }
@@ -490,38 +501,88 @@ export default function ReviewPage() {
     }
   });
 
+  const isDowngraded = (status) => {
+    if (!status) return false;
+    const s = String(status).toLowerCase();
+    return s === 'downgraded' || s === 'downgrade' || s.startsWith('downgraded');
+  };
+
+  const isPending = (status) => {
+    if (!status) return true;
+    const s = String(status).toLowerCase();
+    return s === 'pending';
+  };
+
+  const isEndorsed = (status) => {
+    if (!status) return false;
+    const s = String(status).toLowerCase();
+    return s === 'endorse' || s === 'endorsed';
+  };
+
+  const matchesStatusFilter = (subStatus) => {
+    if (statusFilter === 'all') return true;
+    const s = String(subStatus || '').toLowerCase();
+    const f = String(statusFilter).toLowerCase();
+
+    // "downgraded" is a GROUP filter — matches all downgrade variants
+    if (f === 'downgraded') {
+      return s === 'downgraded' || s === 'downgrade' || s.startsWith('downgraded');
+    }
+
+    // Exact match for everything else
+    return s === f;
+  };
+
   // Calculate stat counts based on the current filter
   const getFilteredStats = () => {
     if (activeTab === 'system') {
       const filtered = submissions.filter(sub => {
-        if (statusFilter !== 'all' && sub.status !== statusFilter) return false;
+        if (!matchesStatusFilter(sub.status)) return false;
         if (categoryFilter !== 'all' && sub.paper_category !== categoryFilter) return false;
         return true;
       });
-      
+
       const total = filtered.length;
-      const pending = filtered.filter(s => s.status === 'pending' || !s.status).length;
-      const endorsed = filtered.filter(s => s.status === 'endorse').length;
-      const downgraded = filtered.filter(s => s.status === 'downgraded').length;
-      
+      const pending = filtered.filter(s => isPending(s.status)).length;
+      const endorsed = filtered.filter(s => isEndorsed(s.status)).length;
+      const downgraded = filtered.filter(s => isDowngraded(s.status)).length;
+
       return { total, pending, endorsed, downgraded, uncategorized: 0 };
     } else {
       const filtered = submissions.filter(sub => {
-        if (statusFilter !== 'all' && sub.status !== statusFilter) return false;
+        if (!matchesStatusFilter(sub.status)) return false;
         return true;
       });
-      
+
       const total = filtered.length;
-      const pending = filtered.filter(s => s.status === 'pending').length;
-      const endorsed = filtered.filter(s => s.status === 'endorse').length;
+      const pending = filtered.filter(s => isPending(s.status)).length;
+      const endorsed = filtered.filter(s => isEndorsed(s.status)).length;
       const uncategorized = filtered.filter(s => s.status === 'uncategorized').length;
-      const downgraded = filtered.filter(s => s.status === 'downgraded').length;
-      
+      const downgraded = filtered.filter(s => isDowngraded(s.status)).length;
+
       return { total, pending, endorsed, downgraded, uncategorized };
     }
   };
 
   const stats = getFilteredStats();
+
+  const STAT_FILTERS = {
+    total: 'all',
+    pending: 'pending',
+    endorsed: 'endorse',
+    downgraded: activeTab === 'system' ? 'downgraded' : 'uncategorized',
+    uncategorized: 'uncategorized',
+  };
+
+  const handleStatCardClick = (cardKey) => {
+    const targetFilter = STAT_FILTERS[cardKey] ?? 'all';
+    setStatusFilter(targetFilter);
+  };
+
+  const isStatCardActive = (cardKey) => {
+    const targetFilter = STAT_FILTERS[cardKey] ?? 'all';
+    return statusFilter === targetFilter;
+  };
 
   // Status display functions
   const getStatusColor = (status) => {
@@ -1212,49 +1273,92 @@ export default function ReviewPage() {
           )}
         </div>
 
-        {/* Stat Cards */}
+        {/* Stat Cards — clickable filters */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all">
+          {/* Total */}
+          <button
+            type="button"
+            onClick={() => handleStatCardClick('total')}
+            className={`text-left bg-white rounded-2xl p-6 border shadow-sm hover:shadow-md transition-all cursor-pointer ${
+              isStatCardActive('total')
+                ? 'border-blue-500 ring-2 ring-blue-500/20'
+                : 'border-slate-200'
+            }`}
+          >
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-3xl font-bold text-slate-900">{stats.total}</p>
                 <p className="text-sm text-slate-500">
                   {activeTab === 'system' ? 'Total Submissions' : 'Total Emails'}
-                  {statusFilter !== 'all' && ` (Filtered)`}
+                  {isStatCardActive('total') && ' (Active)'}
                 </p>
               </div>
               <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600">
                 <FontAwesomeIcon icon={faFolderOpen} className="w-6 h-6" />
               </div>
             </div>
-          </div>
-          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all">
+          </button>
+
+          {/* Pending */}
+          <button
+            type="button"
+            onClick={() => handleStatCardClick('pending')}
+            className={`text-left bg-white rounded-2xl p-6 border shadow-sm hover:shadow-md transition-all cursor-pointer ${
+              isStatCardActive('pending')
+                ? 'border-amber-500 ring-2 ring-amber-500/20'
+                : 'border-slate-200'
+            }`}
+          >
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-3xl font-bold text-amber-600">{stats.pending}</p>
                 <p className="text-sm text-slate-500">
                   {activeTab === 'system' ? 'Pending Review' : 'Pending'}
+                  {isStatCardActive('pending') && ' (Active)'}
                 </p>
               </div>
               <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600">
                 <FontAwesomeIcon icon={faClock} className="w-6 h-6" />
               </div>
             </div>
-          </div>
-          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all">
+          </button>
+
+          {/* Endorsed */}
+          <button
+            type="button"
+            onClick={() => handleStatCardClick('endorsed')}
+            className={`text-left bg-white rounded-2xl p-6 border shadow-sm hover:shadow-md transition-all cursor-pointer ${
+              isStatCardActive('endorsed')
+                ? 'border-emerald-500 ring-2 ring-emerald-500/20'
+                : 'border-slate-200'
+            }`}
+          >
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-3xl font-bold text-emerald-600">{stats.endorsed}</p>
                 <p className="text-sm text-slate-500">
-                  {activeTab === 'system' ? 'Endorsed' : 'Endorsed'}
+                  Endorsed
+                  {isStatCardActive('endorsed') && ' (Active)'}
                 </p>
               </div>
               <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600">
                 <FontAwesomeIcon icon={faCheckCircle} className="w-6 h-6" />
               </div>
             </div>
-          </div>
-          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all">
+          </button>
+
+          {/* Downgraded (system) / Uncategorized (email) */}
+          <button
+            type="button"
+            onClick={() =>
+              handleStatCardClick(activeTab === 'system' ? 'downgraded' : 'uncategorized')
+            }
+            className={`text-left bg-white rounded-2xl p-6 border shadow-sm hover:shadow-md transition-all cursor-pointer ${
+              isStatCardActive(activeTab === 'system' ? 'downgraded' : 'uncategorized')
+                ? 'border-rose-500 ring-2 ring-rose-500/20'
+                : 'border-slate-200'
+            }`}
+          >
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-3xl font-bold text-rose-600">
@@ -1262,13 +1366,14 @@ export default function ReviewPage() {
                 </p>
                 <p className="text-sm text-slate-500">
                   {activeTab === 'system' ? 'Downgraded' : 'Uncategorized'}
+                  {isStatCardActive(activeTab === 'system' ? 'downgraded' : 'uncategorized') && ' (Active)'}
                 </p>
               </div>
               <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-600">
                 <FontAwesomeIcon icon={activeTab === 'system' ? faArrowDown : faWarning} className="w-6 h-6" />
               </div>
             </div>
-          </div>
+          </button>
         </div>
 
         <div className="flex gap-4 mb-6">

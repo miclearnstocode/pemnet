@@ -565,8 +565,26 @@ export default function MasterReviewPage() {
   };
 
   const filteredSubmissions = submissions.filter(sub => {
+    // Group-match: "downgraded" matches all downgrade variants
+    const matchesStatusFilter = (() => {
+      if (statusFilter === 'all') return true;
+      const s = String(sub.status || '').toLowerCase();
+
+      if (statusFilter === 'downgraded') {
+        return s === 'downgraded' || s === 'downgrade' || s.startsWith('downgraded');
+      }
+      if (statusFilter === 'downgraded-non_competitive') {
+        return s === 'downgraded-non_competitive' || s === 'downgraded_non_competitive';
+      }
+      if (statusFilter === 'downgraded-poster_only') {
+        return s === 'downgraded-poster_only' || s === 'downgraded_poster_only';
+      }
+      return s === String(statusFilter).toLowerCase();
+    })();
+
+    if (!matchesStatusFilter) return false;
+
     if (activeTab === 'system') {
-      if (statusFilter !== 'all' && sub.status !== statusFilter) return false;
       if (categoryFilter !== 'all' && sub.paper_category !== categoryFilter) return false;
       if (searchTerm) {
         const search = searchTerm.toLowerCase();
@@ -578,7 +596,6 @@ export default function MasterReviewPage() {
       }
       return true;
     } else {
-      if (statusFilter !== 'all' && sub.status !== statusFilter) return false;
       if (searchTerm) {
         const search = searchTerm.toLowerCase();
         return (
@@ -592,17 +609,70 @@ export default function MasterReviewPage() {
     }
   });
 
+  const isDowngraded = (status) => {
+    if (!status) return false;
+    const s = String(status).toLowerCase();
+    return s === 'downgraded' || s === 'downgrade' || s.startsWith('downgraded');
+  };
+
+  const isNonCompetitive = (status) => {
+    if (!status) return false;
+    const s = String(status).toLowerCase();
+    return s === 'downgraded-non_competitive' || s === 'downgraded_non_competitive';
+  };
+
+  const isPosterOnly = (status) => {
+    if (!status) return false;
+    const s = String(status).toLowerCase();
+    return s === 'downgraded-poster_only' || s === 'downgraded_poster_only';
+  };
+
+  const isPending = (status) => {
+    if (!status) return true;
+    return String(status).toLowerCase() === 'pending';
+  };
+
+  const isEndorsed = (status) => {
+    if (!status) return false;
+    const s = String(status).toLowerCase();
+    return s === 'endorse' || s === 'endorsed';
+  };
+
   const totalSubmissions = submissions.length;
-  const pendingCount = submissions.filter(s => s.status === 'pending').length;
-  const endorsedCount = submissions.filter(s => s.status === 'endorse').length;
-  const nonCompetitiveCount = submissions.filter(s => s.status === 'downgraded-non_competitive' || s.evaluation_status === 'downgraded-non_competitive').length;
-  const posterOnlyCount = submissions.filter(s => s.status === 'downgraded-poster_only' || s.evaluation_status === 'downgraded-poster_only').length;
+  const pendingCount = submissions.filter(s => isPending(s.status)).length;
+  const endorsedCount = submissions.filter(s => isEndorsed(s.status)).length;
+  const nonCompetitiveCount = submissions.filter(s =>
+
+    isNonCompetitive(s.status) || isNonCompetitive(s.evaluation_status)
+  ).length;
+  const posterOnlyCount = submissions.filter(s =>
+    isPosterOnly(s.status) || isPosterOnly(s.evaluation_status)
+  ).length;
 
   const getEmailStatus = () => {
     if (emailLogs.length === 0) return null;
     const latestLog = emailLogs[0];
     return latestLog.status;
   };
+
+  const STAT_FILTERS = {
+      total: 'all',
+      pending: 'pending',
+      endorsed: 'endorse',
+      non_competitive: 'downgraded-non_competitive',
+      poster_only: 'downgraded-poster_only',
+    };
+
+    const handleStatCardClick = (cardKey) => {
+      const targetFilter = STAT_FILTERS[cardKey] ?? 'all';
+      // Toggle: click the same card again to clear the filter
+      setStatusFilter(prev => (prev === targetFilter && targetFilter !== 'all' ? 'all' : targetFilter));
+    };
+
+    const isStatCardActive = (cardKey) => {
+      const targetFilter = STAT_FILTERS[cardKey] ?? 'all';
+      return statusFilter === targetFilter;
+    };
 
   const getEmailStatusBadge = () => {
     const status = getEmailStatus();
@@ -615,6 +685,7 @@ export default function MasterReviewPage() {
     };
 
     const config = statusConfig[status] || statusConfig['pending'];
+
     return (
       <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border ${config.color}`}>
         <FontAwesomeIcon icon={config.icon} className="w-3.5 h-3.5" />
@@ -1164,28 +1235,63 @@ export default function MasterReviewPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-8 py-6">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-          <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+        {/* Stats Cards — clickable filters */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          {/* Total */}
+          <button
+            type="button"
+            onClick={() => handleStatCardClick('total')}
+            className={`text-left bg-white rounded-xl p-6 border shadow-sm hover:shadow-md transition-all cursor-pointer ${
+              isStatCardActive('total')
+                ? 'border-slate-500 ring-2 ring-slate-500/20'
+                : 'border-slate-200'
+            }`}
+          >
             <p className="text-2xl font-bold text-slate-900">{totalSubmissions}</p>
             <p className="text-sm text-slate-500">Total Submissions</p>
-          </div>
-          <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+          </button>
+
+          {/* Pending */}
+          <button
+            type="button"
+            onClick={() => handleStatCardClick('pending')}
+            className={`text-left bg-white rounded-xl p-6 border shadow-sm hover:shadow-md transition-all cursor-pointer ${
+              isStatCardActive('pending')
+                ? 'border-yellow-500 ring-2 ring-yellow-500/20'
+                : 'border-slate-200'
+            }`}
+          >
             <p className="text-2xl font-bold text-yellow-600">{pendingCount}</p>
             <p className="text-sm text-slate-500">Pending Review</p>
-          </div>
-          <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+          </button>
+
+          {/* Endorsed */}
+          <button
+            type="button"
+            onClick={() => handleStatCardClick('endorsed')}
+            className={`text-left bg-white rounded-xl p-6 border shadow-sm hover:shadow-md transition-all cursor-pointer ${
+              isStatCardActive('endorsed')
+                ? 'border-emerald-500 ring-2 ring-emerald-500/20'
+                : 'border-slate-200'
+            }`}
+          >
             <p className="text-2xl font-bold text-emerald-600">{endorsedCount}</p>
             <p className="text-sm text-slate-500">Endorsed</p>
-          </div>
-          <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+          </button>
+
+          {/* Non-Competitive */}
+          <button
+            type="button"
+            onClick={() => handleStatCardClick('non_competitive')}
+            className={`text-left bg-white rounded-xl p-6 border shadow-sm hover:shadow-md transition-all cursor-pointer ${
+              isStatCardActive('non_competitive')
+                ? 'border-yellow-500 ring-2 ring-yellow-500/20'
+                : 'border-slate-200'
+            }`}
+          >
             <p className="text-2xl font-bold text-yellow-600">{nonCompetitiveCount}</p>
             <p className="text-sm text-slate-500">Non-Competitive</p>
-          </div>
-          <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-            <p className="text-2xl font-bold text-orange-600">{posterOnlyCount}</p>
-            <p className="text-sm text-slate-500">Poster Only</p>
-          </div>
+          </button>
         </div>
 
         {/* Tabs */}
@@ -1241,8 +1347,8 @@ export default function MasterReviewPage() {
               <option value="all">All Status</option>
               <option value="pending">Pending</option>
               <option value="endorse">Endorsed</option>
+              <option value="downgraded">Downgraded (All)</option>
               <option value="downgraded-non_competitive">Non-Competitive</option>
-              <option value="downgraded-poster_only">Poster Only</option>
             </select>
           </div>
           {activeTab === 'system' && (

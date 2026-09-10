@@ -1092,18 +1092,38 @@ export default function MasterReviewPage() {
                         className="w-full bg-emerald-600 text-white py-3 rounded-xl font-semibold hover:bg-emerald-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                       >
                         <FontAwesomeIcon icon={faThumbsUp} className="w-5 h-5" />
-                        Endorse for Presentation
+                        {getField('paperCategory')?.includes('Ongoing')
+                          ? 'Endorse for Non-Competitive Presentation'
+                          : 'Endorse for Presentation'}
                         <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">📧</span>
                       </button>
 
-                      <button
-                        onClick={handleOpenDowngradeModal}
-                        disabled={selectedSubmission.status === 'downgraded-non_competitive' || selectedSubmission.status === 'downgraded-poster_only' || selectedSubmission.status === 'downgraded'}
-                        className="w-full bg-yellow-500 text-white py-3 rounded-xl font-semibold hover:bg-yellow-600 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                      >
-                        <FontAwesomeIcon icon={faThumbsDown} className="w-5 h-5" />
-                        Downgrade
-                      </button>
+                      {/* Downgrade button — ONLY shown for Completed Extension Project Papers */}
+                      {getField('paperCategory')?.includes('Completed') && (
+                        <button
+                          onClick={handleOpenDowngradeModal}
+                          disabled={
+                            selectedSubmission.status === 'downgraded-non_competitive' ||
+                            selectedSubmission.status === 'downgraded-poster_only' ||
+                            selectedSubmission.status === 'downgraded'
+                          }
+                          className="w-full bg-yellow-500 text-white py-3 rounded-xl font-semibold hover:bg-yellow-600 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        >
+                          <FontAwesomeIcon icon={faThumbsDown} className="w-5 h-5" />
+                          Downgrade
+                        </button>
+                      )}
+
+                      {/* Informational note for Ongoing papers */}
+                      {getField('paperCategory')?.includes('Ongoing') && (
+                        <div className="w-full bg-blue-50 border border-blue-200 text-blue-700 py-3 px-4 rounded-xl text-sm flex items-start gap-2">
+                          <FontAwesomeIcon icon={faInfoCircle} className="w-4 h-4 mt-0.5 shrink-0" />
+                          <span>
+                            Ongoing Extension Project Papers are presented as <strong>non-competitive</strong> entries.
+                            They can only be <strong>Endorsed</strong> — no downgrade action applies.
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

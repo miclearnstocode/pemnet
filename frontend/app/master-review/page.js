@@ -73,26 +73,40 @@ export default function MasterReviewPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [emailLogs, setEmailLogs] = useState([]);
   const [loadingEmailLogs, setLoadingEmailLogs] = useState(false);
-  
+
   // Email sending preference
   const [sendEmailConfirmation, setSendEmailConfirmation] = useState(true);
-  
+
   // Collapsible sections
   const [showEndorsement, setShowEndorsement] = useState(false);
-  
+
   // Edit Modal States
   const [showEditModal, setShowEditModal] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
-  
+
   // History Modal States
   const [showHistoryModal, setShowHistoryModal] = useState(false);
-  
+
   // Downgrade Modal States
   const [showDowngradeModal, setShowDowngradeModal] = useState(false);
   const [downgradeLoading, setDowngradeLoading] = useState(false);
   const [showDowngradeConfirm, setShowDowngradeConfirm] = useState(false);
   const [pendingDowngradeType, setPendingDowngradeType] = useState(null);
   const [downgradeConfirmLoading, setDowngradeConfirmLoading] = useState(false);
+
+  // ===== DYNAMIC FIELD MAPPING =====
+  const FIELD_MAP = {
+    title:                    { system: 'extension_project_title',  email: 'title',                      fallbackEmail: 'subject' },
+    projectLeader:            { system: 'project_leader',           email: 'project_leader',             fallbackEmail: 'project_leader_name' },
+    authorsList:              { system: 'co_authors',               email: 'authors_list' },
+    suc:                      { system: 'suc_agencies',             email: 'sucs' },
+    correspondingAuthorName:  { system: 'corresponding_author_name', email: 'corresponding_author_name' },
+    correspondingAuthorEmail: { system: 'corresponding_author_email', email: 'corresponding_author_email', fallbackEmail: 'sender_email' },
+    correspondingAuthorPos:   { system: 'corresponding_author_position', email: 'corresponding_author_position' },
+    paperCategory:            { system: 'paper_category',           email: 'paper_category' },
+    thematicArea:             { system: 'thematic_area',            email: 'thematic_area' },
+    theme:                    { system: 'theme',                    email: 'theme' },
+  };
 
   useEffect(() => {
     const storedUser = localStorage.getItem('pemnet_user');
@@ -135,7 +149,7 @@ export default function MasterReviewPage() {
       } else {
         url = 'http://localhost:5000/api/email-submissions?status=all';
       }
-      
+
       const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
@@ -147,7 +161,7 @@ export default function MasterReviewPage() {
         });
         setSubmissions(processedData);
       }
-      
+
       const statsRes = await fetch('http://localhost:5000/api/master-approver/status-summary');
       if (statsRes.ok) {
         const statsData = await statsRes.json();
@@ -201,18 +215,18 @@ export default function MasterReviewPage() {
     setSubmissionDetails(null);
     setEmailExtractedData(null);
     setEmailLogs([]);
-    
+
     const submissionId = sub.submission_id;
-    
+
     if (!submissionId) {
       console.error('No submission_id found for submission:', sub);
       showToast('Invalid submission data - missing submission_id', 'error');
       return;
     }
-    
+
     // Fetch email logs for this submission
     await fetchEmailLogs(submissionId);
-    
+
     // For email submissions, get the status from extracted_abstract_data
     if (activeTab === 'email' && sub.id) {
       const extractedData = await fetchExtractedData(sub.id);
@@ -228,13 +242,12 @@ export default function MasterReviewPage() {
         }));
       }
     }
-    
-    // For system submissions, use 'status' (master approver decision)
+
     setSelectedStatus(sub.status || 'pending');
     setShowEndorsement(false);
     setSendEmailConfirmation(true);
     setIsModalOpen(true);
-    
+
     try {
       const res = await fetch(`http://localhost:5000/api/submissions/${submissionId}/master-details`);
       if (res.ok) {
@@ -249,41 +262,82 @@ export default function MasterReviewPage() {
     }
   };
 
+  // ===== DYNAMIC GETTER =====
+  const getField = (logicalName, fallback = 'Not specified') => {
+    const mapping = FIELD_MAP[logicalName];
+    if (!mapping) return fallback;
+
+    let value;
+
+    if (activeTab === 'system') {
+      value = selectedSubmission?.[mapping.system];
+    } else {
+      value = emailExtractedData?.[mapping.email];
+      if ((value === undefined || value === null || value === '') && mapping.fallbackEmail) {
+        value = selectedSubmission?.[mapping.fallbackEmail];
+      }
+    }
+
+    if (value === undefined || value === null) return fallback;
+    if (typeof value === 'string' && value.trim() === '') return fallback;
+    return value;
+  };
+
+  // Authors list needs custom JSON parsing
+  const getAuthorsList = () => {
+    const raw = getField('authorsList', '');
+    if (!raw) return 'Not specified';
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed.join(', ');
+      return raw;
+    } catch {
+      return raw;
+    }
+  };
+
+  // ===== BUILD NORMALIZED EDIT DATA =====
+  // Returns an object whose keys match exactly the field names in EditSubmission.
+  // For system → uses the system field names directly from selectedSubmission.
+  // For email  → uses the email field names, built from getField() so missing
+  //              values become '' (so the edit form shows the placeholder).
+  const getEditData = () => {
+    if (activeTab === 'system') {
+      // System fields already match the systemFields config in EditSubmission
+      return selectedSubmission || {};
+    }
+    // Email fields — build normalized object
+    return {
+      id: emailExtractedData?.id,
+      title: getField('title', ''),
+      project_leader: getField('projectLeader', ''),
+      sucs: getField('suc', ''),
+      corresponding_author_name: getField('correspondingAuthorName', ''),
+      corresponding_author_email: getField('correspondingAuthorEmail', ''),
+      corresponding_author_position: getField('correspondingAuthorPos', ''),
+      authors_list: getField('authorsList', ''),
+      paper_category: getField('paperCategory', ''),
+      thematic_area: getField('thematicArea', ''),
+      theme: getField('theme', ''),
+    };
+  };
+
   const handleEditSave = async (formData) => {
     if (!selectedSubmission) return;
     setEditLoading(true);
-    
+
     try {
       const submissionId = selectedSubmission.submission_id;
       const isEmailSubmission = activeTab === 'email' && emailExtractedData?.id;
-      
-      // For email submissions, use the extracted data endpoint
+
       const url = isEmailSubmission
         ? `http://localhost:5000/api/extracted-data/${emailExtractedData.id}/edit`
         : `http://localhost:5000/api/submissions/${submissionId}/edit`;
-      
-      // For email submissions, map the fields to match the extracted data table
-      let payload = { ...formData };
-      
-      // For email submissions, we need to map some fields
-      if (isEmailSubmission) {
-        // If the form has extension_project_title, map it to title
-        if (payload.extension_project_title) {
-          payload.title = payload.extension_project_title;
-          delete payload.extension_project_title;
-        }
-        // If the form has suc_agencies, map it to sucs
-        if (payload.suc_agencies) {
-          payload.sucs = payload.suc_agencies;
-          delete payload.suc_agencies;
-        }
-        // If the form has co_authors, map it to authors
-        if (payload.co_authors) {
-          payload.authors = payload.co_authors;
-          delete payload.co_authors;
-        }
-      }
-      
+
+      // For email submissions, the form uses email-field names already (title, sucs, etc.)
+      // so no remapping is needed. Pass payload as-is.
+      const payload = { ...formData };
+
       const res = await fetch(url, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -295,11 +349,27 @@ export default function MasterReviewPage() {
 
       if (res.ok) {
         const data = await res.json();
-        showToast(data.message || 'Submission updated successfully!', 'success');
+
+        let message = data.message || 'Submission updated successfully!';
+        if (data.drive_move && data.drive_move.moved && data.drive_move.moved.length > 0) {
+          message += ` ${data.drive_move.moved.length} file(s) moved to the new folder.`;
+          if (data.drive_move.trashed_folders && data.drive_move.trashed_folders.length > 0) {
+            message += ` ${data.drive_move.trashed_folders.length} empty folder(s) cleaned up.`;
+          }
+        } else if (data.drive_move && data.drive_move.error) {
+          message += ' (Warning: Could not move files in Google Drive)';
+        }
+
+        showToast(message, 'success');
         setShowEditModal(false);
-        // Refresh the submission details
-        await selectSubmission(selectedSubmission);
+
+        // Refresh extracted data if applicable
+        if (activeTab === 'email' && selectedSubmission.id) {
+          await fetchExtractedData(selectedSubmission.id);
+        }
+
         await fetchSubmissions();
+        await selectSubmission(selectedSubmission);
       } else {
         const error = await res.json();
         showToast(error.detail || 'Failed to update submission', 'error');
@@ -314,17 +384,17 @@ export default function MasterReviewPage() {
 
   const handleSetStatus = async (status, notes = '') => {
     if (!selectedSubmission || !status) return;
-    
+
     setIsSettingStatus(true);
     try {
       const submissionId = selectedSubmission.submission_id;
-      
+
       if (!submissionId) {
         showToast('Invalid submission - missing submission_id', 'error');
         setIsSettingStatus(false);
         return;
       }
-      
+
       const res = await fetch(`http://localhost:5000/api/submissions/${submissionId}/master-status`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -341,38 +411,26 @@ export default function MasterReviewPage() {
         const data = await res.json();
         const emailMessage = data.email_sent ? ' Confirmation email sent to the corresponding author.' : '';
         showToast(`Status updated to ${getStatusDisplay(status)}.${emailMessage}`, 'success');
-        
-        // Refresh email logs after sending
+
         if (sendEmailConfirmation) {
           await fetchEmailLogs(submissionId);
         }
-        
-        // Update the submissions list using submission_id
-        setSubmissions(prev => 
+
+        setSubmissions(prev =>
           prev.map(sub => {
             if (sub.submission_id === submissionId) {
-              return { 
-                ...sub, 
-                status: status, // Master Approver decision
-              };
+              return { ...sub, status: status };
             }
             return sub;
           })
         );
-        
-        setSelectedSubmission(prev => ({
-          ...prev,
-          status: status // Update Master Approver decision
-        }));
-        
+
+        setSelectedSubmission(prev => ({ ...prev, status: status }));
+
         if (emailExtractedData) {
-          setEmailExtractedData(prev => ({
-            ...prev,
-            status: status
-          }));
+          setEmailExtractedData(prev => ({ ...prev, status: status }));
         }
-        
-        // Update stats based on status
+
         setStats(prev => {
           const newStats = { ...prev };
           if (status === 'endorse') {
@@ -387,16 +445,15 @@ export default function MasterReviewPage() {
           }
           return newStats;
         });
-        
+
         setShowConfirmModal(false);
         setPendingStatusAction(null);
         setShowDowngradeConfirm(false);
         setPendingDowngradeType(null);
-        
+
         setTimeout(() => {
           setIsModalOpen(false);
         }, 1500);
-        
       } else {
         const error = await res.json();
         showToast(error.detail || 'Failed to update status', 'error');
@@ -473,7 +530,6 @@ export default function MasterReviewPage() {
   };
 
   const getEvaluatorName = (id) => {
-    // If id is a string, try to convert to number
     const userId = typeof id === 'string' ? parseInt(id) : id;
     const user = allUsers.find(u => u.id === userId);
     return user ? user.full_name : `Evaluator ${id}`;
@@ -486,103 +542,6 @@ export default function MasterReviewPage() {
       case 'reassign': return faSync;
       default: return faInfoCircle;
     }
-  };
-
-  const getTitle = () => {
-    if (activeTab === 'system') {
-      return selectedSubmission?.extension_project_title || 'Untitled';
-    }
-    return emailExtractedData?.title || 'Untitled';
-  };
-
-  const getProjectLeader = () => {
-    if (activeTab === 'system') {
-      return selectedSubmission?.project_leader || 'Unknown';
-    }
-    return emailExtractedData?.project_leader || 'Unknown';
-  };
-
-  const getAuthorsList = () => {
-    if (activeTab === 'system') {
-      // Check co_authors first
-      if (selectedSubmission?.co_authors) {
-        try {
-          // Try to parse as JSON if it's an array
-          const parsed = JSON.parse(selectedSubmission.co_authors);
-          if (Array.isArray(parsed)) {
-            return parsed.join(', ');
-          }
-          return selectedSubmission.co_authors;
-        } catch {
-          // If not valid JSON, return as is
-          return selectedSubmission.co_authors;
-        }
-      }
-      // If no co_authors, show project_leader
-      return selectedSubmission?.project_leader || 'N/A';
-    }
-    // For email submissions
-    if (emailExtractedData?.authors) {
-      try {
-        const parsed = JSON.parse(emailExtractedData.authors);
-        if (Array.isArray(parsed)) {
-          return parsed.join(', ');
-        }
-        return emailExtractedData.authors;
-      } catch {
-        return emailExtractedData.authors;
-      }
-    }
-    return 'N/A';
-  };
-
-  const getSUCs = () => {
-    if (activeTab === 'system') {
-      return selectedSubmission?.suc_agencies || 'Unknown';
-    }
-    return emailExtractedData?.sucs || 'Unknown';
-  };
-
-  const getCorrespondingAuthorName = () => {
-    if (activeTab === 'system') {
-      return selectedSubmission?.corresponding_author_name || 'N/A';
-    }
-    return emailExtractedData?.corresponding_author_name || 'N/A';
-  };
-
-  const getCorrespondingAuthorEmail = () => {
-    if (activeTab === 'system') {
-      return selectedSubmission?.corresponding_author_email || 'N/A';
-    }
-    return emailExtractedData?.corresponding_author_email || selectedSubmission?.sender_email || 'N/A';
-  };
-
-  const getCorrespondingAuthorPosition = () => {
-    if (activeTab === 'system') {
-      return selectedSubmission?.corresponding_author_position || 'N/A';
-    }
-    return emailExtractedData?.corresponding_author_position || 'N/A';
-  };
-
-  const getPaperCategory = () => {
-    if (activeTab === 'system') {
-      return selectedSubmission?.paper_category || 'Not specified';
-    }
-    return emailExtractedData?.paper_category || 'Not specified';
-  };
-
-  const getThematicArea = () => {
-    if (activeTab === 'system') {
-      return selectedSubmission?.thematic_area || 'Not specified';
-    }
-    return emailExtractedData?.thematic_area || 'Not specified';
-  };
-
-  const getTheme = () => {
-    if (activeTab === 'system') {
-      return 'Not specified';
-    }
-    return emailExtractedData?.theme || 'Not specified';
   };
 
   const extractGoogleDriveId = (url) => {
@@ -601,10 +560,8 @@ export default function MasterReviewPage() {
     return null;
   };
 
-  // Filter submissions - for master approver, use 'status' field
   const filteredSubmissions = submissions.filter(sub => {
     if (activeTab === 'system') {
-      // Use status for filtering (master approver decision)
       if (statusFilter !== 'all' && sub.status !== statusFilter) return false;
       if (categoryFilter !== 'all' && sub.paper_category !== categoryFilter) return false;
       if (searchTerm) {
@@ -617,7 +574,6 @@ export default function MasterReviewPage() {
       }
       return true;
     } else {
-      // For email submissions, use status
       if (statusFilter !== 'all' && sub.status !== statusFilter) return false;
       if (searchTerm) {
         const search = searchTerm.toLowerCase();
@@ -632,30 +588,28 @@ export default function MasterReviewPage() {
     }
   });
 
-  // Calculate stats based on status (master approver decision)
   const totalSubmissions = submissions.length;
   const pendingCount = submissions.filter(s => s.status === 'pending').length;
   const endorsedCount = submissions.filter(s => s.status === 'endorse').length;
   const nonCompetitiveCount = submissions.filter(s => s.status === 'downgraded-non_competitive' || s.evaluation_status === 'downgraded-non_competitive').length;
   const posterOnlyCount = submissions.filter(s => s.status === 'downgraded-poster_only' || s.evaluation_status === 'downgraded-poster_only').length;
 
-  // Get the latest email log status
   const getEmailStatus = () => {
     if (emailLogs.length === 0) return null;
     const latestLog = emailLogs[0];
-    return latestLog.status; // 'sent', 'failed', 'pending'
+    return latestLog.status;
   };
 
   const getEmailStatusBadge = () => {
     const status = getEmailStatus();
     if (!status) return null;
-    
+
     const statusConfig = {
       'sent': { color: 'bg-emerald-100 text-emerald-700 border-emerald-200', icon: faCheckCircle, label: 'Email Sent' },
       'failed': { color: 'bg-red-100 text-red-700 border-red-200', icon: faTimesCircle, label: 'Email Failed' },
       'pending': { color: 'bg-yellow-100 text-yellow-700 border-yellow-200', icon: faClock, label: 'Email Pending' }
     };
-    
+
     const config = statusConfig[status] || statusConfig['pending'];
     return (
       <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border ${config.color}`}>
@@ -665,7 +619,8 @@ export default function MasterReviewPage() {
     );
   };
 
-  // Field configuration for EditSubmission component - Dynamic based on submission type
+  // Field configuration for EditSubmission
+  // Uses 'Not specified' at the top of select options so empty values default correctly
   const getEditFields = (submissionType) => {
     if (submissionType === 'email') {
       return {
@@ -677,23 +632,22 @@ export default function MasterReviewPage() {
         corresponding_author_position: { label: 'Corresponding Position', icon: faTag, type: 'text' },
         authors_list: { label: 'Authors List', icon: faUsers, type: 'text' },
         paper_category: { label: 'Paper Category', icon: faBookOpen, type: 'select', options: [
+          'Not specified',
           'Completed Extension Project Papers',
-          'Ongoing Extension Project Papers',
-          'Not specified'
+          'Ongoing Extension Project Papers'
         ]},
         thematic_area: { label: 'Thematic Area', icon: faLayerGroup, type: 'select', options: [
+          'Not specified',
           'Food Production, Agriculture, Fisheries, and Natural Resource Systems',
           'Health, Nutrition, Wellness, and Community Care',
           'Education, Literacy, Skills Development, and Lifelong Learning',
           'Livelihood, Entrepreneurship, Cooperatives, MSMEs, and Local Economic Development',
-          'Environment, Climate Action, Disaster Risk Reduction, and Community Resilience',
-          'Not specified'
+          'Environment, Climate Action, Disaster Risk Reduction, and Community Resilience'
         ]},
         theme: { label: 'Theme', icon: faFlag, type: 'text' }
       };
     }
-    
-    // System submission fields
+
     return {
       extension_project_title: { label: 'Title', icon: faFileAlt, type: 'text' },
       project_leader: { label: 'Project Leader', icon: faUser, type: 'text' },
@@ -704,17 +658,17 @@ export default function MasterReviewPage() {
       corresponding_author_position: { label: 'Corresponding Position', icon: faTag, type: 'text' },
       co_authors: { label: 'Co-Authors', icon: faUsers, type: 'text' },
       paper_category: { label: 'Paper Category', icon: faBookOpen, type: 'select', options: [
+        'Not specified',
         'Completed Extension Project Papers',
-        'Ongoing Extension Project Papers',
-        'Not specified'
+        'Ongoing Extension Project Papers'
       ]},
       thematic_area: { label: 'Thematic Area', icon: faLayerGroup, type: 'select', options: [
+        'Not specified',
         'Food Production, Agriculture, Fisheries, and Natural Resource Systems',
         'Health, Nutrition, Wellness, and Community Care',
         'Education, Literacy, Skills Development, and Lifelong Learning',
         'Livelihood, Entrepreneurship, Cooperatives, MSMEs, and Local Economic Development',
-        'Environment, Climate Action, Disaster Risk Reduction, and Community Resilience',
-        'Not specified'
+        'Environment, Climate Action, Disaster Risk Reduction, and Community Resilience'
       ]}
     };
   };
@@ -748,7 +702,7 @@ export default function MasterReviewPage() {
         </div>
       )}
 
-      {/* Endorse Confirmation Modal with Email Option */}
+      {/* Endorse Confirmation Modal */}
       <ConfirmModal
         isOpen={showConfirmModal}
         onClose={() => { setShowConfirmModal(false); setPendingStatusAction(null); }}
@@ -759,10 +713,10 @@ export default function MasterReviewPage() {
             handleSetStatus(pendingStatusAction);
           }
         }}
-        title={pendingStatusAction === 'return_to_sender' ? 'Return to Sender' : 
-              pendingStatusAction === 'endorse' ? 'Accept Abstract for Paper Presentation' : 
+        title={pendingStatusAction === 'return_to_sender' ? 'Return to Sender' :
+              pendingStatusAction === 'endorse' ? 'Accept Abstract for Paper Presentation' :
               'Confirm Status Change'}
-        message={pendingStatusAction === 'return_to_sender' 
+        message={pendingStatusAction === 'return_to_sender'
           ? 'Are you sure you want to return this submission to the sender for revisions?'
           : pendingStatusAction === 'endorse'
             ? 'Are you sure you want to accept this abstract for paper presentation?'
@@ -798,11 +752,11 @@ export default function MasterReviewPage() {
         type="warning"
       />
 
-      {/* Edit Submission Modal */}
+      {/* Edit Submission Modal — data built dynamically via getEditData() */}
       <EditSubmission
         isOpen={showEditModal}
         onClose={() => setShowEditModal(false)}
-        data={emailExtractedData || selectedSubmission}
+        data={getEditData()}
         onSave={handleEditSave}
         isLoading={editLoading}
         currentUser={currentUser}
@@ -828,7 +782,6 @@ export default function MasterReviewPage() {
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsModalOpen(false)}></div>
           <div className="relative min-h-full flex items-center justify-center p-4">
             <div className="relative w-full max-w-6xl bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[95vh]">
-              {/* Modal Header - Fixed */}
               <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-linear-to-r from-purple-50 to-blue-50 sticky top-0 z-10">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
@@ -838,14 +791,13 @@ export default function MasterReviewPage() {
                     <h3 className="text-lg font-bold text-slate-900">
                       {activeTab === 'system' ? 'Submission Details' : 'Email Details'}
                     </h3>
-                    <p className="text-sm text-slate-500 truncate max-w-md">{getTitle()}</p>
+                    <p className="text-sm text-slate-500 truncate max-w-md">{getField('title')}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  {/* Email Status Badge */}
                   {getEmailStatusBadge()}
-                  <button 
-                    onClick={() => setIsModalOpen(false)} 
+                  <button
+                    onClick={() => setIsModalOpen(false)}
                     className="w-10 h-10 flex items-center justify-center rounded-lg bg-white text-slate-600 hover:bg-slate-100 transition shadow-sm"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
@@ -855,94 +807,74 @@ export default function MasterReviewPage() {
                 </div>
               </div>
 
-              {/* Modal Body - Scrollable */}
               <div className="grid grid-cols-1 lg:grid-cols-2 h-[calc(95vh-80px)]">
                 {/* Left Column - Submission Information */}
                 <div className="p-6 overflow-y-auto border-r border-slate-200">
                   <div className="flex items-center justify-between mb-4">
                     <h4 className="text-base font-bold text-slate-700 uppercase">Submission Information</h4>
-                    <button
-                      onClick={() => setShowEditModal(true)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-all font-medium"
-                      disabled={!selectedSubmission}
-                    >
-                      <FontAwesomeIcon icon={faEdit} className="w-3 h-3" />
-                      Edit Details
-                    </button>
-                    <button
-                      onClick={() => setShowHistoryModal(true)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-all font-medium"
-                    >
-                      <FontAwesomeIcon icon={faHistory} className="w-3 h-3" />
-                      View History
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setShowHistoryModal(true)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-all font-medium"
+                      >
+                        <FontAwesomeIcon icon={faHistory} className="w-3 h-3" />
+                        View History
+                      </button>
+                      <button
+                        onClick={() => setShowEditModal(true)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-all font-medium"
+                        disabled={!selectedSubmission}
+                      >
+                        <FontAwesomeIcon icon={faEdit} className="w-3 h-3" />
+                        Edit Details
+                      </button>
+                    </div>
                   </div>
                   <div className="space-y-4">
-                    {/* Title */}
                     <div>
                       <p className="text-sm text-slate-600 font-medium">Title</p>
-                      <p className="text-lg font-semibold text-slate-900">{getTitle()}</p>
+                      <p className="text-lg font-semibold text-slate-900">{getField('title')}</p>
                     </div>
-                    
-                    {/* Project Leader */}
                     <div>
                       <p className="text-sm text-slate-600 font-medium">Project Leader</p>
-                      <p className="text-lg font-semibold text-slate-900">{getProjectLeader()}</p>
+                      <p className="text-lg font-semibold text-slate-900">{getField('projectLeader')}</p>
                     </div>
-                    
-                    {/* Authors List */}
                     <div>
                       <p className="text-sm text-slate-600 font-medium">Authors</p>
                       <p className="text-lg font-semibold text-slate-900">{getAuthorsList()}</p>
                     </div>
-                    
-                    {/* SUCs */}
                     <div>
                       <p className="text-sm text-slate-600 font-medium">SUC / Agency</p>
-                      <p className="text-lg font-semibold text-slate-900">{getSUCs()}</p>
+                      <p className="text-lg font-semibold text-slate-900">{getField('suc')}</p>
                     </div>
-                    
-                    {/* Corresponding Author Name */}
                     <div>
                       <p className="text-sm text-slate-600 font-medium">Corresponding Author</p>
-                      <p className="text-lg font-semibold text-slate-900">{getCorrespondingAuthorName()}</p>
+                      <p className="text-lg font-semibold text-slate-900">{getField('correspondingAuthorName')}</p>
                     </div>
-                    
-                    {/* Corresponding Author Email */}
                     <div>
                       <p className="text-sm text-slate-600 font-medium">Corresponding Author Email</p>
-                      <p className="text-lg font-semibold text-slate-900 break-all">{getCorrespondingAuthorEmail()}</p>
+                      <p className="text-lg font-semibold text-slate-900 break-all">{getField('correspondingAuthorEmail')}</p>
                     </div>
-                    
-                    {/* Corresponding Author Position */}
                     <div>
                       <p className="text-sm text-slate-600 font-medium">Corresponding Author Position</p>
-                      <p className="text-lg font-semibold text-slate-900">{getCorrespondingAuthorPosition()}</p>
+                      <p className="text-lg font-semibold text-slate-900">{getField('correspondingAuthorPos')}</p>
                     </div>
-                    
-                    {/* Theme */}
                     <div>
                       <p className="text-sm text-slate-600 font-medium">Theme</p>
-                      <p className="text-lg font-semibold text-slate-900">{getTheme()}</p>
+                      <p className="text-lg font-semibold text-slate-900">{getField('theme')}</p>
                     </div>
-                    
-                    {/* Paper Category */}
                     <div>
                       <p className="text-sm text-slate-600 font-medium">Paper Category</p>
-                      <span className={`inline-flex px-3 py-1.5 rounded-full text-sm font-medium ${getCategoryColor(getPaperCategory())}`}>
-                        {getPaperCategory()?.includes('Completed') ? 'Completed' : 
-                         getPaperCategory()?.includes('Ongoing') ? 'Ongoing' : 
-                         getPaperCategory() || 'N/A'}
+                      <span className={`inline-flex px-3 py-1.5 rounded-full text-sm font-medium ${getCategoryColor(getField('paperCategory'))}`}>
+                        {getField('paperCategory')?.includes('Completed') ? 'Completed' :
+                         getField('paperCategory')?.includes('Ongoing') ? 'Ongoing' :
+                         getField('paperCategory') || 'Not specified'}
                       </span>
                     </div>
-                    
-                    {/* Thematic Area */}
                     <div>
                       <p className="text-sm text-slate-600 font-medium">Thematic Area</p>
-                      <p className="text-lg font-semibold text-slate-900">{getThematicArea()}</p>
+                      <p className="text-lg font-semibold text-slate-900">{getField('thematicArea')}</p>
                     </div>
-                    
-                    {/* Source */}
                     <div>
                       <p className="text-sm text-slate-600 font-medium">Source</p>
                       <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium ${
@@ -951,8 +883,6 @@ export default function MasterReviewPage() {
                         {activeTab === 'email' ? '📧 Email Submission' : '📝 System Submission'}
                       </span>
                     </div>
-                    
-                    {/* Master Status - Show status (Master Approver decision) */}
                     <div>
                       <p className="text-sm text-slate-600 font-medium">Master Approver Status</p>
                       <span className={`inline-flex px-3 py-1.5 rounded-full text-sm font-medium ${getStatusColor(selectedSubmission.status || 'pending')}`}>
@@ -960,7 +890,6 @@ export default function MasterReviewPage() {
                       </span>
                     </div>
 
-                    {/* Email Notification Status */}
                     <div>
                       <p className="text-sm text-slate-600 font-medium">Email Notification</p>
                       {loadingEmailLogs ? (
@@ -977,9 +906,9 @@ export default function MasterReviewPage() {
                                 log.status === 'failed' ? 'bg-red-100 text-red-700' :
                                 'bg-yellow-100 text-yellow-700'
                               }`}>
-                                <FontAwesomeIcon 
-                                  icon={log.status === 'sent' ? faCheckCircle : log.status === 'failed' ? faTimesCircle : faClock} 
-                                  className="w-3 h-3" 
+                                <FontAwesomeIcon
+                                  icon={log.status === 'sent' ? faCheckCircle : log.status === 'failed' ? faTimesCircle : faClock}
+                                  className="w-3 h-3"
                                 />
                                 {log.status === 'sent' ? 'Sent' : log.status === 'failed' ? 'Failed' : 'Pending'}
                               </span>
@@ -1033,8 +962,7 @@ export default function MasterReviewPage() {
                           </div>
                         ))}
                       </div>
-                      
-                      {/* Vote Summary */}
+
                       <div className="mt-4 grid grid-cols-3 gap-2 text-center">
                         <div className="bg-emerald-50 p-3 rounded-xl">
                           <p className="text-2xl font-bold text-emerald-600">{submissionDetails.vote_stats?.endorse || 0}</p>
@@ -1071,9 +999,8 @@ export default function MasterReviewPage() {
                       Master Approver Control
                     </h4>
                     <p className="text-xs text-slate-500 mb-3">Set the final decision for this abstract</p>
-                    
+
                     <div className="space-y-3">
-                      {/* Endorse for Presentation - Green */}
                       <button
                         onClick={() => confirmStatusChange('endorse')}
                         disabled={selectedSubmission.status === 'endorse'}
@@ -1083,8 +1010,7 @@ export default function MasterReviewPage() {
                         Endorse for Presentation
                         <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">📧</span>
                       </button>
-                      
-                      {/* Downgrade - Yellow/Orange */}
+
                       <button
                         onClick={handleOpenDowngradeModal}
                         disabled={selectedSubmission.status === 'downgraded-non_competitive' || selectedSubmission.status === 'downgraded-poster_only' || selectedSubmission.status === 'downgraded'}
@@ -1100,10 +1026,9 @@ export default function MasterReviewPage() {
                 {/* Right Column - File Viewer */}
                 <div className="bg-slate-50 p-6 overflow-y-auto">
                   <h4 className="text-base font-bold text-slate-700 uppercase mb-4">File Viewer</h4>
-                  
+
                   {activeTab === 'system' ? (
                     <div className="space-y-6">
-                      {/* Abstract PDF - Always visible */}
                       <div>
                         <p className="text-sm font-semibold text-slate-700 mb-3">
                           <FontAwesomeIcon icon={faFilePdf} className="w-4 h-4 text-red-500 mr-2" />
@@ -1111,18 +1036,17 @@ export default function MasterReviewPage() {
                         </p>
                         {selectedSubmission.abstract_view_url ? (
                           <div className="border rounded-lg bg-white overflow-hidden" style={{ height: '450px' }}>
-                            <iframe 
-                              src={`https://drive.google.com/file/d/${extractGoogleDriveId(selectedSubmission.abstract_view_url)}/preview?embedded=true`} 
-                              className="w-full h-full" 
-                              allow="autoplay" 
+                            <iframe
+                              src={`https://drive.google.com/file/d/${extractGoogleDriveId(selectedSubmission.abstract_view_url)}/preview?embedded=true`}
+                              className="w-full h-full"
+                              allow="autoplay"
                             />
                           </div>
                         ) : (
                           <div className="text-center py-16 text-slate-500 bg-white rounded-lg border text-lg">No Abstract Available</div>
                         )}
                       </div>
-                      
-                      {/* Endorsement PDF - Collapsible */}
+
                       {selectedSubmission.endorsement_view_url && (
                         <div>
                           <button
@@ -1137,25 +1061,25 @@ export default function MasterReviewPage() {
                               <span className="text-xs text-slate-500">
                                 {showEndorsement ? 'Hide' : 'Show'}
                               </span>
-                              <svg 
-                                xmlns="http://www.w3.org/2000/svg" 
-                                fill="none" 
-                                viewBox="0 0 24 24" 
-                                strokeWidth={2} 
-                                stroke="currentColor" 
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                strokeWidth={2}
+                                stroke="currentColor"
                                 className={`w-4 h-4 text-slate-500 transition-transform duration-200 ${showEndorsement ? 'rotate-180' : ''}`}
                               >
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
                               </svg>
                             </div>
                           </button>
-                          
+
                           {showEndorsement && (
                             <div className="mt-3 border rounded-lg bg-white overflow-hidden transition-all duration-300" style={{ height: '350px' }}>
-                              <iframe 
-                                src={`https://drive.google.com/file/d/${extractGoogleDriveId(selectedSubmission.endorsement_view_url)}/preview?embedded=true`} 
-                                className="w-full h-full" 
-                                allow="autoplay" 
+                              <iframe
+                                src={`https://drive.google.com/file/d/${extractGoogleDriveId(selectedSubmission.endorsement_view_url)}/preview?embedded=true`}
+                                className="w-full h-full"
+                                allow="autoplay"
                               />
                             </div>
                           )}
@@ -1176,10 +1100,10 @@ export default function MasterReviewPage() {
                       )}
                       {selectedSubmission.attachment_view_url ? (
                         <div className="border rounded-lg bg-white overflow-hidden" style={{ height: '550px' }}>
-                          <iframe 
-                            src={`https://drive.google.com/file/d/${extractGoogleDriveId(selectedSubmission.attachment_view_url)}/preview?embedded=true`} 
-                            className="w-full h-full" 
-                            allow="autoplay" 
+                          <iframe
+                            src={`https://drive.google.com/file/d/${extractGoogleDriveId(selectedSubmission.attachment_view_url)}/preview?embedded=true`}
+                            className="w-full h-full"
+                            allow="autoplay"
                           />
                         </div>
                       ) : (
@@ -1194,7 +1118,7 @@ export default function MasterReviewPage() {
         </div>
       )}
 
-      {/* Header - White Background */}
+      {/* Header */}
       <div className="bg-white border-b border-slate-200 px-8 py-6">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div>
@@ -1226,7 +1150,7 @@ export default function MasterReviewPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-8 py-6">
-        {/* Stats Cards - Use status for master approver stats */}
+        {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
           <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
             <p className="text-2xl font-bold text-slate-900">{totalSubmissions}</p>
@@ -1253,15 +1177,15 @@ export default function MasterReviewPage() {
         {/* Tabs */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex gap-1 bg-slate-100 p-1 rounded-xl">
-            <button 
-              onClick={() => { setActiveTab('system'); setStatusFilter('all'); setCategoryFilter('all'); setSearchTerm(''); }} 
+            <button
+              onClick={() => { setActiveTab('system'); setStatusFilter('all'); setCategoryFilter('all'); setSearchTerm(''); }}
               className={`px-6 py-2.5 rounded-lg font-semibold text-sm transition ${activeTab === 'system' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-600 hover:text-slate-900'}`}
             >
               <FontAwesomeIcon icon={faFileAlt} className="w-4 h-4 mr-2" />
               System Submissions
             </button>
-            <button 
-              onClick={() => { setActiveTab('email'); setCategoryFilter('all'); setSearchTerm(''); }} 
+            <button
+              onClick={() => { setActiveTab('email'); setCategoryFilter('all'); setSearchTerm(''); }}
               className={`px-6 py-2.5 rounded-lg font-semibold text-sm transition ${activeTab === 'email' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-600 hover:text-slate-900'}`}
             >
               <FontAwesomeIcon icon={faEnvelope} className="w-4 h-4 mr-2" />
@@ -1398,7 +1322,7 @@ export default function MasterReviewPage() {
                 {filteredSubmissions.map((sub) => {
                   const evaluatorStatus = sub.evaluation_status || 'pending';
                   const masterStatus = sub.status || 'pending';
-                  
+
                   return (
                     <tr
                       key={sub.submission_id || sub.id}
@@ -1417,10 +1341,10 @@ export default function MasterReviewPage() {
                             </span>
                           </td>
                           <td className="px-6 py-4 text-sm text-slate-600">
-                            {new Date(sub.created_at).toLocaleDateString('en-US', { 
-                              month: 'short', 
-                              day: '2-digit', 
-                              year: 'numeric' 
+                            {new Date(sub.created_at).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: '2-digit',
+                              year: 'numeric'
                             })}
                           </td>
                           <td className="px-6 py-4">
@@ -1442,10 +1366,10 @@ export default function MasterReviewPage() {
                           </td>
                           <td className="px-6 py-4 text-sm text-slate-600">{sub.project_leader_name || sub.sender_name}</td>
                           <td className="px-6 py-4 text-sm text-slate-600">
-                            {new Date(sub.email_received_at || sub.created_at).toLocaleDateString('en-US', { 
-                              month: 'short', 
-                              day: '2-digit', 
-                              year: 'numeric' 
+                            {new Date(sub.email_received_at || sub.created_at).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: '2-digit',
+                              year: 'numeric'
                             })}
                           </td>
                           <td className="px-6 py-4">

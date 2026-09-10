@@ -623,78 +623,63 @@ export default function ReviewPage() {
       </div>
     );
   }
-
-  const getTitle = () => {
-    if (activeTab === 'system') return selectedSubmission?.extension_project_title || 'No title';
-    return emailExtractedData?.title || 'No title';
+  
+  const FIELD_MAP = {
+    title:                    { system: 'extension_project_title',  email: 'title',                      fallbackEmail: 'subject' },
+    projectLeader:            { system: 'project_leader',           email: 'project_leader',             fallbackEmail: 'project_leader_name' },
+    authorsList:              { system: 'co_authors',               email: 'authors_list' },
+    suc:                      { system: 'suc_agencies',             email: 'sucs' },
+    correspondingAuthorName:  { system: 'corresponding_author_name', email: 'corresponding_author_name' },
+    correspondingAuthorEmail: { system: 'corresponding_author_email', email: 'corresponding_author_email', fallbackEmail: 'sender_email' },
+    correspondingAuthorPos:   { system: 'corresponding_author_position', email: 'corresponding_author_position' },
+    paperCategory:            { system: 'paper_category',           email: 'paper_category' },
+    thematicArea:             { system: 'thematic_area',            email: 'thematic_area' },
+    theme:                    { system: 'theme',                    email: 'theme' },
   };
 
-  const getProjectLeader = () => {
-    if (activeTab === 'system') return selectedSubmission?.project_leader || 'Not specified';
-    return emailExtractedData?.project_leader || selectedSubmission?.project_leader_name || 'Not specified';
-  };
+  const getField = (logicalName, fallback = 'Not specified') => {
+    const mapping = FIELD_MAP[logicalName];
+    if (!mapping) return fallback;
 
-  const getAuthorsList = () => {
+    let value;
     if (activeTab === 'system') {
-      // Check co_authors first, but if empty, fall back to project_leader
-      if (selectedSubmission?.co_authors) {
-        try {
-          const parsed = JSON.parse(selectedSubmission.co_authors);
-          if (Array.isArray(parsed)) return parsed.join(', ');
-          return selectedSubmission.co_authors;
-        } catch {
-          return selectedSubmission.co_authors;
-        }
-      }
-      return 'N/A';
-    }
-    // For email submissions
-    if (emailExtractedData?.authors) {
-      try {
-        const parsed = JSON.parse(emailExtractedData.authors);
-        if (Array.isArray(parsed)) return parsed.join(', ');
-        return emailExtractedData.authors;
-      } catch {
-        return emailExtractedData.authors;
+      value = selectedSubmission?.[mapping.system];
+    } else {
+      value = emailExtractedData?.[mapping.email];
+      if ((value === undefined || value === null || value === '') && mapping.fallbackEmail) {
+        value = selectedSubmission?.[mapping.fallbackEmail];
       }
     }
-    return 'N/A';
+
+    if (value === undefined || value === null) return fallback;
+    if (typeof value === 'string' && value.trim() === '') return fallback;
+    return value;
   };
 
-  const getSuc = () => {
-    if (activeTab === 'system') return selectedSubmission?.suc_agencies || 'Not specified';
-    return emailExtractedData?.sucs || 'Not specified';
+  // Authors list needs custom JSON parsing, so it has its own function
+  const getAuthorsList = () => {
+    const raw = getField('authorsList', '');
+    if (!raw) return 'Not specified';
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed.join(', ');
+      return raw;
+    } catch {
+      return raw;
+    }
   };
 
-  const getThematicArea = () => {
-    if (activeTab === 'system') return selectedSubmission?.thematic_area || 'Not specified';
-    return emailExtractedData?.thematic_area || 'Not specified';
-  };
-
-  const getPaperCategory = () => {
-    if (activeTab === 'system') return selectedSubmission?.paper_category || 'Not specified';
-    return emailExtractedData?.paper_category || 'Not specified';
-  };
-
-  const getCorrespondingAuthorName = () => {
-    if (activeTab === 'system') return selectedSubmission?.corresponding_author_name || 'Not specified';
-    return emailExtractedData?.corresponding_author_name || 'Not specified';
-  };
-
-  const getCorrespondingAuthorEmail = () => {
-    if (activeTab === 'system') return selectedSubmission?.corresponding_author_email || 'Not specified';
-    return emailExtractedData?.corresponding_author_email || 'Not specified';
-  };
-
-  const getCorrespondingAuthorPosition = () => {
-    if (activeTab === 'system') return selectedSubmission?.corresponding_author_position || 'Not specified';
-    return emailExtractedData?.corresponding_author_position || 'Not specified';
-  };
-
-  const getTheme = () => {
-    if (activeTab === 'system') return 'Not specified';
-    return emailExtractedData?.theme || 'Not specified';
-  };
+  // ====== BACKWARDS-COMPATIBLE WRAPPERS ======
+  // Keep these so existing call sites don't break.
+  const getTitle                     = () => getField('title');
+  const getProjectLeader             = () => getField('projectLeader');
+  const getSuc                       = () => getField('suc');
+  const getThematicArea              = () => getField('thematicArea');
+  const getPaperCategory             = () => getField('paperCategory');
+  const getCorrespondingAuthorName   = () => getField('correspondingAuthorName');
+  const getCorrespondingAuthorEmail  = () => getField('correspondingAuthorEmail');
+  const getCorrespondingAuthorPosition = () => getField('correspondingAuthorPos');
+  const getTheme                     = () => getField('theme');
 
   const getEvaluatorName = (id) => {
     const user = allUsers.find(u => u.id === id);

@@ -33,8 +33,8 @@ export default function EditSubmission({
   currentUser,
   isMasterApprover = false,
   title = 'Edit Submission',
-  fields = null, // Custom fields configuration
-  submissionType = 'system' // 'system' or 'email'
+  fields = null,
+  submissionType = 'system'
 }) {
   const [editForm, setEditForm] = useState({});
   const [showSucDropdown, setShowSucDropdown] = useState(false);
@@ -43,12 +43,10 @@ export default function EditSubmission({
   const [isAddingSuc, setIsAddingSuc] = useState(false);
   const [newSucName, setNewSucName] = useState('');
   const [newSucRegion, setNewSucRegion] = useState('');
-  
-  // Confirmation modal state
+
   const [showConfirm, setShowConfirm] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
-  // Default field configurations for system submissions
   const systemFields = {
     extension_project_title: { label: 'Title', icon: faFileAlt, type: 'text' },
     project_leader: { label: 'Project Leader', icon: faUser, type: 'text' },
@@ -80,38 +78,45 @@ export default function EditSubmission({
     corresponding_author_name: { label: 'Corresponding Author', icon: faUserCircleIcon, type: 'text' },
     corresponding_author_email: { label: 'Corresponding Email', icon: faEnvelope, type: 'email' },
     corresponding_author_position: { label: 'Corresponding Position', icon: faTag, type: 'text' },
-    authors_list: { label: 'Authors List', icon: faUsers, type: 'text' }, // Retained
+    authors_list: { label: 'Authors List', icon: faUsers, type: 'text' },
     paper_category: { label: 'Paper Category', icon: faBookOpen, type: 'select', options: [
+      'Not specified',
       'Completed Extension Project Papers',
-      'Ongoing Extension Project Papers',
-      'Not specified'
+      'Ongoing Extension Project Papers'
     ]},
     thematic_area: { label: 'Thematic Area', icon: faLayerGroup, type: 'select', options: [
+      'Not specified',
       'Food Production, Agriculture, Fisheries, and Natural Resource Systems',
       'Health, Nutrition, Wellness, and Community Care',
       'Education, Literacy, Skills Development, and Lifelong Learning',
       'Livelihood, Entrepreneurship, Cooperatives, MSMEs, and Local Economic Development',
-      'Environment, Climate Action, Disaster Risk Reduction, and Community Resilience',
-      'Not specified'
+      'Environment, Climate Action, Disaster Risk Reduction, and Community Resilience'
     ]},
     theme: { label: 'Theme', icon: faFlag, type: 'text' }
   };
 
-  // Determine which fields to use
   const defaultFields = submissionType === 'email' ? emailFields : systemFields;
   const fieldConfig = fields || defaultFields;
 
+  // ---- Form initialization ----
+  // Empty values (null / undefined / '') are filled with 'Not specified'
+  // so the user sees the same value here as in the details panel.
   useEffect(() => {
     if (isOpen && data) {
       const initialForm = {};
       Object.keys(fieldConfig).forEach(key => {
-        const value = data[key];
-        const field = fieldConfig[key];
+        const rawValue = data[key];
 
-        if (field && field.type === 'select') {
-          initialForm[key] = value && value.trim() !== '' ? value : 'Not specified';
+        // Normalize: treat null / undefined / '' as empty
+        const isEmpty =
+          rawValue === undefined ||
+          rawValue === null ||
+          (typeof rawValue === 'string' && rawValue.trim() === '');
+
+        if (isEmpty) {
+          initialForm[key] = 'Not specified';
         } else {
-          initialForm[key] = value || '';
+          initialForm[key] = rawValue;
         }
       });
       setEditForm(initialForm);
@@ -144,7 +149,6 @@ export default function EditSubmission({
   };
 
   const handleSucSelect = (sucName) => {
-    // Use the correct field name for the submission type
     const sucField = submissionType === 'email' ? 'sucs' : 'suc_agencies';
     setEditForm(prev => ({ ...prev, [sucField]: sucName }));
     setShowSucDropdown(false);
@@ -153,9 +157,7 @@ export default function EditSubmission({
   };
 
   const handleAddNewSuc = async () => {
-    if (!newSucName.trim()) {
-      return;
-    }
+    if (!newSucName.trim()) return;
 
     setIsAddingSuc(true);
     try {
@@ -189,20 +191,31 @@ export default function EditSubmission({
   };
 
   const handleSubmit = () => {
-    // Check if there are actual changes
     if (!hasChanges) {
-      // If no changes, just close without showing confirmation
       onClose();
       return;
     }
-    // Show confirmation modal
     setShowConfirm(true);
+  };
+
+  // Strip 'Not specified' back to '' before saving so the DB stores null/empty
+  const buildCleanPayload = () => {
+    const clean = {};
+    Object.keys(editForm).forEach(key => {
+      const value = editForm[key];
+      if (typeof value === 'string' && value.trim() === 'Not specified') {
+        clean[key] = '';
+      } else {
+        clean[key] = value;
+      }
+    });
+    return clean;
   };
 
   const confirmSave = () => {
     setShowConfirm(false);
     if (onSave) {
-      onSave(editForm);
+      onSave(buildCleanPayload());
     }
   };
 
@@ -212,12 +225,10 @@ export default function EditSubmission({
 
   if (!isOpen) return null;
 
-  // Filter SUCs based on search term
   const filteredSucs = sucList.filter(suc =>
     suc.name.toLowerCase().includes(sucSearchTerm.toLowerCase())
   );
 
-  // Get the current SUC value based on submission type
   const getSucValue = () => {
     if (submissionType === 'email') {
       return editForm.sucs || '';
@@ -256,14 +267,13 @@ export default function EditSubmission({
               </button>
             </div>
 
-            {/* Body - Adjusted max-height to ensure footer visibility */}
+            {/* Body */}
             <div className="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
               <div className="space-y-4">
                 {Object.keys(fieldConfig).map((key) => {
                   const field = fieldConfig[key];
                   const value = editForm[key] || '';
 
-                  // Skip rendering SUC field if it's not the correct one for this type
                   if (key === 'sucs' && submissionType !== 'email') {
                     return null;
                   }
@@ -312,8 +322,8 @@ export default function EditSubmission({
                               setHasChanges(true);
                             }}
                             onFocus={() => setShowSucDropdown(true)}
-                            placeholder="Search or add SUC..."
-                            className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition-all"
+                            placeholder="Not specified"
+                            className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 placeholder:italic focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition-all"
                           />
                           {showSucDropdown && (
                             <div className="absolute z-60 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
@@ -363,6 +373,13 @@ export default function EditSubmission({
                     );
                   }
 
+                  // Default: text/email input — placeholder shows "Not specified" for empty
+                  const isEmptyText =
+                    value === undefined ||
+                    value === null ||
+                    (typeof value === 'string' && value.trim() === '') ||
+                    value === 'Not specified';
+
                   return (
                     <div key={key} className="group">
                       <div className="flex items-center gap-2 text-sm font-medium text-slate-500 mb-1.5">
@@ -374,7 +391,8 @@ export default function EditSubmission({
                         name={key}
                         value={value}
                         onChange={handleChange}
-                        className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition-all"
+                        placeholder="Not specified"
+                        className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 placeholder:italic focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition-all"
                       />
                     </div>
                   );
@@ -411,7 +429,7 @@ export default function EditSubmission({
               )}
             </div>
 
-            {/* Footer - Fixed with proper padding and layout */}
+            {/* Footer */}
             <div className="flex items-center justify-end gap-4 px-8 py-5 border-t border-slate-200 bg-slate-50/80">
               <button
                 onClick={onClose}
@@ -456,11 +474,11 @@ export default function EditSubmission({
                 <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 rounded-full bg-yellow-100">
                   <FontAwesomeIcon icon={faExclamationTriangle} className="w-6 h-6 text-yellow-600" />
                 </div>
-                
+
                 <h3 className="text-lg font-bold text-slate-900 text-center mb-2">
                   Confirm Changes
                 </h3>
-                
+
                 <div className="text-sm text-slate-600 text-center mb-6">
                   {isMasterApprover ? (
                     <p>Are you sure you want to save these changes? This action will be recorded in the edit history with your role as <strong>Master Approver</strong>.</p>

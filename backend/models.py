@@ -335,3 +335,72 @@ class SubmissionRevision(db.Model):
             },
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None
         }
+        
+class FileMoveLog(db.Model):
+    __tablename__ = 'file_move_logs'
+    id = db.Column(db.Integer, primary_key=True)
+    
+    # What was moved
+    submission_id = db.Column(db.String(50), nullable=False, index=True)
+    submission_type = db.Column(db.Enum('system', 'email'), nullable=False, default='system')
+    file_id = db.Column(db.String(255), nullable=True, index=True)  # Google Drive file ID
+    file_name = db.Column(db.String(500), nullable=True)
+    file_type = db.Column(db.String(50), nullable=True)  # 'abstract', 'endorsement', 'compextproj'
+    
+    # Where it moved from and to
+    old_paper_category = db.Column(db.String(255), nullable=True)
+    old_thematic_area = db.Column(db.String(255), nullable=True)
+    old_sender_name = db.Column(db.String(255), nullable=True)  # Old project leader name
+    old_folder_id = db.Column(db.String(255), nullable=True)
+    old_folder_path = db.Column(db.Text, nullable=True)  # Full path for readability
+    
+    new_paper_category = db.Column(db.String(255), nullable=True)
+    new_thematic_area = db.Column(db.String(255), nullable=True)
+    new_sender_name = db.Column(db.String(255), nullable=True)
+    new_folder_id = db.Column(db.String(255), nullable=True)
+    new_folder_path = db.Column(db.Text, nullable=True)
+    
+    # Status tracking
+    status = db.Column(db.Enum('success', 'failed', 'partial'), nullable=False, default='success')
+    error_message = db.Column(db.Text, nullable=True)
+    
+    # What triggered the move
+    trigger_field = db.Column(db.String(50), nullable=True)  # 'paper_category', 'thematic_area', 'project_leader', 'multiple'
+    triggered_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    triggered_by_name = db.Column(db.String(100), nullable=True)
+    
+    # Folder cleanup info
+    trashed_folders = db.Column(db.Text, nullable=True)  # JSON list of trashed folder names
+    
+    # Timestamps
+    created_at = db.Column(db.DateTime, server_default=db.func.now(), index=True)
+    
+    # Relationships
+    triggered_by = db.relationship('User', foreign_keys=[triggered_by_user_id])
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'submission_id': self.submission_id,
+            'submission_type': self.submission_type,
+            'file_id': self.file_id,
+            'file_name': self.file_name,
+            'file_type': self.file_type,
+            'old_paper_category': self.old_paper_category,
+            'old_thematic_area': self.old_thematic_area,
+            'old_sender_name': self.old_sender_name,
+            'old_folder_id': self.old_folder_id,
+            'old_folder_path': self.old_folder_path,
+            'new_paper_category': self.new_paper_category,
+            'new_thematic_area': self.new_thematic_area,
+            'new_sender_name': self.new_sender_name,
+            'new_folder_id': self.new_folder_id,
+            'new_folder_path': self.new_folder_path,
+            'status': self.status,
+            'error_message': self.error_message,
+            'trigger_field': self.trigger_field,
+            'triggered_by_user_id': self.triggered_by_user_id,
+            'triggered_by_name': self.triggered_by_name,
+            'trashed_folders': json.loads(self.trashed_folders) if self.trashed_folders else [],
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None
+        }

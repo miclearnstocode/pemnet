@@ -1,5 +1,8 @@
 ---
 deployment:
   tasks:
+    - export DEPLOYPATH=/home/pemnetcapsuedu/backend_app/
+    - /bin/cp -R backend/* $DEPLOYPATH
+
     - export DEPLOYPATH=/home/pemnetcapsuedu/public_html/
-    - /bin/cp -R * $DEPLOYPATH
+    - /bin/cp -R frontend/out/. $DEPLOYPATH

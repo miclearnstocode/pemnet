@@ -58,8 +58,8 @@ export default function EditSubmission({
     co_authors: { label: 'Co-Authors', icon: faUsers, type: 'text' },
     paper_category: { label: 'Paper Category', icon: faBookOpen, type: 'select', options: [
       'Not specified',
-      'Completed Extension Project Papers',
-      'Ongoing Extension Project Papers'
+      'Completed Extension Project Paper',
+      'Ongoing Extension Project Paper'
     ]},
     thematic_area: { label: 'Thematic Area', icon: faLayerGroup, type: 'select', options: [
       'Not specified',
@@ -244,7 +244,7 @@ export default function EditSubmission({
         <div className="relative min-h-full flex items-center justify-center p-4">
           <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh]">
             {/* Header */}
-            <div className={`flex items-center justify-between px-6 py-4 border-b border-slate-200 ${isMasterApprover ? 'bg-gradient-to-r from-purple-50 to-blue-50' : 'bg-gradient-to-r from-blue-50 to-white'}`}>
+            <div className={`flex items-center justify-between px-6 py-4 border-b border-slate-200 ${isMasterApprover ? 'bg-linear-to-rrom-purple-50 to-blue-50' : 'bg-linear-to-r from-blue-50 to-white'}`}>
               <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isMasterApprover ? 'bg-purple-100 text-purple-600' : 'bg-emerald-100 text-emerald-600'}`}>
                   <FontAwesomeIcon icon={faEdit} className="w-5 h-5" />
@@ -434,14 +434,14 @@ export default function EditSubmission({
               <button
                 onClick={onClose}
                 disabled={isLoading}
-                className="px-6 py-2.5 bg-slate-100 text-slate-700 rounded-xl font-semibold hover:bg-slate-200 transition disabled:opacity-50 min-w-[100px]"
+                className="px-6 py-2.5 bg-slate-100 text-slate-700 rounded-xl font-semibold hover:bg-slate-200 transition disabled:opacity-50 min-w-25"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSubmit}
                 disabled={isLoading}
-                className={`px-8 py-2.5 rounded-xl font-semibold transition flex items-center justify-center gap-3 text-white min-w-[140px] ${
+                className={`px-8 py-2.5 rounded-xl font-semibold transition flex items-center justify-center gap-3 text-white min-w-35 ${
                   isMasterApprover
                     ? 'bg-purple-600 hover:bg-purple-700 shadow-lg shadow-purple-500/25 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]'
                     : 'bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]'

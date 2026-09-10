@@ -45,6 +45,7 @@ import DowngradeModal from '../components/DowngradeModal';
 import EditSubmission from '../components/EditSubmission';
 import DiscussionSection from '../components/DiscussionSection';
 import ViewHistory from '../components/ViewHistory';
+import DecisionSummary from '../components/DecisionSummary';
 
 export default function MasterReviewPage() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -514,6 +515,9 @@ export default function MasterReviewPage() {
       case 'downgraded-poster_only': return 'Poster Only';
       case 'downgraded': return 'Downgraded';
       case 'pending': return 'Pending';
+      case 'uncategorized': return 'Uncategorized';
+      case 'processed': return 'Processed';
+      case 'rejected': return 'Rejected';
       case 'return_to_sender': return 'Return to Sender';
       default: return status || 'Pending';
     }
@@ -633,8 +637,8 @@ export default function MasterReviewPage() {
         authors_list: { label: 'Authors List', icon: faUsers, type: 'text' },
         paper_category: { label: 'Paper Category', icon: faBookOpen, type: 'select', options: [
           'Not specified',
-          'Completed Extension Project Papers',
-          'Ongoing Extension Project Papers'
+          'Completed Extension Project Paper',
+          'Ongoing Extension Project Paper'
         ]},
         thematic_area: { label: 'Thematic Area', icon: faLayerGroup, type: 'select', options: [
           'Not specified',
@@ -659,8 +663,8 @@ export default function MasterReviewPage() {
       co_authors: { label: 'Co-Authors', icon: faUsers, type: 'text' },
       paper_category: { label: 'Paper Category', icon: faBookOpen, type: 'select', options: [
         'Not specified',
-        'Completed Extension Project Papers',
-        'Ongoing Extension Project Papers'
+        'Completed Extension Project Paper',
+        'Ongoing Extension Project Paper'
       ]},
       thematic_area: { label: 'Thematic Area', icon: faLayerGroup, type: 'select', options: [
         'Not specified',
@@ -731,12 +735,12 @@ export default function MasterReviewPage() {
         onEmailToggle={setSendEmailConfirmation}
       />
 
-      {/* Downgrade Selection Modal */}
       <DowngradeModal
         isOpen={showDowngradeModal}
         onClose={() => setShowDowngradeModal(false)}
         onSubmit={handleDowngradeWithConfirm}
         isLoading={downgradeLoading}
+        paperCategory={getField('paperCategory')}
       />
 
       {/* Downgrade Confirmation Modal */}
@@ -991,7 +995,17 @@ export default function MasterReviewPage() {
                       maxHeight="200px"
                     />
                   </div>
-
+                  {/* Decision Summary */}
+                  <div className="mt-6 pt-6 border-t border-slate-200">
+                    <DecisionSummary
+                      submissionStatus={selectedSubmission.status || 'pending'}
+                      evaluationStatus={selectedSubmission.evaluation_status || 'pending'}
+                      votes={submissionDetails?.votes || []}
+                      voteStats={submissionDetails?.vote_stats || null}
+                      evaluators={allUsers}
+                      showEvaluators={true}
+                    />
+                  </div>
                   {/* Master Approver Controls */}
                   <div className="mt-6 pt-6 border-t-2 border-purple-200">
                     <h4 className="text-base font-bold text-purple-700 uppercase mb-3 flex items-center gap-2">
@@ -1242,8 +1256,8 @@ export default function MasterReviewPage() {
                 className="pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none appearance-none cursor-pointer min-w-50"
               >
                 <option value="all">All Categories</option>
-                <option value="Completed Extension Project Papers">Completed Extension</option>
-                <option value="Ongoing Extension Project Papers">Ongoing Extension</option>
+                <option value="Completed Extension Project Paper">Completed Extension</option>
+                <option value="Ongoing Extension Project Paper">Ongoing Extension</option>
               </select>
             </div>
           )}
@@ -1373,13 +1387,24 @@ export default function MasterReviewPage() {
                             })}
                           </td>
                           <td className="px-6 py-4">
+                            {/* Status badge based on the display status from backend */}
                             <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(masterStatus)}`}>
                               {getStatusDisplay(masterStatus)}
                             </span>
-                            {sub.extraction_status === 'failed' && (
+
+                            {/* Show "Uncategorized" ONLY if actually uncategorized (no paper category AND no thematic area) */}
+                            {sub.is_categorized === false && (
                               <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-50 text-red-600 border border-red-200">
                                 <FontAwesomeIcon icon={faExclamationTriangle} className="w-2.5 h-2.5" />
                                 Needs Review
+                              </span>
+                            )}
+
+                            {/* If categorized but extraction failed, still nudge the admin but as informational */}
+                            {sub.is_categorized === true && sub.extraction_status === 'failed' && (
+                              <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                                <FontAwesomeIcon icon={faExclamationTriangle} className="w-2.5 h-2.5" />
+                                Manually Categorized
                               </span>
                             )}
                           </td>

@@ -413,8 +413,8 @@ export default function ReviewPage() {
         corresponding_author_position: { label: 'Corresponding Position', icon: faTag, type: 'text' },
         authors_list: { label: 'Authors List', icon: faUsers, type: 'text' },
         paper_category: { label: 'Paper Category', icon: faBookOpen, type: 'select', options: [
-          'Completed Extension Project Papers',
-          'Ongoing Extension Project Papers',
+          'Completed Extension Project Paper',
+          'Ongoing Extension Project Paper',
           'Not specified'
         ]},
         thematic_area: { label: 'Thematic Area', icon: faLayerGroup, type: 'select', options: [
@@ -440,8 +440,8 @@ export default function ReviewPage() {
       corresponding_author_position: { label: 'Corresponding Position', icon: faTag, type: 'text' },
       co_authors: { label: 'Authors', icon: faUsers, type: 'text' },
       paper_category: { label: 'Paper Category', icon: faBookOpen, type: 'select', options: [
-        'Completed Extension Project Papers',
-        'Ongoing Extension Project Papers',
+        'Completed Extension Project Paper',
+        'Ongoing Extension Project Paper',
         'Not specified'
       ]},
       thematic_area: { label: 'Thematic Area', icon: faLayerGroup, type: 'select', options: [
@@ -542,16 +542,13 @@ export default function ReviewPage() {
 
   const getStatusDisplay = (status) => {
     switch (status) {
-      case 'endorse':
-        return 'Endorsed';
-      case 'downgraded':
-        return 'Downgraded';
-      case 'pending':
-        return 'Pending Review';
-      case 'uncategorized':
-        return 'Uncategorized';
-      default:
-        return status || 'Pending';
+      case 'endorse': return 'Endorsed';
+      case 'downgraded': return 'Downgraded';
+      case 'pending': return 'Pending Review';
+      case 'uncategorized': return 'Uncategorized';
+      case 'processed': return 'Processed';
+      case 'rejected': return 'Rejected';
+      default: return status || 'Pending';
     }
   };
 
@@ -760,6 +757,7 @@ export default function ReviewPage() {
         onClose={() => setShowDowngradeModal(false)}
         onSubmit={handleDowngradeWithConfirm}
         isLoading={downgradeLoading}
+        paperCategory={getPaperCategory()}
       />
 
       <ConfirmModal
@@ -1321,8 +1319,8 @@ export default function ReviewPage() {
                 className="pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none appearance-none cursor-pointer min-w-50"
               >
                 <option value="all">All Categories</option>
-                <option value="Completed Extension Project Papers">Completed Extension</option>
-                <option value="Ongoing Extension Project Papers">Ongoing Extension</option>
+                <option value="Completed Extension Project Paper">Completed Extension</option>
+                <option value="Ongoing Extension Project Paper">Ongoing Extension</option>
               </select>
             </div>
           )}
@@ -1466,10 +1464,16 @@ export default function ReviewPage() {
                               <FontAwesomeIcon icon={getStatusIcon(displayStatus)} className="w-3 h-3" />
                               {getStatusDisplay(displayStatus)}
                             </span>
-                            {sub.extraction_status === 'failed' && (
+                            {sub.is_categorized === false && (
                               <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-50 text-red-600 border border-red-200">
                                 <FontAwesomeIcon icon={faExclamationTriangle} className="w-2.5 h-2.5" />
                                 Needs Review
+                              </span>
+                            )}
+                            {sub.is_categorized === true && sub.extraction_status === 'failed' && (
+                              <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                                <FontAwesomeIcon icon={faWarning} className="w-2.5 h-2.5" />
+                                Manually Categorized
                               </span>
                             )}
                           </td>

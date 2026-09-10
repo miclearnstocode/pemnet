@@ -1459,16 +1459,23 @@ def get_email_submissions():
         for s in submissions:
             # Fetch the extracted data for this email submission
             extracted_data = ExtractedAbstractData.query.filter_by(email_submission_id=s.id).first()
-            
-            # Determine the display status based on extraction status
-            if extracted_data and extracted_data.extraction_status == 'failed':
+
+            def _is_blank(v):
+                return v is None or (isinstance(v, str) and v.strip() == '') or v == 'Not specified'
+
+            paper_cat = extracted_data.paper_category if extracted_data else None
+            thematic   = extracted_data.thematic_area if extracted_data else None
+            has_category = not _is_blank(paper_cat) and not _is_blank(thematic)
+
+            if s.status in ('endorse', 'downgraded-non_competitive', 'downgraded-poster_only', 'processed', 'rejected'):
+                display_status = s.status
+            elif not has_category:
                 display_status = 'uncategorized'
             else:
-                display_status = s.status
-            
+                display_status = 'pending'
+
             result.append({
                 'id': s.id,
-                # IMPORTANT: Use the submission_id from extracted_data
                 'submission_id': extracted_data.submission_id if extracted_data else None,
                 'sender_email': s.sender_email,
                 'sender_name': s.sender_name,
@@ -1481,6 +1488,9 @@ def get_email_submissions():
                 'status': display_status,
                 'extraction_status': extracted_data.extraction_status if extracted_data else 'pending',
                 'evaluation_status': extracted_data.evaluation_status if extracted_data else 'pending',
+                'paper_category': paper_cat,
+                'thematic_area': thematic,
+                'is_categorized': has_category,
                 'processed_submission_id': s.processed_submission_id,
                 'email_received_at': s.email_received_at.strftime('%Y-%m-%d %H:%M:%S') if s.email_received_at else None,
                 'created_at': s.created_at.strftime('%Y-%m-%d %H:%M:%S') if s.created_at else None
@@ -2125,16 +2135,26 @@ def get_extracted_data(email_submission_id):
         return jsonify({})
     
     try:
-        # Get the extracted data for this email submission
         extracted = ExtractedAbstractData.query.filter_by(email_submission_id=email_submission_id).first()
         
         if not extracted:
             return jsonify({}), 200 
         
-        # Get the email submission to get its status
         email_sub = EmailSubmission.query.get(email_submission_id)
         email_status = email_sub.status if email_sub else 'pending'
-        
+
+        def _is_blank(v):
+            return v is None or (isinstance(v, str) and v.strip() == '') or v == 'Not specified'
+
+        has_category = not _is_blank(extracted.paper_category) and not _is_blank(extracted.thematic_area)
+
+        if email_status in ('endorse', 'downgraded-non_competitive', 'downgraded-poster_only', 'processed', 'rejected'):
+            display_status = email_status
+        elif not has_category:
+            display_status = 'uncategorized'
+        else:
+            display_status = 'pending'
+
         return jsonify({
             'id': extracted.id,
             'email_submission_id': extracted.email_submission_id,
@@ -2149,8 +2169,10 @@ def get_extracted_data(email_submission_id):
             'paper_category': extracted.paper_category,
             'thematic_area': extracted.thematic_area,
             'theme': extracted.theme,
-            # Use email submission status
-            'status': email_status,
+            # Use computed display status
+            'status': display_status,
+            'raw_email_status': email_status,
+            'is_categorized': has_category,
             'extraction_status': extracted.extraction_status,
             'extraction_error': extracted.extraction_error,
             'extracted_at': extracted.extracted_at.strftime('%Y-%m-%d %H:%M:%S') if extracted.extracted_at else None
@@ -2310,6 +2332,24 @@ def edit_extracted_data(extracted_data_id):
                 theme=extracted.theme
             )
             db.session.add(revision)
+
+            # ---- NEW: sync email submission status based on categorization ----
+            try:
+                # Recompute whether the extracted data is now categorized
+                def _is_blank(v):
+                    return v is None or (isinstance(v, str) and v.strip() == '') or v == 'Not specified'
+
+                has_category = (
+                    not _is_blank(extracted.paper_category)
+                    and not _is_blank(extracted.thematic_area)
+                )
+
+                if email_sub and has_category and email_sub.status == 'uncategorized':
+                    email_sub.status = 'pending'
+                    print(f"📝 Email submission {email_sub.id} status updated: uncategorized → pending")
+            except Exception as sync_error:
+                print(f"⚠️ Could not sync email submission status: {sync_error}")
+
             db.session.commit()
 
         return jsonify({

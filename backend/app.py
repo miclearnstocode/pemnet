@@ -23,6 +23,14 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your_super_secret_key_here')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'mysql+pymysql://root:@127.0.0.1:3306/pemnet')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['MAX_CONTENT_LENGTH'] = 64 * 1024 * 1024  # 64MB max file size
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'connect_args': {
+        'connect_timeout': 5,
+        'read_timeout': 5,
+        'write_timeout': 5,
+    },
+    'pool_pre_ping': True,
+}
 
 # Initialize extensions
 db.init_app(app)
@@ -47,9 +55,13 @@ def after_request(response):
     response.headers.add('Access-Control-Max-Age', '3600')
     return response
     
-# Create tables
 with app.app_context():
-    db.create_all()
+    try:
+        db.create_all()
+        print("Database connection established")
+    except Exception as database_error:
+        db.session.rollback()
+        print(f"Database unavailable; start-up will continue: {database_error}")
 
 # Staff required decorator
 def staff_required(f):
@@ -2150,11 +2162,13 @@ def get_extracted_data(email_submission_id):
 
 @app.route('/api/extracted-data/<int:extracted_data_id>/edit', methods=['PUT', 'OPTIONS'])
 def edit_extracted_data(extracted_data_id):
-    """Edit extracted data and log the changes."""
+    """Edit extracted data and log the changes. Also moves files in Google Drive if category/thematic area changed."""
     if request.method == 'OPTIONS':
         return jsonify({})
 
     try:
+        from google_drive import move_submission_files
+        
         data = request.get_json()
         evaluator_id = data.get('evaluator_id')
         
@@ -2171,11 +2185,25 @@ def edit_extracted_data(extracted_data_id):
         if not extracted:
             return jsonify({"detail": "Extracted data not found"}), 404
 
+        # Get the email submission for file URLs
+        email_sub = EmailSubmission.query.get(extracted.email_submission_id)
+        
+        # Track old values for file move
+        old_paper_category = extracted.paper_category
+        old_thematic_area = extracted.thematic_area
+        # FIX: Use project_leader (person's name) for folder structure, NOT sucs
+        old_sender_name = (
+            extracted.project_leader or 
+            extracted.corresponding_author_name or 
+            (email_sub.sender_name if email_sub else None)
+        )
+
         # Build a list of changed fields
         changes = {}
+        needs_file_move = False
         
-        # Helper to compare and update
         def update_field(field_name, column):
+            nonlocal needs_file_move
             if field_name in data:
                 new_value = data[field_name]
                 old_value = getattr(extracted, column)
@@ -2190,6 +2218,10 @@ def edit_extracted_data(extracted_data_id):
                         'new': new_value
                     }
                     setattr(extracted, column, new_value)
+                    
+                    # Check if we need to move files
+                    if field_name in ['paper_category', 'thematic_area']:
+                        needs_file_move = True
 
         # Update all editable fields
         update_field('title', 'title')
@@ -2203,6 +2235,53 @@ def edit_extracted_data(extracted_data_id):
         update_field('paper_category', 'paper_category')
         update_field('thematic_area', 'thematic_area')
         update_field('theme', 'theme')
+
+        # FIX: Check if the sender name (project_leader) changed — this uses old_sender_name
+        new_sender_name = (
+            extracted.project_leader or 
+            extracted.corresponding_author_name or 
+            (email_sub.sender_name if email_sub else None)
+        )
+        old_sender_str = str(old_sender_name) if old_sender_name else ''
+        new_sender_str = str(new_sender_name) if new_sender_name else ''
+        if old_sender_str != new_sender_str:
+            needs_file_move = True
+
+        # Move files in Google Drive if needed
+        drive_move_result = None
+        if needs_file_move and changes and email_sub:
+            try:
+                # Collect all file URLs for this submission
+                file_urls = []
+                if email_sub.attachment_view_url:
+                    file_urls.append(email_sub.attachment_view_url)
+                
+                if file_urls:
+                    print(f"📦 Moving {len(file_urls)} files due to category/thematic area change...")
+                    print(f"   Old: {old_paper_category} / {old_thematic_area}")
+                    print(f"   New: {extracted.paper_category} / {extracted.thematic_area}")
+                    print(f"   Sender (Project Leader): {new_sender_name}")
+                    
+                    drive_move_result = move_submission_files(
+                        file_urls,
+                        extracted.paper_category,
+                        extracted.thematic_area,
+                        new_sender_name
+                    )
+                    
+                    # Update URLs if they changed
+                    if drive_move_result and drive_move_result.get('url_mapping'):
+                        for old_url, new_urls in drive_move_result['url_mapping'].items():
+                            if email_sub.attachment_view_url == old_url:
+                                email_sub.attachment_view_url = new_urls['view_url']
+                                email_sub.attachment_download_url = new_urls['download_url']
+                    
+                    print(f"✅ File move completed: {len(drive_move_result.get('moved', []))} moved, "
+                          f"{len(drive_move_result.get('trashed_folders', []))} empty folder(s) removed")
+            except Exception as drive_error:
+                print(f"⚠️ Drive move error (non-fatal): {drive_error}")
+                traceback.print_exc()
+                drive_move_result = {'error': str(drive_error)}
 
         # Save changes if any
         if changes:
@@ -2236,6 +2315,7 @@ def edit_extracted_data(extracted_data_id):
         return jsonify({
             "message": "Data updated successfully",
             "changes": changes,
+            "drive_move": drive_move_result,
             "data": {
                 'title': extracted.title,
                 'authors': extracted.authors,
@@ -2337,11 +2417,13 @@ def get_submission_edit_history(submission_id):
     
 @app.route('/api/submissions/<string:submission_id>/edit', methods=['PUT', 'OPTIONS'])
 def edit_system_submission(submission_id):
-    """Edit a system submission and log the changes."""
+    """Edit a system submission and log the changes. Also moves files in Google Drive if category/thematic area changed."""
     if request.method == 'OPTIONS':
         return jsonify({})
     
     try:
+        from google_drive import move_submission_files
+        
         data = request.get_json()
         evaluator_id = data.get('evaluator_id')
         
@@ -2358,7 +2440,7 @@ def edit_system_submission(submission_id):
         user_name = user.full_name if user else 'Unknown'
         is_master_approver = user.role in ['admin', 'master_approver'] if user else False
         
-        # Fields that can be updated - matching the database columns
+        # Fields that can be updated
         editable_fields = {
             'extension_project_title': 'extension_project_title',
             'thematic_area': 'thematic_area',
@@ -2373,6 +2455,13 @@ def edit_system_submission(submission_id):
         }
         
         changes = {}
+        needs_file_move = False
+        
+        # Track old values for category/thematic area
+        old_paper_category = submission.paper_category
+        old_thematic_area = submission.thematic_area
+        # FIX: Use project_leader (person's name) for folder structure, NOT suc_agencies
+        old_sender_name = submission.project_leader or submission.presenter
         
         # Update fields and track changes
         for field_name, db_field in editable_fields.items():
@@ -2390,6 +2479,76 @@ def edit_system_submission(submission_id):
                         'new': new_value
                     }
                     setattr(submission, db_field, new_value)
+                    
+                    # Check if we need to move files
+                    if field_name in ['paper_category', 'thematic_area']:
+                        needs_file_move = True
+        
+        # FIX: Check if sender name (project_leader) changed — this uses old_sender_name
+        # and also triggers a folder rename/move when the leader changes
+        new_sender_name = submission.project_leader or submission.presenter
+        old_sender_str = str(old_sender_name) if old_sender_name else ''
+        new_sender_str = str(new_sender_name) if new_sender_name else ''
+        if old_sender_str != new_sender_str:
+            needs_file_move = True
+        
+        # Move files in Google Drive if category/thematic area/sender changed
+        drive_move_result = None
+        if needs_file_move and changes:
+            try:
+                # Collect ALL file URLs for this submission
+                # Includes: abstract, endorsement, and completed extension project (if available)
+                file_urls = []
+                file_labels = []  # For logging which file is which
+                
+                if submission.abstract_view_url:
+                    file_urls.append(submission.abstract_view_url)
+                    file_labels.append('abstract')
+                
+                # FIX: Explicitly include endorsement file when available
+                if submission.endorsement_view_url:
+                    file_urls.append(submission.endorsement_view_url)
+                    file_labels.append('endorsement')
+                
+                if submission.compextproj_drive_view_url:
+                    file_urls.append(submission.compextproj_drive_view_url)
+                    file_labels.append('completed_extension_project')
+                
+                if file_urls:
+                    print(f"📦 Moving {len(file_urls)} files due to category/thematic area/leader change...")
+                    print(f"   Files: {', '.join(file_labels)}")
+                    print(f"   Old: {old_paper_category} / {old_thematic_area}")
+                    print(f"   New: {submission.paper_category} / {submission.thematic_area}")
+                    print(f"   Sender (Project Leader): {new_sender_name}")
+                    
+                    drive_move_result = move_submission_files(
+                        file_urls,
+                        submission.paper_category,
+                        submission.thematic_area,
+                        new_sender_name
+                    )
+                    
+                    # Update URLs if they changed (file IDs stay same, but good to be safe)
+                    if drive_move_result and drive_move_result.get('url_mapping'):
+                        for old_url, new_urls in drive_move_result['url_mapping'].items():
+                            if submission.abstract_view_url == old_url:
+                                submission.abstract_view_url = new_urls['view_url']
+                                submission.abstract_download_url = new_urls['download_url']
+                            elif submission.endorsement_view_url == old_url:
+                                submission.endorsement_view_url = new_urls['view_url']
+                                submission.endorsement_download_url = new_urls['download_url']
+                            elif submission.compextproj_drive_view_url == old_url:
+                                submission.compextproj_drive_view_url = new_urls['view_url']
+                                submission.compextproj_drive_download_url = new_urls['download_url']
+                    
+                    print(f"✅ File move completed: {len(drive_move_result.get('moved', []))} moved, "
+                          f"{len(drive_move_result.get('failed', []))} failed, "
+                          f"{len(drive_move_result.get('trashed_folders', []))} empty folder(s) removed")
+            except Exception as drive_error:
+                print(f"⚠️ Drive move error (non-fatal): {drive_error}")
+                traceback.print_exc()
+                # Don't fail the whole request if drive move fails
+                drive_move_result = {'error': str(drive_error)}
         
         # Only create revision if there are changes
         if changes:
@@ -2420,7 +2579,8 @@ def edit_system_submission(submission_id):
             return jsonify({
                 "message": "Submission updated successfully",
                 "changes": changes,
-                "revision_id": revision.id
+                "revision_id": revision.id,
+                "drive_move": drive_move_result
             }), 200
         else:
             return jsonify({"message": "No changes made"}), 200

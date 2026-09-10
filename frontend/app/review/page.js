@@ -336,55 +336,72 @@ export default function ReviewPage() {
   };
 
   const handleEditSave = async (formData) => {
-    if (!selectedSubmission) return;
-    setEditLoading(true);
-    
-    try {
-      const submissionId = selectedSubmission.submission_id || selectedSubmission.id;
+      if (!selectedSubmission) return;
+      setEditLoading(true);
       
-      let url;
-      let payload = { ...formData };
-
-      if (activeTab === 'email' && emailExtractedData) {
-        // Email submissions use the extracted-data endpoint
-        url = `http://localhost:5000/api/extracted-data/${emailExtractedData.id}/edit`;
-        payload.evaluator_id = currentEvaluatorId;
-      } else {
-        // System submissions use the submission-id endpoint
-        url = `http://localhost:5000/api/submissions/${submissionId}/edit`;
-        payload.evaluator_id = currentEvaluatorId;
-      }
-      
-      const res = await fetch(url, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        showToast(data.message || 'Submission updated successfully!', 'success');
-        setShowEditModal(false);
+      try {
+        const submissionId = selectedSubmission.submission_id || selectedSubmission.id;
         
-        // Refresh extracted data if applicable
-        if (activeTab === 'email' && selectedSubmission.id) {
-          await fetchExtractedData(selectedSubmission.id);
+        let url;
+        let payload = { ...formData };
+
+        if (activeTab === 'email' && emailExtractedData) {
+          url = `http://localhost:5000/api/extracted-data/${emailExtractedData.id}/edit`;
+          payload.evaluator_id = currentEvaluatorId;
+        } else {
+          url = `http://localhost:5000/api/submissions/${submissionId}/edit`;
+          payload.evaluator_id = currentEvaluatorId;
         }
         
-        fetchSubmissions();
-      } else {
-        const error = await res.json();
-        showToast(error.detail || 'Failed to update submission', 'error');
-      }
-    } catch (error) {
-      console.error('Error updating submission:', error);
-      showToast('Failed to update submission', 'error');
-    } finally {
-      setEditLoading(false);
-    }
-  };
+        const res = await fetch(url, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
 
-  // Helper to configure fields for the EditSubmission component based on activeTab
+        if (res.ok) {
+          const data = await res.json();
+          
+          let message = data.message || 'Submission updated successfully!';
+          if (data.drive_move && data.drive_move.moved && data.drive_move.moved.length > 0) {
+            message += ` ${data.drive_move.moved.length} file(s) moved to the new folder.`;
+            if (data.drive_move.trashed_folders && data.drive_move.trashed_folders.length > 0) {
+              message += ` ${data.drive_move.trashed_folders.length} empty folder(s) cleaned up.`;
+            }
+          } else if (data.drive_move && data.drive_move.error) {
+            message += ' (Warning: Could not move files in Google Drive)';
+          }
+          
+          showToast(message, 'success');
+          setShowEditModal(false);
+          
+          // Refresh extracted data if applicable
+          if (activeTab === 'email' && selectedSubmission.id) {
+            await fetchExtractedData(selectedSubmission.id);
+          }
+          
+          // Refresh submissions to get updated data
+          fetchSubmissions();
+          
+          // Update selected submission with new data
+          if (activeTab === 'system') {
+            setSelectedSubmission(prev => ({
+              ...prev,
+              ...formData
+            }));
+          }
+        } else {
+          const error = await res.json();
+          showToast(error.detail || 'Failed to update submission', 'error');
+        }
+      } catch (error) {
+        console.error('Error updating submission:', error);
+        showToast('Failed to update submission', 'error');
+      } finally {
+        setEditLoading(false);
+      }
+    };
+
   const getEditFields = (submissionType) => {
     if (submissionType === 'email') {
       return {

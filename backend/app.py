@@ -838,164 +838,235 @@ except Exception as e:
     gmail_service = None
 
 def process_email_submission(email_data):
-    """Process an email and create an email submission record."""
+    """
+    Process an email and create email submission records.
+    
+    IMPORTANT: If the email has MULTIPLE attachments, each attachment is processed
+    as a SEPARATE email submission with its own extracted data and submission_id.
+    This handles cases where a sender submits multiple abstracts in one email.
+    
+    Returns:
+        list: List of created EmailSubmission objects (one per attachment), or empty list.
+    """
     try:
-        # Extract data
+        # Extract email-level metadata
         sender_name = email_data['sender_name']
         sender_email = email_data['sender_email']
         subject = email_data['subject']
         body = email_data['body'] if email_data['body'] else ''
         
-        # Check if email should be skipped
+        # Skip checks at the EMAIL level (these apply to the whole email)
         should_skip, skip_reason = should_skip_email(subject, body, sender_email)
         if should_skip:
             print(f"⏭️  Skipping email ({skip_reason}): {subject}")
-            return None
+            return []
         
-        # Check if it's an invitation email
         if is_invitation_email(subject, body):
             print(f"⏭️  Skipping invitation email: {subject}")
-            return None
+            return []
         
-        # Check if sender is pemnet26@gmail.com (skip self-emails)
         if 'pemnet26@gmail.com' in sender_email:
             print(f"⏭️  Skipping email from self (pemnet26@gmail.com): {subject}")
-            return None
+            return []
         
-        # Get first attachment
-        attachment = email_data['attachments'][0] if email_data['attachments'] else None
-        
-        # Skip if no attachment
-        if not attachment:
+        # Get ALL attachments
+        attachments = email_data.get('attachments') or []
+        if not attachments:
             print(f"⏭️  Skipping email with no attachment: {subject}")
-            return None
+            return []
         
-        # Try to extract project leader name from body
-        project_leader_name = extract_project_leader(body)
-        if not project_leader_name:
-            project_leader_name = sender_name
+        print(f"📎 Email has {len(attachments)} attachment(s) — processing each as a separate submission")
         
-        attachment_view_url = None
-        attachment_download_url = None
-        extracted_data = None
-        temp_path = None
+        # Try to extract project leader name from body (fallback for all attachments)
+        body_project_leader = extract_project_leader(body)
+        if not body_project_leader:
+            body_project_leader = sender_name
         
-        # Process the attachment
-        if attachment and attachment.get('data'):
+        created_submissions = []
+        
+        # ----------------------------------------------------------------
+        # Process EACH attachment independently
+        # ----------------------------------------------------------------
+        for idx, attachment in enumerate(attachments):
+            if not attachment or not attachment.get('data'):
+                print(f"   ⏭️  Skipping attachment #{idx + 1} (no data)")
+                continue
+            
+            original_filename = attachment.get('filename', f'attachment_{idx + 1}.pdf')
+            print(f"\n   ── Processing attachment #{idx + 1}/{len(attachments)}: {original_filename}")
+            
             try:
-                original_filename = attachment.get('filename', 'attachment.pdf')
-                
-                # Determine file type from extension
-                is_docx = original_filename.lower().endswith('.docx')
-                is_pdf = original_filename.lower().endswith('.pdf')
-                
-                # If it's not PDF or DOCX, treat as PDF for extraction attempt
-                if not is_pdf and not is_docx:
-                    # Try to detect from file content
-                    if attachment['data'][:4] == b'%PDF':
-                        is_pdf = True
-                    elif attachment['data'][:2] == b'PK':
-                        is_docx = True
-                
-                # Step 1: Create temporary file
-                suffix = '.docx' if is_docx else '.pdf'
-                with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp_file:
-                    temp_file.write(attachment['data'])
-                    temp_path = temp_file.name
-                
-                print(f"📄 Temporary file created: {temp_path} ({os.path.getsize(temp_path)} bytes)")
-                
-                # Step 2: Extract data from the file based on type
-                try:
-                    if is_docx:
-                        from docs_extracted import DOCSExtractor as DOCXExtractor
-                        print("📄 Reading and extracting data from DOCX attachment...")
-                        extractor = DOCXExtractor(attachment['data'], filename=original_filename)
-                    else:
-                        from pdf_extracted import PDFExtractor
-                        print("📄 Reading and extracting data from PDF attachment...")
-                        extractor = PDFExtractor(attachment['data'])
-                    
-                    extracted_data = extractor.extract_all()
-                    
-                    if extracted_data:
-                        print(f"✅ Extraction successful!")
-                        if extracted_data.get('title'):
-                            print(f"   📝 Title: {extracted_data.get('title')}")
-                        if extracted_data.get('authors_data'):
-                            print(f"   👤 Authors: {extracted_data.get('authors_data', {}).get('list', [])}")
-                        if extracted_data.get('paper_category'):
-                            print(f"   📂 Category: {extracted_data.get('paper_category')}")
-                        if extracted_data.get('thematic_area'):
-                            print(f"   🎯 Thematic Area: {extracted_data.get('thematic_area')}")
-                        if extracted_data.get('sucs'):
-                            print(f"   🏫 SUCs: {extracted_data.get('sucs')}")
-                    else:
-                        print("⚠️  No data extracted from file")
-                        
-                except ImportError as e:
-                    print(f"⚠️  Import error: {e}")
-                except Exception as e:
-                    print(f"⚠️  Error extracting data: {e}")
-                    import traceback
-                    traceback.print_exc()
-                
-                # Step 3: Extract project title (from email first, then extracted data)
-                project_title = subject.replace('ABSTRACT-', '').strip()
-                if not project_title or len(project_title) < 5:
-                    if extracted_data and extracted_data.get('title'):
-                        project_title = extracted_data.get('title')
-                    else:
-                        lines = body.split('\n') if body else []
-                        for line in lines:
-                            if 'ABSTRACT' in line.upper() or 'TITLE' in line.upper():
-                                project_title = line.strip()
-                                break
-                        if not project_title:
-                            project_title = subject
-                
-                # Step 4: Get paper category and thematic area from extracted data
-                paper_category = extracted_data.get('paper_category') if extracted_data else None
-                thematic_area = extracted_data.get('thematic_area') if extracted_data else None
-                
-                # Step 5: Upload to Google Drive with folder structure
-                print(f"📤 Uploading attachment to Google Drive...")
-                view_url, download_url = upload_file_to_drive(
-                    temp_path,
-                    f"abstract_{original_filename}",
-                    project_title=project_title,
+                submission = _process_single_attachment(
+                    attachment=attachment,
+                    original_filename=original_filename,
+                    email_data=email_data,
                     sender_name=sender_name,
-                    paper_category=paper_category,
-                    thematic_area=thematic_area
+                    sender_email=sender_email,
+                    subject=subject,
+                    body=body,
+                    body_project_leader=body_project_leader,
+                    attachment_index=idx + 1,
+                    total_attachments=len(attachments),
                 )
-                attachment_view_url = view_url
-                attachment_download_url = download_url
-                print(f"📎 Uploaded attachment to Drive: {view_url}")
-                
+                if submission:
+                    created_submissions.append(submission)
             except Exception as e:
-                print(f"❌ Error processing attachment: {e}")
+                print(f"   ❌ Error processing attachment #{idx + 1}: {e}")
                 import traceback
                 traceback.print_exc()
-            finally:
-                # Clean up temp file
-                if temp_path and os.path.exists(temp_path):
-                    try:
-                        os.unlink(temp_path)
-                        print(f"🧹 Cleaned up temp file: {temp_path}")
-                    except:
-                        pass
-        submission_id_value = generate_submission_id()
-        print(f"Generated submission ID for email: {submission_id_value}")
+                # Continue with next attachment — don't let one bad attachment kill the rest
         
-        # Step 6: Store in Database (Email Data)
+        if created_submissions:
+            print(f"\n✅ Successfully processed {len(created_submissions)} submission(s) from email: {subject}")
+        
+        return created_submissions
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ Error processing email submission: {e}")
+        import traceback
+        traceback.print_exc()
+        return []
+
+
+def _process_single_attachment(attachment, original_filename, email_data, sender_name,
+                                 sender_email, subject, body, body_project_leader,
+                                 attachment_index=1, total_attachments=1):
+    """
+    Process ONE attachment from an email and create its own EmailSubmission + ExtractedAbstractData.
+    
+    Returns:
+        EmailSubmission or None
+    """
+    # Determine file type
+    is_docx = original_filename.lower().endswith('.docx')
+    is_pdf = original_filename.lower().endswith('.pdf')
+    
+    if not is_pdf and not is_docx:
+        if attachment['data'][:4] == b'%PDF':
+            is_pdf = True
+        elif attachment['data'][:2] == b'PK':
+            is_docx = True
+    
+    # Create temporary file
+    suffix = '.docx' if is_docx else '.pdf'
+    temp_path = None
+    attachment_view_url = None
+    attachment_download_url = None
+    extracted_data = None
+    
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp_file:
+            temp_file.write(attachment['data'])
+            temp_path = temp_file.name
+        
+        print(f"      📄 Temp file created: {temp_path} ({os.path.getsize(temp_path)} bytes)")
+        
+        # ---- STEP 1: Extract data from the file ----
+        try:
+            if is_docx:
+                from docs_extracted import DOCSExtractor as DOCXExtractor
+                print(f"      📄 Extracting data from DOCX...")
+                extractor = DOCXExtractor(attachment['data'], filename=original_filename)
+            else:
+                from pdf_extracted import PDFExtractor
+                print(f"      📄 Extracting data from PDF...")
+                extractor = PDFExtractor(attachment['data'])
+            
+            extracted_data = extractor.extract_all()
+            
+            if extracted_data:
+                print(f"      ✅ Extraction successful!")
+                if extracted_data.get('title'):
+                    print(f"         📝 Title: {extracted_data.get('title')}")
+                if extracted_data.get('paper_category'):
+                    print(f"         📂 Category: {extracted_data.get('paper_category')}")
+                if extracted_data.get('thematic_area'):
+                    print(f"         🎯 Thematic Area: {extracted_data.get('thematic_area')}")
+                if extracted_data.get('sucs'):
+                    print(f"         🏫 SUCs: {extracted_data.get('sucs')}")
+            else:
+                print(f"      ⚠️  No data extracted from file")
+                
+        except ImportError as e:
+            print(f"      ⚠️  Import error: {e}")
+        except Exception as e:
+            print(f"      ⚠️  Error extracting data: {e}")
+            import traceback
+            traceback.print_exc()
+        
+        # ---- STEP 2: Determine project title ----
+        # Priority: extracted title > subject > body fallback
+        if extracted_data and extracted_data.get('title'):
+            project_title = extracted_data.get('title')
+        else:
+            # Try subject (clean up common prefixes)
+            subject_clean = subject
+            for prefix in ['ABSTRACT-', 'ABSTRACT:', 'Abstract -', 'Abstract:']:
+                if subject_clean.upper().startswith(prefix.upper()):
+                    subject_clean = subject_clean[len(prefix):].strip()
+                    break
+            project_title = subject_clean
+            # If still too short, look in body
+            if not project_title or len(project_title) < 5:
+                lines = body.split('\n') if body else []
+                for line in lines:
+                    if 'ABSTRACT' in line.upper() or 'TITLE' in line.upper():
+                        project_title = line.strip()
+                        break
+                if not project_title:
+                    project_title = subject
+        
+        # ---- STEP 3: Get paper category & thematic area ----
+        paper_category = extracted_data.get('paper_category') if extracted_data else None
+        thematic_area = extracted_data.get('thematic_area') if extracted_data else None
+        
+        # ---- STEP 4: Generate a UNIQUE submission_id for this attachment ----
+        submission_id_value = generate_submission_id()
+        print(f"      🆔 Generated submission ID: {submission_id_value}")
+        
+        # ---- STEP 5: Upload to Google Drive ----
+        print(f"      📤 Uploading to Google Drive...")
+        try:
+            view_url, download_url = upload_file_to_drive(
+                temp_path,
+                f"abstract_{original_filename}",
+                project_title=project_title,
+                sender_name=sender_name,
+                paper_category=paper_category,
+                thematic_area=thematic_area
+            )
+            attachment_view_url = view_url
+            attachment_download_url = download_url
+            print(f"      📎 Uploaded: {view_url}")
+        except Exception as e:
+            print(f"      ❌ Drive upload failed: {e}")
+            import traceback
+            traceback.print_exc()
+            # Continue anyway — we still want to save the DB record
+        
+        # ---- STEP 6: Create EmailSubmission record ----
+        unique_email_message_id = email_data['id']
+        if total_attachments > 1:
+            unique_email_message_id = f"{email_data['id']}__att{attachment_index}"
+        
+        # SAFETY: Skip if this exact attachment row already exists (prevents
+        # duplicates when a previous scan partially failed and gets retried)
+        already_exists = EmailSubmission.query.filter_by(
+            email_message_id=unique_email_message_id
+        ).first()
+        if already_exists:
+            print(f"      ⏭️  Attachment #{attachment_index} already exists (email_message_id={unique_email_message_id}) — skipping")
+            return already_exists
+        
         email_submission = EmailSubmission(
-            email_message_id=email_data['id'],
+            email_message_id=unique_email_message_id,
             sender_email=sender_email,
             sender_name=sender_name,
-            project_leader_name=project_leader_name,
+            project_leader_name=body_project_leader,
             subject=subject,
             body=body[:5000] if body else '',
-            attachment_filename=attachment.get('filename') if attachment else None,
+            attachment_filename=original_filename,
             attachment_view_url=attachment_view_url,
             attachment_download_url=attachment_download_url,
             status='pending',
@@ -1003,77 +1074,83 @@ def process_email_submission(email_data):
         )
         
         db.session.add(email_submission)
-        db.session.flush()  # Get the ID for the relationship
+        db.session.flush()  # Get ID
         
-        # Step 7: Store Extracted Data in Database
+        # ---- STEP 7: Create ExtractedAbstractData record ----
         if extracted_data:
             try:
-                # Prepare authors data
-                authors_data = extracted_data.get('authors_data')
-                authors_list_json = None
-                if authors_data and authors_data.get('list'):
-                    import json
-                    authors_list_json = json.dumps(authors_data.get('list'))
-                
-                corresponding_author = extracted_data.get('corresponding_author')
-                
-                extracted_record = ExtractedAbstractData(
-                    submission_id=submission_id_value,
-                    email_submission_id=email_submission.id,
-                    title=extracted_data.get('title'),
-                    authors=authors_data.get('full_text') if authors_data else None,
-                    authors_list=authors_list_json,
-                    project_leader=authors_data.get('project_leader') if authors_data else None,
-                    corresponding_author_name=corresponding_author.get('name') if corresponding_author else None,
-                    corresponding_author_email=corresponding_author.get('email') if corresponding_author else None,
-                    corresponding_author_position=extracted_data.get('corresponding_author_position'),
-                    sucs=extracted_data.get('sucs'),
-                    paper_category=extracted_data.get('paper_category'),
-                    thematic_area=extracted_data.get('thematic_area'),
-                    theme=extracted_data.get('theme'),
-                    extraction_status='extracted' if extracted_data else 'failed'
-                )
-                db.session.add(extracted_record)
-                print(f"✅ Extracted data saved to database (email_submission_id: {email_submission.id})")
-                print(f"   🏫 SUCs: {extracted_data.get('sucs')}")
-                print(f"   📍 Corresponding Author Position: {extracted_data.get('corresponding_author_position')}")
-                
+                # SAFETY: Skip if a record with this submission_id already exists
+                # (shouldn't happen since submission_id is freshly generated, but
+                # guard against races/retries)
+                existing_extracted = ExtractedAbstractData.query.filter_by(
+                    submission_id=submission_id_value
+                ).first()
+                if existing_extracted:
+                    print(f"      ⏭️  Extracted data with submission_id={submission_id_value} already exists — skipping")
+                else:
+                    authors_data = extracted_data.get('authors_data')
+                    authors_list_json = None
+                    if authors_data and authors_data.get('list'):
+                        authors_list_json = json.dumps(authors_data.get('list'))
+                    
+                    corresponding_author = extracted_data.get('corresponding_author')
+                    
+                    extracted_record = ExtractedAbstractData(
+                        submission_id=submission_id_value,
+                        email_submission_id=email_submission.id,
+                        title=extracted_data.get('title'),
+                        authors=authors_data.get('full_text') if authors_data else None,
+                        authors_list=authors_list_json,
+                        project_leader=authors_data.get('project_leader') if authors_data else None,
+                        corresponding_author_name=corresponding_author.get('name') if corresponding_author else None,
+                        corresponding_author_email=corresponding_author.get('email') if corresponding_author else None,
+                        corresponding_author_position=extracted_data.get('corresponding_author_position'),
+                        sucs=extracted_data.get('sucs'),
+                        paper_category=extracted_data.get('paper_category'),
+                        thematic_area=extracted_data.get('thematic_area'),
+                        theme=extracted_data.get('theme'),
+                        extraction_status='extracted'
+                    )
+                    db.session.add(extracted_record)
+                    print(f"      ✅ Extracted data saved (email_submission_id: {email_submission.id}, submission_id: {submission_id_value})")
             except Exception as e:
-                print(f"⚠️  Error saving extracted data: {e}")
+                print(f"      ⚠️  Error saving extracted data: {e}")
                 import traceback
                 traceback.print_exc()
         else:
-            # Even if no extracted data, create a record with failed status
+            # Create a failed-extraction record so admin can review/edit
             try:
-                extracted_record = ExtractedAbstractData(
-                    submission_id=submission_id_value,
-                    email_submission_id=email_submission.id,
-                    extraction_status='failed',
-                    extraction_error='No data could be extracted from the attachment'
-                )
-                db.session.add(extracted_record)
-                # Update the email submission status to 'uncategorized'
-                email_submission.status = 'uncategorized'
-                print(f"⚠️  Created failed extraction record for email_submission_id: {email_submission.id}")
+                existing_extracted = ExtractedAbstractData.query.filter_by(
+                    submission_id=submission_id_value
+                ).first()
+                if existing_extracted:
+                    print(f"      ⏭️  Failed-extraction record already exists for submission_id={submission_id_value} — skipping")
+                else:
+                    extracted_record = ExtractedAbstractData(
+                        submission_id=submission_id_value,
+                        email_submission_id=email_submission.id,
+                        extraction_status='failed',
+                        extraction_error='No data could be extracted from the attachment'
+                    )
+                    db.session.add(extracted_record)
+                    email_submission.status = 'uncategorized'
+                    print(f"      ⚠️  Created failed extraction record for email_submission_id: {email_submission.id}")
             except Exception as e:
-                print(f"⚠️  Error saving failed extraction record: {e}")
+                print(f"      ⚠️  Error saving failed extraction record: {e}")
         
         db.session.commit()
-        
-        print(f"✅ Successfully processed email: {subject}")
-        print(f"   📧 Email stored in database (ID: {email_submission.id})")
-        if extracted_data:
-            print(f"   📄 PDF data extracted and stored")
-        print(f"   📎 Attachment uploaded to Google Drive")
+        print(f"      ✅ Attachment #{attachment_index} committed to database")
         
         return email_submission
         
-    except Exception as e:
-        db.session.rollback()
-        print(f"❌ Error processing email submission: {e}")
-        import traceback
-        traceback.print_exc()
-        return None
+    finally:
+        # Clean up temp file
+        if temp_path and os.path.exists(temp_path):
+            try:
+                os.unlink(temp_path)
+                print(f"      🧹 Cleaned up temp file")
+            except:
+                pass
 
 def extract_project_leader(body):
     """Extract project leader name from email body."""
@@ -1359,14 +1436,16 @@ def check_email_submissions():
         if not gmail_service:
             return jsonify({"detail": "Gmail service not configured."}), 503
         
-        # Get existing email IDs from database
-        existing_ids = set()
+        existing_base_ids = set()
         all_existing = EmailSubmission.query.with_entities(EmailSubmission.email_message_id).all()
         for record in all_existing:
-            existing_ids.add(record[0])
+            if not record[0]:
+                continue
+            base_id = record[0].split('__att')[0]
+            existing_base_ids.add(base_id)
         
         print(f"📧 Reading emails from inbox of: pemnet26@gmail.com")
-        print(f"Found {len(existing_ids)} existing email records in database")
+        print(f"Found {len(existing_base_ids)} existing email records (by base gmail id) in database")
         
         query = 'has:attachment -from:pemnet26@gmail.com'
         
@@ -1382,8 +1461,8 @@ def check_email_submissions():
         non_abstract_skipped = 0
         
         for email in emails:
-            # Check if already processed in database
-            if email['id'] in existing_ids:
+            # Check if already processed in database — compare against BASE gmail id
+            if email['id'] in existing_base_ids:
                 skipped_count += 1
                 continue
             
@@ -1405,11 +1484,11 @@ def check_email_submissions():
                 # NO modification to the email
                 continue
             
-            # Process the email - copy attachment and upload to Drive
-            result = process_email_submission(email)
-            if result:
-                processed_count += 1
-                print(f"✅ Processed email from: {email['sender_email']} - {email['subject']}")
+            # Process the email — may return MULTIPLE submissions (one per attachment)
+            results = process_email_submission(email)
+            if results:
+                processed_count += len(results)
+                print(f"✅ Processed {len(results)} submission(s) from: {email['sender_email']} - {email['subject']}")
             else:
                 errors.append(email['subject'])
         
@@ -1674,12 +1753,15 @@ def sync_all_emails():
             return jsonify({"detail": "Gmail service not configured. Please set up credentials.json"}), 503
         
         # Get ALL existing email message IDs from our database
-        existing_ids = set()
+        existing_base_ids = set()
         all_existing = EmailSubmission.query.with_entities(EmailSubmission.email_message_id).all()
         for record in all_existing:
-            existing_ids.add(record[0])
+            if not record[0]:
+                continue
+            base_id = record[0].split('__att')[0]
+            existing_base_ids.add(base_id)
         
-        print(f"Found {len(existing_ids)} existing email records in database")
+        print(f"Found {len(existing_base_ids)} existing email records (by base gmail id) in database")
         
         # Fetch ALL emails with attachments, excluding self-emails
         query = 'has:attachment -from:pemnet26@gmail.com'
@@ -1695,8 +1777,7 @@ def sync_all_emails():
         errors = []
         
         for email in emails:
-            # Check if already processed
-            if email['id'] in existing_ids:
+            if email['id'] in existing_base_ids:
                 skipped_count += 1
                 continue
             
@@ -1727,11 +1808,11 @@ def sync_all_emails():
                 print(f"⏭️  Skipping invitation email: {subject}")
                 continue
             
-            # Process the email
-            result = process_email_submission(email)
-            if result:
-                processed_count += 1
-                print(f"Synced new email: {email['subject']}")
+            # Process the email — may return MULTIPLE submissions (one per attachment)
+            results = process_email_submission(email)
+            if results:
+                processed_count += len(results)
+                print(f"Synced {len(results)} submission(s) from email: {email['subject']}")
             else:
                 errors.append(email['subject'])
         

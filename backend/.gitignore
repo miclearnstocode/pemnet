@@ -5,3 +5,8 @@ credentials.json
 token_pemnet26_gmail_com.pickle
 *.json
 .env
+__pycache__/
+*.pyc
+nohup.out
+.env.broken.*
+venv/

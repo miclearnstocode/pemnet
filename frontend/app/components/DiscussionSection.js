@@ -12,6 +12,8 @@ import {
   faSync
 } from '@fortawesome/free-solid-svg-icons';
 
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000').replace(/\/+$/, '');
+
 export default function DiscussionSection({
   submissionId,
   currentUserId,
@@ -61,7 +63,7 @@ export default function DiscussionSection({
 
   const fetchUsers = async () => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users`);
+      const res = await fetch(`${API_URL}/api/users`);
       if (res.ok) {
         const data = await res.json();
         setAllUsers(data);
@@ -82,7 +84,7 @@ export default function DiscussionSection({
     
     try {
       console.log('Fetching discussions for submissionId:', submissionId);
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/submissions/${submissionId}/discussions`);
+      const res = await fetch(`${API_URL}/api/submissions/${submissionId}/discussions`);
       
       if (res.ok) {
         const data = await res.json();
@@ -112,7 +114,7 @@ export default function DiscussionSection({
     
     try {
       console.log('Posting message to submissionId:', submissionId);
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/submissions/${submissionId}/discussions`, {
+      const res = await fetch(`${API_URL}/api/submissions/${submissionId}/discussions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

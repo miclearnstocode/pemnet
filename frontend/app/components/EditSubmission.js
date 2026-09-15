@@ -24,6 +24,8 @@ import {
   faExclamationTriangle
 } from '@fortawesome/free-solid-svg-icons';
 
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000').replace(/\/+$/, '');
+
 export default function EditSubmission({
   isOpen,
   onClose,
@@ -132,7 +134,7 @@ export default function EditSubmission({
 
   const fetchSucs = async () => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/sucs`);
+      const res = await fetch(`${API_URL}/api/sucs`);
       if (res.ok) {
         const data = await res.json();
         setSucList(data);
@@ -161,7 +163,7 @@ export default function EditSubmission({
 
     setIsAddingSuc(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/sucs`, {
+      const res = await fetch(`${API_URL}/api/sucs`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

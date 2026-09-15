@@ -1,6 +1,5 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from datetime import datetime
 import os, json
@@ -14,7 +13,7 @@ from functools import wraps
 from gmail_service import GmailService
 from models import SubmissionRevision, db, User, Submission, EmailSubmission, ExtractedAbstractData, SUC, SubmissionVote, EvaluatorDiscussion, Payment, ExtractedDataRevision, EmailNotificationLog
 from master_approver import MasterApproverService
-from email_service import gmail_service, send_status_update_email, send_confirmation_email
+from email_service import gmail_service, send_confirmation_email
 
 load_dotenv()
 
@@ -22,7 +21,7 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your_super_secret_key_here')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'mysql+pymysql://root:@127.0.0.1:3306/pemnet')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['MAX_CONTENT_LENGTH'] = 64 * 1024 * 1024  # 64MB max file size
+app.config['MAX_CONTENT_LENGTH'] = 64 * 1024 * 1024 
 app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
     'connect_args': {
         'connect_timeout': 5,
@@ -36,10 +35,20 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
 db.init_app(app)
 bcrypt = Bcrypt(app)
 
-_default_origins = "http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001"
-_allowed_origins = [
-    o.strip() for o in os.getenv("CORS_ORIGINS", _default_origins).split(",") if o.strip()
+_default_origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:3001",
+    "http://127.0.0.1:3001",
+    "https://pemnet.capsu.edu.ph",
+    r"http://192\.168\..*",
+    r"http://10\..*",
+    r"http://172\..*",
+    r"http://localhost:\d+",
+    r"http://127\.0\.0\.1:\d+",
 ]
+_env_origins = [o.strip() for o in os.getenv("CORS_ORIGINS", "").split(",") if o.strip()]
+_allowed_origins = list(set(_default_origins + _env_origins))
 
 CORS(app,
      origins=_allowed_origins,
@@ -62,8 +71,6 @@ with app.app_context():
 def staff_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        # Simple check - for now, staff can be identified by role in request
-        # You can add proper authentication later
         return f(*args, **kwargs)
     return decorated_function
 
@@ -3035,4 +3042,4 @@ def get_all_payments():
         return jsonify({"detail": str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=False, port=5000, host='127.0.0.1')
+    app.run(debug=False, port=5000, host='0.0.0.0')

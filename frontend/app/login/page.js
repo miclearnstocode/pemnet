@@ -109,7 +109,8 @@ export default function LoginPage() {
       const sanitizedEmail = email.trim().toLowerCase();
       const sanitizedPassword = password;
       
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/login`, {
+      const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000').replace(/\/+$/, '');
+      const res = await fetch(`${apiUrl}/api/login`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -133,7 +134,10 @@ export default function LoginPage() {
         localStorage.removeItem('pemnet_token');
         localStorage.removeItem('pemnet_user');
         
-        // Store fresh user data
+        // Store fresh user and token data
+        if (data.token) {
+          localStorage.setItem('pemnet_token', data.token);
+        }
         localStorage.setItem('pemnet_user', JSON.stringify(data.user));
         
         console.log('User role:', data.user.role);
@@ -150,13 +154,12 @@ export default function LoginPage() {
         }
       } else {
         const errData = await res.json().catch(() => ({}));
-        // Generic error message for security
-        setError('Invalid credentials. Please check your credentials properly.');
+        setError(errData.detail || errData.msg || 'Invalid credentials. Please check your credentials properly.');
         handleFailedAttempt();
       }
     } catch (err) {
       console.error('Login error:', err);
-      setError('Unable to connect to the server. Please try again later.');
+      setError('Unable to connect to the server. Please check if the backend is running.');
       handleFailedAttempt();
     } finally {
       setLoading(false);

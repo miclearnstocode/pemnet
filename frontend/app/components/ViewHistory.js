@@ -23,6 +23,8 @@ import {
   faSync
 } from '@fortawesome/free-solid-svg-icons';
 
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000').replace(/\/+$/, '');
+
 export default function ViewHistory({
   isOpen,
   onClose,
@@ -45,7 +47,7 @@ export default function ViewHistory({
 
   const fetchUsers = async () => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users`);
+      const res = await fetch(`${API_URL}/api/users`);
       if (res.ok) {
         const data = await res.json();
         setAllUsers(data);
@@ -61,9 +63,9 @@ export default function ViewHistory({
       let url;
       
       if (extractedDataId) {
-        url = `${process.env.NEXT_PUBLIC_API_URL}/api/extracted-data/${extractedDataId}/revisions`;
+        url = `${API_URL}/api/extracted-data/${extractedDataId}/revisions`;
       } else if (submissionId) {
-        url = `${process.env.NEXT_PUBLIC_API_URL}/api/submissions/${submissionId}/edit-history`;
+        url = `${API_URL}/api/submissions/${submissionId}/edit-history`;
       } else {
         setRevisions([]);
         setLoading(false);

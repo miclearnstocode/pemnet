@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000').replace(/\/+$/, '');
+
 export default function TreasurerPage() {
   const [currentUser, setCurrentUser] = useState(null);
   const [payments, setPayments] = useState([]);
@@ -46,7 +48,8 @@ export default function TreasurerPage() {
 
   const fetchUsers = async () => {
     try {
-      const res = await fetch('${process.env.NEXT_PUBLIC_API_URL}/api/users');
+      const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000').replace(/\/+$/, '');
+      const res = await fetch(`${apiUrl}/api/users`);
       if (res.ok) {
         const data = await res.json();
         setAllUsers(data);
@@ -61,8 +64,8 @@ export default function TreasurerPage() {
     try {
       const token = localStorage.getItem('pemnet_token');
       const url = statusFilter === 'all' 
-        ? `${process.env.NEXT_PUBLIC_API_URL}/api/payments/all`
-        : `${process.env.NEXT_PUBLIC_API_URL}/api/payments/all?status=${statusFilter}`;
+        ? `${API_URL}/api/payments/all`
+        : `${API_URL}/api/payments/all?status=${statusFilter}`;
       
       const res = await fetch(url, {
         headers: {
@@ -98,7 +101,7 @@ export default function TreasurerPage() {
     setActionLoading(true);
     try {
       const token = localStorage.getItem('pemnet_token');
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/payments/${paymentId}/verify`, {
+      const res = await fetch(`${API_URL}/api/payments/${paymentId}/verify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -137,7 +140,7 @@ export default function TreasurerPage() {
     setActionLoading(true);
     try {
       const token = localStorage.getItem('pemnet_token');
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/payments/${paymentId}/verify`, {
+      const res = await fetch(`${API_URL}/api/payments/${paymentId}/verify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

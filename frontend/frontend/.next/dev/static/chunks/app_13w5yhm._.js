@@ -277,6 +277,7 @@ var _s = __turbopack_context__.k.signature();
 ;
 ;
 ;
+const API_URL = (("TURBOPACK compile-time value", "http://localhost:5000") || 'http://localhost:5000').replace(/\/+$/, '');
 function DiscussionSection({ submissionId, currentUserId, currentUserName, onNewMessage, initialDiscussions = [], isMasterApprover = false, title = 'Evaluator Discussion', maxHeight = '300px' }) {
     _s();
     const [discussions, setDiscussions] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(initialDiscussions);
@@ -328,7 +329,7 @@ function DiscussionSection({ submissionId, currentUserId, currentUserName, onNew
     ]);
     const fetchUsers = async ()=>{
         try {
-            const res = await fetch(`${("TURBOPACK compile-time value", "http://localhost:5000")}/api/users`);
+            const res = await fetch(`${API_URL}/api/users`);
             if (res.ok) {
                 const data = await res.json();
                 setAllUsers(data);
@@ -346,7 +347,7 @@ function DiscussionSection({ submissionId, currentUserId, currentUserName, onNew
         setError(null);
         try {
             console.log('Fetching discussions for submissionId:', submissionId);
-            const res = await fetch(`${("TURBOPACK compile-time value", "http://localhost:5000")}/api/submissions/${submissionId}/discussions`);
+            const res = await fetch(`${API_URL}/api/submissions/${submissionId}/discussions`);
             if (res.ok) {
                 const data = await res.json();
                 console.log('Discussions fetched:', data);
@@ -372,7 +373,7 @@ function DiscussionSection({ submissionId, currentUserId, currentUserName, onNew
         setError(null);
         try {
             console.log('Posting message to submissionId:', submissionId);
-            const res = await fetch(`${("TURBOPACK compile-time value", "http://localhost:5000")}/api/submissions/${submissionId}/discussions`, {
+            const res = await fetch(`${API_URL}/api/submissions/${submissionId}/discussions`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -432,7 +433,7 @@ function DiscussionSection({ submissionId, currentUserId, currentUserName, onNew
                                 className: `w-5 h-5 ${isMasterApprover ? 'text-purple-600' : 'text-indigo-600'}`
                             }, void 0, false, {
                                 fileName: "[project]/app/components/DiscussionSection.js",
-                                lineNumber: 164,
+                                lineNumber: 166,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h4", {
@@ -440,7 +441,7 @@ function DiscussionSection({ submissionId, currentUserId, currentUserName, onNew
                                 children: title
                             }, void 0, false, {
                                 fileName: "[project]/app/components/DiscussionSection.js",
-                                lineNumber: 168,
+                                lineNumber: 170,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -454,7 +455,7 @@ function DiscussionSection({ submissionId, currentUserId, currentUserName, onNew
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/components/DiscussionSection.js",
-                                lineNumber: 171,
+                                lineNumber: 173,
                                 columnNumber: 11
                             }, this),
                             isMasterApprover && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -465,14 +466,14 @@ function DiscussionSection({ submissionId, currentUserId, currentUserName, onNew
                                         className: "w-2.5 h-2.5"
                                     }, void 0, false, {
                                         fileName: "[project]/app/components/DiscussionSection.js",
-                                        lineNumber: 176,
+                                        lineNumber: 178,
                                         columnNumber: 15
                                     }, this),
                                     "Master View"
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/components/DiscussionSection.js",
-                                lineNumber: 175,
+                                lineNumber: 177,
                                 columnNumber: 13
                             }, this),
                             submissionId && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -484,13 +485,13 @@ function DiscussionSection({ submissionId, currentUserId, currentUserName, onNew
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/components/DiscussionSection.js",
-                                lineNumber: 181,
+                                lineNumber: 183,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/app/components/DiscussionSection.js",
-                        lineNumber: 163,
+                        lineNumber: 165,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -504,14 +505,14 @@ function DiscussionSection({ submissionId, currentUserId, currentUserName, onNew
                                     className: "w-3 h-3 animate-spin"
                                 }, void 0, false, {
                                     fileName: "[project]/app/components/DiscussionSection.js",
-                                    lineNumber: 193,
+                                    lineNumber: 195,
                                     columnNumber: 15
                                 }, this),
                                 "Loading..."
                             ]
                         }, void 0, true, {
                             fileName: "[project]/app/components/DiscussionSection.js",
-                            lineNumber: 192,
+                            lineNumber: 194,
                             columnNumber: 13
                         }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
                             children: [
@@ -520,25 +521,25 @@ function DiscussionSection({ submissionId, currentUserId, currentUserName, onNew
                                     className: "w-3 h-3"
                                 }, void 0, false, {
                                     fileName: "[project]/app/components/DiscussionSection.js",
-                                    lineNumber: 198,
+                                    lineNumber: 200,
                                     columnNumber: 15
                                 }, this),
                                 "Refresh"
                             ]
                         }, void 0, true, {
                             fileName: "[project]/app/components/DiscussionSection.js",
-                            lineNumber: 197,
+                            lineNumber: 199,
                             columnNumber: 13
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/app/components/DiscussionSection.js",
-                        lineNumber: 186,
+                        lineNumber: 188,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/app/components/DiscussionSection.js",
-                lineNumber: 162,
+                lineNumber: 164,
                 columnNumber: 7
             }, this),
             error && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -549,7 +550,7 @@ function DiscussionSection({ submissionId, currentUserId, currentUserName, onNew
                         className: "w-3 h-3"
                     }, void 0, false, {
                         fileName: "[project]/app/components/DiscussionSection.js",
-                        lineNumber: 208,
+                        lineNumber: 210,
                         columnNumber: 11
                     }, this),
                     error,
@@ -559,13 +560,13 @@ function DiscussionSection({ submissionId, currentUserId, currentUserName, onNew
                         children: "Retry"
                     }, void 0, false, {
                         fileName: "[project]/app/components/DiscussionSection.js",
-                        lineNumber: 210,
+                        lineNumber: 212,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/app/components/DiscussionSection.js",
-                lineNumber: 207,
+                lineNumber: 209,
                 columnNumber: 9
             }, this),
             !submissionId && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -576,14 +577,14 @@ function DiscussionSection({ submissionId, currentUserId, currentUserName, onNew
                         className: "w-3 h-3"
                     }, void 0, false, {
                         fileName: "[project]/app/components/DiscussionSection.js",
-                        lineNumber: 219,
+                        lineNumber: 221,
                         columnNumber: 11
                     }, this),
                     "No submission selected"
                 ]
             }, void 0, true, {
                 fileName: "[project]/app/components/DiscussionSection.js",
-                lineNumber: 218,
+                lineNumber: 220,
                 columnNumber: 9
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -598,12 +599,12 @@ function DiscussionSection({ submissionId, currentUserId, currentUserName, onNew
                         className: "w-6 h-6 text-blue-500 animate-spin"
                     }, void 0, false, {
                         fileName: "[project]/app/components/DiscussionSection.js",
-                        lineNumber: 231,
+                        lineNumber: 233,
                         columnNumber: 13
                     }, this)
                 }, void 0, false, {
                     fileName: "[project]/app/components/DiscussionSection.js",
-                    lineNumber: 230,
+                    lineNumber: 232,
                     columnNumber: 11
                 }, this) : discussions.length > 0 ? discussions.map((msg)=>{
                     const isCurrentUser = msg.evaluator_id === currentUserId;
@@ -621,7 +622,7 @@ function DiscussionSection({ submissionId, currentUserId, currentUserName, onNew
                                             className: `w-3 h-3 ${isCurrentUser ? 'text-blue-500' : 'text-slate-400'}`
                                         }, void 0, false, {
                                             fileName: "[project]/app/components/DiscussionSection.js",
-                                            lineNumber: 242,
+                                            lineNumber: 244,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -633,13 +634,13 @@ function DiscussionSection({ submissionId, currentUserId, currentUserName, onNew
                                                     children: "(Evaluator)"
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/components/DiscussionSection.js",
-                                                    lineNumber: 249,
+                                                    lineNumber: 251,
                                                     columnNumber: 25
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/app/components/DiscussionSection.js",
-                                            lineNumber: 246,
+                                            lineNumber: 248,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -650,20 +651,20 @@ function DiscussionSection({ submissionId, currentUserId, currentUserName, onNew
                                                     className: "w-2.5 h-2.5"
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/components/DiscussionSection.js",
-                                                    lineNumber: 253,
+                                                    lineNumber: 255,
                                                     columnNumber: 23
                                                 }, this),
                                                 msg.created_at
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/app/components/DiscussionSection.js",
-                                            lineNumber: 252,
+                                            lineNumber: 254,
                                             columnNumber: 21
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/app/components/DiscussionSection.js",
-                                    lineNumber: 241,
+                                    lineNumber: 243,
                                     columnNumber: 19
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -673,23 +674,23 @@ function DiscussionSection({ submissionId, currentUserId, currentUserName, onNew
                                         children: msg.message || msg.text || 'No message'
                                     }, void 0, false, {
                                         fileName: "[project]/app/components/DiscussionSection.js",
-                                        lineNumber: 262,
+                                        lineNumber: 264,
                                         columnNumber: 21
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/app/components/DiscussionSection.js",
-                                    lineNumber: 257,
+                                    lineNumber: 259,
                                     columnNumber: 19
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/app/components/DiscussionSection.js",
-                            lineNumber: 240,
+                            lineNumber: 242,
                             columnNumber: 17
                         }, this)
                     }, msg.id || Math.random(), false, {
                         fileName: "[project]/app/components/DiscussionSection.js",
-                        lineNumber: 239,
+                        lineNumber: 241,
                         columnNumber: 15
                     }, this);
                 }) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -700,7 +701,7 @@ function DiscussionSection({ submissionId, currentUserId, currentUserName, onNew
                             className: "w-8 h-8 text-slate-300 mb-2"
                         }, void 0, false, {
                             fileName: "[project]/app/components/DiscussionSection.js",
-                            lineNumber: 270,
+                            lineNumber: 272,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -708,7 +709,7 @@ function DiscussionSection({ submissionId, currentUserId, currentUserName, onNew
                             children: "No discussions yet"
                         }, void 0, false, {
                             fileName: "[project]/app/components/DiscussionSection.js",
-                            lineNumber: 271,
+                            lineNumber: 273,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -716,18 +717,18 @@ function DiscussionSection({ submissionId, currentUserId, currentUserName, onNew
                             children: "Start the conversation with other evaluators"
                         }, void 0, false, {
                             fileName: "[project]/app/components/DiscussionSection.js",
-                            lineNumber: 272,
+                            lineNumber: 274,
                             columnNumber: 13
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/app/components/DiscussionSection.js",
-                    lineNumber: 269,
+                    lineNumber: 271,
                     columnNumber: 11
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/app/components/DiscussionSection.js",
-                lineNumber: 225,
+                lineNumber: 227,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -743,7 +744,7 @@ function DiscussionSection({ submissionId, currentUserId, currentUserName, onNew
                         disabled: isSending || !submissionId
                     }, void 0, false, {
                         fileName: "[project]/app/components/DiscussionSection.js",
-                        lineNumber: 279,
+                        lineNumber: 281,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -756,14 +757,14 @@ function DiscussionSection({ submissionId, currentUserId, currentUserName, onNew
                                     className: "animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"
                                 }, void 0, false, {
                                     fileName: "[project]/app/components/DiscussionSection.js",
-                                    lineNumber: 299,
+                                    lineNumber: 301,
                                     columnNumber: 15
                                 }, this),
                                 "Sending..."
                             ]
                         }, void 0, true, {
                             fileName: "[project]/app/components/DiscussionSection.js",
-                            lineNumber: 298,
+                            lineNumber: 300,
                             columnNumber: 13
                         }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
                             children: [
@@ -772,31 +773,31 @@ function DiscussionSection({ submissionId, currentUserId, currentUserName, onNew
                                     className: "w-4 h-4"
                                 }, void 0, false, {
                                     fileName: "[project]/app/components/DiscussionSection.js",
-                                    lineNumber: 304,
+                                    lineNumber: 306,
                                     columnNumber: 15
                                 }, this),
                                 "Send"
                             ]
                         }, void 0, true, {
                             fileName: "[project]/app/components/DiscussionSection.js",
-                            lineNumber: 303,
+                            lineNumber: 305,
                             columnNumber: 13
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/app/components/DiscussionSection.js",
-                        lineNumber: 288,
+                        lineNumber: 290,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/app/components/DiscussionSection.js",
-                lineNumber: 278,
+                lineNumber: 280,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/app/components/DiscussionSection.js",
-        lineNumber: 160,
+        lineNumber: 162,
         columnNumber: 5
     }, this);
 }
@@ -1215,6 +1216,7 @@ var _s = __turbopack_context__.k.signature();
 ;
 ;
 ;
+const API_URL = (("TURBOPACK compile-time value", "http://localhost:5000") || 'http://localhost:5000').replace(/\/+$/, '');
 function EditSubmission({ isOpen, onClose, data, onSave, isLoading = false, currentUser, isMasterApprover = false, title = 'Edit Submission', fields = null, submissionType = 'system' }) {
     _s();
     const [editForm, setEditForm] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])({});
@@ -1397,7 +1399,7 @@ function EditSubmission({ isOpen, onClose, data, onSave, isLoading = false, curr
     ]);
     const fetchSucs = async ()=>{
         try {
-            const res = await fetch(`${("TURBOPACK compile-time value", "http://localhost:5000")}/api/sucs`);
+            const res = await fetch(`${API_URL}/api/sucs`);
             if (res.ok) {
                 const data = await res.json();
                 setSucList(data);
@@ -1428,7 +1430,7 @@ function EditSubmission({ isOpen, onClose, data, onSave, isLoading = false, curr
         if (!newSucName.trim()) return;
         setIsAddingSuc(true);
         try {
-            const res = await fetch(`${("TURBOPACK compile-time value", "http://localhost:5000")}/api/sucs`, {
+            const res = await fetch(`${API_URL}/api/sucs`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -1510,7 +1512,7 @@ function EditSubmission({ isOpen, onClose, data, onSave, isLoading = false, curr
                         onClick: onClose
                     }, void 0, false, {
                         fileName: "[project]/app/components/EditSubmission.js",
-                        lineNumber: 243,
+                        lineNumber: 245,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1531,12 +1533,12 @@ function EditSubmission({ isOpen, onClose, data, onSave, isLoading = false, curr
                                                         className: "w-5 h-5"
                                                     }, void 0, false, {
                                                         fileName: "[project]/app/components/EditSubmission.js",
-                                                        lineNumber: 250,
+                                                        lineNumber: 252,
                                                         columnNumber: 19
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/components/EditSubmission.js",
-                                                    lineNumber: 249,
+                                                    lineNumber: 251,
                                                     columnNumber: 17
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1546,7 +1548,7 @@ function EditSubmission({ isOpen, onClose, data, onSave, isLoading = false, curr
                                                             children: title
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/components/EditSubmission.js",
-                                                            lineNumber: 253,
+                                                            lineNumber: 255,
                                                             columnNumber: 19
                                                         }, this),
                                                         isMasterApprover && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1554,7 +1556,7 @@ function EditSubmission({ isOpen, onClose, data, onSave, isLoading = false, curr
                                                             children: "Master Approver Edit"
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/components/EditSubmission.js",
-                                                            lineNumber: 255,
+                                                            lineNumber: 257,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1562,19 +1564,19 @@ function EditSubmission({ isOpen, onClose, data, onSave, isLoading = false, curr
                                                             children: submissionType === 'email' ? '📧 Email Submission' : '📝 System Submission'
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/components/EditSubmission.js",
-                                                            lineNumber: 257,
+                                                            lineNumber: 259,
                                                             columnNumber: 19
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/app/components/EditSubmission.js",
-                                                    lineNumber: 252,
+                                                    lineNumber: 254,
                                                     columnNumber: 17
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/app/components/EditSubmission.js",
-                                            lineNumber: 248,
+                                            lineNumber: 250,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1585,18 +1587,18 @@ function EditSubmission({ isOpen, onClose, data, onSave, isLoading = false, curr
                                                 className: "w-5 h-5"
                                             }, void 0, false, {
                                                 fileName: "[project]/app/components/EditSubmission.js",
-                                                lineNumber: 266,
+                                                lineNumber: 268,
                                                 columnNumber: 17
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/app/components/EditSubmission.js",
-                                            lineNumber: 262,
+                                            lineNumber: 264,
                                             columnNumber: 15
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/app/components/EditSubmission.js",
-                                    lineNumber: 247,
+                                    lineNumber: 249,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1625,14 +1627,14 @@ function EditSubmission({ isOpen, onClose, data, onSave, isLoading = false, curr
                                                                         className: "w-4 h-4 text-blue-400"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/components/EditSubmission.js",
-                                                                        lineNumber: 288,
+                                                                        lineNumber: 290,
                                                                         columnNumber: 27
                                                                     }, this),
                                                                     field.label
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/app/components/EditSubmission.js",
-                                                                lineNumber: 287,
+                                                                lineNumber: 289,
                                                                 columnNumber: 25
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("select", {
@@ -1645,18 +1647,18 @@ function EditSubmission({ isOpen, onClose, data, onSave, isLoading = false, curr
                                                                         children: option
                                                                     }, option, false, {
                                                                         fileName: "[project]/app/components/EditSubmission.js",
-                                                                        lineNumber: 298,
+                                                                        lineNumber: 300,
                                                                         columnNumber: 29
                                                                     }, this))
                                                             }, void 0, false, {
                                                                 fileName: "[project]/app/components/EditSubmission.js",
-                                                                lineNumber: 291,
+                                                                lineNumber: 293,
                                                                 columnNumber: 25
                                                             }, this)
                                                         ]
                                                     }, key, true, {
                                                         fileName: "[project]/app/components/EditSubmission.js",
-                                                        lineNumber: 286,
+                                                        lineNumber: 288,
                                                         columnNumber: 23
                                                     }, this);
                                                 }
@@ -1672,14 +1674,14 @@ function EditSubmission({ isOpen, onClose, data, onSave, isLoading = false, curr
                                                                         className: "w-4 h-4 text-amber-400"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/components/EditSubmission.js",
-                                                                        lineNumber: 309,
+                                                                        lineNumber: 311,
                                                                         columnNumber: 27
                                                                     }, this),
                                                                     field.label
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/app/components/EditSubmission.js",
-                                                                lineNumber: 308,
+                                                                lineNumber: 310,
                                                                 columnNumber: 25
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1704,7 +1706,7 @@ function EditSubmission({ isOpen, onClose, data, onSave, isLoading = false, curr
                                                                         className: "w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 placeholder:italic focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition-all"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/components/EditSubmission.js",
-                                                                        lineNumber: 313,
+                                                                        lineNumber: 315,
                                                                         columnNumber: 27
                                                                     }, this),
                                                                     showSucDropdown && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1717,7 +1719,7 @@ function EditSubmission({ isOpen, onClose, data, onSave, isLoading = false, curr
                                                                                         children: suc.name
                                                                                     }, void 0, false, {
                                                                                         fileName: "[project]/app/components/EditSubmission.js",
-                                                                                        lineNumber: 337,
+                                                                                        lineNumber: 339,
                                                                                         columnNumber: 37
                                                                                     }, this),
                                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1725,13 +1727,13 @@ function EditSubmission({ isOpen, onClose, data, onSave, isLoading = false, curr
                                                                                         children: suc.region
                                                                                     }, void 0, false, {
                                                                                         fileName: "[project]/app/components/EditSubmission.js",
-                                                                                        lineNumber: 338,
+                                                                                        lineNumber: 340,
                                                                                         columnNumber: 37
                                                                                     }, this)
                                                                                 ]
                                                                             }, suc.id, true, {
                                                                                 fileName: "[project]/app/components/EditSubmission.js",
-                                                                                lineNumber: 332,
+                                                                                lineNumber: 334,
                                                                                 columnNumber: 35
                                                                             }, this)) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                                                             className: "p-3",
@@ -1741,7 +1743,7 @@ function EditSubmission({ isOpen, onClose, data, onSave, isLoading = false, curr
                                                                                     children: "No SUC found. Add new:"
                                                                                 }, void 0, false, {
                                                                                     fileName: "[project]/app/components/EditSubmission.js",
-                                                                                    lineNumber: 343,
+                                                                                    lineNumber: 345,
                                                                                     columnNumber: 35
                                                                                 }, this),
                                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1755,7 +1757,7 @@ function EditSubmission({ isOpen, onClose, data, onSave, isLoading = false, curr
                                                                                             className: "flex-1 px-3 py-1.5 border border-slate-200 rounded-lg text-sm"
                                                                                         }, void 0, false, {
                                                                                             fileName: "[project]/app/components/EditSubmission.js",
-                                                                                            lineNumber: 345,
+                                                                                            lineNumber: 347,
                                                                                             columnNumber: 37
                                                                                         }, this),
                                                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -1766,7 +1768,7 @@ function EditSubmission({ isOpen, onClose, data, onSave, isLoading = false, curr
                                                                                             className: "flex-1 px-3 py-1.5 border border-slate-200 rounded-lg text-sm"
                                                                                         }, void 0, false, {
                                                                                             fileName: "[project]/app/components/EditSubmission.js",
-                                                                                            lineNumber: 352,
+                                                                                            lineNumber: 354,
                                                                                             columnNumber: 37
                                                                                         }, this),
                                                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1778,48 +1780,48 @@ function EditSubmission({ isOpen, onClose, data, onSave, isLoading = false, curr
                                                                                                 className: "w-4 h-4 animate-spin"
                                                                                             }, void 0, false, {
                                                                                                 fileName: "[project]/app/components/EditSubmission.js",
-                                                                                                lineNumber: 364,
+                                                                                                lineNumber: 366,
                                                                                                 columnNumber: 54
                                                                                             }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$fortawesome$2f$react$2d$fontawesome$2f$dist$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["FontAwesomeIcon"], {
                                                                                                 icon: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$fortawesome$2f$free$2d$solid$2d$svg$2d$icons$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["faPlus"],
                                                                                                 className: "w-4 h-4"
                                                                                             }, void 0, false, {
                                                                                                 fileName: "[project]/app/components/EditSubmission.js",
-                                                                                                lineNumber: 364,
+                                                                                                lineNumber: 366,
                                                                                                 columnNumber: 126
                                                                                             }, this)
                                                                                         }, void 0, false, {
                                                                                             fileName: "[project]/app/components/EditSubmission.js",
-                                                                                            lineNumber: 359,
+                                                                                            lineNumber: 361,
                                                                                             columnNumber: 37
                                                                                         }, this)
                                                                                     ]
                                                                                 }, void 0, true, {
                                                                                     fileName: "[project]/app/components/EditSubmission.js",
-                                                                                    lineNumber: 344,
+                                                                                    lineNumber: 346,
                                                                                     columnNumber: 35
                                                                                 }, this)
                                                                             ]
                                                                         }, void 0, true, {
                                                                             fileName: "[project]/app/components/EditSubmission.js",
-                                                                            lineNumber: 342,
+                                                                            lineNumber: 344,
                                                                             columnNumber: 33
                                                                         }, this)
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/components/EditSubmission.js",
-                                                                        lineNumber: 329,
+                                                                        lineNumber: 331,
                                                                         columnNumber: 29
                                                                     }, this)
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/app/components/EditSubmission.js",
-                                                                lineNumber: 312,
+                                                                lineNumber: 314,
                                                                 columnNumber: 25
                                                             }, this)
                                                         ]
                                                     }, key, true, {
                                                         fileName: "[project]/app/components/EditSubmission.js",
-                                                        lineNumber: 307,
+                                                        lineNumber: 309,
                                                         columnNumber: 23
                                                     }, this);
                                                 }
@@ -1836,14 +1838,14 @@ function EditSubmission({ isOpen, onClose, data, onSave, isLoading = false, curr
                                                                     className: "w-4 h-4 text-blue-400"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/app/components/EditSubmission.js",
-                                                                    lineNumber: 386,
+                                                                    lineNumber: 388,
                                                                     columnNumber: 25
                                                                 }, this),
                                                                 field.label
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/app/components/EditSubmission.js",
-                                                            lineNumber: 385,
+                                                            lineNumber: 387,
                                                             columnNumber: 23
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -1855,19 +1857,19 @@ function EditSubmission({ isOpen, onClose, data, onSave, isLoading = false, curr
                                                             className: "w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 placeholder:italic focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition-all"
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/components/EditSubmission.js",
-                                                            lineNumber: 389,
+                                                            lineNumber: 391,
                                                             columnNumber: 23
                                                         }, this)
                                                     ]
                                                 }, key, true, {
                                                     fileName: "[project]/app/components/EditSubmission.js",
-                                                    lineNumber: 384,
+                                                    lineNumber: 386,
                                                     columnNumber: 21
                                                 }, this);
                                             })
                                         }, void 0, false, {
                                             fileName: "[project]/app/components/EditSubmission.js",
-                                            lineNumber: 272,
+                                            lineNumber: 274,
                                             columnNumber: 15
                                         }, this),
                                         isMasterApprover && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1881,14 +1883,14 @@ function EditSubmission({ isOpen, onClose, data, onSave, isLoading = false, curr
                                                             className: "w-4 h-4 mr-2"
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/components/EditSubmission.js",
-                                                            lineNumber: 406,
+                                                            lineNumber: 408,
                                                             columnNumber: 21
                                                         }, this),
                                                         "Master Approver Notes"
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/app/components/EditSubmission.js",
-                                                    lineNumber: 405,
+                                                    lineNumber: 407,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("textarea", {
@@ -1900,13 +1902,13 @@ function EditSubmission({ isOpen, onClose, data, onSave, isLoading = false, curr
                                                     rows: "3"
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/components/EditSubmission.js",
-                                                    lineNumber: 409,
+                                                    lineNumber: 411,
                                                     columnNumber: 19
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/app/components/EditSubmission.js",
-                                            lineNumber: 404,
+                                            lineNumber: 406,
                                             columnNumber: 17
                                         }, this),
                                         data?.edited_at && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1919,7 +1921,7 @@ function EditSubmission({ isOpen, onClose, data, onSave, isLoading = false, curr
                                                         className: "w-3 h-3"
                                                     }, void 0, false, {
                                                         fileName: "[project]/app/components/EditSubmission.js",
-                                                        lineNumber: 424,
+                                                        lineNumber: 426,
                                                         columnNumber: 21
                                                     }, this),
                                                     "Last edited: ",
@@ -1928,18 +1930,18 @@ function EditSubmission({ isOpen, onClose, data, onSave, isLoading = false, curr
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/app/components/EditSubmission.js",
-                                                lineNumber: 423,
+                                                lineNumber: 425,
                                                 columnNumber: 19
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/app/components/EditSubmission.js",
-                                            lineNumber: 422,
+                                            lineNumber: 424,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/app/components/EditSubmission.js",
-                                    lineNumber: 271,
+                                    lineNumber: 273,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1952,7 +1954,7 @@ function EditSubmission({ isOpen, onClose, data, onSave, isLoading = false, curr
                                             children: "Cancel"
                                         }, void 0, false, {
                                             fileName: "[project]/app/components/EditSubmission.js",
-                                            lineNumber: 434,
+                                            lineNumber: 436,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1965,14 +1967,14 @@ function EditSubmission({ isOpen, onClose, data, onSave, isLoading = false, curr
                                                         className: "animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"
                                                     }, void 0, false, {
                                                         fileName: "[project]/app/components/EditSubmission.js",
-                                                        lineNumber: 452,
+                                                        lineNumber: 454,
                                                         columnNumber: 21
                                                     }, this),
                                                     "Saving..."
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/app/components/EditSubmission.js",
-                                                lineNumber: 451,
+                                                lineNumber: 453,
                                                 columnNumber: 19
                                             }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
                                                 children: [
@@ -1981,42 +1983,42 @@ function EditSubmission({ isOpen, onClose, data, onSave, isLoading = false, curr
                                                         className: "w-4 h-4"
                                                     }, void 0, false, {
                                                         fileName: "[project]/app/components/EditSubmission.js",
-                                                        lineNumber: 457,
+                                                        lineNumber: 459,
                                                         columnNumber: 21
                                                     }, this),
                                                     "Save Changes"
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/app/components/EditSubmission.js",
-                                                lineNumber: 456,
+                                                lineNumber: 458,
                                                 columnNumber: 19
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/app/components/EditSubmission.js",
-                                            lineNumber: 441,
+                                            lineNumber: 443,
                                             columnNumber: 15
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/app/components/EditSubmission.js",
-                                    lineNumber: 433,
+                                    lineNumber: 435,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/app/components/EditSubmission.js",
-                            lineNumber: 245,
+                            lineNumber: 247,
                             columnNumber: 11
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/app/components/EditSubmission.js",
-                        lineNumber: 244,
+                        lineNumber: 246,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/app/components/EditSubmission.js",
-                lineNumber: 242,
+                lineNumber: 244,
                 columnNumber: 7
             }, this),
             showConfirm && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2027,7 +2029,7 @@ function EditSubmission({ isOpen, onClose, data, onSave, isLoading = false, curr
                         onClick: cancelSave
                     }, void 0, false, {
                         fileName: "[project]/app/components/EditSubmission.js",
-                        lineNumber: 470,
+                        lineNumber: 472,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2044,12 +2046,12 @@ function EditSubmission({ isOpen, onClose, data, onSave, isLoading = false, curr
                                             className: "w-6 h-6 text-yellow-600"
                                         }, void 0, false, {
                                             fileName: "[project]/app/components/EditSubmission.js",
-                                            lineNumber: 475,
+                                            lineNumber: 477,
                                             columnNumber: 19
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/app/components/EditSubmission.js",
-                                        lineNumber: 474,
+                                        lineNumber: 476,
                                         columnNumber: 17
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h3", {
@@ -2057,7 +2059,7 @@ function EditSubmission({ isOpen, onClose, data, onSave, isLoading = false, curr
                                         children: "Confirm Changes"
                                     }, void 0, false, {
                                         fileName: "[project]/app/components/EditSubmission.js",
-                                        lineNumber: 478,
+                                        lineNumber: 480,
                                         columnNumber: 17
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2070,20 +2072,20 @@ function EditSubmission({ isOpen, onClose, data, onSave, isLoading = false, curr
                                                         children: "Master Approver"
                                                     }, void 0, false, {
                                                         fileName: "[project]/app/components/EditSubmission.js",
-                                                        lineNumber: 484,
+                                                        lineNumber: 486,
                                                         columnNumber: 136
                                                     }, this),
                                                     "."
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/app/components/EditSubmission.js",
-                                                lineNumber: 484,
+                                                lineNumber: 486,
                                                 columnNumber: 21
                                             }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
                                                 children: "Are you sure you want to save these changes? This action will be recorded in the edit history."
                                             }, void 0, false, {
                                                 fileName: "[project]/app/components/EditSubmission.js",
-                                                lineNumber: 486,
+                                                lineNumber: 488,
                                                 columnNumber: 21
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2103,7 +2105,7 @@ function EditSubmission({ isOpen, onClose, data, onSave, isLoading = false, curr
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/app/components/EditSubmission.js",
-                                                                    lineNumber: 495,
+                                                                    lineNumber: 497,
                                                                     columnNumber: 29
                                                                 }, this),
                                                                 ' ',
@@ -2112,7 +2114,7 @@ function EditSubmission({ isOpen, onClose, data, onSave, isLoading = false, curr
                                                                     children: originalValue || '(empty)'
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/app/components/EditSubmission.js",
-                                                                    lineNumber: 496,
+                                                                    lineNumber: 498,
                                                                     columnNumber: 29
                                                                 }, this),
                                                                 ' → ',
@@ -2121,13 +2123,13 @@ function EditSubmission({ isOpen, onClose, data, onSave, isLoading = false, curr
                                                                     children: newValue || '(empty)'
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/app/components/EditSubmission.js",
-                                                                    lineNumber: 498,
+                                                                    lineNumber: 500,
                                                                     columnNumber: 29
                                                                 }, this)
                                                             ]
                                                         }, key, true, {
                                                             fileName: "[project]/app/components/EditSubmission.js",
-                                                            lineNumber: 494,
+                                                            lineNumber: 496,
                                                             columnNumber: 27
                                                         }, this);
                                                     }
@@ -2135,13 +2137,13 @@ function EditSubmission({ isOpen, onClose, data, onSave, isLoading = false, curr
                                                 })
                                             }, void 0, false, {
                                                 fileName: "[project]/app/components/EditSubmission.js",
-                                                lineNumber: 488,
+                                                lineNumber: 490,
                                                 columnNumber: 19
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/app/components/EditSubmission.js",
-                                        lineNumber: 482,
+                                        lineNumber: 484,
                                         columnNumber: 17
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2154,7 +2156,7 @@ function EditSubmission({ isOpen, onClose, data, onSave, isLoading = false, curr
                                                 children: "Cancel"
                                             }, void 0, false, {
                                                 fileName: "[project]/app/components/EditSubmission.js",
-                                                lineNumber: 508,
+                                                lineNumber: 510,
                                                 columnNumber: 19
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -2167,14 +2169,14 @@ function EditSubmission({ isOpen, onClose, data, onSave, isLoading = false, curr
                                                             className: "animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/components/EditSubmission.js",
-                                                            lineNumber: 522,
+                                                            lineNumber: 524,
                                                             columnNumber: 25
                                                         }, this),
                                                         "Saving..."
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/app/components/EditSubmission.js",
-                                                    lineNumber: 521,
+                                                    lineNumber: 523,
                                                     columnNumber: 23
                                                 }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
                                                     children: [
@@ -2183,53 +2185,53 @@ function EditSubmission({ isOpen, onClose, data, onSave, isLoading = false, curr
                                                             className: "w-4 h-4"
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/components/EditSubmission.js",
-                                                            lineNumber: 527,
+                                                            lineNumber: 529,
                                                             columnNumber: 25
                                                         }, this),
                                                         "Yes, Save Changes"
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/app/components/EditSubmission.js",
-                                                    lineNumber: 526,
+                                                    lineNumber: 528,
                                                     columnNumber: 23
                                                 }, this)
                                             }, void 0, false, {
                                                 fileName: "[project]/app/components/EditSubmission.js",
-                                                lineNumber: 515,
+                                                lineNumber: 517,
                                                 columnNumber: 19
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/app/components/EditSubmission.js",
-                                        lineNumber: 507,
+                                        lineNumber: 509,
                                         columnNumber: 17
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/components/EditSubmission.js",
-                                lineNumber: 473,
+                                lineNumber: 475,
                                 columnNumber: 15
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/app/components/EditSubmission.js",
-                            lineNumber: 472,
+                            lineNumber: 474,
                             columnNumber: 13
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/app/components/EditSubmission.js",
-                        lineNumber: 471,
+                        lineNumber: 473,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/app/components/EditSubmission.js",
-                lineNumber: 469,
+                lineNumber: 471,
                 columnNumber: 9
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/app/components/EditSubmission.js",
-        lineNumber: 240,
+        lineNumber: 242,
         columnNumber: 5
     }, this);
 }
@@ -2568,6 +2570,7 @@ var _s = __turbopack_context__.k.signature();
 ;
 ;
 ;
+const API_URL = (("TURBOPACK compile-time value", "http://localhost:5000") || 'http://localhost:5000').replace(/\/+$/, '');
 function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterApprover = false, title = 'Edit History' }) {
     _s();
     const [revisions, setRevisions] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])([]);
@@ -2588,7 +2591,7 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
     ]);
     const fetchUsers = async ()=>{
         try {
-            const res = await fetch(`${("TURBOPACK compile-time value", "http://localhost:5000")}/api/users`);
+            const res = await fetch(`${API_URL}/api/users`);
             if (res.ok) {
                 const data = await res.json();
                 setAllUsers(data);
@@ -2602,9 +2605,9 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
         try {
             let url;
             if (extractedDataId) {
-                url = `${"TURBOPACK compile-time value", "http://localhost:5000"}/api/extracted-data/${extractedDataId}/revisions`;
+                url = `${API_URL}/api/extracted-data/${extractedDataId}/revisions`;
             } else if (submissionId) {
-                url = `${"TURBOPACK compile-time value", "http://localhost:5000"}/api/submissions/${submissionId}/edit-history`;
+                url = `${API_URL}/api/submissions/${submissionId}/edit-history`;
             } else {
                 setRevisions([]);
                 setLoading(false);
@@ -2690,7 +2693,7 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                 children: "Master Approver"
             }, void 0, false, {
                 fileName: "[project]/app/components/ViewHistory.js",
-                lineNumber: 155,
+                lineNumber: 157,
                 columnNumber: 9
             }, this);
         }
@@ -2700,7 +2703,7 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                 children: "Evaluator"
             }, void 0, false, {
                 fileName: "[project]/app/components/ViewHistory.js",
-                lineNumber: 162,
+                lineNumber: 164,
                 columnNumber: 9
             }, this);
         }
@@ -2715,7 +2718,7 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                 onClick: onClose
             }, void 0, false, {
                 fileName: "[project]/app/components/ViewHistory.js",
-                lineNumber: 174,
+                lineNumber: 176,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2736,12 +2739,12 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                 className: "w-5 h-5"
                                             }, void 0, false, {
                                                 fileName: "[project]/app/components/ViewHistory.js",
-                                                lineNumber: 185,
+                                                lineNumber: 187,
                                                 columnNumber: 17
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/app/components/ViewHistory.js",
-                                            lineNumber: 182,
+                                            lineNumber: 184,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2751,7 +2754,7 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                     children: title
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/components/ViewHistory.js",
-                                                    lineNumber: 188,
+                                                    lineNumber: 190,
                                                     columnNumber: 17
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2764,19 +2767,19 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/app/components/ViewHistory.js",
-                                                    lineNumber: 189,
+                                                    lineNumber: 191,
                                                     columnNumber: 17
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/app/components/ViewHistory.js",
-                                            lineNumber: 187,
+                                            lineNumber: 189,
                                             columnNumber: 15
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/app/components/ViewHistory.js",
-                                    lineNumber: 181,
+                                    lineNumber: 183,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -2787,18 +2790,18 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                         className: "w-5 h-5"
                                     }, void 0, false, {
                                         fileName: "[project]/app/components/ViewHistory.js",
-                                        lineNumber: 198,
+                                        lineNumber: 200,
                                         columnNumber: 15
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/app/components/ViewHistory.js",
-                                    lineNumber: 194,
+                                    lineNumber: 196,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/app/components/ViewHistory.js",
-                            lineNumber: 178,
+                            lineNumber: 180,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2810,12 +2813,12 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                     className: "w-8 h-8 text-blue-500 animate-spin"
                                 }, void 0, false, {
                                     fileName: "[project]/app/components/ViewHistory.js",
-                                    lineNumber: 206,
+                                    lineNumber: 208,
                                     columnNumber: 17
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/app/components/ViewHistory.js",
-                                lineNumber: 205,
+                                lineNumber: 207,
                                 columnNumber: 15
                             }, this) : revisions.length > 0 ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                 className: "space-y-4",
@@ -2842,7 +2845,7 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                                         className: "w-5 h-5 text-slate-400"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/components/ViewHistory.js",
-                                                                        lineNumber: 232,
+                                                                        lineNumber: 234,
                                                                         columnNumber: 29
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -2850,7 +2853,7 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                                         children: rev.edited_by_name || getUserName(rev.edited_by)
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/components/ViewHistory.js",
-                                                                        lineNumber: 236,
+                                                                        lineNumber: 238,
                                                                         columnNumber: 29
                                                                     }, this),
                                                                     getRoleBadge(rev.edited_by),
@@ -2859,13 +2862,13 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                                         children: "Latest Edit"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/components/ViewHistory.js",
-                                                                        lineNumber: 241,
+                                                                        lineNumber: 243,
                                                                         columnNumber: 31
                                                                     }, this)
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/app/components/ViewHistory.js",
-                                                                lineNumber: 231,
+                                                                lineNumber: 233,
                                                                 columnNumber: 27
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -2876,14 +2879,14 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                                         className: "w-3 h-3"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/components/ViewHistory.js",
-                                                                        lineNumber: 247,
+                                                                        lineNumber: 249,
                                                                         columnNumber: 29
                                                                     }, this),
                                                                     rev.created_at
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/app/components/ViewHistory.js",
-                                                                lineNumber: 246,
+                                                                lineNumber: 248,
                                                                 columnNumber: 27
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -2897,13 +2900,13 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/app/components/ViewHistory.js",
-                                                                lineNumber: 250,
+                                                                lineNumber: 252,
                                                                 columnNumber: 27
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/app/components/ViewHistory.js",
-                                                        lineNumber: 230,
+                                                        lineNumber: 232,
                                                         columnNumber: 25
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2917,7 +2920,7 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/app/components/ViewHistory.js",
-                                                                lineNumber: 255,
+                                                                lineNumber: 257,
                                                                 columnNumber: 27
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$fortawesome$2f$react$2d$fontawesome$2f$dist$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["FontAwesomeIcon"], {
@@ -2925,19 +2928,19 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                                 className: "w-4 h-4 text-slate-400"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/app/components/ViewHistory.js",
-                                                                lineNumber: 258,
+                                                                lineNumber: 260,
                                                                 columnNumber: 27
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/app/components/ViewHistory.js",
-                                                        lineNumber: 254,
+                                                        lineNumber: 256,
                                                         columnNumber: 25
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/app/components/ViewHistory.js",
-                                                lineNumber: 224,
+                                                lineNumber: 226,
                                                 columnNumber: 23
                                             }, this),
                                             isExpanded && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2961,7 +2964,7 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                                                 className: "w-4 h-4 text-blue-500"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/app/components/ViewHistory.js",
-                                                                                lineNumber: 281,
+                                                                                lineNumber: 283,
                                                                                 columnNumber: 37
                                                                             }, this),
                                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -2969,13 +2972,13 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                                                 children: getFieldLabel(field)
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/app/components/ViewHistory.js",
-                                                                                lineNumber: 285,
+                                                                                lineNumber: 287,
                                                                                 columnNumber: 37
                                                                             }, this)
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/app/components/ViewHistory.js",
-                                                                        lineNumber: 280,
+                                                                        lineNumber: 282,
                                                                         columnNumber: 35
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2989,7 +2992,7 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                                                         children: "Old Value"
                                                                                     }, void 0, false, {
                                                                                         fileName: "[project]/app/components/ViewHistory.js",
-                                                                                        lineNumber: 291,
+                                                                                        lineNumber: 293,
                                                                                         columnNumber: 39
                                                                                     }, this),
                                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2999,18 +3002,18 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                                                             children: "Not set"
                                                                                         }, void 0, false, {
                                                                                             fileName: "[project]/app/components/ViewHistory.js",
-                                                                                            lineNumber: 293,
+                                                                                            lineNumber: 295,
                                                                                             columnNumber: 54
                                                                                         }, this)
                                                                                     }, void 0, false, {
                                                                                         fileName: "[project]/app/components/ViewHistory.js",
-                                                                                        lineNumber: 292,
+                                                                                        lineNumber: 294,
                                                                                         columnNumber: 39
                                                                                     }, this)
                                                                                 ]
                                                                             }, void 0, true, {
                                                                                 fileName: "[project]/app/components/ViewHistory.js",
-                                                                                lineNumber: 290,
+                                                                                lineNumber: 292,
                                                                                 columnNumber: 37
                                                                             }, this),
                                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3021,7 +3024,7 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                                                         children: "New Value"
                                                                                     }, void 0, false, {
                                                                                         fileName: "[project]/app/components/ViewHistory.js",
-                                                                                        lineNumber: 297,
+                                                                                        lineNumber: 299,
                                                                                         columnNumber: 39
                                                                                     }, this),
                                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -3031,24 +3034,24 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                                                             children: "Not set"
                                                                                         }, void 0, false, {
                                                                                             fileName: "[project]/app/components/ViewHistory.js",
-                                                                                            lineNumber: 299,
+                                                                                            lineNumber: 301,
                                                                                             columnNumber: 54
                                                                                         }, this)
                                                                                     }, void 0, false, {
                                                                                         fileName: "[project]/app/components/ViewHistory.js",
-                                                                                        lineNumber: 298,
+                                                                                        lineNumber: 300,
                                                                                         columnNumber: 39
                                                                                     }, this)
                                                                                 ]
                                                                             }, void 0, true, {
                                                                                 fileName: "[project]/app/components/ViewHistory.js",
-                                                                                lineNumber: 296,
+                                                                                lineNumber: 298,
                                                                                 columnNumber: 37
                                                                             }, this)
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/app/components/ViewHistory.js",
-                                                                        lineNumber: 289,
+                                                                        lineNumber: 291,
                                                                         columnNumber: 35
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3059,7 +3062,7 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                                                 className: "w-3 h-3"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/app/components/ViewHistory.js",
-                                                                                lineNumber: 304,
+                                                                                lineNumber: 306,
                                                                                 columnNumber: 37
                                                                             }, this),
                                                                             "Changed from ",
@@ -3072,7 +3075,7 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                                                 ]
                                                                             }, void 0, true, {
                                                                                 fileName: "[project]/app/components/ViewHistory.js",
-                                                                                lineNumber: 305,
+                                                                                lineNumber: 307,
                                                                                 columnNumber: 50
                                                                             }, this),
                                                                             "to ",
@@ -3085,19 +3088,19 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                                                 ]
                                                                             }, void 0, true, {
                                                                                 fileName: "[project]/app/components/ViewHistory.js",
-                                                                                lineNumber: 306,
+                                                                                lineNumber: 308,
                                                                                 columnNumber: 40
                                                                             }, this)
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/app/components/ViewHistory.js",
-                                                                        lineNumber: 303,
+                                                                        lineNumber: 305,
                                                                         columnNumber: 35
                                                                     }, this)
                                                                 ]
                                                             }, field, true, {
                                                                 fileName: "[project]/app/components/ViewHistory.js",
-                                                                lineNumber: 276,
+                                                                lineNumber: 278,
                                                                 columnNumber: 33
                                                             }, this);
                                                         }),
@@ -3114,7 +3117,7 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                                                 className: "w-3 h-3"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/app/components/ViewHistory.js",
-                                                                                lineNumber: 317,
+                                                                                lineNumber: 319,
                                                                                 columnNumber: 37
                                                                             }, this),
                                                                             "View Full Snapshot After Edit",
@@ -3123,13 +3126,13 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                                                 className: "w-3 h-3 group-open:rotate-180 transition-transform"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/app/components/ViewHistory.js",
-                                                                                lineNumber: 319,
+                                                                                lineNumber: 321,
                                                                                 columnNumber: 37
                                                                             }, this)
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/app/components/ViewHistory.js",
-                                                                        lineNumber: 316,
+                                                                        lineNumber: 318,
                                                                         columnNumber: 35
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3145,7 +3148,7 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                                                         ]
                                                                                     }, void 0, true, {
                                                                                         fileName: "[project]/app/components/ViewHistory.js",
-                                                                                        lineNumber: 325,
+                                                                                        lineNumber: 327,
                                                                                         columnNumber: 43
                                                                                     }, this),
                                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -3153,52 +3156,52 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                                                         children: String(value)
                                                                                     }, void 0, false, {
                                                                                         fileName: "[project]/app/components/ViewHistory.js",
-                                                                                        lineNumber: 328,
+                                                                                        lineNumber: 330,
                                                                                         columnNumber: 43
                                                                                     }, this)
                                                                                 ]
                                                                             }, key, true, {
                                                                                 fileName: "[project]/app/components/ViewHistory.js",
-                                                                                lineNumber: 324,
+                                                                                lineNumber: 326,
                                                                                 columnNumber: 41
                                                                             }, this))
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/components/ViewHistory.js",
-                                                                        lineNumber: 321,
+                                                                        lineNumber: 323,
                                                                         columnNumber: 35
                                                                     }, this)
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/app/components/ViewHistory.js",
-                                                                lineNumber: 315,
+                                                                lineNumber: 317,
                                                                 columnNumber: 33
                                                             }, this)
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/components/ViewHistory.js",
-                                                            lineNumber: 314,
+                                                            lineNumber: 316,
                                                             columnNumber: 31
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/app/components/ViewHistory.js",
-                                                    lineNumber: 268,
+                                                    lineNumber: 270,
                                                     columnNumber: 27
                                                 }, this)
                                             }, void 0, false, {
                                                 fileName: "[project]/app/components/ViewHistory.js",
-                                                lineNumber: 267,
+                                                lineNumber: 269,
                                                 columnNumber: 25
                                             }, this)
                                         ]
                                     }, rev.id, true, {
                                         fileName: "[project]/app/components/ViewHistory.js",
-                                        lineNumber: 217,
+                                        lineNumber: 219,
                                         columnNumber: 21
                                     }, this);
                                 })
                             }, void 0, false, {
                                 fileName: "[project]/app/components/ViewHistory.js",
-                                lineNumber: 209,
+                                lineNumber: 211,
                                 columnNumber: 15
                             }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                 className: "text-center py-12 text-slate-400",
@@ -3208,7 +3211,7 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                         className: "w-12 h-12 text-slate-300 mb-4"
                                     }, void 0, false, {
                                         fileName: "[project]/app/components/ViewHistory.js",
-                                        lineNumber: 347,
+                                        lineNumber: 349,
                                         columnNumber: 17
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -3216,7 +3219,7 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                         children: "No edit history found"
                                     }, void 0, false, {
                                         fileName: "[project]/app/components/ViewHistory.js",
-                                        lineNumber: 348,
+                                        lineNumber: 350,
                                         columnNumber: 17
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -3224,18 +3227,18 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                         children: "This submission has not been edited yet"
                                     }, void 0, false, {
                                         fileName: "[project]/app/components/ViewHistory.js",
-                                        lineNumber: 349,
+                                        lineNumber: 351,
                                         columnNumber: 17
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/components/ViewHistory.js",
-                                lineNumber: 346,
+                                lineNumber: 348,
                                 columnNumber: 15
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/app/components/ViewHistory.js",
-                            lineNumber: 203,
+                            lineNumber: 205,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3249,7 +3252,7 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                             className: "w-3 h-3"
                                         }, void 0, false, {
                                             fileName: "[project]/app/components/ViewHistory.js",
-                                            lineNumber: 357,
+                                            lineNumber: 359,
                                             columnNumber: 15
                                         }, this),
                                         revisions.length > 0 ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
@@ -3262,13 +3265,13 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/app/components/ViewHistory.js",
-                                            lineNumber: 359,
+                                            lineNumber: 361,
                                             columnNumber: 17
                                         }, this) : 'No edits recorded'
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/app/components/ViewHistory.js",
-                                    lineNumber: 356,
+                                    lineNumber: 358,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -3282,14 +3285,14 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                 className: "w-4 h-4 animate-spin"
                                             }, void 0, false, {
                                                 fileName: "[project]/app/components/ViewHistory.js",
-                                                lineNumber: 374,
+                                                lineNumber: 376,
                                                 columnNumber: 19
                                             }, this),
                                             "Loading..."
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/app/components/ViewHistory.js",
-                                        lineNumber: 373,
+                                        lineNumber: 375,
                                         columnNumber: 17
                                     }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
                                         children: [
@@ -3298,42 +3301,42 @@ function ViewHistory({ isOpen, onClose, submissionId, extractedDataId, isMasterA
                                                 className: "w-4 h-4"
                                             }, void 0, false, {
                                                 fileName: "[project]/app/components/ViewHistory.js",
-                                                lineNumber: 379,
+                                                lineNumber: 381,
                                                 columnNumber: 19
                                             }, this),
                                             "Refresh"
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/app/components/ViewHistory.js",
-                                        lineNumber: 378,
+                                        lineNumber: 380,
                                         columnNumber: 17
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/app/components/ViewHistory.js",
-                                    lineNumber: 367,
+                                    lineNumber: 369,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/app/components/ViewHistory.js",
-                            lineNumber: 355,
+                            lineNumber: 357,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/app/components/ViewHistory.js",
-                    lineNumber: 176,
+                    lineNumber: 178,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/app/components/ViewHistory.js",
-                lineNumber: 175,
+                lineNumber: 177,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/app/components/ViewHistory.js",
-        lineNumber: 173,
+        lineNumber: 175,
         columnNumber: 5
     }, this);
 }
@@ -3380,6 +3383,7 @@ var _s = __turbopack_context__.k.signature();
 ;
 ;
 ;
+const API_URL = (("TURBOPACK compile-time value", "http://localhost:5000") || 'http://localhost:5000').replace(/\/+$/, '');
 function ReviewPage() {
     _s();
     const [currentUser, setCurrentUser] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
@@ -3444,7 +3448,7 @@ function ReviewPage() {
     ]);
     const fetchAllUsers = async ()=>{
         try {
-            const res = await fetch(`${("TURBOPACK compile-time value", "http://localhost:5000")}/api/users`);
+            const res = await fetch(`${API_URL}/api/users`);
             const data = await res.json();
             setAllUsers(data);
         } catch (err) {
@@ -3453,7 +3457,7 @@ function ReviewPage() {
     };
     const fetchSucs = async ()=>{
         try {
-            const res = await fetch(`${("TURBOPACK compile-time value", "http://localhost:5000")}/api/sucs`);
+            const res = await fetch(`${API_URL}/api/sucs`);
             if (res.ok) {
                 const data = await res.json();
                 setSucList(data);
@@ -3467,9 +3471,9 @@ function ReviewPage() {
         try {
             let url;
             if (activeTab === 'system') {
-                url = `${"TURBOPACK compile-time value", "http://localhost:5000"}/api/submissions`;
+                url = `${API_URL}/api/submissions`;
             } else {
-                url = `${"TURBOPACK compile-time value", "http://localhost:5000"}/api/email-submissions?status=all`;
+                url = `${API_URL}/api/email-submissions?status=all`;
             }
             const res = await fetch(url);
             if (res.ok) {
@@ -3486,7 +3490,7 @@ function ReviewPage() {
     const checkEmails = async ()=>{
         setCheckingEmails(true);
         try {
-            const res = await fetch(`${("TURBOPACK compile-time value", "http://localhost:5000")}/api/email-submissions/check`, {
+            const res = await fetch(`${API_URL}/api/email-submissions/check`, {
                 method: 'POST'
             });
             if (res.ok) {
@@ -3508,7 +3512,7 @@ function ReviewPage() {
         setTimeout(()=>setToast(null), 5000);
     };
     const fetchExtractedData = async (emailSubmissionId)=>{
-        const res = await fetch(`${("TURBOPACK compile-time value", "http://localhost:5000")}/api/email-submissions/${emailSubmissionId}/extracted-data`);
+        const res = await fetch(`${API_URL}/api/email-submissions/${emailSubmissionId}/extracted-data`);
         if (res.ok) {
             const data = await res.json();
             setEmailExtractedData(data);
@@ -3522,7 +3526,7 @@ function ReviewPage() {
         const subId = sub.submission_id || sub.id;
         console.log('Selecting submission with ID:', subId, 'Type:', typeof subId);
         try {
-            const votesRes = await fetch(`${("TURBOPACK compile-time value", "http://localhost:5000")}/api/submissions/${subId}/evaluate`);
+            const votesRes = await fetch(`${API_URL}/api/submissions/${subId}/evaluate`);
             if (votesRes.ok) {
                 const votesData = await votesRes.json();
                 setVotes({
@@ -3544,7 +3548,7 @@ function ReviewPage() {
         if (!selectedSubmission) return;
         const subId = selectedSubmission.submission_id || selectedSubmission.id;
         try {
-            const res = await fetch(`${("TURBOPACK compile-time value", "http://localhost:5000")}/api/submissions/${subId}/evaluate`, {
+            const res = await fetch(`${API_URL}/api/submissions/${subId}/evaluate`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -3601,7 +3605,7 @@ function ReviewPage() {
         setDowngradeLoading(true);
         const subId = selectedSubmission.submission_id || selectedSubmission.id;
         try {
-            const res = await fetch(`${("TURBOPACK compile-time value", "http://localhost:5000")}/api/submissions/${subId}/evaluate`, {
+            const res = await fetch(`${API_URL}/api/submissions/${subId}/evaluate`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -3650,10 +3654,10 @@ function ReviewPage() {
                 ...formData
             };
             if (activeTab === 'email' && emailExtractedData) {
-                url = `${"TURBOPACK compile-time value", "http://localhost:5000"}/api/extracted-data/${emailExtractedData.id}/edit`;
+                url = `${API_URL}/api/extracted-data/${emailExtractedData.id}/edit`;
                 payload.evaluator_id = currentEvaluatorId;
             } else {
-                url = `${"TURBOPACK compile-time value", "http://localhost:5000"}/api/submissions/${submissionId}/edit`;
+                url = `${API_URL}/api/submissions/${submissionId}/edit`;
                 payload.evaluator_id = currentEvaluatorId;
             }
             const res = await fetch(url, {
@@ -4047,7 +4051,7 @@ function ReviewPage() {
                         className: "animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent mx-auto mb-4"
                     }, void 0, false, {
                         fileName: "[project]/app/review/page.js",
-                        lineNumber: 678,
+                        lineNumber: 680,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -4055,18 +4059,18 @@ function ReviewPage() {
                         children: "Loading submissions..."
                     }, void 0, false, {
                         fileName: "[project]/app/review/page.js",
-                        lineNumber: 679,
+                        lineNumber: 681,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/app/review/page.js",
-                lineNumber: 677,
+                lineNumber: 679,
                 columnNumber: 9
             }, this)
         }, void 0, false, {
             fileName: "[project]/app/review/page.js",
-            lineNumber: 676,
+            lineNumber: 678,
             columnNumber: 7
         }, this);
     }
@@ -4176,12 +4180,12 @@ function ReviewPage() {
                                     className: "w-5 h-5"
                                 }, void 0, false, {
                                     fileName: "[project]/app/review/page.js",
-                                    lineNumber: 761,
+                                    lineNumber: 763,
                                     columnNumber: 17
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/app/review/page.js",
-                                lineNumber: 758,
+                                lineNumber: 760,
                                 columnNumber: 15
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4192,7 +4196,7 @@ function ReviewPage() {
                                         children: toast.type === 'success' ? 'Success!' : 'Error!'
                                     }, void 0, false, {
                                         fileName: "[project]/app/review/page.js",
-                                        lineNumber: 764,
+                                        lineNumber: 766,
                                         columnNumber: 17
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -4200,13 +4204,13 @@ function ReviewPage() {
                                         children: toast.message
                                     }, void 0, false, {
                                         fileName: "[project]/app/review/page.js",
-                                        lineNumber: 767,
+                                        lineNumber: 769,
                                         columnNumber: 17
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/review/page.js",
-                                lineNumber: 763,
+                                lineNumber: 765,
                                 columnNumber: 15
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -4217,28 +4221,28 @@ function ReviewPage() {
                                     className: "w-4 h-4"
                                 }, void 0, false, {
                                     fileName: "[project]/app/review/page.js",
-                                    lineNumber: 770,
+                                    lineNumber: 772,
                                     columnNumber: 17
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/app/review/page.js",
-                                lineNumber: 769,
+                                lineNumber: 771,
                                 columnNumber: 15
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/app/review/page.js",
-                        lineNumber: 757,
+                        lineNumber: 759,
                         columnNumber: 13
                     }, this)
                 }, void 0, false, {
                     fileName: "[project]/app/review/page.js",
-                    lineNumber: 752,
+                    lineNumber: 754,
                     columnNumber: 11
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/app/review/page.js",
-                lineNumber: 751,
+                lineNumber: 753,
                 columnNumber: 9
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$app$2f$components$2f$ReassignModal$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
@@ -4248,7 +4252,7 @@ function ReviewPage() {
                     setReassignLoading(true);
                     try {
                         // FIX: Use submission_id for all submissions
-                        const res = await fetch(`${("TURBOPACK compile-time value", "http://localhost:5000")}/api/submissions/${selectedSubmission.submission_id || selectedSubmission.id}/evaluate`, {
+                        const res = await fetch(`${API_URL}/api/submissions/${selectedSubmission.submission_id || selectedSubmission.id}/evaluate`, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json'
@@ -4285,7 +4289,7 @@ function ReviewPage() {
                 currentThematicArea: getThematicArea()
             }, void 0, false, {
                 fileName: "[project]/app/review/page.js",
-                lineNumber: 777,
+                lineNumber: 779,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$app$2f$components$2f$DowngradeModal$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
@@ -4296,7 +4300,7 @@ function ReviewPage() {
                 paperCategory: getPaperCategory()
             }, void 0, false, {
                 fileName: "[project]/app/review/page.js",
-                lineNumber: 816,
+                lineNumber: 818,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$app$2f$components$2f$ConfirmModal$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
@@ -4313,7 +4317,7 @@ function ReviewPage() {
                 isLoading: confirmLoading
             }, void 0, false, {
                 fileName: "[project]/app/review/page.js",
-                lineNumber: 824,
+                lineNumber: 826,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$app$2f$components$2f$ConfirmModal$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
@@ -4331,7 +4335,7 @@ function ReviewPage() {
                 type: "warning"
             }, void 0, false, {
                 fileName: "[project]/app/review/page.js",
-                lineNumber: 835,
+                lineNumber: 837,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$app$2f$components$2f$EditSubmission$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
@@ -4347,7 +4351,7 @@ function ReviewPage() {
                 submissionType: activeTab === 'email' ? 'email' : 'system'
             }, void 0, false, {
                 fileName: "[project]/app/review/page.js",
-                lineNumber: 848,
+                lineNumber: 850,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$app$2f$components$2f$ViewHistory$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
@@ -4359,7 +4363,7 @@ function ReviewPage() {
                 title: "Edit History"
             }, void 0, false, {
                 fileName: "[project]/app/review/page.js",
-                lineNumber: 862,
+                lineNumber: 864,
                 columnNumber: 7
             }, this),
             selectedSubmission && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4370,7 +4374,7 @@ function ReviewPage() {
                         className: "jsx-607ed4c10455b76a" + " " + "absolute inset-0 bg-black/50 backdrop-blur-sm"
                     }, void 0, false, {
                         fileName: "[project]/app/review/page.js",
-                        lineNumber: 873,
+                        lineNumber: 875,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4391,12 +4395,12 @@ function ReviewPage() {
                                                         className: "w-6 h-6 text-white"
                                                     }, void 0, false, {
                                                         fileName: "[project]/app/review/page.js",
-                                                        lineNumber: 879,
+                                                        lineNumber: 881,
                                                         columnNumber: 21
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/review/page.js",
-                                                    lineNumber: 878,
+                                                    lineNumber: 880,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4407,7 +4411,7 @@ function ReviewPage() {
                                                             children: activeTab === 'system' ? 'Submission Details' : 'Email Details'
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/review/page.js",
-                                                            lineNumber: 882,
+                                                            lineNumber: 884,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -4415,19 +4419,19 @@ function ReviewPage() {
                                                             children: getTitle()
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/review/page.js",
-                                                            lineNumber: 885,
+                                                            lineNumber: 887,
                                                             columnNumber: 21
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/app/review/page.js",
-                                                    lineNumber: 881,
+                                                    lineNumber: 883,
                                                     columnNumber: 19
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/app/review/page.js",
-                                            lineNumber: 877,
+                                            lineNumber: 879,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4440,23 +4444,23 @@ function ReviewPage() {
                                                     className: "w-5 h-5"
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/review/page.js",
-                                                    lineNumber: 893,
+                                                    lineNumber: 895,
                                                     columnNumber: 21
                                                 }, this)
                                             }, void 0, false, {
                                                 fileName: "[project]/app/review/page.js",
-                                                lineNumber: 889,
+                                                lineNumber: 891,
                                                 columnNumber: 19
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/app/review/page.js",
-                                            lineNumber: 888,
+                                            lineNumber: 890,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/app/review/page.js",
-                                    lineNumber: 876,
+                                    lineNumber: 878,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4476,7 +4480,7 @@ function ReviewPage() {
                                                                     className: "w-5 h-5 text-blue-600"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/app/review/page.js",
-                                                                    lineNumber: 902,
+                                                                    lineNumber: 904,
                                                                     columnNumber: 23
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h4", {
@@ -4484,13 +4488,13 @@ function ReviewPage() {
                                                                     children: "Submission Information"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/app/review/page.js",
-                                                                    lineNumber: 903,
+                                                                    lineNumber: 905,
                                                                     columnNumber: 23
                                                                 }, this)
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/app/review/page.js",
-                                                            lineNumber: 901,
+                                                            lineNumber: 903,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4506,14 +4510,14 @@ function ReviewPage() {
                                                                             className: "w-4 h-4"
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/app/review/page.js",
-                                                                            lineNumber: 913,
+                                                                            lineNumber: 915,
                                                                             columnNumber: 25
                                                                         }, this),
                                                                         "View History"
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/app/review/page.js",
-                                                                    lineNumber: 908,
+                                                                    lineNumber: 910,
                                                                     columnNumber: 23
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -4526,26 +4530,26 @@ function ReviewPage() {
                                                                             className: "w-4 h-4"
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/app/review/page.js",
-                                                                            lineNumber: 921,
+                                                                            lineNumber: 923,
                                                                             columnNumber: 25
                                                                         }, this),
                                                                         "Edit Details"
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/app/review/page.js",
-                                                                    lineNumber: 916,
+                                                                    lineNumber: 918,
                                                                     columnNumber: 23
                                                                 }, this)
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/app/review/page.js",
-                                                            lineNumber: 907,
+                                                            lineNumber: 909,
                                                             columnNumber: 21
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/app/review/page.js",
-                                                    lineNumber: 900,
+                                                    lineNumber: 902,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4562,14 +4566,14 @@ function ReviewPage() {
                                                                             className: "w-4 h-4 text-blue-400"
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/app/review/page.js",
-                                                                            lineNumber: 930,
+                                                                            lineNumber: 932,
                                                                             columnNumber: 25
                                                                         }, this),
                                                                         "Title"
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/app/review/page.js",
-                                                                    lineNumber: 929,
+                                                                    lineNumber: 931,
                                                                     columnNumber: 23
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -4577,13 +4581,13 @@ function ReviewPage() {
                                                                     children: getTitle() || 'No title'
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/app/review/page.js",
-                                                                    lineNumber: 933,
+                                                                    lineNumber: 935,
                                                                     columnNumber: 23
                                                                 }, this)
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/app/review/page.js",
-                                                            lineNumber: 928,
+                                                            lineNumber: 930,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4600,14 +4604,14 @@ function ReviewPage() {
                                                                                     className: "w-4 h-4 text-emerald-400"
                                                                                 }, void 0, false, {
                                                                                     fileName: "[project]/app/review/page.js",
-                                                                                    lineNumber: 939,
+                                                                                    lineNumber: 941,
                                                                                     columnNumber: 27
                                                                                 }, this),
                                                                                 "Project Leader"
                                                                             ]
                                                                         }, void 0, true, {
                                                                             fileName: "[project]/app/review/page.js",
-                                                                            lineNumber: 938,
+                                                                            lineNumber: 940,
                                                                             columnNumber: 25
                                                                         }, this),
                                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -4615,13 +4619,13 @@ function ReviewPage() {
                                                                             children: getProjectLeader()
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/app/review/page.js",
-                                                                            lineNumber: 942,
+                                                                            lineNumber: 944,
                                                                             columnNumber: 25
                                                                         }, this)
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/app/review/page.js",
-                                                                    lineNumber: 937,
+                                                                    lineNumber: 939,
                                                                     columnNumber: 23
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4635,14 +4639,14 @@ function ReviewPage() {
                                                                                     className: "w-4 h-4 text-blue-400"
                                                                                 }, void 0, false, {
                                                                                     fileName: "[project]/app/review/page.js",
-                                                                                    lineNumber: 947,
+                                                                                    lineNumber: 949,
                                                                                     columnNumber: 27
                                                                                 }, this),
                                                                                 "Authors"
                                                                             ]
                                                                         }, void 0, true, {
                                                                             fileName: "[project]/app/review/page.js",
-                                                                            lineNumber: 946,
+                                                                            lineNumber: 948,
                                                                             columnNumber: 25
                                                                         }, this),
                                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -4650,19 +4654,19 @@ function ReviewPage() {
                                                                             children: getAuthorsList()
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/app/review/page.js",
-                                                                            lineNumber: 950,
+                                                                            lineNumber: 952,
                                                                             columnNumber: 25
                                                                         }, this)
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/app/review/page.js",
-                                                                    lineNumber: 945,
+                                                                    lineNumber: 947,
                                                                     columnNumber: 23
                                                                 }, this)
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/app/review/page.js",
-                                                            lineNumber: 936,
+                                                            lineNumber: 938,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4679,14 +4683,14 @@ function ReviewPage() {
                                                                                     className: "w-4 h-4 text-amber-400"
                                                                                 }, void 0, false, {
                                                                                     fileName: "[project]/app/review/page.js",
-                                                                                    lineNumber: 957,
+                                                                                    lineNumber: 959,
                                                                                     columnNumber: 27
                                                                                 }, this),
                                                                                 "SUC / Agency"
                                                                             ]
                                                                         }, void 0, true, {
                                                                             fileName: "[project]/app/review/page.js",
-                                                                            lineNumber: 956,
+                                                                            lineNumber: 958,
                                                                             columnNumber: 25
                                                                         }, this),
                                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -4694,13 +4698,13 @@ function ReviewPage() {
                                                                             children: getSuc()
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/app/review/page.js",
-                                                                            lineNumber: 960,
+                                                                            lineNumber: 962,
                                                                             columnNumber: 25
                                                                         }, this)
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/app/review/page.js",
-                                                                    lineNumber: 955,
+                                                                    lineNumber: 957,
                                                                     columnNumber: 23
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4714,14 +4718,14 @@ function ReviewPage() {
                                                                                     className: "w-4 h-4 text-cyan-400"
                                                                                 }, void 0, false, {
                                                                                     fileName: "[project]/app/review/page.js",
-                                                                                    lineNumber: 965,
+                                                                                    lineNumber: 967,
                                                                                     columnNumber: 27
                                                                                 }, this),
                                                                                 "Corresponding Author"
                                                                             ]
                                                                         }, void 0, true, {
                                                                             fileName: "[project]/app/review/page.js",
-                                                                            lineNumber: 964,
+                                                                            lineNumber: 966,
                                                                             columnNumber: 25
                                                                         }, this),
                                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -4729,19 +4733,19 @@ function ReviewPage() {
                                                                             children: getCorrespondingAuthorName()
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/app/review/page.js",
-                                                                            lineNumber: 968,
+                                                                            lineNumber: 970,
                                                                             columnNumber: 25
                                                                         }, this)
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/app/review/page.js",
-                                                                    lineNumber: 963,
+                                                                    lineNumber: 965,
                                                                     columnNumber: 23
                                                                 }, this)
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/app/review/page.js",
-                                                            lineNumber: 954,
+                                                            lineNumber: 956,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4758,14 +4762,14 @@ function ReviewPage() {
                                                                                     className: "w-4 h-4 text-red-400"
                                                                                 }, void 0, false, {
                                                                                     fileName: "[project]/app/review/page.js",
-                                                                                    lineNumber: 975,
+                                                                                    lineNumber: 977,
                                                                                     columnNumber: 27
                                                                                 }, this),
                                                                                 "Corresponding Author Email"
                                                                             ]
                                                                         }, void 0, true, {
                                                                             fileName: "[project]/app/review/page.js",
-                                                                            lineNumber: 974,
+                                                                            lineNumber: 976,
                                                                             columnNumber: 25
                                                                         }, this),
                                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -4773,13 +4777,13 @@ function ReviewPage() {
                                                                             children: getCorrespondingAuthorEmail()
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/app/review/page.js",
-                                                                            lineNumber: 978,
+                                                                            lineNumber: 980,
                                                                             columnNumber: 25
                                                                         }, this)
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/app/review/page.js",
-                                                                    lineNumber: 973,
+                                                                    lineNumber: 975,
                                                                     columnNumber: 23
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4793,14 +4797,14 @@ function ReviewPage() {
                                                                                     className: "w-4 h-4 text-purple-400"
                                                                                 }, void 0, false, {
                                                                                     fileName: "[project]/app/review/page.js",
-                                                                                    lineNumber: 983,
+                                                                                    lineNumber: 985,
                                                                                     columnNumber: 27
                                                                                 }, this),
                                                                                 "Corresponding Author Position"
                                                                             ]
                                                                         }, void 0, true, {
                                                                             fileName: "[project]/app/review/page.js",
-                                                                            lineNumber: 982,
+                                                                            lineNumber: 984,
                                                                             columnNumber: 25
                                                                         }, this),
                                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -4808,19 +4812,19 @@ function ReviewPage() {
                                                                             children: getCorrespondingAuthorPosition()
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/app/review/page.js",
-                                                                            lineNumber: 986,
+                                                                            lineNumber: 988,
                                                                             columnNumber: 25
                                                                         }, this)
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/app/review/page.js",
-                                                                    lineNumber: 981,
+                                                                    lineNumber: 983,
                                                                     columnNumber: 23
                                                                 }, this)
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/app/review/page.js",
-                                                            lineNumber: 972,
+                                                            lineNumber: 974,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4837,14 +4841,14 @@ function ReviewPage() {
                                                                                     className: "w-4 h-4 text-rose-400"
                                                                                 }, void 0, false, {
                                                                                     fileName: "[project]/app/review/page.js",
-                                                                                    lineNumber: 993,
+                                                                                    lineNumber: 995,
                                                                                     columnNumber: 27
                                                                                 }, this),
                                                                                 "Theme"
                                                                             ]
                                                                         }, void 0, true, {
                                                                             fileName: "[project]/app/review/page.js",
-                                                                            lineNumber: 992,
+                                                                            lineNumber: 994,
                                                                             columnNumber: 25
                                                                         }, this),
                                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -4852,13 +4856,13 @@ function ReviewPage() {
                                                                             children: getTheme()
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/app/review/page.js",
-                                                                            lineNumber: 996,
+                                                                            lineNumber: 998,
                                                                             columnNumber: 25
                                                                         }, this)
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/app/review/page.js",
-                                                                    lineNumber: 991,
+                                                                    lineNumber: 993,
                                                                     columnNumber: 23
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4872,14 +4876,14 @@ function ReviewPage() {
                                                                                     className: "w-4 h-4 text-purple-400"
                                                                                 }, void 0, false, {
                                                                                     fileName: "[project]/app/review/page.js",
-                                                                                    lineNumber: 1001,
+                                                                                    lineNumber: 1003,
                                                                                     columnNumber: 27
                                                                                 }, this),
                                                                                 "Paper Category"
                                                                             ]
                                                                         }, void 0, true, {
                                                                             fileName: "[project]/app/review/page.js",
-                                                                            lineNumber: 1000,
+                                                                            lineNumber: 1002,
                                                                             columnNumber: 25
                                                                         }, this),
                                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -4890,26 +4894,26 @@ function ReviewPage() {
                                                                                     className: "w-3 h-3"
                                                                                 }, void 0, false, {
                                                                                     fileName: "[project]/app/review/page.js",
-                                                                                    lineNumber: 1005,
+                                                                                    lineNumber: 1007,
                                                                                     columnNumber: 27
                                                                                 }, this),
                                                                                 getPaperCategory()?.includes('Completed') ? 'Completed' : getPaperCategory() || 'Not specified'
                                                                             ]
                                                                         }, void 0, true, {
                                                                             fileName: "[project]/app/review/page.js",
-                                                                            lineNumber: 1004,
+                                                                            lineNumber: 1006,
                                                                             columnNumber: 25
                                                                         }, this)
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/app/review/page.js",
-                                                                    lineNumber: 999,
+                                                                    lineNumber: 1001,
                                                                     columnNumber: 23
                                                                 }, this)
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/app/review/page.js",
-                                                            lineNumber: 990,
+                                                            lineNumber: 992,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4926,14 +4930,14 @@ function ReviewPage() {
                                                                                     className: "w-4 h-4 text-indigo-400"
                                                                                 }, void 0, false, {
                                                                                     fileName: "[project]/app/review/page.js",
-                                                                                    lineNumber: 1014,
+                                                                                    lineNumber: 1016,
                                                                                     columnNumber: 27
                                                                                 }, this),
                                                                                 "Thematic Area"
                                                                             ]
                                                                         }, void 0, true, {
                                                                             fileName: "[project]/app/review/page.js",
-                                                                            lineNumber: 1013,
+                                                                            lineNumber: 1015,
                                                                             columnNumber: 25
                                                                         }, this),
                                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -4941,13 +4945,13 @@ function ReviewPage() {
                                                                             children: getThematicArea()
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/app/review/page.js",
-                                                                            lineNumber: 1017,
+                                                                            lineNumber: 1019,
                                                                             columnNumber: 25
                                                                         }, this)
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/app/review/page.js",
-                                                                    lineNumber: 1012,
+                                                                    lineNumber: 1014,
                                                                     columnNumber: 23
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4961,14 +4965,14 @@ function ReviewPage() {
                                                                                     className: "w-4 h-4 text-violet-400"
                                                                                 }, void 0, false, {
                                                                                     fileName: "[project]/app/review/page.js",
-                                                                                    lineNumber: 1022,
+                                                                                    lineNumber: 1024,
                                                                                     columnNumber: 27
                                                                                 }, this),
                                                                                 "Final Status"
                                                                             ]
                                                                         }, void 0, true, {
                                                                             fileName: "[project]/app/review/page.js",
-                                                                            lineNumber: 1021,
+                                                                            lineNumber: 1023,
                                                                             columnNumber: 25
                                                                         }, this),
                                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -4979,32 +4983,32 @@ function ReviewPage() {
                                                                                     className: "w-3.5 h-3.5"
                                                                                 }, void 0, false, {
                                                                                     fileName: "[project]/app/review/page.js",
-                                                                                    lineNumber: 1026,
+                                                                                    lineNumber: 1028,
                                                                                     columnNumber: 27
                                                                                 }, this),
                                                                                 getStatusDisplay(votes.evaluation_status)
                                                                             ]
                                                                         }, void 0, true, {
                                                                             fileName: "[project]/app/review/page.js",
-                                                                            lineNumber: 1025,
+                                                                            lineNumber: 1027,
                                                                             columnNumber: 25
                                                                         }, this)
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/app/review/page.js",
-                                                                    lineNumber: 1020,
+                                                                    lineNumber: 1022,
                                                                     columnNumber: 23
                                                                 }, this)
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/app/review/page.js",
-                                                            lineNumber: 1011,
+                                                            lineNumber: 1013,
                                                             columnNumber: 21
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/app/review/page.js",
-                                                    lineNumber: 927,
+                                                    lineNumber: 929,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5018,7 +5022,7 @@ function ReviewPage() {
                                                                     className: "w-4 h-4 text-slate-400"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/app/review/page.js",
-                                                                    lineNumber: 1036,
+                                                                    lineNumber: 1038,
                                                                     columnNumber: 27
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -5026,7 +5030,7 @@ function ReviewPage() {
                                                                     children: "Cast Your Vote"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/app/review/page.js",
-                                                                    lineNumber: 1037,
+                                                                    lineNumber: 1039,
                                                                     columnNumber: 27
                                                                 }, this),
                                                                 votes.evaluation_status !== 'pending' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -5037,20 +5041,20 @@ function ReviewPage() {
                                                                             className: "w-2.5 h-2.5"
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/app/review/page.js",
-                                                                            lineNumber: 1040,
+                                                                            lineNumber: 1042,
                                                                             columnNumber: 35
                                                                         }, this),
                                                                         "Finalized by Master Approver"
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/app/review/page.js",
-                                                                    lineNumber: 1039,
+                                                                    lineNumber: 1041,
                                                                     columnNumber: 31
                                                                 }, this)
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/app/review/page.js",
-                                                            lineNumber: 1035,
+                                                            lineNumber: 1037,
                                                             columnNumber: 23
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -5064,14 +5068,14 @@ function ReviewPage() {
                                                                     className: "w-5 h-5"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/app/review/page.js",
-                                                                    lineNumber: 1052,
+                                                                    lineNumber: 1054,
                                                                     columnNumber: 27
                                                                 }, this),
                                                                 "Endorse for Presentation"
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/app/review/page.js",
-                                                            lineNumber: 1046,
+                                                            lineNumber: 1048,
                                                             columnNumber: 23
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -5085,20 +5089,20 @@ function ReviewPage() {
                                                                     className: "w-5 h-5"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/app/review/page.js",
-                                                                    lineNumber: 1062,
+                                                                    lineNumber: 1064,
                                                                     columnNumber: 27
                                                                 }, this),
                                                                 "Downgrade"
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/app/review/page.js",
-                                                            lineNumber: 1056,
+                                                            lineNumber: 1058,
                                                             columnNumber: 23
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/app/review/page.js",
-                                                    lineNumber: 1034,
+                                                    lineNumber: 1036,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5112,7 +5116,7 @@ function ReviewPage() {
                                                                     className: "w-5 h-5 text-blue-600"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/app/review/page.js",
-                                                                    lineNumber: 1069,
+                                                                    lineNumber: 1071,
                                                                     columnNumber: 23
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h4", {
@@ -5120,7 +5124,7 @@ function ReviewPage() {
                                                                     children: "Live Votes"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/app/review/page.js",
-                                                                    lineNumber: 1070,
+                                                                    lineNumber: 1072,
                                                                     columnNumber: 23
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -5132,13 +5136,13 @@ function ReviewPage() {
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/app/review/page.js",
-                                                                    lineNumber: 1071,
+                                                                    lineNumber: 1073,
                                                                     columnNumber: 23
                                                                 }, this)
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/app/review/page.js",
-                                                            lineNumber: 1068,
+                                                            lineNumber: 1070,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5158,14 +5162,14 @@ function ReviewPage() {
                                                                                                 className: "w-4 h-4 text-slate-400"
                                                                                             }, void 0, false, {
                                                                                                 fileName: "[project]/app/review/page.js",
-                                                                                                lineNumber: 1078,
+                                                                                                lineNumber: 1080,
                                                                                                 columnNumber: 31
                                                                                             }, this),
                                                                                             vote.evaluator_id === currentEvaluatorId ? `${currentUser?.full_name || 'You'} (You)` : getEvaluatorName(vote.evaluator_id)
                                                                                         ]
                                                                                     }, void 0, true, {
                                                                                         fileName: "[project]/app/review/page.js",
-                                                                                        lineNumber: 1077,
+                                                                                        lineNumber: 1079,
                                                                                         columnNumber: 29
                                                                                     }, this),
                                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -5176,20 +5180,20 @@ function ReviewPage() {
                                                                                                 className: "w-3 h-3"
                                                                                             }, void 0, false, {
                                                                                                 fileName: "[project]/app/review/page.js",
-                                                                                                lineNumber: 1084,
+                                                                                                lineNumber: 1086,
                                                                                                 columnNumber: 31
                                                                                             }, this),
                                                                                             vote.vote_status === 'endorse' ? 'Endorse' : vote.vote_status === 'downgrade' ? 'Downgraded' : vote.vote_status?.replace('_', ' ').toUpperCase()
                                                                                         ]
                                                                                     }, void 0, true, {
                                                                                         fileName: "[project]/app/review/page.js",
-                                                                                        lineNumber: 1083,
+                                                                                        lineNumber: 1085,
                                                                                         columnNumber: 29
                                                                                     }, this)
                                                                                 ]
                                                                             }, void 0, true, {
                                                                                 fileName: "[project]/app/review/page.js",
-                                                                                lineNumber: 1076,
+                                                                                lineNumber: 1078,
                                                                                 columnNumber: 27
                                                                             }, this),
                                                                             vote.vote_notes && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -5201,13 +5205,13 @@ function ReviewPage() {
                                                                                 ]
                                                                             }, void 0, true, {
                                                                                 fileName: "[project]/app/review/page.js",
-                                                                                lineNumber: 1091,
+                                                                                lineNumber: 1093,
                                                                                 columnNumber: 29
                                                                             }, this)
                                                                         ]
                                                                     }, idx, true, {
                                                                         fileName: "[project]/app/review/page.js",
-                                                                        lineNumber: 1075,
+                                                                        lineNumber: 1077,
                                                                         columnNumber: 25
                                                                     }, this)),
                                                                 (votes.votes || []).length === 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -5215,19 +5219,19 @@ function ReviewPage() {
                                                                     children: "No votes yet"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/app/review/page.js",
-                                                                    lineNumber: 1098,
+                                                                    lineNumber: 1100,
                                                                     columnNumber: 25
                                                                 }, this)
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/app/review/page.js",
-                                                            lineNumber: 1073,
+                                                            lineNumber: 1075,
                                                             columnNumber: 21
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/app/review/page.js",
-                                                    lineNumber: 1067,
+                                                    lineNumber: 1069,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5241,18 +5245,18 @@ function ReviewPage() {
                                                         maxHeight: "300px"
                                                     }, void 0, false, {
                                                         fileName: "[project]/app/review/page.js",
-                                                        lineNumber: 1105,
+                                                        lineNumber: 1107,
                                                         columnNumber: 21
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/review/page.js",
-                                                    lineNumber: 1104,
+                                                    lineNumber: 1106,
                                                     columnNumber: 19
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/app/review/page.js",
-                                            lineNumber: 899,
+                                            lineNumber: 901,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5266,7 +5270,7 @@ function ReviewPage() {
                                                             className: "w-5 h-5 text-indigo-600"
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/review/page.js",
-                                                            lineNumber: 1118,
+                                                            lineNumber: 1120,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h4", {
@@ -5274,13 +5278,13 @@ function ReviewPage() {
                                                             children: "File Viewer"
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/review/page.js",
-                                                            lineNumber: 1119,
+                                                            lineNumber: 1121,
                                                             columnNumber: 21
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/app/review/page.js",
-                                                    lineNumber: 1117,
+                                                    lineNumber: 1119,
                                                     columnNumber: 19
                                                 }, this),
                                                 activeTab === 'system' ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5297,14 +5301,14 @@ function ReviewPage() {
                                                                             className: "w-4 h-4 text-red-500"
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/app/review/page.js",
-                                                                            lineNumber: 1126,
+                                                                            lineNumber: 1128,
                                                                             columnNumber: 27
                                                                         }, this),
                                                                         "Abstract PDF"
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/app/review/page.js",
-                                                                    lineNumber: 1125,
+                                                                    lineNumber: 1127,
                                                                     columnNumber: 25
                                                                 }, this),
                                                                 selectedSubmission.abstract_view_url ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5319,12 +5323,12 @@ function ReviewPage() {
                                                                         className: "jsx-607ed4c10455b76a" + " " + "w-full h-full"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/review/page.js",
-                                                                        lineNumber: 1131,
+                                                                        lineNumber: 1133,
                                                                         columnNumber: 29
                                                                     }, this)
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/app/review/page.js",
-                                                                    lineNumber: 1130,
+                                                                    lineNumber: 1132,
                                                                     columnNumber: 27
                                                                 }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                                                     className: "jsx-607ed4c10455b76a" + " " + "text-center py-16 text-slate-400 bg-white rounded-2xl border-2 border-dashed border-slate-200",
@@ -5334,7 +5338,7 @@ function ReviewPage() {
                                                                             className: "w-12 h-12 text-slate-300 mb-3"
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/app/review/page.js",
-                                                                            lineNumber: 1140,
+                                                                            lineNumber: 1142,
                                                                             columnNumber: 29
                                                                         }, this),
                                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -5342,19 +5346,19 @@ function ReviewPage() {
                                                                             children: "No Abstract Available"
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/app/review/page.js",
-                                                                            lineNumber: 1141,
+                                                                            lineNumber: 1143,
                                                                             columnNumber: 29
                                                                         }, this)
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/app/review/page.js",
-                                                                    lineNumber: 1139,
+                                                                    lineNumber: 1141,
                                                                     columnNumber: 27
                                                                 }, this)
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/app/review/page.js",
-                                                            lineNumber: 1124,
+                                                            lineNumber: 1126,
                                                             columnNumber: 23
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5368,14 +5372,14 @@ function ReviewPage() {
                                                                             className: "w-4 h-4 text-emerald-500"
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/app/review/page.js",
-                                                                            lineNumber: 1147,
+                                                                            lineNumber: 1149,
                                                                             columnNumber: 27
                                                                         }, this),
                                                                         "Endorsement PDF"
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/app/review/page.js",
-                                                                    lineNumber: 1146,
+                                                                    lineNumber: 1148,
                                                                     columnNumber: 25
                                                                 }, this),
                                                                 selectedSubmission.endorsement_view_url ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5389,12 +5393,12 @@ function ReviewPage() {
                                                                         className: "jsx-607ed4c10455b76a" + " " + "w-full h-full"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/review/page.js",
-                                                                        lineNumber: 1152,
+                                                                        lineNumber: 1154,
                                                                         columnNumber: 29
                                                                     }, this)
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/app/review/page.js",
-                                                                    lineNumber: 1151,
+                                                                    lineNumber: 1153,
                                                                     columnNumber: 27
                                                                 }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                                                     className: "jsx-607ed4c10455b76a" + " " + "text-center py-16 text-slate-400 bg-white rounded-2xl border-2 border-dashed border-slate-200",
@@ -5404,7 +5408,7 @@ function ReviewPage() {
                                                                             className: "w-12 h-12 text-slate-300 mb-3"
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/app/review/page.js",
-                                                                            lineNumber: 1160,
+                                                                            lineNumber: 1162,
                                                                             columnNumber: 29
                                                                         }, this),
                                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -5412,25 +5416,25 @@ function ReviewPage() {
                                                                             children: "No Endorsement Available"
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/app/review/page.js",
-                                                                            lineNumber: 1161,
+                                                                            lineNumber: 1163,
                                                                             columnNumber: 29
                                                                         }, this)
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/app/review/page.js",
-                                                                    lineNumber: 1159,
+                                                                    lineNumber: 1161,
                                                                     columnNumber: 27
                                                                 }, this)
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/app/review/page.js",
-                                                            lineNumber: 1145,
+                                                            lineNumber: 1147,
                                                             columnNumber: 23
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/app/review/page.js",
-                                                    lineNumber: 1123,
+                                                    lineNumber: 1125,
                                                     columnNumber: 21
                                                 }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                                     className: "jsx-607ed4c10455b76a" + " " + "space-y-4",
@@ -5445,14 +5449,14 @@ function ReviewPage() {
                                                                         className: "w-4 h-4 text-rose-500"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/review/page.js",
-                                                                        lineNumber: 1170,
+                                                                        lineNumber: 1172,
                                                                         columnNumber: 27
                                                                     }, this),
                                                                     "Attachment"
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/app/review/page.js",
-                                                                lineNumber: 1169,
+                                                                lineNumber: 1171,
                                                                 columnNumber: 25
                                                             }, this),
                                                             selectedSubmission.attachment_filename && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -5463,14 +5467,14 @@ function ReviewPage() {
                                                                         className: "w-4 h-4 text-slate-400"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/review/page.js",
-                                                                        lineNumber: 1175,
+                                                                        lineNumber: 1177,
                                                                         columnNumber: 29
                                                                     }, this),
                                                                     selectedSubmission.attachment_filename
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/app/review/page.js",
-                                                                lineNumber: 1174,
+                                                                lineNumber: 1176,
                                                                 columnNumber: 27
                                                             }, this),
                                                             selectedSubmission.attachment_view_url ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5485,12 +5489,12 @@ function ReviewPage() {
                                                                     className: "jsx-607ed4c10455b76a" + " " + "w-full h-full"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/app/review/page.js",
-                                                                    lineNumber: 1181,
+                                                                    lineNumber: 1183,
                                                                     columnNumber: 29
                                                                 }, this)
                                                             }, void 0, false, {
                                                                 fileName: "[project]/app/review/page.js",
-                                                                lineNumber: 1180,
+                                                                lineNumber: 1182,
                                                                 columnNumber: 27
                                                             }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                                                 className: "jsx-607ed4c10455b76a" + " " + "text-center py-16 text-slate-400 bg-white rounded-2xl border-2 border-dashed border-slate-200",
@@ -5500,7 +5504,7 @@ function ReviewPage() {
                                                                         className: "w-12 h-12 text-slate-300 mb-3"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/review/page.js",
-                                                                        lineNumber: 1190,
+                                                                        lineNumber: 1192,
                                                                         columnNumber: 29
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -5508,53 +5512,53 @@ function ReviewPage() {
                                                                         children: "No Attachment Available"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/review/page.js",
-                                                                        lineNumber: 1191,
+                                                                        lineNumber: 1193,
                                                                         columnNumber: 29
                                                                     }, this)
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/app/review/page.js",
-                                                                lineNumber: 1189,
+                                                                lineNumber: 1191,
                                                                 columnNumber: 27
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/app/review/page.js",
-                                                        lineNumber: 1168,
+                                                        lineNumber: 1170,
                                                         columnNumber: 23
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/review/page.js",
-                                                    lineNumber: 1167,
+                                                    lineNumber: 1169,
                                                     columnNumber: 21
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/app/review/page.js",
-                                            lineNumber: 1116,
+                                            lineNumber: 1118,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/app/review/page.js",
-                                    lineNumber: 898,
+                                    lineNumber: 900,
                                     columnNumber: 15
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/app/review/page.js",
-                            lineNumber: 875,
+                            lineNumber: 877,
                             columnNumber: 13
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/app/review/page.js",
-                        lineNumber: 874,
+                        lineNumber: 876,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/app/review/page.js",
-                lineNumber: 872,
+                lineNumber: 874,
                 columnNumber: 9
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5573,14 +5577,14 @@ function ReviewPage() {
                                             className: "w-6 h-6 text-blue-600"
                                         }, void 0, false, {
                                             fileName: "[project]/app/review/page.js",
-                                            lineNumber: 1208,
+                                            lineNumber: 1210,
                                             columnNumber: 15
                                         }, this),
                                         "Abstract Review"
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/app/review/page.js",
-                                    lineNumber: 1207,
+                                    lineNumber: 1209,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -5591,20 +5595,20 @@ function ReviewPage() {
                                             className: "w-3.5 h-3.5 text-slate-400"
                                         }, void 0, false, {
                                             fileName: "[project]/app/review/page.js",
-                                            lineNumber: 1212,
+                                            lineNumber: 1214,
                                             columnNumber: 15
                                         }, this),
                                         "Review, vote, and collaborate with your fellow evaluators."
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/app/review/page.js",
-                                    lineNumber: 1211,
+                                    lineNumber: 1213,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/app/review/page.js",
-                            lineNumber: 1206,
+                            lineNumber: 1208,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5618,7 +5622,7 @@ function ReviewPage() {
                                             children: currentUser?.full_name?.charAt(0) || 'E'
                                         }, void 0, false, {
                                             fileName: "[project]/app/review/page.js",
-                                            lineNumber: 1219,
+                                            lineNumber: 1221,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5629,7 +5633,7 @@ function ReviewPage() {
                                                     children: currentUser?.full_name || 'Evaluator'
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/review/page.js",
-                                                    lineNumber: 1223,
+                                                    lineNumber: 1225,
                                                     columnNumber: 17
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -5637,19 +5641,19 @@ function ReviewPage() {
                                                     children: currentUser?.role || 'User'
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/review/page.js",
-                                                    lineNumber: 1224,
+                                                    lineNumber: 1226,
                                                     columnNumber: 17
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/app/review/page.js",
-                                            lineNumber: 1222,
+                                            lineNumber: 1224,
                                             columnNumber: 15
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/app/review/page.js",
-                                    lineNumber: 1218,
+                                    lineNumber: 1220,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$client$2f$app$2d$dir$2f$link$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
@@ -5661,31 +5665,31 @@ function ReviewPage() {
                                             className: "w-4 h-4"
                                         }, void 0, false, {
                                             fileName: "[project]/app/review/page.js",
-                                            lineNumber: 1228,
+                                            lineNumber: 1230,
                                             columnNumber: 15
                                         }, this),
                                         "Logout"
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/app/review/page.js",
-                                    lineNumber: 1227,
+                                    lineNumber: 1229,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/app/review/page.js",
-                            lineNumber: 1217,
+                            lineNumber: 1219,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/app/review/page.js",
-                    lineNumber: 1205,
+                    lineNumber: 1207,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/app/review/page.js",
-                lineNumber: 1204,
+                lineNumber: 1206,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5711,14 +5715,14 @@ function ReviewPage() {
                                                 className: "w-4 h-4"
                                             }, void 0, false, {
                                                 fileName: "[project]/app/review/page.js",
-                                                lineNumber: 1246,
+                                                lineNumber: 1248,
                                                 columnNumber: 15
                                             }, this),
                                             "System Submissions"
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/app/review/page.js",
-                                        lineNumber: 1238,
+                                        lineNumber: 1240,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -5734,20 +5738,20 @@ function ReviewPage() {
                                                 className: "w-4 h-4"
                                             }, void 0, false, {
                                                 fileName: "[project]/app/review/page.js",
-                                                lineNumber: 1257,
+                                                lineNumber: 1259,
                                                 columnNumber: 15
                                             }, this),
                                             "Email Submissions"
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/app/review/page.js",
-                                        lineNumber: 1249,
+                                        lineNumber: 1251,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/review/page.js",
-                                lineNumber: 1237,
+                                lineNumber: 1239,
                                 columnNumber: 11
                             }, this),
                             activeTab === 'email' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -5761,14 +5765,14 @@ function ReviewPage() {
                                             className: "w-4 h-4 animate-spin"
                                         }, void 0, false, {
                                             fileName: "[project]/app/review/page.js",
-                                            lineNumber: 1268,
+                                            lineNumber: 1270,
                                             columnNumber: 19
                                         }, this),
                                         "Checking..."
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/app/review/page.js",
-                                    lineNumber: 1268,
+                                    lineNumber: 1270,
                                     columnNumber: 17
                                 }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
                                     children: [
@@ -5777,25 +5781,25 @@ function ReviewPage() {
                                             className: "w-4 h-4"
                                         }, void 0, false, {
                                             fileName: "[project]/app/review/page.js",
-                                            lineNumber: 1270,
+                                            lineNumber: 1272,
                                             columnNumber: 19
                                         }, this),
                                         "Check Inbox"
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/app/review/page.js",
-                                    lineNumber: 1270,
+                                    lineNumber: 1272,
                                     columnNumber: 17
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/app/review/page.js",
-                                lineNumber: 1262,
+                                lineNumber: 1264,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/app/review/page.js",
-                        lineNumber: 1236,
+                        lineNumber: 1238,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5816,7 +5820,7 @@ function ReviewPage() {
                                                     children: stats.total
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/review/page.js",
-                                                    lineNumber: 1290,
+                                                    lineNumber: 1292,
                                                     columnNumber: 17
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -5827,13 +5831,13 @@ function ReviewPage() {
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/app/review/page.js",
-                                                    lineNumber: 1291,
+                                                    lineNumber: 1293,
                                                     columnNumber: 17
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/app/review/page.js",
-                                            lineNumber: 1289,
+                                            lineNumber: 1291,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5843,23 +5847,23 @@ function ReviewPage() {
                                                 className: "w-6 h-6"
                                             }, void 0, false, {
                                                 fileName: "[project]/app/review/page.js",
-                                                lineNumber: 1297,
+                                                lineNumber: 1299,
                                                 columnNumber: 17
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/app/review/page.js",
-                                            lineNumber: 1296,
+                                            lineNumber: 1298,
                                             columnNumber: 15
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/app/review/page.js",
-                                    lineNumber: 1288,
+                                    lineNumber: 1290,
                                     columnNumber: 13
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/app/review/page.js",
-                                lineNumber: 1279,
+                                lineNumber: 1281,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -5877,7 +5881,7 @@ function ReviewPage() {
                                                     children: stats.pending
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/review/page.js",
-                                                    lineNumber: 1314,
+                                                    lineNumber: 1316,
                                                     columnNumber: 17
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -5888,13 +5892,13 @@ function ReviewPage() {
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/app/review/page.js",
-                                                    lineNumber: 1315,
+                                                    lineNumber: 1317,
                                                     columnNumber: 17
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/app/review/page.js",
-                                            lineNumber: 1313,
+                                            lineNumber: 1315,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5904,23 +5908,23 @@ function ReviewPage() {
                                                 className: "w-6 h-6"
                                             }, void 0, false, {
                                                 fileName: "[project]/app/review/page.js",
-                                                lineNumber: 1321,
+                                                lineNumber: 1323,
                                                 columnNumber: 17
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/app/review/page.js",
-                                            lineNumber: 1320,
+                                            lineNumber: 1322,
                                             columnNumber: 15
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/app/review/page.js",
-                                    lineNumber: 1312,
+                                    lineNumber: 1314,
                                     columnNumber: 13
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/app/review/page.js",
-                                lineNumber: 1303,
+                                lineNumber: 1305,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -5938,7 +5942,7 @@ function ReviewPage() {
                                                     children: stats.endorsed
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/review/page.js",
-                                                    lineNumber: 1338,
+                                                    lineNumber: 1340,
                                                     columnNumber: 17
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -5949,13 +5953,13 @@ function ReviewPage() {
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/app/review/page.js",
-                                                    lineNumber: 1339,
+                                                    lineNumber: 1341,
                                                     columnNumber: 17
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/app/review/page.js",
-                                            lineNumber: 1337,
+                                            lineNumber: 1339,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5965,23 +5969,23 @@ function ReviewPage() {
                                                 className: "w-6 h-6"
                                             }, void 0, false, {
                                                 fileName: "[project]/app/review/page.js",
-                                                lineNumber: 1345,
+                                                lineNumber: 1347,
                                                 columnNumber: 17
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/app/review/page.js",
-                                            lineNumber: 1344,
+                                            lineNumber: 1346,
                                             columnNumber: 15
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/app/review/page.js",
-                                    lineNumber: 1336,
+                                    lineNumber: 1338,
                                     columnNumber: 13
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/app/review/page.js",
-                                lineNumber: 1327,
+                                lineNumber: 1329,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -5999,7 +6003,7 @@ function ReviewPage() {
                                                     children: activeTab === 'system' ? stats.downgraded : stats.uncategorized
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/review/page.js",
-                                                    lineNumber: 1364,
+                                                    lineNumber: 1366,
                                                     columnNumber: 17
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -6010,13 +6014,13 @@ function ReviewPage() {
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/app/review/page.js",
-                                                    lineNumber: 1367,
+                                                    lineNumber: 1369,
                                                     columnNumber: 17
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/app/review/page.js",
-                                            lineNumber: 1363,
+                                            lineNumber: 1365,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -6026,29 +6030,29 @@ function ReviewPage() {
                                                 className: "w-6 h-6"
                                             }, void 0, false, {
                                                 fileName: "[project]/app/review/page.js",
-                                                lineNumber: 1373,
+                                                lineNumber: 1375,
                                                 columnNumber: 17
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/app/review/page.js",
-                                            lineNumber: 1372,
+                                            lineNumber: 1374,
                                             columnNumber: 15
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/app/review/page.js",
-                                    lineNumber: 1362,
+                                    lineNumber: 1364,
                                     columnNumber: 13
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/app/review/page.js",
-                                lineNumber: 1351,
+                                lineNumber: 1353,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/app/review/page.js",
-                        lineNumber: 1277,
+                        lineNumber: 1279,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -6064,12 +6068,12 @@ function ReviewPage() {
                                             className: "w-4 h-4"
                                         }, void 0, false, {
                                             fileName: "[project]/app/review/page.js",
-                                            lineNumber: 1382,
+                                            lineNumber: 1384,
                                             columnNumber: 15
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/app/review/page.js",
-                                        lineNumber: 1381,
+                                        lineNumber: 1383,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -6080,13 +6084,13 @@ function ReviewPage() {
                                         className: "jsx-607ed4c10455b76a" + " " + "w-full px-4 py-3 pl-11 bg-white border border-slate-200 rounded-2xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition-all"
                                     }, void 0, false, {
                                         fileName: "[project]/app/review/page.js",
-                                        lineNumber: 1384,
+                                        lineNumber: 1386,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/review/page.js",
-                                lineNumber: 1380,
+                                lineNumber: 1382,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -6099,12 +6103,12 @@ function ReviewPage() {
                                             className: "w-4 h-4"
                                         }, void 0, false, {
                                             fileName: "[project]/app/review/page.js",
-                                            lineNumber: 1394,
+                                            lineNumber: 1396,
                                             columnNumber: 15
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/app/review/page.js",
-                                        lineNumber: 1393,
+                                        lineNumber: 1395,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("select", {
@@ -6118,7 +6122,7 @@ function ReviewPage() {
                                                 children: "All Status"
                                             }, void 0, false, {
                                                 fileName: "[project]/app/review/page.js",
-                                                lineNumber: 1401,
+                                                lineNumber: 1403,
                                                 columnNumber: 15
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("option", {
@@ -6127,7 +6131,7 @@ function ReviewPage() {
                                                 children: "Pending"
                                             }, void 0, false, {
                                                 fileName: "[project]/app/review/page.js",
-                                                lineNumber: 1402,
+                                                lineNumber: 1404,
                                                 columnNumber: 15
                                             }, this),
                                             activeTab === 'system' ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
@@ -6138,7 +6142,7 @@ function ReviewPage() {
                                                         children: "Endorsed"
                                                     }, void 0, false, {
                                                         fileName: "[project]/app/review/page.js",
-                                                        lineNumber: 1405,
+                                                        lineNumber: 1407,
                                                         columnNumber: 19
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("option", {
@@ -6147,13 +6151,13 @@ function ReviewPage() {
                                                         children: "Downgraded"
                                                     }, void 0, false, {
                                                         fileName: "[project]/app/review/page.js",
-                                                        lineNumber: 1406,
+                                                        lineNumber: 1408,
                                                         columnNumber: 19
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/app/review/page.js",
-                                                lineNumber: 1404,
+                                                lineNumber: 1406,
                                                 columnNumber: 17
                                             }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
                                                 children: [
@@ -6163,7 +6167,7 @@ function ReviewPage() {
                                                         children: "Endorsed"
                                                     }, void 0, false, {
                                                         fileName: "[project]/app/review/page.js",
-                                                        lineNumber: 1410,
+                                                        lineNumber: 1412,
                                                         columnNumber: 19
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("option", {
@@ -6172,25 +6176,25 @@ function ReviewPage() {
                                                         children: "Uncategorized"
                                                     }, void 0, false, {
                                                         fileName: "[project]/app/review/page.js",
-                                                        lineNumber: 1411,
+                                                        lineNumber: 1413,
                                                         columnNumber: 19
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/app/review/page.js",
-                                                lineNumber: 1409,
+                                                lineNumber: 1411,
                                                 columnNumber: 17
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/app/review/page.js",
-                                        lineNumber: 1396,
+                                        lineNumber: 1398,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/review/page.js",
-                                lineNumber: 1392,
+                                lineNumber: 1394,
                                 columnNumber: 11
                             }, this),
                             activeTab === 'system' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -6203,12 +6207,12 @@ function ReviewPage() {
                                             className: "w-4 h-4"
                                         }, void 0, false, {
                                             fileName: "[project]/app/review/page.js",
-                                            lineNumber: 1419,
+                                            lineNumber: 1421,
                                             columnNumber: 17
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/app/review/page.js",
-                                        lineNumber: 1418,
+                                        lineNumber: 1420,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("select", {
@@ -6222,7 +6226,7 @@ function ReviewPage() {
                                                 children: "All Categories"
                                             }, void 0, false, {
                                                 fileName: "[project]/app/review/page.js",
-                                                lineNumber: 1426,
+                                                lineNumber: 1428,
                                                 columnNumber: 17
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("option", {
@@ -6231,7 +6235,7 @@ function ReviewPage() {
                                                 children: "Completed Extension"
                                             }, void 0, false, {
                                                 fileName: "[project]/app/review/page.js",
-                                                lineNumber: 1427,
+                                                lineNumber: 1429,
                                                 columnNumber: 17
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("option", {
@@ -6240,25 +6244,25 @@ function ReviewPage() {
                                                 children: "Ongoing Extension"
                                             }, void 0, false, {
                                                 fileName: "[project]/app/review/page.js",
-                                                lineNumber: 1428,
+                                                lineNumber: 1430,
                                                 columnNumber: 17
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/app/review/page.js",
-                                        lineNumber: 1421,
+                                        lineNumber: 1423,
                                         columnNumber: 15
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/review/page.js",
-                                lineNumber: 1417,
+                                lineNumber: 1419,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/app/review/page.js",
-                        lineNumber: 1379,
+                        lineNumber: 1381,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -6285,19 +6289,19 @@ function ReviewPage() {
                                                                         className: "w-3.5 h-3.5 text-blue-500"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/review/page.js",
-                                                                        lineNumber: 1443,
+                                                                        lineNumber: 1445,
                                                                         columnNumber: 27
                                                                     }, this),
                                                                     "Title & Leader"
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/app/review/page.js",
-                                                                lineNumber: 1442,
+                                                                lineNumber: 1444,
                                                                 columnNumber: 25
                                                             }, this)
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/review/page.js",
-                                                            lineNumber: 1441,
+                                                            lineNumber: 1443,
                                                             columnNumber: 23
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
@@ -6310,19 +6314,19 @@ function ReviewPage() {
                                                                         className: "w-3.5 h-3.5 text-amber-500"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/review/page.js",
-                                                                        lineNumber: 1449,
+                                                                        lineNumber: 1451,
                                                                         columnNumber: 27
                                                                     }, this),
                                                                     "SUC / Agency"
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/app/review/page.js",
-                                                                lineNumber: 1448,
+                                                                lineNumber: 1450,
                                                                 columnNumber: 25
                                                             }, this)
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/review/page.js",
-                                                            lineNumber: 1447,
+                                                            lineNumber: 1449,
                                                             columnNumber: 23
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
@@ -6335,19 +6339,19 @@ function ReviewPage() {
                                                                         className: "w-3.5 h-3.5 text-purple-500"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/review/page.js",
-                                                                        lineNumber: 1455,
+                                                                        lineNumber: 1457,
                                                                         columnNumber: 27
                                                                     }, this),
                                                                     "Category"
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/app/review/page.js",
-                                                                lineNumber: 1454,
+                                                                lineNumber: 1456,
                                                                 columnNumber: 25
                                                             }, this)
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/review/page.js",
-                                                            lineNumber: 1453,
+                                                            lineNumber: 1455,
                                                             columnNumber: 23
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
@@ -6360,19 +6364,19 @@ function ReviewPage() {
                                                                         className: "w-3.5 h-3.5 text-slate-400"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/review/page.js",
-                                                                        lineNumber: 1461,
+                                                                        lineNumber: 1463,
                                                                         columnNumber: 27
                                                                     }, this),
                                                                     "Date"
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/app/review/page.js",
-                                                                lineNumber: 1460,
+                                                                lineNumber: 1462,
                                                                 columnNumber: 25
                                                             }, this)
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/review/page.js",
-                                                            lineNumber: 1459,
+                                                            lineNumber: 1461,
                                                             columnNumber: 23
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
@@ -6385,25 +6389,25 @@ function ReviewPage() {
                                                                         className: "w-3.5 h-3.5 text-rose-500"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/review/page.js",
-                                                                        lineNumber: 1467,
+                                                                        lineNumber: 1469,
                                                                         columnNumber: 27
                                                                     }, this),
                                                                     "Status"
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/app/review/page.js",
-                                                                lineNumber: 1466,
+                                                                lineNumber: 1468,
                                                                 columnNumber: 25
                                                             }, this)
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/review/page.js",
-                                                            lineNumber: 1465,
+                                                            lineNumber: 1467,
                                                             columnNumber: 23
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/app/review/page.js",
-                                                    lineNumber: 1440,
+                                                    lineNumber: 1442,
                                                     columnNumber: 21
                                                 }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
                                                     children: [
@@ -6417,19 +6421,19 @@ function ReviewPage() {
                                                                         className: "w-3.5 h-3.5 text-blue-500"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/review/page.js",
-                                                                        lineNumber: 1476,
+                                                                        lineNumber: 1478,
                                                                         columnNumber: 27
                                                                     }, this),
                                                                     "Subject / Sender"
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/app/review/page.js",
-                                                                lineNumber: 1475,
+                                                                lineNumber: 1477,
                                                                 columnNumber: 25
                                                             }, this)
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/review/page.js",
-                                                            lineNumber: 1474,
+                                                            lineNumber: 1476,
                                                             columnNumber: 23
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
@@ -6442,19 +6446,19 @@ function ReviewPage() {
                                                                         className: "w-3.5 h-3.5 text-emerald-500"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/review/page.js",
-                                                                        lineNumber: 1482,
+                                                                        lineNumber: 1484,
                                                                         columnNumber: 27
                                                                     }, this),
                                                                     "Project Leader"
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/app/review/page.js",
-                                                                lineNumber: 1481,
+                                                                lineNumber: 1483,
                                                                 columnNumber: 25
                                                             }, this)
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/review/page.js",
-                                                            lineNumber: 1480,
+                                                            lineNumber: 1482,
                                                             columnNumber: 23
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
@@ -6467,19 +6471,19 @@ function ReviewPage() {
                                                                         className: "w-3.5 h-3.5 text-slate-400"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/review/page.js",
-                                                                        lineNumber: 1488,
+                                                                        lineNumber: 1490,
                                                                         columnNumber: 27
                                                                     }, this),
                                                                     "Received"
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/app/review/page.js",
-                                                                lineNumber: 1487,
+                                                                lineNumber: 1489,
                                                                 columnNumber: 25
                                                             }, this)
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/review/page.js",
-                                                            lineNumber: 1486,
+                                                            lineNumber: 1488,
                                                             columnNumber: 23
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
@@ -6492,35 +6496,35 @@ function ReviewPage() {
                                                                         className: "w-3.5 h-3.5 text-rose-500"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/review/page.js",
-                                                                        lineNumber: 1494,
+                                                                        lineNumber: 1496,
                                                                         columnNumber: 27
                                                                     }, this),
                                                                     "Status"
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/app/review/page.js",
-                                                                lineNumber: 1493,
+                                                                lineNumber: 1495,
                                                                 columnNumber: 25
                                                             }, this)
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/review/page.js",
-                                                            lineNumber: 1492,
+                                                            lineNumber: 1494,
                                                             columnNumber: 23
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/app/review/page.js",
-                                                    lineNumber: 1473,
+                                                    lineNumber: 1475,
                                                     columnNumber: 21
                                                 }, this)
                                             }, void 0, false, {
                                                 fileName: "[project]/app/review/page.js",
-                                                lineNumber: 1438,
+                                                lineNumber: 1440,
                                                 columnNumber: 17
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/app/review/page.js",
-                                            lineNumber: 1437,
+                                            lineNumber: 1439,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("tbody", {
@@ -6546,7 +6550,7 @@ function ReviewPage() {
                                                                         children: sub.extension_project_title
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/review/page.js",
-                                                                        lineNumber: 1517,
+                                                                        lineNumber: 1519,
                                                                         columnNumber: 29
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -6557,7 +6561,7 @@ function ReviewPage() {
                                                                                 className: "w-3 h-3 text-slate-400"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/app/review/page.js",
-                                                                                lineNumber: 1519,
+                                                                                lineNumber: 1521,
                                                                                 columnNumber: 31
                                                                             }, this),
                                                                             sub.project_leader,
@@ -6565,13 +6569,13 @@ function ReviewPage() {
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/app/review/page.js",
-                                                                        lineNumber: 1518,
+                                                                        lineNumber: 1520,
                                                                         columnNumber: 29
                                                                     }, this)
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/app/review/page.js",
-                                                                lineNumber: 1516,
+                                                                lineNumber: 1518,
                                                                 columnNumber: 27
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
@@ -6579,7 +6583,7 @@ function ReviewPage() {
                                                                 children: sub.suc_agencies
                                                             }, void 0, false, {
                                                                 fileName: "[project]/app/review/page.js",
-                                                                lineNumber: 1523,
+                                                                lineNumber: 1525,
                                                                 columnNumber: 27
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
@@ -6592,19 +6596,19 @@ function ReviewPage() {
                                                                             className: "w-3 h-3"
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/app/review/page.js",
-                                                                            lineNumber: 1526,
+                                                                            lineNumber: 1528,
                                                                             columnNumber: 31
                                                                         }, this),
                                                                         sub.paper_category?.includes('Completed') ? 'Completed' : 'Ongoing'
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/app/review/page.js",
-                                                                    lineNumber: 1525,
+                                                                    lineNumber: 1527,
                                                                     columnNumber: 29
                                                                 }, this)
                                                             }, void 0, false, {
                                                                 fileName: "[project]/app/review/page.js",
-                                                                lineNumber: 1524,
+                                                                lineNumber: 1526,
                                                                 columnNumber: 27
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
@@ -6617,7 +6621,7 @@ function ReviewPage() {
                                                                             className: "w-3 h-3 text-slate-400"
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/app/review/page.js",
-                                                                            lineNumber: 1532,
+                                                                            lineNumber: 1534,
                                                                             columnNumber: 31
                                                                         }, this),
                                                                         new Date(sub.created_at).toLocaleDateString('en-US', {
@@ -6628,12 +6632,12 @@ function ReviewPage() {
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/app/review/page.js",
-                                                                    lineNumber: 1531,
+                                                                    lineNumber: 1533,
                                                                     columnNumber: 29
                                                                 }, this)
                                                             }, void 0, false, {
                                                                 fileName: "[project]/app/review/page.js",
-                                                                lineNumber: 1530,
+                                                                lineNumber: 1532,
                                                                 columnNumber: 27
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
@@ -6646,25 +6650,25 @@ function ReviewPage() {
                                                                             className: "w-3 h-3"
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/app/review/page.js",
-                                                                            lineNumber: 1538,
+                                                                            lineNumber: 1540,
                                                                             columnNumber: 31
                                                                         }, this),
                                                                         getStatusDisplay(displayStatus)
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/app/review/page.js",
-                                                                    lineNumber: 1537,
+                                                                    lineNumber: 1539,
                                                                     columnNumber: 29
                                                                 }, this)
                                                             }, void 0, false, {
                                                                 fileName: "[project]/app/review/page.js",
-                                                                lineNumber: 1536,
+                                                                lineNumber: 1538,
                                                                 columnNumber: 27
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/app/review/page.js",
-                                                        lineNumber: 1515,
+                                                        lineNumber: 1517,
                                                         columnNumber: 25
                                                     }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
                                                         children: [
@@ -6676,7 +6680,7 @@ function ReviewPage() {
                                                                         children: sub.subject || 'No Subject'
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/review/page.js",
-                                                                        lineNumber: 1546,
+                                                                        lineNumber: 1548,
                                                                         columnNumber: 29
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -6687,7 +6691,7 @@ function ReviewPage() {
                                                                                 className: "w-3 h-3 text-slate-400"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/app/review/page.js",
-                                                                                lineNumber: 1548,
+                                                                                lineNumber: 1550,
                                                                                 columnNumber: 31
                                                                             }, this),
                                                                             sub.sender_name || 'Unknown',
@@ -6697,13 +6701,13 @@ function ReviewPage() {
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/app/review/page.js",
-                                                                        lineNumber: 1547,
+                                                                        lineNumber: 1549,
                                                                         columnNumber: 29
                                                                     }, this)
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/app/review/page.js",
-                                                                lineNumber: 1545,
+                                                                lineNumber: 1547,
                                                                 columnNumber: 27
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
@@ -6718,20 +6722,20 @@ function ReviewPage() {
                                                                                 className: "w-2.5 h-2.5"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/app/review/page.js",
-                                                                                lineNumber: 1556,
+                                                                                lineNumber: 1558,
                                                                                 columnNumber: 33
                                                                             }, this),
                                                                             "Uncategorized"
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/app/review/page.js",
-                                                                        lineNumber: 1555,
+                                                                        lineNumber: 1557,
                                                                         columnNumber: 31
                                                                     }, this)
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/app/review/page.js",
-                                                                lineNumber: 1552,
+                                                                lineNumber: 1554,
                                                                 columnNumber: 27
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
@@ -6744,7 +6748,7 @@ function ReviewPage() {
                                                                             className: "w-3 h-3 text-slate-400"
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/app/review/page.js",
-                                                                            lineNumber: 1563,
+                                                                            lineNumber: 1565,
                                                                             columnNumber: 31
                                                                         }, this),
                                                                         new Date(sub.email_received_at || sub.created_at).toLocaleDateString('en-US', {
@@ -6755,12 +6759,12 @@ function ReviewPage() {
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/app/review/page.js",
-                                                                    lineNumber: 1562,
+                                                                    lineNumber: 1564,
                                                                     columnNumber: 29
                                                                 }, this)
                                                             }, void 0, false, {
                                                                 fileName: "[project]/app/review/page.js",
-                                                                lineNumber: 1561,
+                                                                lineNumber: 1563,
                                                                 columnNumber: 27
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
@@ -6774,14 +6778,14 @@ function ReviewPage() {
                                                                                 className: "w-3 h-3"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/app/review/page.js",
-                                                                                lineNumber: 1569,
+                                                                                lineNumber: 1571,
                                                                                 columnNumber: 31
                                                                             }, this),
                                                                             getStatusDisplay(displayStatus)
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/app/review/page.js",
-                                                                        lineNumber: 1568,
+                                                                        lineNumber: 1570,
                                                                         columnNumber: 29
                                                                     }, this),
                                                                     sub.is_categorized === false && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -6792,14 +6796,14 @@ function ReviewPage() {
                                                                                 className: "w-2.5 h-2.5"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/app/review/page.js",
-                                                                                lineNumber: 1574,
+                                                                                lineNumber: 1576,
                                                                                 columnNumber: 33
                                                                             }, this),
                                                                             "Needs Review"
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/app/review/page.js",
-                                                                        lineNumber: 1573,
+                                                                        lineNumber: 1575,
                                                                         columnNumber: 31
                                                                     }, this),
                                                                     sub.is_categorized === true && sub.extraction_status === 'failed' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -6810,43 +6814,43 @@ function ReviewPage() {
                                                                                 className: "w-2.5 h-2.5"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/app/review/page.js",
-                                                                                lineNumber: 1580,
+                                                                                lineNumber: 1582,
                                                                                 columnNumber: 33
                                                                             }, this),
                                                                             "Manually Categorized"
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/app/review/page.js",
-                                                                        lineNumber: 1579,
+                                                                        lineNumber: 1581,
                                                                         columnNumber: 31
                                                                     }, this)
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/app/review/page.js",
-                                                                lineNumber: 1567,
+                                                                lineNumber: 1569,
                                                                 columnNumber: 27
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/app/review/page.js",
-                                                        lineNumber: 1544,
+                                                        lineNumber: 1546,
                                                         columnNumber: 25
                                                     }, this)
                                                 }, sub.id, false, {
                                                     fileName: "[project]/app/review/page.js",
-                                                    lineNumber: 1507,
+                                                    lineNumber: 1509,
                                                     columnNumber: 21
                                                 }, this);
                                             })
                                         }, void 0, false, {
                                             fileName: "[project]/app/review/page.js",
-                                            lineNumber: 1502,
+                                            lineNumber: 1504,
                                             columnNumber: 15
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/app/review/page.js",
-                                    lineNumber: 1436,
+                                    lineNumber: 1438,
                                     columnNumber: 13
                                 }, this),
                                 filteredSubmissions.length === 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -6857,7 +6861,7 @@ function ReviewPage() {
                                             className: "w-12 h-12 text-slate-300 mb-4"
                                         }, void 0, false, {
                                             fileName: "[project]/app/review/page.js",
-                                            lineNumber: 1594,
+                                            lineNumber: 1596,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -6869,7 +6873,7 @@ function ReviewPage() {
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/app/review/page.js",
-                                            lineNumber: 1595,
+                                            lineNumber: 1597,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -6877,30 +6881,30 @@ function ReviewPage() {
                                             children: "Try adjusting your filters or search terms"
                                         }, void 0, false, {
                                             fileName: "[project]/app/review/page.js",
-                                            lineNumber: 1596,
+                                            lineNumber: 1598,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/app/review/page.js",
-                                    lineNumber: 1593,
+                                    lineNumber: 1595,
                                     columnNumber: 15
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/app/review/page.js",
-                            lineNumber: 1435,
+                            lineNumber: 1437,
                             columnNumber: 11
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/app/review/page.js",
-                        lineNumber: 1434,
+                        lineNumber: 1436,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/app/review/page.js",
-                lineNumber: 1235,
+                lineNumber: 1237,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$styled$2d$jsx$2f$style$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
@@ -6910,7 +6914,7 @@ function ReviewPage() {
         ]
     }, void 0, true, {
         fileName: "[project]/app/review/page.js",
-        lineNumber: 749,
+        lineNumber: 751,
         columnNumber: 5
     }, this);
 }

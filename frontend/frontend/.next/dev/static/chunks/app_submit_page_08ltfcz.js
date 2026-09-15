@@ -32,6 +32,7 @@ const paperCategories = [
     "Completed Extension Project Papers",
     "Ongoing Extension Project Papers"
 ];
+const API_URL = (("TURBOPACK compile-time value", "http://localhost:5000") || 'http://localhost:5000').replace(/\/+$/, '');
 // Toast Component
 const Toast = ({ message, type, onClose })=>{
     _s();
@@ -64,12 +65,12 @@ const Toast = ({ message, type, onClose })=>{
                         className: `h-full ${progressColor} animate-progress-shrink`
                     }, void 0, false, {
                         fileName: "[project]/app/submit/page.js",
-                        lineNumber: 39,
+                        lineNumber: 41,
                         columnNumber: 11
                     }, ("TURBOPACK compile-time value", void 0))
                 }, void 0, false, {
                     fileName: "[project]/app/submit/page.js",
-                    lineNumber: 38,
+                    lineNumber: 40,
                     columnNumber: 9
                 }, ("TURBOPACK compile-time value", void 0)),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -90,12 +91,12 @@ const Toast = ({ message, type, onClose })=>{
                                     d: "M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                                 }, void 0, false, {
                                     fileName: "[project]/app/submit/page.js",
-                                    lineNumber: 46,
+                                    lineNumber: 48,
                                     columnNumber: 17
                                 }, ("TURBOPACK compile-time value", void 0))
                             }, void 0, false, {
                                 fileName: "[project]/app/submit/page.js",
-                                lineNumber: 45,
+                                lineNumber: 47,
                                 columnNumber: 15
                             }, ("TURBOPACK compile-time value", void 0)) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("svg", {
                                 xmlns: "http://www.w3.org/2000/svg",
@@ -110,17 +111,17 @@ const Toast = ({ message, type, onClose })=>{
                                     d: "M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"
                                 }, void 0, false, {
                                     fileName: "[project]/app/submit/page.js",
-                                    lineNumber: 50,
+                                    lineNumber: 52,
                                     columnNumber: 17
                                 }, ("TURBOPACK compile-time value", void 0))
                             }, void 0, false, {
                                 fileName: "[project]/app/submit/page.js",
-                                lineNumber: 49,
+                                lineNumber: 51,
                                 columnNumber: 15
                             }, ("TURBOPACK compile-time value", void 0))
                         }, void 0, false, {
                             fileName: "[project]/app/submit/page.js",
-                            lineNumber: 43,
+                            lineNumber: 45,
                             columnNumber: 11
                         }, ("TURBOPACK compile-time value", void 0)),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -131,7 +132,7 @@ const Toast = ({ message, type, onClose })=>{
                                     children: type === 'success' ? 'Success!' : 'Error!'
                                 }, void 0, false, {
                                     fileName: "[project]/app/submit/page.js",
-                                    lineNumber: 55,
+                                    lineNumber: 57,
                                     columnNumber: 13
                                 }, ("TURBOPACK compile-time value", void 0)),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -139,13 +140,13 @@ const Toast = ({ message, type, onClose })=>{
                                     children: message
                                 }, void 0, false, {
                                     fileName: "[project]/app/submit/page.js",
-                                    lineNumber: 58,
+                                    lineNumber: 60,
                                     columnNumber: 13
                                 }, ("TURBOPACK compile-time value", void 0))
                             ]
                         }, void 0, true, {
                             fileName: "[project]/app/submit/page.js",
-                            lineNumber: 54,
+                            lineNumber: 56,
                             columnNumber: 11
                         }, ("TURBOPACK compile-time value", void 0)),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -164,34 +165,34 @@ const Toast = ({ message, type, onClose })=>{
                                     d: "M6 18L18 6M6 6l12 12"
                                 }, void 0, false, {
                                     fileName: "[project]/app/submit/page.js",
-                                    lineNumber: 65,
+                                    lineNumber: 67,
                                     columnNumber: 15
                                 }, ("TURBOPACK compile-time value", void 0))
                             }, void 0, false, {
                                 fileName: "[project]/app/submit/page.js",
-                                lineNumber: 64,
+                                lineNumber: 66,
                                 columnNumber: 13
                             }, ("TURBOPACK compile-time value", void 0))
                         }, void 0, false, {
                             fileName: "[project]/app/submit/page.js",
-                            lineNumber: 60,
+                            lineNumber: 62,
                             columnNumber: 11
                         }, ("TURBOPACK compile-time value", void 0))
                     ]
                 }, void 0, true, {
                     fileName: "[project]/app/submit/page.js",
-                    lineNumber: 42,
+                    lineNumber: 44,
                     columnNumber: 9
                 }, ("TURBOPACK compile-time value", void 0))
             ]
         }, void 0, true, {
             fileName: "[project]/app/submit/page.js",
-            lineNumber: 37,
+            lineNumber: 39,
             columnNumber: 7
         }, ("TURBOPACK compile-time value", void 0))
     }, void 0, false, {
         fileName: "[project]/app/submit/page.js",
-        lineNumber: 36,
+        lineNumber: 38,
         columnNumber: 5
     }, ("TURBOPACK compile-time value", void 0));
 };
@@ -237,7 +238,7 @@ function SubmitPage() {
                 "SubmitPage.useEffect.fetchSUCs": async ()=>{
                     try {
                         console.log('Fetching SUCs...');
-                        const response = await fetch(`${("TURBOPACK compile-time value", "http://localhost:5000")}/api/sucs`);
+                        const response = await fetch(`${API_URL}/api/sucs`);
                         if (!response.ok) {
                             throw new Error(`HTTP error! status: ${response.status}`);
                         }
@@ -293,7 +294,7 @@ function SubmitPage() {
     const fetchUserSubmissions = async (userId)=>{
         setIsLoadingSubmissions(true);
         try {
-            const response = await fetch(`${("TURBOPACK compile-time value", "http://localhost:5000")}/api/submissions/user/${userId}`);
+            const response = await fetch(`${API_URL}/api/submissions/user/${userId}`);
             if (response.ok) {
                 const data = await response.json();
                 setUserSubmissions(data);
@@ -308,7 +309,7 @@ function SubmitPage() {
     };
     const fetchUserPayments = async (userId)=>{
         try {
-            const response = await fetch(`${("TURBOPACK compile-time value", "http://localhost:5000")}/api/payments/user/${userId}`);
+            const response = await fetch(`${API_URL}/api/payments/user/${userId}`);
             if (response.ok) {
                 const data = await response.json();
                 setUserPayments(data);
@@ -351,7 +352,7 @@ function SubmitPage() {
     ]);
     const checkPaymentStatus = async (submissionId)=>{
         try {
-            const response = await fetch(`${("TURBOPACK compile-time value", "http://localhost:5000")}/api/payments/submission/${submissionId}`);
+            const response = await fetch(`${API_URL}/api/payments/submission/${submissionId}`);
             if (response.ok) {
                 const data = await response.json();
                 setPaymentData(data);
@@ -381,7 +382,7 @@ function SubmitPage() {
             formData.append('payment_amount', paymentAmount);
             formData.append('payment_date', paymentDate);
             formData.append('payment_proof', paymentFile);
-            const response = await fetch(`${("TURBOPACK compile-time value", "http://localhost:5000")}/api/payments/upload`, {
+            const response = await fetch(`${API_URL}/api/payments/upload`, {
                 method: 'POST',
                 body: formData
             });
@@ -522,7 +523,7 @@ function SubmitPage() {
         const existingSuc = sucList.find((s)=>s.name.toLowerCase() === finalSuc.toLowerCase());
         if (!existingSuc && showOtherSuc) {
             try {
-                const addResponse = await fetch(`${("TURBOPACK compile-time value", "http://localhost:5000")}/api/sucs`, {
+                const addResponse = await fetch(`${API_URL}/api/sucs`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -593,7 +594,7 @@ function SubmitPage() {
             }
         }
         try {
-            const res = await fetch(`${("TURBOPACK compile-time value", "http://localhost:5000")}/api/submit`, {
+            const res = await fetch(`${API_URL}/api/submit`, {
                 method: 'POST',
                 body: submitData
             });
@@ -644,12 +645,12 @@ function SubmitPage() {
                     className: "animate-spin rounded-full h-8 w-8 border-2 border-blue-500 border-t-transparent"
                 }, void 0, false, {
                     fileName: "[project]/app/submit/page.js",
-                    lineNumber: 526,
+                    lineNumber: 528,
                     columnNumber: 11
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/app/submit/page.js",
-                lineNumber: 525,
+                lineNumber: 527,
                 columnNumber: 9
             }, this);
         }
@@ -672,17 +673,17 @@ function SubmitPage() {
                                 d: "M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
                             }, void 0, false, {
                                 fileName: "[project]/app/submit/page.js",
-                                lineNumber: 536,
+                                lineNumber: 538,
                                 columnNumber: 15
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/app/submit/page.js",
-                            lineNumber: 535,
+                            lineNumber: 537,
                             columnNumber: 13
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/app/submit/page.js",
-                        lineNumber: 534,
+                        lineNumber: 536,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h3", {
@@ -690,7 +691,7 @@ function SubmitPage() {
                         children: "No Submissions Yet"
                     }, void 0, false, {
                         fileName: "[project]/app/submit/page.js",
-                        lineNumber: 539,
+                        lineNumber: 541,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -698,7 +699,7 @@ function SubmitPage() {
                         children: "You haven't submitted any abstracts yet."
                     }, void 0, false, {
                         fileName: "[project]/app/submit/page.js",
-                        lineNumber: 540,
+                        lineNumber: 542,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -707,13 +708,13 @@ function SubmitPage() {
                         children: "Submit Your First Abstract"
                     }, void 0, false, {
                         fileName: "[project]/app/submit/page.js",
-                        lineNumber: 541,
+                        lineNumber: 543,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/app/submit/page.js",
-                lineNumber: 533,
+                lineNumber: 535,
                 columnNumber: 9
             }, this);
         }
@@ -732,7 +733,7 @@ function SubmitPage() {
                                         children: submission.extension_project_title
                                     }, void 0, false, {
                                         fileName: "[project]/app/submit/page.js",
-                                        lineNumber: 557,
+                                        lineNumber: 559,
                                         columnNumber: 17
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -743,7 +744,7 @@ function SubmitPage() {
                                                 children: submission.thematic_area
                                             }, void 0, false, {
                                                 fileName: "[project]/app/submit/page.js",
-                                                lineNumber: 561,
+                                                lineNumber: 563,
                                                 columnNumber: 19
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -751,7 +752,7 @@ function SubmitPage() {
                                                 children: submission.paper_category
                                             }, void 0, false, {
                                                 fileName: "[project]/app/submit/page.js",
-                                                lineNumber: 564,
+                                                lineNumber: 566,
                                                 columnNumber: 19
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -759,13 +760,13 @@ function SubmitPage() {
                                                 children: submission.status.charAt(0).toUpperCase() + submission.status.slice(1)
                                             }, void 0, false, {
                                                 fileName: "[project]/app/submit/page.js",
-                                                lineNumber: 567,
+                                                lineNumber: 569,
                                                 columnNumber: 19
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/app/submit/page.js",
-                                        lineNumber: 560,
+                                        lineNumber: 562,
                                         columnNumber: 17
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -778,7 +779,7 @@ function SubmitPage() {
                                                         children: "Project Leader:"
                                                     }, void 0, false, {
                                                         fileName: "[project]/app/submit/page.js",
-                                                        lineNumber: 576,
+                                                        lineNumber: 578,
                                                         columnNumber: 25
                                                     }, this),
                                                     " ",
@@ -786,7 +787,7 @@ function SubmitPage() {
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/app/submit/page.js",
-                                                lineNumber: 576,
+                                                lineNumber: 578,
                                                 columnNumber: 19
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -796,7 +797,7 @@ function SubmitPage() {
                                                         children: "Presenter:"
                                                     }, void 0, false, {
                                                         fileName: "[project]/app/submit/page.js",
-                                                        lineNumber: 577,
+                                                        lineNumber: 579,
                                                         columnNumber: 25
                                                     }, this),
                                                     " ",
@@ -804,7 +805,7 @@ function SubmitPage() {
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/app/submit/page.js",
-                                                lineNumber: 577,
+                                                lineNumber: 579,
                                                 columnNumber: 19
                                             }, this),
                                             submission.corresponding_author_name && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -814,7 +815,7 @@ function SubmitPage() {
                                                         children: "Corresponding Author:"
                                                     }, void 0, false, {
                                                         fileName: "[project]/app/submit/page.js",
-                                                        lineNumber: 579,
+                                                        lineNumber: 581,
                                                         columnNumber: 27
                                                     }, this),
                                                     " ",
@@ -822,7 +823,7 @@ function SubmitPage() {
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/app/submit/page.js",
-                                                lineNumber: 579,
+                                                lineNumber: 581,
                                                 columnNumber: 21
                                             }, this),
                                             submission.corresponding_author_position && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -832,7 +833,7 @@ function SubmitPage() {
                                                         children: "Position:"
                                                     }, void 0, false, {
                                                         fileName: "[project]/app/submit/page.js",
-                                                        lineNumber: 582,
+                                                        lineNumber: 584,
                                                         columnNumber: 27
                                                     }, this),
                                                     " ",
@@ -840,7 +841,7 @@ function SubmitPage() {
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/app/submit/page.js",
-                                                lineNumber: 582,
+                                                lineNumber: 584,
                                                 columnNumber: 21
                                             }, this),
                                             submission.suc_agencies && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -850,7 +851,7 @@ function SubmitPage() {
                                                         children: "SUC:"
                                                     }, void 0, false, {
                                                         fileName: "[project]/app/submit/page.js",
-                                                        lineNumber: 585,
+                                                        lineNumber: 587,
                                                         columnNumber: 27
                                                     }, this),
                                                     " ",
@@ -858,13 +859,13 @@ function SubmitPage() {
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/app/submit/page.js",
-                                                lineNumber: 585,
+                                                lineNumber: 587,
                                                 columnNumber: 21
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/app/submit/page.js",
-                                        lineNumber: 575,
+                                        lineNumber: 577,
                                         columnNumber: 17
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -875,13 +876,13 @@ function SubmitPage() {
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/app/submit/page.js",
-                                        lineNumber: 588,
+                                        lineNumber: 590,
                                         columnNumber: 17
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/submit/page.js",
-                                lineNumber: 556,
+                                lineNumber: 558,
                                 columnNumber: 15
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -906,19 +907,19 @@ function SubmitPage() {
                                                     d: "M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/submit/page.js",
-                                                    lineNumber: 601,
+                                                    lineNumber: 603,
                                                     columnNumber: 23
                                                 }, this)
                                             }, void 0, false, {
                                                 fileName: "[project]/app/submit/page.js",
-                                                lineNumber: 600,
+                                                lineNumber: 602,
                                                 columnNumber: 21
                                             }, this),
                                             "View Abstract"
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/app/submit/page.js",
-                                        lineNumber: 594,
+                                        lineNumber: 596,
                                         columnNumber: 19
                                     }, this),
                                     submission.endorsement_view_url && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("a", {
@@ -940,41 +941,41 @@ function SubmitPage() {
                                                     d: "M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/submit/page.js",
-                                                    lineNumber: 614,
+                                                    lineNumber: 616,
                                                     columnNumber: 23
                                                 }, this)
                                             }, void 0, false, {
                                                 fileName: "[project]/app/submit/page.js",
-                                                lineNumber: 613,
+                                                lineNumber: 615,
                                                 columnNumber: 21
                                             }, this),
                                             "View Endorsement"
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/app/submit/page.js",
-                                        lineNumber: 607,
+                                        lineNumber: 609,
                                         columnNumber: 19
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/submit/page.js",
-                                lineNumber: 592,
+                                lineNumber: 594,
                                 columnNumber: 15
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/app/submit/page.js",
-                        lineNumber: 555,
+                        lineNumber: 557,
                         columnNumber: 13
                     }, this)
                 }, submission.id, false, {
                     fileName: "[project]/app/submit/page.js",
-                    lineNumber: 554,
+                    lineNumber: 556,
                     columnNumber: 11
                 }, this))
         }, void 0, false, {
             fileName: "[project]/app/submit/page.js",
-            lineNumber: 552,
+            lineNumber: 554,
             columnNumber: 7
         }, this);
     };
@@ -984,7 +985,7 @@ function SubmitPage() {
             children: "Loading..."
         }, void 0, false, {
             fileName: "[project]/app/submit/page.js",
-            lineNumber: 628,
+            lineNumber: 630,
             columnNumber: 12
         }, this);
     }
@@ -997,7 +998,7 @@ function SubmitPage() {
                 onClose: hideToast
             }, void 0, false, {
                 fileName: "[project]/app/submit/page.js",
-                lineNumber: 635,
+                lineNumber: 637,
                 columnNumber: 9
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("nav", {
@@ -1018,12 +1019,12 @@ function SubmitPage() {
                                         className: "jsx-7ae810da9302cfe2" + " " + "object-contain"
                                     }, void 0, false, {
                                         fileName: "[project]/app/submit/page.js",
-                                        lineNumber: 647,
+                                        lineNumber: 649,
                                         columnNumber: 15
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/app/submit/page.js",
-                                    lineNumber: 646,
+                                    lineNumber: 648,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h1", {
@@ -1031,13 +1032,13 @@ function SubmitPage() {
                                     children: "PEMNet"
                                 }, void 0, false, {
                                     fileName: "[project]/app/submit/page.js",
-                                    lineNumber: 649,
+                                    lineNumber: 651,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/app/submit/page.js",
-                            lineNumber: 645,
+                            lineNumber: 647,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1051,7 +1052,7 @@ function SubmitPage() {
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/app/submit/page.js",
-                                    lineNumber: 653,
+                                    lineNumber: 655,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$client$2f$app$2d$dir$2f$link$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
@@ -1063,31 +1064,31 @@ function SubmitPage() {
                                             className: "w-4 h-4"
                                         }, void 0, false, {
                                             fileName: "[project]/app/submit/page.js",
-                                            lineNumber: 655,
+                                            lineNumber: 657,
                                             columnNumber: 15
                                         }, this),
                                         "Logout"
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/app/submit/page.js",
-                                    lineNumber: 654,
+                                    lineNumber: 656,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/app/submit/page.js",
-                            lineNumber: 652,
+                            lineNumber: 654,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/app/submit/page.js",
-                    lineNumber: 644,
+                    lineNumber: 646,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/app/submit/page.js",
-                lineNumber: 643,
+                lineNumber: 645,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1107,13 +1108,13 @@ function SubmitPage() {
                                             className: "jsx-7ae810da9302cfe2" + " " + "absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600"
                                         }, void 0, false, {
                                             fileName: "[project]/app/submit/page.js",
-                                            lineNumber: 676,
+                                            lineNumber: 678,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/app/submit/page.js",
-                                    lineNumber: 666,
+                                    lineNumber: 668,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1129,20 +1130,20 @@ function SubmitPage() {
                                             children: userSubmissions.length
                                         }, void 0, false, {
                                             fileName: "[project]/app/submit/page.js",
-                                            lineNumber: 692,
+                                            lineNumber: 694,
                                             columnNumber: 17
                                         }, this),
                                         activeTab === 'my-submissions' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                             className: "jsx-7ae810da9302cfe2" + " " + "absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600"
                                         }, void 0, false, {
                                             fileName: "[project]/app/submit/page.js",
-                                            lineNumber: 697,
+                                            lineNumber: 699,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/app/submit/page.js",
-                                    lineNumber: 679,
+                                    lineNumber: 681,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1159,19 +1160,19 @@ function SubmitPage() {
                                             className: "jsx-7ae810da9302cfe2" + " " + "absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600"
                                         }, void 0, false, {
                                             fileName: "[project]/app/submit/page.js",
-                                            lineNumber: 715,
+                                            lineNumber: 717,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/app/submit/page.js",
-                                    lineNumber: 700,
+                                    lineNumber: 702,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/app/submit/page.js",
-                            lineNumber: 665,
+                            lineNumber: 667,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1188,7 +1189,7 @@ function SubmitPage() {
                                                     children: "Submit Extension Project Abstract"
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/submit/page.js",
-                                                    lineNumber: 726,
+                                                    lineNumber: 728,
                                                     columnNumber: 21
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1196,18 +1197,18 @@ function SubmitPage() {
                                                     children: "Upload your abstract for the conference"
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/submit/page.js",
-                                                    lineNumber: 727,
+                                                    lineNumber: 729,
                                                     columnNumber: 21
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/app/submit/page.js",
-                                            lineNumber: 725,
+                                            lineNumber: 727,
                                             columnNumber: 19
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/app/submit/page.js",
-                                        lineNumber: 724,
+                                        lineNumber: 726,
                                         columnNumber: 17
                                     }, this),
                                     error && !toast && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1227,19 +1228,19 @@ function SubmitPage() {
                                                     className: "jsx-7ae810da9302cfe2"
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/submit/page.js",
-                                                    lineNumber: 734,
+                                                    lineNumber: 736,
                                                     columnNumber: 23
                                                 }, this)
                                             }, void 0, false, {
                                                 fileName: "[project]/app/submit/page.js",
-                                                lineNumber: 733,
+                                                lineNumber: 735,
                                                 columnNumber: 21
                                             }, this),
                                             error
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/app/submit/page.js",
-                                        lineNumber: 732,
+                                        lineNumber: 734,
                                         columnNumber: 19
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("form", {
@@ -1256,12 +1257,12 @@ function SubmitPage() {
                                                             children: "PEMNet 1st National Extension Conference 2026"
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/submit/page.js",
-                                                            lineNumber: 744,
+                                                            lineNumber: 746,
                                                             columnNumber: 23
                                                         }, this)
                                                     }, void 0, false, {
                                                         fileName: "[project]/app/submit/page.js",
-                                                        lineNumber: 743,
+                                                        lineNumber: 745,
                                                         columnNumber: 21
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1274,12 +1275,12 @@ function SubmitPage() {
                                                                     children: "1"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/app/submit/page.js",
-                                                                    lineNumber: 750,
+                                                                    lineNumber: 752,
                                                                     columnNumber: 25
                                                                 }, this)
                                                             }, void 0, false, {
                                                                 fileName: "[project]/app/submit/page.js",
-                                                                lineNumber: 749,
+                                                                lineNumber: 751,
                                                                 columnNumber: 23
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h2", {
@@ -1287,13 +1288,13 @@ function SubmitPage() {
                                                                 children: "Project Information"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/app/submit/page.js",
-                                                                lineNumber: 752,
+                                                                lineNumber: 754,
                                                                 columnNumber: 23
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/app/submit/page.js",
-                                                        lineNumber: 748,
+                                                        lineNumber: 750,
                                                         columnNumber: 21
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1307,7 +1308,7 @@ function SubmitPage() {
                                                                         children: "Extension Project Title"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/submit/page.js",
-                                                                        lineNumber: 757,
+                                                                        lineNumber: 759,
                                                                         columnNumber: 25
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -1318,13 +1319,13 @@ function SubmitPage() {
                                                                         className: "jsx-7ae810da9302cfe2" + " " + "w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/submit/page.js",
-                                                                        lineNumber: 758,
+                                                                        lineNumber: 760,
                                                                         columnNumber: 25
                                                                     }, this)
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/app/submit/page.js",
-                                                                lineNumber: 756,
+                                                                lineNumber: 758,
                                                                 columnNumber: 23
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1338,7 +1339,7 @@ function SubmitPage() {
                                                                                 children: "Thematic Area"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                lineNumber: 769,
+                                                                                lineNumber: 771,
                                                                                 columnNumber: 27
                                                                             }, this),
                                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("select", {
@@ -1352,7 +1353,7 @@ function SubmitPage() {
                                                                                         children: "Select Thematic Area"
                                                                                     }, void 0, false, {
                                                                                         fileName: "[project]/app/submit/page.js",
-                                                                                        lineNumber: 775,
+                                                                                        lineNumber: 777,
                                                                                         columnNumber: 29
                                                                                     }, this),
                                                                                     thematicAreas.map((area)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("option", {
@@ -1361,19 +1362,19 @@ function SubmitPage() {
                                                                                             children: area
                                                                                         }, area, false, {
                                                                                             fileName: "[project]/app/submit/page.js",
-                                                                                            lineNumber: 777,
+                                                                                            lineNumber: 779,
                                                                                             columnNumber: 31
                                                                                         }, this))
                                                                                 ]
                                                                             }, void 0, true, {
                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                lineNumber: 770,
+                                                                                lineNumber: 772,
                                                                                 columnNumber: 27
                                                                             }, this)
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/app/submit/page.js",
-                                                                        lineNumber: 768,
+                                                                        lineNumber: 770,
                                                                         columnNumber: 25
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1384,7 +1385,7 @@ function SubmitPage() {
                                                                                 children: "Paper Category"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                lineNumber: 783,
+                                                                                lineNumber: 785,
                                                                                 columnNumber: 27
                                                                             }, this),
                                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("select", {
@@ -1398,7 +1399,7 @@ function SubmitPage() {
                                                                                         children: "Select Category"
                                                                                     }, void 0, false, {
                                                                                         fileName: "[project]/app/submit/page.js",
-                                                                                        lineNumber: 789,
+                                                                                        lineNumber: 791,
                                                                                         columnNumber: 29
                                                                                     }, this),
                                                                                     paperCategories.map((cat)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("option", {
@@ -1407,25 +1408,25 @@ function SubmitPage() {
                                                                                             children: cat
                                                                                         }, cat, false, {
                                                                                             fileName: "[project]/app/submit/page.js",
-                                                                                            lineNumber: 791,
+                                                                                            lineNumber: 793,
                                                                                             columnNumber: 31
                                                                                         }, this))
                                                                                 ]
                                                                             }, void 0, true, {
                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                lineNumber: 784,
+                                                                                lineNumber: 786,
                                                                                 columnNumber: 27
                                                                             }, this)
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/app/submit/page.js",
-                                                                        lineNumber: 782,
+                                                                        lineNumber: 784,
                                                                         columnNumber: 25
                                                                     }, this)
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/app/submit/page.js",
-                                                                lineNumber: 767,
+                                                                lineNumber: 769,
                                                                 columnNumber: 23
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1437,7 +1438,7 @@ function SubmitPage() {
                                                                         children: "SUC / Agency"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/submit/page.js",
-                                                                        lineNumber: 798,
+                                                                        lineNumber: 800,
                                                                         columnNumber: 25
                                                                     }, this),
                                                                     !showOtherSuc ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1455,7 +1456,7 @@ function SubmitPage() {
                                                                                         className: "jsx-7ae810da9302cfe2" + " " + "w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
                                                                                     }, void 0, false, {
                                                                                         fileName: "[project]/app/submit/page.js",
-                                                                                        lineNumber: 803,
+                                                                                        lineNumber: 805,
                                                                                         columnNumber: 31
                                                                                     }, this),
                                                                                     isLoadingSucs && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1464,18 +1465,18 @@ function SubmitPage() {
                                                                                             className: "jsx-7ae810da9302cfe2" + " " + "animate-spin rounded-full h-4 w-4 border-2 border-blue-500 border-t-transparent"
                                                                                         }, void 0, false, {
                                                                                             fileName: "[project]/app/submit/page.js",
-                                                                                            lineNumber: 813,
+                                                                                            lineNumber: 815,
                                                                                             columnNumber: 35
                                                                                         }, this)
                                                                                     }, void 0, false, {
                                                                                         fileName: "[project]/app/submit/page.js",
-                                                                                        lineNumber: 812,
+                                                                                        lineNumber: 814,
                                                                                         columnNumber: 33
                                                                                     }, this)
                                                                                 ]
                                                                             }, void 0, true, {
                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                lineNumber: 802,
+                                                                                lineNumber: 804,
                                                                                 columnNumber: 29
                                                                             }, this),
                                                                             showDropdown && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1493,7 +1494,7 @@ function SubmitPage() {
                                                                                                         children: suc.name
                                                                                                     }, void 0, false, {
                                                                                                         fileName: "[project]/app/submit/page.js",
-                                                                                                        lineNumber: 829,
+                                                                                                        lineNumber: 831,
                                                                                                         columnNumber: 41
                                                                                                     }, this),
                                                                                                     suc.abbreviation && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1505,13 +1506,13 @@ function SubmitPage() {
                                                                                                         ]
                                                                                                     }, void 0, true, {
                                                                                                         fileName: "[project]/app/submit/page.js",
-                                                                                                        lineNumber: 831,
+                                                                                                        lineNumber: 833,
                                                                                                         columnNumber: 43
                                                                                                     }, this)
                                                                                                 ]
                                                                                             }, void 0, true, {
                                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                                lineNumber: 828,
+                                                                                                lineNumber: 830,
                                                                                                 columnNumber: 39
                                                                                             }, this),
                                                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1519,13 +1520,13 @@ function SubmitPage() {
                                                                                                 children: suc.region
                                                                                             }, void 0, false, {
                                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                                lineNumber: 834,
+                                                                                                lineNumber: 836,
                                                                                                 columnNumber: 39
                                                                                             }, this)
                                                                                         ]
                                                                                     }, suc.id, true, {
                                                                                         fileName: "[project]/app/submit/page.js",
-                                                                                        lineNumber: 822,
+                                                                                        lineNumber: 824,
                                                                                         columnNumber: 37
                                                                                     }, this)) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                                                                     className: "jsx-7ae810da9302cfe2" + " " + "px-4 py-3 text-sm text-slate-500",
@@ -1542,18 +1543,18 @@ function SubmitPage() {
                                                                                             ]
                                                                                         }, void 0, true, {
                                                                                             fileName: "[project]/app/submit/page.js",
-                                                                                            lineNumber: 840,
+                                                                                            lineNumber: 842,
                                                                                             columnNumber: 37
                                                                                         }, this)
                                                                                     ]
                                                                                 }, void 0, true, {
                                                                                     fileName: "[project]/app/submit/page.js",
-                                                                                    lineNumber: 838,
+                                                                                    lineNumber: 840,
                                                                                     columnNumber: 35
                                                                                 }, this)
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                lineNumber: 819,
+                                                                                lineNumber: 821,
                                                                                 columnNumber: 31
                                                                             }, this),
                                                                             chosenSuc && !showOtherSuc && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1567,7 +1568,7 @@ function SubmitPage() {
                                                                                         ]
                                                                                     }, void 0, true, {
                                                                                         fileName: "[project]/app/submit/page.js",
-                                                                                        lineNumber: 854,
+                                                                                        lineNumber: 856,
                                                                                         columnNumber: 33
                                                                                     }, this),
                                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1580,13 +1581,13 @@ function SubmitPage() {
                                                                                         children: "Clear"
                                                                                     }, void 0, false, {
                                                                                         fileName: "[project]/app/submit/page.js",
-                                                                                        lineNumber: 855,
+                                                                                        lineNumber: 857,
                                                                                         columnNumber: 33
                                                                                     }, this)
                                                                                 ]
                                                                             }, void 0, true, {
                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                lineNumber: 853,
+                                                                                lineNumber: 855,
                                                                                 columnNumber: 31
                                                                             }, this),
                                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1608,25 +1609,25 @@ function SubmitPage() {
                                                                                             className: "jsx-7ae810da9302cfe2"
                                                                                         }, void 0, false, {
                                                                                             fileName: "[project]/app/submit/page.js",
-                                                                                            lineNumber: 874,
+                                                                                            lineNumber: 876,
                                                                                             columnNumber: 33
                                                                                         }, this)
                                                                                     }, void 0, false, {
                                                                                         fileName: "[project]/app/submit/page.js",
-                                                                                        lineNumber: 873,
+                                                                                        lineNumber: 875,
                                                                                         columnNumber: 31
                                                                                     }, this),
                                                                                     "Can't find your SUC? Add it here"
                                                                                 ]
                                                                             }, void 0, true, {
                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                lineNumber: 868,
+                                                                                lineNumber: 870,
                                                                                 columnNumber: 29
                                                                             }, this)
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/app/submit/page.js",
-                                                                        lineNumber: 801,
+                                                                        lineNumber: 803,
                                                                         columnNumber: 27
                                                                     }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                                                         className: "jsx-7ae810da9302cfe2",
@@ -1644,7 +1645,7 @@ function SubmitPage() {
                                                                                         className: "jsx-7ae810da9302cfe2" + " " + "flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
                                                                                     }, void 0, false, {
                                                                                         fileName: "[project]/app/submit/page.js",
-                                                                                        lineNumber: 882,
+                                                                                        lineNumber: 884,
                                                                                         columnNumber: 31
                                                                                     }, this),
                                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1669,23 +1670,23 @@ function SubmitPage() {
                                                                                                 className: "jsx-7ae810da9302cfe2"
                                                                                             }, void 0, false, {
                                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                                lineNumber: 901,
+                                                                                                lineNumber: 903,
                                                                                                 columnNumber: 35
                                                                                             }, this)
                                                                                         }, void 0, false, {
                                                                                             fileName: "[project]/app/submit/page.js",
-                                                                                            lineNumber: 900,
+                                                                                            lineNumber: 902,
                                                                                             columnNumber: 33
                                                                                         }, this)
                                                                                     }, void 0, false, {
                                                                                         fileName: "[project]/app/submit/page.js",
-                                                                                        lineNumber: 891,
+                                                                                        lineNumber: 893,
                                                                                         columnNumber: 31
                                                                                     }, this)
                                                                                 ]
                                                                             }, void 0, true, {
                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                lineNumber: 881,
+                                                                                lineNumber: 883,
                                                                                 columnNumber: 29
                                                                             }, this),
                                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1693,31 +1694,31 @@ function SubmitPage() {
                                                                                 children: "This SUC/Agency will be added when you submit."
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                lineNumber: 905,
+                                                                                lineNumber: 907,
                                                                                 columnNumber: 29
                                                                             }, this)
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/app/submit/page.js",
-                                                                        lineNumber: 880,
+                                                                        lineNumber: 882,
                                                                         columnNumber: 27
                                                                     }, this)
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/app/submit/page.js",
-                                                                lineNumber: 797,
+                                                                lineNumber: 799,
                                                                 columnNumber: 23
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/app/submit/page.js",
-                                                        lineNumber: 755,
+                                                        lineNumber: 757,
                                                         columnNumber: 21
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/app/submit/page.js",
-                                                lineNumber: 742,
+                                                lineNumber: 744,
                                                 columnNumber: 19
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1733,12 +1734,12 @@ function SubmitPage() {
                                                                     children: "2"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/app/submit/page.js",
-                                                                    lineNumber: 918,
+                                                                    lineNumber: 920,
                                                                     columnNumber: 25
                                                                 }, this)
                                                             }, void 0, false, {
                                                                 fileName: "[project]/app/submit/page.js",
-                                                                lineNumber: 917,
+                                                                lineNumber: 919,
                                                                 columnNumber: 23
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h2", {
@@ -1746,13 +1747,13 @@ function SubmitPage() {
                                                                 children: "Author Information"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/app/submit/page.js",
-                                                                lineNumber: 920,
+                                                                lineNumber: 922,
                                                                 columnNumber: 23
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/app/submit/page.js",
-                                                        lineNumber: 916,
+                                                        lineNumber: 918,
                                                         columnNumber: 21
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1769,7 +1770,7 @@ function SubmitPage() {
                                                                                 children: "Project Leader"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                lineNumber: 926,
+                                                                                lineNumber: 928,
                                                                                 columnNumber: 27
                                                                             }, this),
                                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -1780,13 +1781,13 @@ function SubmitPage() {
                                                                                 className: "jsx-7ae810da9302cfe2" + " " + "w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                lineNumber: 927,
+                                                                                lineNumber: 929,
                                                                                 columnNumber: 27
                                                                             }, this)
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/app/submit/page.js",
-                                                                        lineNumber: 925,
+                                                                        lineNumber: 927,
                                                                         columnNumber: 25
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1797,7 +1798,7 @@ function SubmitPage() {
                                                                                 children: "Paper Presenter"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                lineNumber: 937,
+                                                                                lineNumber: 939,
                                                                                 columnNumber: 27
                                                                             }, this),
                                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -1808,13 +1809,13 @@ function SubmitPage() {
                                                                                 className: "jsx-7ae810da9302cfe2" + " " + "w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                lineNumber: 938,
+                                                                                lineNumber: 940,
                                                                                 columnNumber: 27
                                                                             }, this)
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/app/submit/page.js",
-                                                                        lineNumber: 936,
+                                                                        lineNumber: 938,
                                                                         columnNumber: 25
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1825,7 +1826,7 @@ function SubmitPage() {
                                                                                 children: "Corresponding Author Name"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                lineNumber: 948,
+                                                                                lineNumber: 950,
                                                                                 columnNumber: 27
                                                                             }, this),
                                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -1835,13 +1836,13 @@ function SubmitPage() {
                                                                                 className: "jsx-7ae810da9302cfe2" + " " + "w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                lineNumber: 949,
+                                                                                lineNumber: 951,
                                                                                 columnNumber: 27
                                                                             }, this)
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/app/submit/page.js",
-                                                                        lineNumber: 947,
+                                                                        lineNumber: 949,
                                                                         columnNumber: 25
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1852,7 +1853,7 @@ function SubmitPage() {
                                                                                 children: "Corresponding Author Position/Designation"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                lineNumber: 958,
+                                                                                lineNumber: 960,
                                                                                 columnNumber: 27
                                                                             }, this),
                                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -1862,13 +1863,13 @@ function SubmitPage() {
                                                                                 className: "jsx-7ae810da9302cfe2" + " " + "w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                lineNumber: 959,
+                                                                                lineNumber: 961,
                                                                                 columnNumber: 27
                                                                             }, this)
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/app/submit/page.js",
-                                                                        lineNumber: 957,
+                                                                        lineNumber: 959,
                                                                         columnNumber: 25
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1879,7 +1880,7 @@ function SubmitPage() {
                                                                                 children: "Corresponding Author Email"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                lineNumber: 968,
+                                                                                lineNumber: 970,
                                                                                 columnNumber: 27
                                                                             }, this),
                                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -1889,19 +1890,19 @@ function SubmitPage() {
                                                                                 className: "jsx-7ae810da9302cfe2" + " " + "w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                lineNumber: 969,
+                                                                                lineNumber: 971,
                                                                                 columnNumber: 27
                                                                             }, this)
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/app/submit/page.js",
-                                                                        lineNumber: 967,
+                                                                        lineNumber: 969,
                                                                         columnNumber: 25
                                                                     }, this)
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/app/submit/page.js",
-                                                                lineNumber: 924,
+                                                                lineNumber: 926,
                                                                 columnNumber: 23
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1915,7 +1916,7 @@ function SubmitPage() {
                                                                                 children: "Co-Authors"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                lineNumber: 980,
+                                                                                lineNumber: 982,
                                                                                 columnNumber: 27
                                                                             }, this),
                                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1927,13 +1928,13 @@ function SubmitPage() {
                                                                                 ]
                                                                             }, void 0, true, {
                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                lineNumber: 981,
+                                                                                lineNumber: 983,
                                                                                 columnNumber: 27
                                                                             }, this)
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/app/submit/page.js",
-                                                                        lineNumber: 979,
+                                                                        lineNumber: 981,
                                                                         columnNumber: 25
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1949,7 +1950,7 @@ function SubmitPage() {
                                                                                         ]
                                                                                     }, void 0, true, {
                                                                                         fileName: "[project]/app/submit/page.js",
-                                                                                        lineNumber: 992,
+                                                                                        lineNumber: 994,
                                                                                         columnNumber: 31
                                                                                     }, this),
                                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -1960,7 +1961,7 @@ function SubmitPage() {
                                                                                         className: "jsx-7ae810da9302cfe2" + " " + "w-32 bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none"
                                                                                     }, void 0, false, {
                                                                                         fileName: "[project]/app/submit/page.js",
-                                                                                        lineNumber: 996,
+                                                                                        lineNumber: 998,
                                                                                         columnNumber: 31
                                                                                     }, this),
                                                                                     coAuthors.length > 1 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1982,28 +1983,28 @@ function SubmitPage() {
                                                                                                 className: "jsx-7ae810da9302cfe2"
                                                                                             }, void 0, false, {
                                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                                lineNumber: 1012,
+                                                                                                lineNumber: 1014,
                                                                                                 columnNumber: 37
                                                                                             }, this)
                                                                                         }, void 0, false, {
                                                                                             fileName: "[project]/app/submit/page.js",
-                                                                                            lineNumber: 1011,
+                                                                                            lineNumber: 1013,
                                                                                             columnNumber: 35
                                                                                         }, this)
                                                                                     }, void 0, false, {
                                                                                         fileName: "[project]/app/submit/page.js",
-                                                                                        lineNumber: 1005,
+                                                                                        lineNumber: 1007,
                                                                                         columnNumber: 33
                                                                                     }, this)
                                                                                 ]
                                                                             }, index, true, {
                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                lineNumber: 988,
+                                                                                lineNumber: 990,
                                                                                 columnNumber: 29
                                                                             }, this))
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/submit/page.js",
-                                                                        lineNumber: 986,
+                                                                        lineNumber: 988,
                                                                         columnNumber: 25
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -2025,37 +2026,37 @@ function SubmitPage() {
                                                                                     className: "jsx-7ae810da9302cfe2"
                                                                                 }, void 0, false, {
                                                                                     fileName: "[project]/app/submit/page.js",
-                                                                                    lineNumber: 1026,
+                                                                                    lineNumber: 1028,
                                                                                     columnNumber: 29
                                                                                 }, this)
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                lineNumber: 1025,
+                                                                                lineNumber: 1027,
                                                                                 columnNumber: 27
                                                                             }, this),
                                                                             "Add Co-Author"
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/app/submit/page.js",
-                                                                        lineNumber: 1020,
+                                                                        lineNumber: 1022,
                                                                         columnNumber: 25
                                                                     }, this)
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/app/submit/page.js",
-                                                                lineNumber: 978,
+                                                                lineNumber: 980,
                                                                 columnNumber: 23
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/app/submit/page.js",
-                                                        lineNumber: 923,
+                                                        lineNumber: 925,
                                                         columnNumber: 21
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/app/submit/page.js",
-                                                lineNumber: 915,
+                                                lineNumber: 917,
                                                 columnNumber: 19
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2071,12 +2072,12 @@ function SubmitPage() {
                                                                     children: "3"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/app/submit/page.js",
-                                                                    lineNumber: 1038,
+                                                                    lineNumber: 1040,
                                                                     columnNumber: 25
                                                                 }, this)
                                                             }, void 0, false, {
                                                                 fileName: "[project]/app/submit/page.js",
-                                                                lineNumber: 1037,
+                                                                lineNumber: 1039,
                                                                 columnNumber: 23
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h2", {
@@ -2084,13 +2085,13 @@ function SubmitPage() {
                                                                 children: "File Uploads"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/app/submit/page.js",
-                                                                lineNumber: 1040,
+                                                                lineNumber: 1042,
                                                                 columnNumber: 23
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/app/submit/page.js",
-                                                        lineNumber: 1036,
+                                                        lineNumber: 1038,
                                                         columnNumber: 21
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2115,17 +2116,17 @@ function SubmitPage() {
                                                                                 className: "jsx-7ae810da9302cfe2"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                lineNumber: 1047,
+                                                                                lineNumber: 1049,
                                                                                 columnNumber: 29
                                                                             }, this)
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/app/submit/page.js",
-                                                                            lineNumber: 1046,
+                                                                            lineNumber: 1048,
                                                                             columnNumber: 27
                                                                         }, this)
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/submit/page.js",
-                                                                        lineNumber: 1045,
+                                                                        lineNumber: 1047,
                                                                         columnNumber: 25
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
@@ -2133,7 +2134,7 @@ function SubmitPage() {
                                                                         children: "Abstract PDF *"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/submit/page.js",
-                                                                        lineNumber: 1050,
+                                                                        lineNumber: 1052,
                                                                         columnNumber: 25
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -2144,7 +2145,7 @@ function SubmitPage() {
                                                                         className: "jsx-7ae810da9302cfe2" + " " + "w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-5 file:rounded-xl file:border-0 file:bg-blue-700 file:text-white file:font-semibold hover:file:bg-blue-800 cursor-pointer transition"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/submit/page.js",
-                                                                        lineNumber: 1051,
+                                                                        lineNumber: 1053,
                                                                         columnNumber: 25
                                                                     }, this),
                                                                     abstractFile && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2152,13 +2153,13 @@ function SubmitPage() {
                                                                         children: abstractFile.name
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/submit/page.js",
-                                                                        lineNumber: 1059,
+                                                                        lineNumber: 1061,
                                                                         columnNumber: 27
                                                                     }, this)
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/app/submit/page.js",
-                                                                lineNumber: 1044,
+                                                                lineNumber: 1046,
                                                                 columnNumber: 23
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2180,17 +2181,17 @@ function SubmitPage() {
                                                                                 className: "jsx-7ae810da9302cfe2"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                lineNumber: 1065,
+                                                                                lineNumber: 1067,
                                                                                 columnNumber: 29
                                                                             }, this)
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/app/submit/page.js",
-                                                                            lineNumber: 1064,
+                                                                            lineNumber: 1066,
                                                                             columnNumber: 27
                                                                         }, this)
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/submit/page.js",
-                                                                        lineNumber: 1063,
+                                                                        lineNumber: 1065,
                                                                         columnNumber: 25
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
@@ -2198,7 +2199,7 @@ function SubmitPage() {
                                                                         children: "Endorsement PDF *"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/submit/page.js",
-                                                                        lineNumber: 1068,
+                                                                        lineNumber: 1070,
                                                                         columnNumber: 25
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -2209,7 +2210,7 @@ function SubmitPage() {
                                                                         className: "jsx-7ae810da9302cfe2" + " " + "w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-5 file:rounded-xl file:border-0 file:bg-emerald-600 file:text-white file:font-semibold hover:file:bg-emerald-700 cursor-pointer transition"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/submit/page.js",
-                                                                        lineNumber: 1069,
+                                                                        lineNumber: 1071,
                                                                         columnNumber: 25
                                                                     }, this),
                                                                     endorsementFile && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2217,25 +2218,25 @@ function SubmitPage() {
                                                                         children: endorsementFile.name
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/submit/page.js",
-                                                                        lineNumber: 1077,
+                                                                        lineNumber: 1079,
                                                                         columnNumber: 27
                                                                     }, this)
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/app/submit/page.js",
-                                                                lineNumber: 1062,
+                                                                lineNumber: 1064,
                                                                 columnNumber: 23
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/app/submit/page.js",
-                                                        lineNumber: 1043,
+                                                        lineNumber: 1045,
                                                         columnNumber: 21
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/app/submit/page.js",
-                                                lineNumber: 1035,
+                                                lineNumber: 1037,
                                                 columnNumber: 19
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2247,24 +2248,24 @@ function SubmitPage() {
                                                     children: submitting ? "Submitting..." : "Submit Abstract"
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/submit/page.js",
-                                                    lineNumber: 1085,
+                                                    lineNumber: 1087,
                                                     columnNumber: 21
                                                 }, this)
                                             }, void 0, false, {
                                                 fileName: "[project]/app/submit/page.js",
-                                                lineNumber: 1084,
+                                                lineNumber: 1086,
                                                 columnNumber: 19
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/app/submit/page.js",
-                                        lineNumber: 740,
+                                        lineNumber: 742,
                                         columnNumber: 17
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/submit/page.js",
-                                lineNumber: 723,
+                                lineNumber: 725,
                                 columnNumber: 15
                             }, this) : activeTab === 'my-submissions' ? // My Submissions Tab
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
@@ -2280,7 +2281,7 @@ function SubmitPage() {
                                                         children: "My Submissions"
                                                     }, void 0, false, {
                                                         fileName: "[project]/app/submit/page.js",
-                                                        lineNumber: 1100,
+                                                        lineNumber: 1102,
                                                         columnNumber: 21
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2288,13 +2289,13 @@ function SubmitPage() {
                                                         children: "View all your submitted abstracts"
                                                     }, void 0, false, {
                                                         fileName: "[project]/app/submit/page.js",
-                                                        lineNumber: 1101,
+                                                        lineNumber: 1103,
                                                         columnNumber: 21
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/app/submit/page.js",
-                                                lineNumber: 1099,
+                                                lineNumber: 1101,
                                                 columnNumber: 19
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -2318,25 +2319,25 @@ function SubmitPage() {
                                                             className: "jsx-7ae810da9302cfe2"
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/submit/page.js",
-                                                            lineNumber: 1111,
+                                                            lineNumber: 1113,
                                                             columnNumber: 23
                                                         }, this)
                                                     }, void 0, false, {
                                                         fileName: "[project]/app/submit/page.js",
-                                                        lineNumber: 1110,
+                                                        lineNumber: 1112,
                                                         columnNumber: 21
                                                     }, this),
                                                     "Submit New Abstract"
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/app/submit/page.js",
-                                                lineNumber: 1103,
+                                                lineNumber: 1105,
                                                 columnNumber: 19
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/app/submit/page.js",
-                                        lineNumber: 1098,
+                                        lineNumber: 1100,
                                         columnNumber: 17
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2344,13 +2345,13 @@ function SubmitPage() {
                                         children: renderSubmissions()
                                     }, void 0, false, {
                                         fileName: "[project]/app/submit/page.js",
-                                        lineNumber: 1117,
+                                        lineNumber: 1119,
                                         columnNumber: 17
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/submit/page.js",
-                                lineNumber: 1097,
+                                lineNumber: 1099,
                                 columnNumber: 15
                             }, this) : // Payment Tab
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
@@ -2365,7 +2366,7 @@ function SubmitPage() {
                                                     children: "Payment"
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/submit/page.js",
-                                                    lineNumber: 1126,
+                                                    lineNumber: 1128,
                                                     columnNumber: 21
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2373,18 +2374,18 @@ function SubmitPage() {
                                                     children: "Manage your registration payments"
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/submit/page.js",
-                                                    lineNumber: 1127,
+                                                    lineNumber: 1129,
                                                     columnNumber: 21
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/app/submit/page.js",
-                                            lineNumber: 1125,
+                                            lineNumber: 1127,
                                             columnNumber: 19
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/app/submit/page.js",
-                                        lineNumber: 1124,
+                                        lineNumber: 1126,
                                         columnNumber: 17
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2395,7 +2396,7 @@ function SubmitPage() {
                                                 children: "Registration Fees"
                                             }, void 0, false, {
                                                 fileName: "[project]/app/submit/page.js",
-                                                lineNumber: 1133,
+                                                lineNumber: 1135,
                                                 columnNumber: 19
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2409,14 +2410,14 @@ function SubmitPage() {
                                                                 children: "Regular Registration Fee:"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/app/submit/page.js",
-                                                                lineNumber: 1135,
+                                                                lineNumber: 1137,
                                                                 columnNumber: 24
                                                             }, this),
                                                             " PhP 6,500.00"
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/app/submit/page.js",
-                                                        lineNumber: 1135,
+                                                        lineNumber: 1137,
                                                         columnNumber: 21
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2427,7 +2428,7 @@ function SubmitPage() {
                                                                 children: "Early-Bird Registration Fee:"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/app/submit/page.js",
-                                                                lineNumber: 1136,
+                                                                lineNumber: 1138,
                                                                 columnNumber: 24
                                                             }, this),
                                                             " PhP 6,000.00 ",
@@ -2436,13 +2437,13 @@ function SubmitPage() {
                                                                 children: "(for payments made on or before October 3, 2026)"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/app/submit/page.js",
-                                                                lineNumber: 1136,
+                                                                lineNumber: 1138,
                                                                 columnNumber: 105
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/app/submit/page.js",
-                                                        lineNumber: 1136,
+                                                        lineNumber: 1138,
                                                         columnNumber: 21
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2453,7 +2454,7 @@ function SubmitPage() {
                                                                 children: "Registration Fee Inclusions:"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/app/submit/page.js",
-                                                                lineNumber: 1138,
+                                                                lineNumber: 1140,
                                                                 columnNumber: 23
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("ul", {
@@ -2464,7 +2465,7 @@ function SubmitPage() {
                                                                         children: "Conference kit"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/submit/page.js",
-                                                                        lineNumber: 1140,
+                                                                        lineNumber: 1142,
                                                                         columnNumber: 25
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("li", {
@@ -2472,7 +2473,7 @@ function SubmitPage() {
                                                                         children: "Two (2) managed buffet lunches"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/submit/page.js",
-                                                                        lineNumber: 1141,
+                                                                        lineNumber: 1143,
                                                                         columnNumber: 25
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("li", {
@@ -2480,19 +2481,19 @@ function SubmitPage() {
                                                                         children: "Five (5) snacks"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/submit/page.js",
-                                                                        lineNumber: 1142,
+                                                                        lineNumber: 1144,
                                                                         columnNumber: 25
                                                                     }, this)
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/app/submit/page.js",
-                                                                lineNumber: 1139,
+                                                                lineNumber: 1141,
                                                                 columnNumber: 23
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/app/submit/page.js",
-                                                        lineNumber: 1137,
+                                                        lineNumber: 1139,
                                                         columnNumber: 21
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2503,7 +2504,7 @@ function SubmitPage() {
                                                                 children: "Payment Details"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/app/submit/page.js",
-                                                                lineNumber: 1146,
+                                                                lineNumber: 1148,
                                                                 columnNumber: 23
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2511,7 +2512,7 @@ function SubmitPage() {
                                                                 children: "Payments may be deposited or transferred to the following official account:"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/app/submit/page.js",
-                                                                lineNumber: 1147,
+                                                                lineNumber: 1149,
                                                                 columnNumber: 23
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2525,46 +2526,10 @@ function SubmitPage() {
                                                                                 children: "Account Name:"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                lineNumber: 1149,
-                                                                                columnNumber: 28
-                                                                            }, this),
-                                                                            " Philippine Extension Managers Network, Inc."
-                                                                        ]
-                                                                    }, void 0, true, {
-                                                                        fileName: "[project]/app/submit/page.js",
-                                                                        lineNumber: 1149,
-                                                                        columnNumber: 25
-                                                                    }, this),
-                                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                                        className: "jsx-7ae810da9302cfe2",
-                                                                        children: [
-                                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                                                className: "jsx-7ae810da9302cfe2" + " " + "font-semibold",
-                                                                                children: "Bank:"
-                                                                            }, void 0, false, {
-                                                                                fileName: "[project]/app/submit/page.js",
-                                                                                lineNumber: 1150,
-                                                                                columnNumber: 28
-                                                                            }, this),
-                                                                            " Bank of the Philippine Islands"
-                                                                        ]
-                                                                    }, void 0, true, {
-                                                                        fileName: "[project]/app/submit/page.js",
-                                                                        lineNumber: 1150,
-                                                                        columnNumber: 25
-                                                                    }, this),
-                                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                                        className: "jsx-7ae810da9302cfe2",
-                                                                        children: [
-                                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                                                className: "jsx-7ae810da9302cfe2" + " " + "font-semibold",
-                                                                                children: "Account Number:"
-                                                                            }, void 0, false, {
-                                                                                fileName: "[project]/app/submit/page.js",
                                                                                 lineNumber: 1151,
                                                                                 columnNumber: 28
                                                                             }, this),
-                                                                            " 1330-0222-23"
+                                                                            " Philippine Extension Managers Network, Inc."
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/app/submit/page.js",
@@ -2576,23 +2541,59 @@ function SubmitPage() {
                                                                         children: [
                                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                                                                 className: "jsx-7ae810da9302cfe2" + " " + "font-semibold",
-                                                                                children: "Branch:"
+                                                                                children: "Bank:"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/app/submit/page.js",
                                                                                 lineNumber: 1152,
+                                                                                columnNumber: 28
+                                                                            }, this),
+                                                                            " Bank of the Philippine Islands"
+                                                                        ]
+                                                                    }, void 0, true, {
+                                                                        fileName: "[project]/app/submit/page.js",
+                                                                        lineNumber: 1152,
+                                                                        columnNumber: 25
+                                                                    }, this),
+                                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
+                                                                        className: "jsx-7ae810da9302cfe2",
+                                                                        children: [
+                                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                                                className: "jsx-7ae810da9302cfe2" + " " + "font-semibold",
+                                                                                children: "Account Number:"
+                                                                            }, void 0, false, {
+                                                                                fileName: "[project]/app/submit/page.js",
+                                                                                lineNumber: 1153,
+                                                                                columnNumber: 28
+                                                                            }, this),
+                                                                            " 1330-0222-23"
+                                                                        ]
+                                                                    }, void 0, true, {
+                                                                        fileName: "[project]/app/submit/page.js",
+                                                                        lineNumber: 1153,
+                                                                        columnNumber: 25
+                                                                    }, this),
+                                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
+                                                                        className: "jsx-7ae810da9302cfe2",
+                                                                        children: [
+                                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                                                className: "jsx-7ae810da9302cfe2" + " " + "font-semibold",
+                                                                                children: "Branch:"
+                                                                            }, void 0, false, {
+                                                                                fileName: "[project]/app/submit/page.js",
+                                                                                lineNumber: 1154,
                                                                                 columnNumber: 28
                                                                             }, this),
                                                                             " Iloilo Jaro Branch: E Lopez St. Cor D.B. Ledesma St., Jaro, Iloilo City 5000"
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/app/submit/page.js",
-                                                                        lineNumber: 1152,
+                                                                        lineNumber: 1154,
                                                                         columnNumber: 25
                                                                     }, this)
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/app/submit/page.js",
-                                                                lineNumber: 1148,
+                                                                lineNumber: 1150,
                                                                 columnNumber: 23
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2600,25 +2601,25 @@ function SubmitPage() {
                                                                 children: "After payment, upload a clear copy of the validated deposit slip or electronic transaction receipt. The proof of payment must indicate the participant's full name, institution, amount paid, date of payment, and transaction or reference number."
                                                             }, void 0, false, {
                                                                 fileName: "[project]/app/submit/page.js",
-                                                                lineNumber: 1154,
+                                                                lineNumber: 1156,
                                                                 columnNumber: 23
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/app/submit/page.js",
-                                                        lineNumber: 1145,
+                                                        lineNumber: 1147,
                                                         columnNumber: 21
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/app/submit/page.js",
-                                                lineNumber: 1134,
+                                                lineNumber: 1136,
                                                 columnNumber: 19
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/app/submit/page.js",
-                                        lineNumber: 1132,
+                                        lineNumber: 1134,
                                         columnNumber: 17
                                     }, this),
                                     userSubmissions.filter((s)=>s.status === 'endorse').length > 0 ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
@@ -2631,7 +2632,7 @@ function SubmitPage() {
                                                         children: "Upload Payment Proof"
                                                     }, void 0, false, {
                                                         fileName: "[project]/app/submit/page.js",
-                                                        lineNumber: 1163,
+                                                        lineNumber: 1165,
                                                         columnNumber: 23
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2639,7 +2640,7 @@ function SubmitPage() {
                                                         children: "Select an endorsed submission and upload your payment proof."
                                                     }, void 0, false, {
                                                         fileName: "[project]/app/submit/page.js",
-                                                        lineNumber: 1164,
+                                                        lineNumber: 1166,
                                                         columnNumber: 23
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("form", {
@@ -2654,7 +2655,7 @@ function SubmitPage() {
                                                                         children: "Select Submission"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/submit/page.js",
-                                                                        lineNumber: 1168,
+                                                                        lineNumber: 1170,
                                                                         columnNumber: 27
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("select", {
@@ -2674,7 +2675,7 @@ function SubmitPage() {
                                                                                 children: "Select a submission"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                lineNumber: 1180,
+                                                                                lineNumber: 1182,
                                                                                 columnNumber: 29
                                                                             }, this),
                                                                             userSubmissions.filter((s)=>s.status === 'endorse').map((sub)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("option", {
@@ -2683,19 +2684,19 @@ function SubmitPage() {
                                                                                     children: sub.extension_project_title
                                                                                 }, sub.id, false, {
                                                                                     fileName: "[project]/app/submit/page.js",
-                                                                                    lineNumber: 1182,
+                                                                                    lineNumber: 1184,
                                                                                     columnNumber: 31
                                                                                 }, this))
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/app/submit/page.js",
-                                                                        lineNumber: 1169,
+                                                                        lineNumber: 1171,
                                                                         columnNumber: 27
                                                                     }, this)
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/app/submit/page.js",
-                                                                lineNumber: 1167,
+                                                                lineNumber: 1169,
                                                                 columnNumber: 25
                                                             }, this),
                                                             selectedSubmission && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
@@ -2711,7 +2712,7 @@ function SubmitPage() {
                                                                                         children: "Reference Number"
                                                                                     }, void 0, false, {
                                                                                         fileName: "[project]/app/submit/page.js",
-                                                                                        lineNumber: 1193,
+                                                                                        lineNumber: 1195,
                                                                                         columnNumber: 33
                                                                                     }, this),
                                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -2723,13 +2724,13 @@ function SubmitPage() {
                                                                                         className: "jsx-7ae810da9302cfe2" + " " + "w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                                                                                     }, void 0, false, {
                                                                                         fileName: "[project]/app/submit/page.js",
-                                                                                        lineNumber: 1194,
+                                                                                        lineNumber: 1196,
                                                                                         columnNumber: 33
                                                                                     }, this)
                                                                                 ]
                                                                             }, void 0, true, {
                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                lineNumber: 1192,
+                                                                                lineNumber: 1194,
                                                                                 columnNumber: 31
                                                                             }, this),
                                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2740,7 +2741,7 @@ function SubmitPage() {
                                                                                         children: "Payment Amount (PHP)"
                                                                                     }, void 0, false, {
                                                                                         fileName: "[project]/app/submit/page.js",
-                                                                                        lineNumber: 1204,
+                                                                                        lineNumber: 1206,
                                                                                         columnNumber: 33
                                                                                     }, this),
                                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -2752,19 +2753,19 @@ function SubmitPage() {
                                                                                         className: "jsx-7ae810da9302cfe2" + " " + "w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                                                                                     }, void 0, false, {
                                                                                         fileName: "[project]/app/submit/page.js",
-                                                                                        lineNumber: 1205,
+                                                                                        lineNumber: 1207,
                                                                                         columnNumber: 33
                                                                                     }, this)
                                                                                 ]
                                                                             }, void 0, true, {
                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                lineNumber: 1203,
+                                                                                lineNumber: 1205,
                                                                                 columnNumber: 31
                                                                             }, this)
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/app/submit/page.js",
-                                                                        lineNumber: 1191,
+                                                                        lineNumber: 1193,
                                                                         columnNumber: 29
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2775,7 +2776,7 @@ function SubmitPage() {
                                                                                 children: "Payment Date"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                lineNumber: 1216,
+                                                                                lineNumber: 1218,
                                                                                 columnNumber: 31
                                                                             }, this),
                                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -2786,13 +2787,13 @@ function SubmitPage() {
                                                                                 className: "jsx-7ae810da9302cfe2" + " " + "w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                lineNumber: 1217,
+                                                                                lineNumber: 1219,
                                                                                 columnNumber: 31
                                                                             }, this)
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/app/submit/page.js",
-                                                                        lineNumber: 1215,
+                                                                        lineNumber: 1217,
                                                                         columnNumber: 29
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2814,17 +2815,17 @@ function SubmitPage() {
                                                                                         className: "jsx-7ae810da9302cfe2"
                                                                                     }, void 0, false, {
                                                                                         fileName: "[project]/app/submit/page.js",
-                                                                                        lineNumber: 1229,
+                                                                                        lineNumber: 1231,
                                                                                         columnNumber: 35
                                                                                     }, this)
                                                                                 }, void 0, false, {
                                                                                     fileName: "[project]/app/submit/page.js",
-                                                                                    lineNumber: 1228,
+                                                                                    lineNumber: 1230,
                                                                                     columnNumber: 33
                                                                                 }, this)
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                lineNumber: 1227,
+                                                                                lineNumber: 1229,
                                                                                 columnNumber: 31
                                                                             }, this),
                                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
@@ -2832,7 +2833,7 @@ function SubmitPage() {
                                                                                 children: "Payment Proof (Image or PDF)"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                lineNumber: 1232,
+                                                                                lineNumber: 1234,
                                                                                 columnNumber: 31
                                                                             }, this),
                                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -2843,7 +2844,7 @@ function SubmitPage() {
                                                                                 className: "jsx-7ae810da9302cfe2" + " " + "w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-5 file:rounded-xl file:border-0 file:bg-blue-700 file:text-white file:font-semibold hover:file:bg-blue-800 cursor-pointer transition"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                lineNumber: 1233,
+                                                                                lineNumber: 1235,
                                                                                 columnNumber: 31
                                                                             }, this),
                                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2851,7 +2852,7 @@ function SubmitPage() {
                                                                                 children: "Accepted formats: JPG, PNG, GIF, BMP, WEBP, PDF"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                lineNumber: 1240,
+                                                                                lineNumber: 1242,
                                                                                 columnNumber: 31
                                                                             }, this),
                                                                             paymentFile && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2859,13 +2860,13 @@ function SubmitPage() {
                                                                                 children: paymentFile.name
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                lineNumber: 1242,
+                                                                                lineNumber: 1244,
                                                                                 columnNumber: 33
                                                                             }, this)
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/app/submit/page.js",
-                                                                        lineNumber: 1226,
+                                                                        lineNumber: 1228,
                                                                         columnNumber: 29
                                                                     }, this),
                                                                     paymentData && paymentData.exists && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2880,13 +2881,13 @@ function SubmitPage() {
                                                                                         children: paymentData.payment.payment_status.toUpperCase()
                                                                                     }, void 0, false, {
                                                                                         fileName: "[project]/app/submit/page.js",
-                                                                                        lineNumber: 1248,
+                                                                                        lineNumber: 1250,
                                                                                         columnNumber: 78
                                                                                     }, this)
                                                                                 ]
                                                                             }, void 0, true, {
                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                lineNumber: 1248,
+                                                                                lineNumber: 1250,
                                                                                 columnNumber: 33
                                                                             }, this),
                                                                             paymentData.payment.payment_status === 'rejected' && paymentData.payment.rejection_reason && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2897,7 +2898,7 @@ function SubmitPage() {
                                                                                 ]
                                                                             }, void 0, true, {
                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                lineNumber: 1254,
+                                                                                lineNumber: 1256,
                                                                                 columnNumber: 35
                                                                             }, this),
                                                                             paymentData.payment.payment_proof_view_url && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("a", {
@@ -2920,25 +2921,25 @@ function SubmitPage() {
                                                                                             className: "jsx-7ae810da9302cfe2"
                                                                                         }, void 0, false, {
                                                                                             fileName: "[project]/app/submit/page.js",
-                                                                                            lineNumber: 1259,
+                                                                                            lineNumber: 1261,
                                                                                             columnNumber: 39
                                                                                         }, this)
                                                                                     }, void 0, false, {
                                                                                         fileName: "[project]/app/submit/page.js",
-                                                                                        lineNumber: 1258,
+                                                                                        lineNumber: 1260,
                                                                                         columnNumber: 37
                                                                                     }, this),
                                                                                     "View Payment Proof"
                                                                                 ]
                                                                             }, void 0, true, {
                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                lineNumber: 1257,
+                                                                                lineNumber: 1259,
                                                                                 columnNumber: 35
                                                                             }, this)
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/app/submit/page.js",
-                                                                        lineNumber: 1247,
+                                                                        lineNumber: 1249,
                                                                         columnNumber: 31
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -2948,25 +2949,25 @@ function SubmitPage() {
                                                                         children: isUploadingPayment ? 'Uploading...' : 'Upload Payment Proof'
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/app/submit/page.js",
-                                                                        lineNumber: 1267,
+                                                                        lineNumber: 1269,
                                                                         columnNumber: 29
                                                                     }, this)
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/app/submit/page.js",
-                                                                lineNumber: 1190,
+                                                                lineNumber: 1192,
                                                                 columnNumber: 27
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/app/submit/page.js",
-                                                        lineNumber: 1166,
+                                                        lineNumber: 1168,
                                                         columnNumber: 23
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/app/submit/page.js",
-                                                lineNumber: 1162,
+                                                lineNumber: 1164,
                                                 columnNumber: 21
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2977,7 +2978,7 @@ function SubmitPage() {
                                                         children: "Payment History"
                                                     }, void 0, false, {
                                                         fileName: "[project]/app/submit/page.js",
-                                                        lineNumber: 1281,
+                                                        lineNumber: 1283,
                                                         columnNumber: 23
                                                     }, this),
                                                     userPayments.length > 0 ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2993,7 +2994,7 @@ function SubmitPage() {
                                                                                 children: payment.submission_title || 'Submission'
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                lineNumber: 1287,
+                                                                                lineNumber: 1289,
                                                                                 columnNumber: 33
                                                                             }, this),
                                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -3004,7 +3005,7 @@ function SubmitPage() {
                                                                                 ]
                                                                             }, void 0, true, {
                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                lineNumber: 1288,
+                                                                                lineNumber: 1290,
                                                                                 columnNumber: 33
                                                                             }, this),
                                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -3015,13 +3016,13 @@ function SubmitPage() {
                                                                                 ]
                                                                             }, void 0, true, {
                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                lineNumber: 1289,
+                                                                                lineNumber: 1291,
                                                                                 columnNumber: 33
                                                                             }, this)
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/app/submit/page.js",
-                                                                        lineNumber: 1286,
+                                                                        lineNumber: 1288,
                                                                         columnNumber: 31
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3032,7 +3033,7 @@ function SubmitPage() {
                                                                                 children: payment.payment_status.toUpperCase()
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                lineNumber: 1292,
+                                                                                lineNumber: 1294,
                                                                                 columnNumber: 33
                                                                             }, this),
                                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -3040,43 +3041,43 @@ function SubmitPage() {
                                                                                 children: new Date(payment.created_at).toLocaleDateString()
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/app/submit/page.js",
-                                                                                lineNumber: 1298,
+                                                                                lineNumber: 1300,
                                                                                 columnNumber: 33
                                                                             }, this)
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/app/submit/page.js",
-                                                                        lineNumber: 1291,
+                                                                        lineNumber: 1293,
                                                                         columnNumber: 31
                                                                     }, this)
                                                                 ]
                                                             }, payment.id, true, {
                                                                 fileName: "[project]/app/submit/page.js",
-                                                                lineNumber: 1285,
+                                                                lineNumber: 1287,
                                                                 columnNumber: 29
                                                             }, this))
                                                     }, void 0, false, {
                                                         fileName: "[project]/app/submit/page.js",
-                                                        lineNumber: 1283,
+                                                        lineNumber: 1285,
                                                         columnNumber: 25
                                                     }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
                                                         className: "jsx-7ae810da9302cfe2" + " " + "text-center text-slate-500 py-4",
                                                         children: "No payment records found."
                                                     }, void 0, false, {
                                                         fileName: "[project]/app/submit/page.js",
-                                                        lineNumber: 1304,
+                                                        lineNumber: 1306,
                                                         columnNumber: 25
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/app/submit/page.js",
-                                                lineNumber: 1280,
+                                                lineNumber: 1282,
                                                 columnNumber: 21
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/app/submit/page.js",
-                                        lineNumber: 1161,
+                                        lineNumber: 1163,
                                         columnNumber: 19
                                     }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                         className: "jsx-7ae810da9302cfe2" + " " + "bg-white border border-slate-200 rounded-xl p-8 text-center",
@@ -3097,17 +3098,17 @@ function SubmitPage() {
                                                         className: "jsx-7ae810da9302cfe2"
                                                     }, void 0, false, {
                                                         fileName: "[project]/app/submit/page.js",
-                                                        lineNumber: 1312,
+                                                        lineNumber: 1314,
                                                         columnNumber: 25
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/submit/page.js",
-                                                    lineNumber: 1311,
+                                                    lineNumber: 1313,
                                                     columnNumber: 23
                                                 }, this)
                                             }, void 0, false, {
                                                 fileName: "[project]/app/submit/page.js",
-                                                lineNumber: 1310,
+                                                lineNumber: 1312,
                                                 columnNumber: 21
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h3", {
@@ -3115,7 +3116,7 @@ function SubmitPage() {
                                                 children: "No Endorsed Submissions"
                                             }, void 0, false, {
                                                 fileName: "[project]/app/submit/page.js",
-                                                lineNumber: 1315,
+                                                lineNumber: 1317,
                                                 columnNumber: 21
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -3123,7 +3124,7 @@ function SubmitPage() {
                                                 children: "You need to have an endorsed submission to make a payment."
                                             }, void 0, false, {
                                                 fileName: "[project]/app/submit/page.js",
-                                                lineNumber: 1316,
+                                                lineNumber: 1318,
                                                 columnNumber: 21
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -3131,35 +3132,35 @@ function SubmitPage() {
                                                 children: "Please wait for your submission to be endorsed by the evaluators."
                                             }, void 0, false, {
                                                 fileName: "[project]/app/submit/page.js",
-                                                lineNumber: 1317,
+                                                lineNumber: 1319,
                                                 columnNumber: 21
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/app/submit/page.js",
-                                        lineNumber: 1309,
+                                        lineNumber: 1311,
                                         columnNumber: 19
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/submit/page.js",
-                                lineNumber: 1123,
+                                lineNumber: 1125,
                                 columnNumber: 15
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/app/submit/page.js",
-                            lineNumber: 721,
+                            lineNumber: 723,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/app/submit/page.js",
-                    lineNumber: 664,
+                    lineNumber: 666,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/app/submit/page.js",
-                lineNumber: 663,
+                lineNumber: 665,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$styled$2d$jsx$2f$style$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
@@ -3169,7 +3170,7 @@ function SubmitPage() {
         ]
     }, void 0, true, {
         fileName: "[project]/app/submit/page.js",
-        lineNumber: 632,
+        lineNumber: 634,
         columnNumber: 5
     }, this);
 }

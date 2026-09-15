@@ -4,3 +4,4 @@ rdesystem-secret.json
 credentials.json
 token_pemnet26_gmail_com.pickle
 *.json
+.env

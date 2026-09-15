@@ -36,24 +36,19 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
 db.init_app(app)
 bcrypt = Bcrypt(app)
 
-# CORS configuration
-CORS(app, 
-     origins=["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:3001", "http://127.0.0.1:3001"],
+_default_origins = "http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001"
+_allowed_origins = [
+    o.strip() for o in os.getenv("CORS_ORIGINS", _default_origins).split(",") if o.strip()
+]
+
+CORS(app,
+     origins=_allowed_origins,
      supports_credentials=True,
      allow_headers=["Content-Type", "Authorization", "Accept", "X-Requested-With"],
      expose_headers=["Content-Type", "Authorization"],
      methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
      max_age=3600)
 
-# Add after_request handler to ensure CORS headers are always added
-@app.after_request
-def after_request(response):
-    response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With')
-    response.headers.add('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-    response.headers.add('Access-Control-Allow-Credentials', 'true')
-    response.headers.add('Access-Control-Max-Age', '3600')
-    return response
     
 with app.app_context():
     try:
@@ -3040,4 +3035,4 @@ def get_all_payments():
         return jsonify({"detail": str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000, host='127.0.0.1')
+    app.run(debug=False, port=5000, host='127.0.0.1')

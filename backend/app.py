@@ -3181,5 +3181,10 @@ def get_all_payments():
         print(f"Error fetching all payments: {e}")
         return jsonify({"detail": str(e)}), 500
 
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    from datetime import datetime
+    return jsonify({"status": "ok", "timestamp": datetime.now().isoformat()}), 200
+
 if __name__ == '__main__':
     app.run(debug=False, port=5000, host='0.0.0.0')

@@ -1343,7 +1343,7 @@ export default function MasterReviewPage() {
               <FontAwesomeIcon icon={faSync} className="w-5 h-5" />
               Refresh
             </button>
-          </div>
+          </div>  
         </div>
 
         {/* Filters */}

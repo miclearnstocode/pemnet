@@ -101,7 +101,7 @@ export default function RegisterPage() {
 
       setIsEmailValidating(true);
       try {
-        const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000').replace(/\/+$/, '');
+        const apiUrl = (process.env.NEXT_PUBLIC_API_URL).replace(/\/+$/, '');
         const res = await fetch(`${apiUrl}/api/validate-email?email=${encodeURIComponent(email)}`, {
           method: 'GET',
           headers: {
@@ -249,7 +249,7 @@ export default function RegisterPage() {
     try {
       console.log('Sending registration request:', data);
       
-      const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000').replace(/\/+$/, '');
+      const apiUrl = (process.env.NEXT_PUBLIC_API_URL).replace(/\/+$/, '');
       const res = await fetch(`${apiUrl}/api/register`, {
         method: 'POST',
         headers: { 

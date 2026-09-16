@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
-const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000').replace(/\/+$/, '');
+const API_URL = (process.env.NEXT_PUBLIC_API_URL).replace(/\/+$/, '');
 
 export default function TreasurerPage() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -48,7 +48,7 @@ export default function TreasurerPage() {
 
   const fetchUsers = async () => {
     try {
-      const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000').replace(/\/+$/, '');
+      const apiUrl = (process.env.NEXT_PUBLIC_API_URL).replace(/\/+$/, '');
       const res = await fetch(`${apiUrl}/api/users`);
       if (res.ok) {
         const data = await res.json();

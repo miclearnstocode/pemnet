@@ -12,7 +12,7 @@ import {
   faSync
 } from '@fortawesome/free-solid-svg-icons';
 
-const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000').replace(/\/+$/, '');
+const API_URL = (process.env.NEXT_PUBLIC_API_URL).replace(/\/+$/, '');
 
 export default function DiscussionSection({
   submissionId,

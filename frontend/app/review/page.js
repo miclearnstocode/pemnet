@@ -60,7 +60,7 @@ import EditSubmission from '../components/EditSubmission';
 import ViewHistory from '../components/ViewHistory';
 import DiscussionSection from '../components/DiscussionSection';
 
-const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000').replace(/\/+$/, '');
+const API_URL = (process.env.NEXT_PUBLIC_API_URL).replace(/\/+$/, '');
 
 export default function ReviewPage() {
   const [currentUser, setCurrentUser] = useState(null);

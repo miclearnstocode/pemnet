@@ -47,7 +47,7 @@ import DiscussionSection from '../components/DiscussionSection';
 import ViewHistory from '../components/ViewHistory';
 import DecisionSummary from '../components/DecisionSummary';
 
-const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000').replace(/\/+$/, '');
+const API_URL = (process.env.NEXT_PUBLIC_API_URL).replace(/\/+$/, '');
 
 export default function MasterReviewPage() {
   const [currentUser, setCurrentUser] = useState(null);

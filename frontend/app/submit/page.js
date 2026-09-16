@@ -18,7 +18,7 @@ const paperCategories = [
   "Ongoing Extension Project Papers"
 ];
 
-const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000').replace(/\/+$/, '');
+const API_URL = (process.env.NEXT_PUBLIC_API_URL).replace(/\/+$/, '');
 
 // Toast Component
 const Toast = ({ message, type, onClose }) => {

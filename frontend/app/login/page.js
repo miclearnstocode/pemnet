@@ -109,7 +109,7 @@ export default function LoginPage() {
       const sanitizedEmail = email.trim().toLowerCase();
       const sanitizedPassword = password;
       
-      const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000').replace(/\/+$/, '');
+      const apiUrl = (process.env.NEXT_PUBLIC_API_URL).replace(/\/+$/, '');
       const res = await fetch(`${apiUrl}/api/login`, {
         method: 'POST',
         headers: { 

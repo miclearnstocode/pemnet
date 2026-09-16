@@ -250,7 +250,7 @@ function LoginPage() {
             // Sanitize inputs - trim and validate
             const sanitizedEmail = email.trim().toLowerCase();
             const sanitizedPassword = password;
-            const apiUrl = (("TURBOPACK compile-time value", "http://localhost:5000") || 'http://localhost:5000').replace(/\/+$/, '');
+            const apiUrl = ("TURBOPACK compile-time value", "http://localhost:5000").replace(/\/+$/, '');
             const res = await fetch(`${apiUrl}/api/login`, {
                 method: 'POST',
                 headers: {

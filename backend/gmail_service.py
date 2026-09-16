@@ -171,66 +171,50 @@ class GmailService:
     def html_to_text(self, html):
         soup = BeautifulSoup(html, 'html.parser')
         return soup.get_text(separator='\n', strip=True)
-    
-    ALLOWED_ATTACHMENT_EXTENSIONS = ('.pdf', '.docx')
 
     def get_attachments(self, msg):
-
+        """Extract attachments from email. Only PDF and DOCX attachments are kept."""
         attachments = []
 
-        def _is_allowed(filename, mime_type):
-            fname = (filename or '').lower()
-            mt = (mime_type or '').lower()
+        # Files we accept as submissions
+        ALLOWED_EXTENSIONS = ('.pdf', '.docx')
 
-            # 1. Filename extension check
-            if fname.endswith('.pdf') or fname.endswith('.docx'):
-                return True
-
-            # 2. MIME-type fallback (Gmail sometimes sends 'attachment' as
-            #    the filename with the real type only in the mimeType field)
-            if mt == 'application/pdf':
-                return True
-            if mt == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
-                return True
-
-            return False
-
-        def _maybe_append(part):
-            filename = part.get('filename') or ''
-            mime_type = part.get('mimeType') or ''
-
+        def _is_allowed(filename):
             if not filename:
-                return
-
-            if not _is_allowed(filename, mime_type):
-                print(f"      ⏭️  Skipping non-document attachment: {filename} ({mime_type})")
-                return
-
-            # Only fetch the actual bytes if we're going to keep it
-            if 'body' not in part or 'attachmentId' not in part['body']:
-                print(f"      ⚠️  Skipping {filename} — no attachmentId")
-                return
-
-            attachment_data = self.get_attachment(msg['id'], part['body']['attachmentId'])
-            if not attachment_data:
-                print(f"      ⚠️  Could not download {filename} — skipping")
-                return
-
-            attachments.append({
-                'filename': filename,
-                'mimeType': mime_type,
-                'size': part['body'].get('size', 0),
-                'data': attachment_data
-            })
+                return False
+            return filename.lower().endswith(ALLOWED_EXTENSIONS)
 
         if 'parts' in msg['payload']:
             for part in msg['payload']['parts']:
                 if part.get('filename'):
-                    _maybe_append(part)
+                    filename = part['filename']
+                    if not _is_allowed(filename):
+                        print(f"   ⏭️  Skipping non-PDF/DOCX attachment: {filename}")
+                        continue
+                    if 'body' in part and 'attachmentId' in part['body']:
+                        attachment_data = self.get_attachment(msg['id'], part['body']['attachmentId'])
+                        attachments.append({
+                            'filename': filename,
+                            'mimeType': part['mimeType'],
+                            'size': part['body'].get('size', 0),
+                            'data': attachment_data
+                        })
                 elif 'parts' in part:
+                    # Multipart nested
                     for subpart in part['parts']:
                         if subpart.get('filename'):
-                            _maybe_append(subpart)
+                            filename = subpart['filename']
+                            if not _is_allowed(filename):
+                                print(f"   ⏭️  Skipping non-PDF/DOCX attachment: {filename}")
+                                continue
+                            if 'body' in subpart and 'attachmentId' in subpart['body']:
+                                attachment_data = self.get_attachment(msg['id'], subpart['body']['attachmentId'])
+                                attachments.append({
+                                    'filename': filename,
+                                    'mimeType': subpart['mimeType'],
+                                    'size': subpart['body'].get('size', 0),
+                                    'data': attachment_data
+                                })
 
         return attachments
     

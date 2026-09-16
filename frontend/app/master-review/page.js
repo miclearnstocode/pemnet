@@ -77,10 +77,6 @@ export default function MasterReviewPage() {
   const [emailLogs, setEmailLogs] = useState([]);
   const [loadingEmailLogs, setLoadingEmailLogs] = useState(false);
 
-  // ===== INBOX SYNC STATE =====
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [syncResult, setSyncResult] = useState(null);
-
   // Email sending preference
   const [sendEmailConfirmation, setSendEmailConfirmation] = useState(true);
 
@@ -179,73 +175,6 @@ export default function MasterReviewPage() {
       showToast('Failed to fetch submissions', 'error');
     } finally {
       setLoading(false);
-    }
-  };
-
-  // ===== CHECK INBOX (SYNC ALL EMAILS) =====
-  const handleCheckInbox = async () => {
-    if (isSyncing) return;
-
-    setIsSyncing(true);
-    setSyncResult(null);
-
-    try {
-      const res = await fetch(`${API_URL}/api/email-submissions/sync-all`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      });
-
-      // Parse JSON safely — a 503/500 may still return JSON, but be defensive
-      let data = null;
-      try {
-        data = await res.json();
-      } catch {
-        data = null;
-      }
-
-      if (!res.ok) {
-        const msg = data?.detail || `Server returned ${res.status}`;
-        showToast(`Inbox sync failed: ${msg}`, 'error');
-        return;
-      }
-
-      // Build a friendly summary
-      const processed = data?.processed ?? 0;
-      const skipped = data?.skipped ?? 0;
-      const invitations = data?.invitation_skipped ?? 0;
-      const total = data?.total_emails_found ?? 0;
-      const errors = Array.isArray(data?.errors) ? data.errors : [];
-
-      setSyncResult({
-        processed,
-        skipped,
-        invitations,
-        total,
-        errors,
-        timestamp: new Date().toISOString(),
-      });
-
-      if (processed === 0 && total === 0) {
-        showToast('Inbox checked. No emails with attachments found.', 'success');
-      } else if (processed === 0) {
-        showToast(
-          `Inbox checked. ${total} email(s) scanned — all already in the system.`,
-          'success'
-        );
-      } else {
-        showToast(
-          `✅ Inbox synced! ${processed} new submission(s) added.`,
-          'success'
-        );
-      }
-
-      // Refresh the list so the new email submissions appear
-      await fetchSubmissions();
-    } catch (error) {
-      console.error('Error syncing inbox:', error);
-      showToast('Failed to check inbox. Please try again.', 'error');
-    } finally {
-      setIsSyncing(false);
     }
   };
 
@@ -1387,42 +1316,6 @@ export default function MasterReviewPage() {
           </button>
         </div>
 
-        {/* Sync Result Banner */}
-        {syncResult && (
-          <div className="mb-4 p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-start gap-3">
-            <FontAwesomeIcon
-              icon={faCheckCircle}
-              className="w-5 h-5 text-emerald-600 mt-0.5 shrink-0"
-            />
-            <div className="flex-1 text-sm text-emerald-800">
-              <p className="font-semibold mb-1">
-                Inbox sync completed
-                <span className="text-emerald-600 font-normal ml-2">
-                  {new Date(syncResult.timestamp).toLocaleTimeString()}
-                </span>
-              </p>
-              <ul className="list-disc list-inside space-y-0.5 text-emerald-700">
-                <li><strong>{syncResult.total}</strong> email(s) with attachments scanned</li>
-                <li><strong>{syncResult.processed}</strong> new submission(s) added</li>
-                <li><strong>{syncResult.skipped}</strong> already in the system</li>
-                <li><strong>{syncResult.invitations}</strong> invitation(s) skipped</li>
-                {syncResult.errors.length > 0 && (
-                  <li className="text-amber-700">
-                    <strong>{syncResult.errors.length}</strong> error(s): {syncResult.errors.slice(0, 3).join(', ')}
-                    {syncResult.errors.length > 3 && '…'}
-                  </li>
-                )}
-              </ul>
-            </div>
-            <button
-              onClick={() => setSyncResult(null)}
-              className="text-emerald-600 hover:text-emerald-800 text-lg leading-none"
-              aria-label="Dismiss"
-            >
-              ×
-            </button>
-          </div>
-        )}
 
         {/* Tabs */}
         <div className="flex items-center justify-between mb-6">
@@ -1443,34 +1336,9 @@ export default function MasterReviewPage() {
             </button>
           </div>
           <div className="flex items-center gap-2">
-            {/* ===== CHECK INBOX BUTTON ===== */}
-            <button
-              onClick={handleCheckInbox}
-              disabled={isSyncing}
-              className={`px-4 py-2.5 rounded-xl font-semibold transition flex items-center gap-2 ${
-                isSyncing
-                  ? 'bg-emerald-400 text-white cursor-not-allowed'
-                  : 'bg-emerald-600 text-white hover:bg-emerald-700'
-              }`}
-              title="Scan pemnet26@gmail.com for new email submissions"
-            >
-              {isSyncing ? (
-                <>
-                  <FontAwesomeIcon icon={faSpinner} className="w-5 h-5 animate-spin" />
-                  Checking Inbox…
-                </>
-              ) : (
-                <>
-                  <FontAwesomeIcon icon={faInbox} className="w-5 h-5" />
-                  Check Inbox
-                </>
-              )}
-            </button>
-
             <button
               onClick={fetchSubmissions}
-              disabled={isSyncing}
-              className="px-4 py-2.5 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2.5 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition flex items-center gap-2"
             >
               <FontAwesomeIcon icon={faSync} className="w-5 h-5" />
               Refresh

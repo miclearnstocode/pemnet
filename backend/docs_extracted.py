@@ -15,10 +15,9 @@ class DOCSExtractor:
         self.file_buffer = file_buffer
         self.filename = filename
         self.text = None
-        self.doc = None  # Store the python-docx Document object for direct table access
+        self.doc = None  
     
     def _is_docx(self):
-        """Check if the file is a DOCX based on filename or magic bytes"""
         if self.filename:
             return self.filename.lower().endswith('.docx')
         if len(self.file_buffer) > 4:
@@ -26,7 +25,6 @@ class DOCSExtractor:
         return False
     
     def extract_text(self):
-        """Extract text from PDF or DOCX buffer"""
         try:
             if self._is_docx():
                 return self._extract_from_docx()
@@ -37,7 +35,6 @@ class DOCSExtractor:
             return None
     
     def _extract_from_pdf(self):
-        """Extract text from PDF buffer"""
         try:
             try:
                 pdf_file = io.BytesIO(self.file_buffer)
@@ -62,7 +59,6 @@ class DOCSExtractor:
             return None
     
     def _extract_from_docx(self):
-        """Extract text from DOCX buffer"""
         try:
             try:
                 from docx import Document
@@ -110,7 +106,6 @@ class DOCSExtractor:
             return None
     
     def extract_title(self):
-        """Extract main title - find it in the table structure"""
         if not self.text:
             return None
         
@@ -155,7 +150,6 @@ class DOCSExtractor:
         return None
     
     def extract_title_english(self):
-        """Extract English version of title"""
         patterns = [
             r'English\s+Version[:\s]*([^\n]+)',
             r'English\s+Title[:\s]*([^\n]+)',
@@ -167,7 +161,6 @@ class DOCSExtractor:
         return None
     
     def extract_authors(self):
-        """Extract authors - get the full author names and affiliations"""
         if not self.text:
             return None
         
@@ -204,7 +197,6 @@ class DOCSExtractor:
         return None
     
     def _parse_authors(self, authors_text):
-        """Helper method to parse authors text - clean up asterisk but keep PhD"""
         if not authors_text:
             return None
         
@@ -279,7 +271,6 @@ class DOCSExtractor:
         }
         
     def extract_corresponding_author(self):
-        """Extract corresponding author - robustly handles typos/space breaks within emails."""
         if not self.text:
             return None
         
@@ -323,7 +314,6 @@ class DOCSExtractor:
         return None
 
     def extract_sucs(self):
-        """Extract SUCs - Case-insensitive. Uses updated DB names. Removes longer names first so shorter names CANNOT falsely match."""
         if not self.text:
             return None
         
@@ -508,7 +498,6 @@ class DOCSExtractor:
         return None
     
     def extract_corresponding_author_position(self):
-        """Extract corresponding author's position (Professor, Dean, etc.)"""
         if not self.text:
             return None
         
@@ -539,7 +528,6 @@ class DOCSExtractor:
         return None
     
     def _get_highlighted_paragraphs(self):
-        """Use python-docx to find paragraphs with yellow highlight or shading (including inside TABLES)."""
         try:
             highlighted_paragraphs = []
             if not self.doc:
@@ -601,7 +589,6 @@ class DOCSExtractor:
             return []
 
     def _cell_has_shape_or_fill(self, cell):
-        """Helper method to inspect a cell's XML for shapes, Wingdings, or background fills."""
         try:
             if not etree:
                 return False
@@ -626,7 +613,6 @@ class DOCSExtractor:
             return False
 
     def extract_paper_category(self):
-        """Extract paper category - Detects shapes, Wingdings, ANY bracket markers, or highlights."""
         categories = ["Completed", "Ongoing"]
 
         # 1. PREMIUM METHOD: Directly iterate DOCX tables using self.doc
@@ -674,7 +660,6 @@ class DOCSExtractor:
         return None
 
     def extract_thematic_area(self):
-        """Extract thematic area - Detects shapes, Wingdings, ANY bracket markers, or highlights."""
         thematic_areas = [
             'Food Production, Agriculture, Fisheries, and Natural Resource Systems',
             'Health, Nutrition, Wellness, and Community Care',
@@ -727,7 +712,6 @@ class DOCSExtractor:
         return None
     
     def extract_theme(self):
-        """Extract theme - get the value after Theme:"""
         if not self.text:
             return None
         
@@ -742,7 +726,6 @@ class DOCSExtractor:
         return None
     
     def extract_all(self):
-        """Extract all fields"""
         try:
             if not self.text:
                 self.extract_text()
@@ -774,6 +757,5 @@ class DOCSExtractor:
 
     @staticmethod
     def extract_from_file_buffer(file_buffer, filename=None):
-        """Static method to extract data from file buffer (PDF or DOCX)"""
         extractor = DOCSExtractor(file_buffer, filename)
         return extractor.extract_all()

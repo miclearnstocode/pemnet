@@ -104,7 +104,6 @@ def test_cors():
 
 @app.route('/api/validate-email', methods=['GET', 'OPTIONS'])
 def validate_email():
-    """Check if an email exists in the email_submissions table."""
     if request.method == 'OPTIONS':
         return jsonify({})
     
@@ -182,7 +181,6 @@ def register():
     
 @app.route('/api/current-user', methods=['GET', 'OPTIONS'])
 def get_current_user():
-    """Get the currently logged-in user from the session."""
     if request.method == 'OPTIONS':
         return jsonify({})
     
@@ -218,7 +216,6 @@ def get_current_user():
 
 @app.route('/api/users', methods=['GET', 'OPTIONS'])
 def get_all_users():
-    """Get all users for name mapping."""
     if request.method == 'OPTIONS':
         return jsonify({})
     
@@ -235,7 +232,6 @@ def get_all_users():
         return jsonify({"detail": str(e)}), 500
     
 def verify_token(token):
-    """Simple token verification for demo purposes."""
     try:
         # For demo: token is base64 encoded email
         import base64
@@ -321,7 +317,6 @@ def login():
         return jsonify({"detail": "An error occurred during login"}), 500
     
 def generate_submission_id():
-    """Generate a unique submission ID in format pemnet-XXX-YYYY"""
     from datetime import datetime
     
     current_year = datetime.now().year
@@ -784,7 +779,6 @@ def add_suc():
 
 @app.route('/api/test-upload', methods=['POST'])
 def test_upload():
-    """Test endpoint to debug uploads."""
     try:
         # Create a test PDF in memory
         test_pdf = b'%PDF-1.4\n1 0 obj\n<</Type/Catalog/Pages 2 0 R>>\nendobj\n2 0 obj\n<</Type/Pages/Kids[3 0 R]/Count 1>>\nendobj\n3 0 obj\n<</Type/Page/MediaBox[0 0 612 792]/Contents 4 0 R>>\nendobj\n4 0 obj\n<</Length 44>>\nstream\nBT/F1 12 Tf 100 700 Td(Test)Tj ET\nendstream\nendobj\nxref\n0 5\n0000000000 65535 f\n0000000010 00000 n\n0000000050 00000 n\n0000000100 00000 n\n0000000200 00000 n\ntrailer\n<</Size 5/Root 1 0 R>>\nstartxref\n300\n%%EOF\n'
@@ -840,16 +834,6 @@ except Exception as e:
     gmail_service = None
 
 def process_email_submission(email_data):
-    """
-    Process an email and create email submission records.
-    
-    IMPORTANT: If the email has MULTIPLE attachments, each attachment is processed
-    as a SEPARATE email submission with its own extracted data and submission_id.
-    This handles cases where a sender submits multiple abstracts in one email.
-    
-    Returns:
-        list: List of created EmailSubmission objects (one per attachment), or empty list.
-    """
     try:
         # Extract email-level metadata
         sender_name = email_data['sender_name']
@@ -934,12 +918,6 @@ def process_email_submission(email_data):
 def _process_single_attachment(attachment, original_filename, email_data, sender_name,
                                  sender_email, subject, body, body_project_leader,
                                  attachment_index=1, total_attachments=1):
-    """
-    Process ONE attachment from an email and create its own EmailSubmission + ExtractedAbstractData.
-    
-    Returns:
-        EmailSubmission or None
-    """
     # Determine file type
     is_docx = original_filename.lower().endswith('.docx')
     is_pdf = original_filename.lower().endswith('.pdf')
@@ -1041,11 +1019,22 @@ def _process_single_attachment(attachment, original_filename, email_data, sender
             attachment_view_url = view_url
             attachment_download_url = download_url
             print(f"      📎 Uploaded: {view_url}")
+
+            try:
+                from google_drive import mark_file_parent_as_new
+                marked_folder_id = mark_file_parent_as_new(view_url)
+                if marked_folder_id:
+                    print(f"      🆕 Sender folder marked [NEW] (folder_id={marked_folder_id})")
+                else:
+                    print(f"      ⚠️  Could not mark sender folder [NEW] (helper returned None)")
+            except Exception as mark_err:
+                # Never let Drive folder marking break the extraction pipeline
+                print(f"      ⚠️  Error while marking sender folder [NEW] (non-fatal): {mark_err}")
+
         except Exception as e:
             print(f"      ❌ Drive upload failed: {e}")
             import traceback
             traceback.print_exc()
-            # Continue anyway — we still want to save the DB record
         
         # ---- STEP 6: Create EmailSubmission record ----
         unique_email_message_id = email_data['id']
@@ -1155,7 +1144,6 @@ def _process_single_attachment(attachment, original_filename, email_data, sender
                 pass
 
 def extract_project_leader(body):
-    """Extract project leader name from email body."""
     if not body:
         return None
     
@@ -1173,56 +1161,164 @@ def extract_project_leader(body):
             return match.group(1).strip()
     
     return None
+try:
+    from fuzzywuzzy import fuzz, process
+    FUZZY_AVAILABLE = True
+except ImportError:
+    FUZZY_AVAILABLE = False
+    print("⚠️  fuzzywuzzy not installed — falling back to exact matching")
+    
+_PEMNET_VARIANTS = [
+    'pemnet 1st national extension conference',
+    'pemnet 1st national extension conference 2026',
+    '1st pemnet national extension conference',
+    '1st pemnet national extension conference 2026',
+    'first pemnet national extension conference',
+    'pemnet national extension conference',
+    'pemnet national extension conference 2026',
+    'pemnet conference 2026',
+    'pemnet 2026',
+]
+
+
+def _normalize_text(text):
+    if not text:
+        return ''
+    t = text.lower()
+
+    # Normalize dashes and quotes
+    t = t.replace('\u2013', '-').replace('\u2014', '-').replace('\u2019', "'")
+
+    # Collapse common ordinal variants: "1st" -> "first", "2nd" -> "second"
+    t = re.sub(r'\b1st\b', 'first', t)
+    t = re.sub(r'\b2nd\b', 'second', t)
+    t = re.sub(r'\b3rd\b', 'third', t)
+
+    # Drop punctuation except whitespace and a few meaningful chars
+    t = re.sub(r'[^\w\s@.\-]', ' ', t)
+    t = re.sub(r'\s+', ' ', t).strip()
+    return t
+
+
+def _fuzzy_contains(needle, haystack, threshold=88):
+    if not needle or not haystack:
+        return False
+
+    needle_n = _normalize_text(needle)
+    haystack_n = _normalize_text(haystack)
+
+    if not needle_n or not haystack_n:
+        return False
+
+    # Fast path: exact substring
+    if needle_n in haystack_n:
+        return True
+
+    if not FUZZY_AVAILABLE:
+        return False
+
+    # Fuzzy path: sliding window over haystack, checking partial ratio.
+    # We window because fuzz.partial_ratio already does a best-effort scan,
+    # but we cap the haystack size to keep it fast on long email bodies.
+    window_size = max(len(needle_n) * 2, 80)
+    max_start = max(0, len(haystack_n) - window_size)
+    step = max(1, len(needle_n) // 4)
+
+    best = 0
+    for start in range(0, max_start + 1, step):
+        chunk = haystack_n[start:start + window_size]
+        score = fuzz.partial_ratio(needle_n, chunk)
+        if score > best:
+            best = score
+        if best >= threshold:
+            return True
+
+    # Final full-text partial_ratio as a catch-all
+    if fuzz.partial_ratio(needle_n, haystack_n) >= threshold:
+        return True
+
+    return best >= threshold
+
+
+def _matches_any_fuzzy(text, phrases, threshold=88):
+    if not text or not phrases:
+        return None, 0
+
+    text_n = _normalize_text(text)
+    if not text_n:
+        return None, 0
+
+    # Fast exact path
+    for phrase in phrases:
+        p_n = _normalize_text(phrase)
+        if p_n and p_n in text_n:
+            return phrase, 100
+
+    if not FUZZY_AVAILABLE:
+        return None, 0
+
+    # Fuzzy path
+    best_phrase = None
+    best_score = 0
+
+    window_size = max(200, len(text_n))
+    sample = text_n[:window_size]
+
+    for phrase in phrases:
+        score = fuzz.partial_ratio(_normalize_text(phrase), sample)
+        if score > best_score:
+            best_score = score
+            best_phrase = phrase
+        if best_score >= threshold:
+            return best_phrase, best_score
+
+    return (best_phrase, best_score) if best_score >= threshold else (None, 0)
+
+
+def _is_any_variant(text, variants, threshold=90):
+    return _matches_any_fuzzy(text, variants, threshold=threshold)[0] is not None
 
 def is_abstract_submission(subject, body, sender_email):
-    """
-    Check if an email is a valid abstract submission.
-    
-    Args:
-        subject (str): Email subject
-        body (str): Email body content
-        sender_email (str): Sender email address
-    
-    Returns:
-        bool: True if it's a valid abstract submission, False otherwise
-    """
-    subject_lower = subject.lower() if subject else ''
-    body_lower = body.lower() if body else ''
-    sender_lower = sender_email.lower() if sender_email else ''
-    
-    # 1. Skip delivery status notifications
-    if 'delivery status notification' in subject_lower or 'mail delivery subsystem' in sender_lower:
+    subject = subject or ''
+    body = body or ''
+    sender_email = sender_email or ''
+
+    subject_lower = subject.lower()
+    body_lower = body.lower()
+    sender_lower = sender_email.lower()
+
+    # -------- 1. Hard skip: delivery failures --------
+    if _fuzzy_contains('delivery status notification', subject_lower, 92):
         return False
-    
-    # 2. Skip failure notifications
-    if 'failure' in subject_lower or 'undelivered' in subject_lower:
+    if 'mailer-daemon' in sender_lower or 'mail delivery subsystem' in sender_lower:
         return False
-    
-    # 3. Skip meeting/planning requests
+    if _fuzzy_contains('undelivered', subject_lower, 92) or \
+       _fuzzy_contains('delivery failure', subject_lower, 92):
+        return False
+
+    # -------- 2. Hard skip: meeting/planning requests --------
     meeting_keywords = [
         'request to allow',
         'planning meeting',
         'courtesy visit',
         'board member',
         'meeting request',
-        'planning/meeting',
-        'pemnet officer'
+        'planning meeting',
+        'pemnet officer',
     ]
-    for keyword in meeting_keywords:
-        if keyword in subject_lower:
-            return False
-    
-    # 4. Skip interested participant (not abstract submission)
-    if 'interested participant' in subject_lower:
+    if _matches_any_fuzzy(subject, meeting_keywords, threshold=90)[0]:
         return False
-    
-    # 5. Skip invitation emails
-    invitation_keywords = [
-        'invitation',
-        'invite',
+
+    # -------- 3. Hard skip: interested participant --------
+    if _fuzzy_contains('interested participant', subject, 90):
+        return False
+
+    # -------- 4. Invitation / reminder check (strong) --------
+    invitation_phrases = [
+        'invitation to',
         'you are invited',
         'you have been invited',
-        'you\'re invited',
+        "you're invited",
         'cordially invite',
         'pleasure to invite',
         'please join us',
@@ -1235,18 +1331,34 @@ def is_abstract_submission(subject, body, sender_email):
         'rsvp for',
         'reserve your seat',
         'early bird registration',
-        'invitation to the pemnet',
-        'pemnet 1st national extension conference',
-        'reminder'
+        'reminder',
+        'registration reminder',
+        'conference reminder',
+        'abstract reminder',
     ]
-    
-    for keyword in invitation_keywords:
-        if keyword in subject_lower or keyword in body_lower:
-            print(f"⏭️  Skipping invitation/reminder email: {subject}")
+    # Check only on subject for reminders/invitations — bodies often quote
+    # previous threads that contain these words innocently.
+    matched_invite, score = _matches_any_fuzzy(subject, invitation_phrases, threshold=90)
+    if matched_invite:
+        print(f"⏭️  Subject matches invitation phrase '{matched_invite}' (score={score}): {subject}")
+        return False
+
+    # Also check PEMNet conference-name variants (fuzzy)
+    if _is_any_variant(subject, _PEMNET_VARIANTS, threshold=90):
+        # If subject IS the conference name, it's probably a conference blast
+        # (invitation, registration, etc.), not a submission.
+        # But only skip if no submission keyword is present.
+        submission_signals = [
+            'submission', 'abstract', 'submit', 'paper',
+            'presentation', 'for consideration',
+        ]
+        if not _matches_any_fuzzy(subject, submission_signals, threshold=88)[0]:
+            print(f"⏭️  Subject is a PEMNet conference announcement: {subject}")
             return False
-    
-    # 6. Check for abstract-related keywords (MORE SPECIFIC)
+
+    # -------- 5. Require at least one positive signal --------
     abstract_keywords = [
+        # Core submission phrases
         'abstract submission',
         'submission of abstract',
         'submitting abstract',
@@ -1279,32 +1391,61 @@ def is_abstract_submission(subject, body, sender_email):
         'abstract -',
         'abstract:',
         'submission of two extension project',
-        'submitting two extension project'
+        'submitting two extension project',
+        # New — cover common phrasings seen in real submissions
+        'submission:',
+        'submission -',
+        'submission of',
+        'i submit',
+        'we submit',
+        'respectfully submit',
+        'i am submitting',
+        'we are submitting',
+        'ongoing extension program',
+        'ongoing extension project',
+        'completed extension program',
+        'completed extension project',
+        'extension program',
+        'extension paper',
+        'paper to be presented',
+        'paper for presentation',
+        'for presentation',
+        'presented at the',
+        'under the thematic area',
+        'thematic area:',
+        'for consideration as a paper',
+        'for consideration as an abstract',
+        'for the conference',
+        'to the conference',
+        'program leader',
+        'project leader',
+        'proponent',
     ]
-    
-    # Check subject for abstract indicators
-    for keyword in abstract_keywords:
-        if keyword in subject_lower:
-            return True
-    
-    # Check body for abstract indicators
-    for keyword in abstract_keywords:
-        if keyword in body_lower:
-            return True
-    
+
+    # Subject first
+    matched_subj, score_subj = _matches_any_fuzzy(subject, abstract_keywords, threshold=85)
+    if matched_subj:
+        return True
+
+    # Body second (with slightly lower threshold since bodies are longer/noisier)
+    matched_body, score_body = _matches_any_fuzzy(body, abstract_keywords, threshold=85)
+    if matched_body:
+        return True
+
     return False
 
 def is_invitation_email(subject, body):
-    """Check if an email is an invitation or reminder."""
-    subject_lower = subject.lower() if subject else ''
-    body_lower = body.lower() if body else ''
-    
-    # High-confidence invitation indicators
+    subject = subject or ''
+    body = body or ''
+    subject_lower = subject.lower()
+    body_lower = body.lower()
+
+    # -------- Strong invitation indicators --------
     invitation_phrases = [
         'invitation to',
         'you are invited',
         'you have been invited',
-        'you\'re invited',
+        "you're invited",
         'cordially invite',
         'pleasure to invite',
         'please join us',
@@ -1317,20 +1458,26 @@ def is_invitation_email(subject, body):
         'rsvp for',
         'reserve your seat',
         'early bird registration',
-        'pemnet 1st national extension conference',
         'invitation to the pemnet',
         'reminder',
         'registration reminder',
         'conference reminder',
-        'abstract reminder'
+        'abstract reminder',
     ]
-    
-    # Check for invitation phrases
-    for phrase in invitation_phrases:
-        if phrase in subject_lower or phrase in body_lower:
+
+    # Check subject only for invitation/reminder phrases
+    matched, score = _matches_any_fuzzy(subject, invitation_phrases, threshold=90)
+    if matched:
+        print(f"⏭️  Invitation phrase '{matched}' (score={score}) in subject: {subject}")
+        return True
+
+    # PEMNet conference-name variant in subject + no submission signal → invitation
+    if _is_any_variant(subject, _PEMNET_VARIANTS, threshold=90):
+        submission_signals = ['submission', 'abstract', 'submit', 'paper']
+        if not _matches_any_fuzzy(subject, submission_signals, threshold=88)[0]:
             return True
-    
-    # Check for abstract submission keywords (these indicate it's NOT an invitation)
+
+    # -------- Submission keywords override everything --------
     abstract_submission_keywords = [
         'abstract submission',
         'submit abstract',
@@ -1347,64 +1494,60 @@ def is_invitation_email(subject, body):
         'for presentation at the',
         'submission of abstract',
         'submitting abstract',
-        'submission of two extension project'
+        'submission of two extension project',
+        'respectfully submit',
+        'i submit',
+        'we submit',
+        'paper to be presented',
     ]
-    
-    for keyword in abstract_submission_keywords:
-        if keyword in body_lower:
-            return False
-    
+    if _matches_any_fuzzy(body, abstract_submission_keywords, threshold=85)[0]:
+        return False
+
     return False
 
 def should_skip_email(subject, body, sender_email):
-    """
-    Determine if an email should be skipped (not a valid abstract submission).
-    
-    Args:
-        subject (str): Email subject
-        body (str): Email body content
-        sender_email (str): Sender email address
-    
-    Returns:
-        tuple: (should_skip, reason)
-    """
-    subject_lower = subject.lower() if subject else ''
-    body_lower = body.lower() if body else ''
-    sender_lower = sender_email.lower() if sender_email else ''
-    
-    # 1. Skip delivery status notifications
-    if 'delivery status notification' in subject_lower:
+    subject = subject or ''
+    body = body or ''
+    sender_email = sender_email or ''
+
+    subject_lower = subject.lower()
+    body_lower = body.lower()
+    sender_lower = sender_email.lower()
+
+    # 1. Delivery status notifications
+    if _fuzzy_contains('delivery status notification', subject_lower, 92):
         return True, "Delivery Status Notification"
-    
     if 'mailer-daemon' in sender_lower or 'mail delivery subsystem' in sender_lower:
         return True, "Mail Delivery Subsystem"
-    
-    if 'failure' in subject_lower:
+    if _fuzzy_contains('delivery failure', subject_lower, 92):
         return True, "Delivery Failure"
-    
-    # 2. Skip meeting/planning requests
+    if _fuzzy_contains('undelivered', subject_lower, 92):
+        return True, "Undelivered Mail"
+
+    # 2. Meeting / planning requests
     meeting_keywords = [
         'request to allow',
         'planning meeting',
         'courtesy visit',
         'board member',
         'meeting request',
-        'planning/meeting',
-        'pemnet officer'
+        'planning meeting',
+        'pemnet officer',
     ]
-    for keyword in meeting_keywords:
-        if keyword in subject_lower:
-            return True, "Meeting/Planning Request"
-    
-    # 3. Skip non-abstract inquiries
-    if 'interested participant' in subject_lower:
+    matched, score = _matches_any_fuzzy(subject, meeting_keywords, threshold=90)
+    if matched:
+        return True, f"Meeting/Planning Request ('{matched}', score={score})"
+
+    # 3. Non-abstract inquiries
+    if _fuzzy_contains('interested participant', subject_lower, 90):
         return True, "Interested Participant (Not Abstract)"
-    
-    # 4. Skip auto-replies
-    if 'auto-reply' in subject_lower or 'out of office' in subject_lower:
+
+    # 4. Auto-replies
+    if _fuzzy_contains('auto-reply', subject_lower, 92) or \
+       _fuzzy_contains('out of office', subject_lower, 92):
         return True, "Auto-Reply"
-    
-    # 5. Skip invitation and reminder emails
+
+    # 5. Invitations and reminders — check subject only
     invitation_keywords = [
         'invitation',
         'invite',
@@ -1416,21 +1559,24 @@ def should_skip_email(subject, body, sender_email):
         'you have been invited',
         'register now',
         'early bird',
-        'rsvp'
+        'rsvp',
     ]
-    for keyword in invitation_keywords:
-        if keyword in subject_lower:
-            return True, "Invitation/Reminder Email"
-    
-    # 6. Skip if it doesn't have abstract indicators
+    matched, score = _matches_any_fuzzy(subject, invitation_keywords, threshold=90)
+    if matched:
+        # If the subject also contains a submission signal, don't skip
+        submission_override = ['submission', 'abstract', 'submit', 'paper']
+        if not _matches_any_fuzzy(subject, submission_override, threshold=88)[0]:
+            return True, f"Invitation/Reminder Email ('{matched}', score={score})"
+
+    # 6. Must pass the abstract check
     if not is_abstract_submission(subject, body, sender_email):
         return True, "Not an Abstract Submission"
-    
+
     return False, None
+
 
 @app.route('/api/email-submissions/check', methods=['POST', 'OPTIONS'])
 def check_email_submissions():
-    """Check for new email submissions from Gmail."""
     if request.method == 'OPTIONS':
         return jsonify({})
     
@@ -1449,11 +1595,12 @@ def check_email_submissions():
         print(f"📧 Reading emails from inbox of: pemnet26@gmail.com")
         print(f"Found {len(existing_base_ids)} existing email records (by base gmail id) in database")
         
-        query = 'has:attachment -from:pemnet26@gmail.com'
-        
+        query = 'has:attachment -from:pemnet26@gmail.com -in:spam'
+
         emails = gmail_service.get_emails_with_attachments(
             query=query,
-            max_results=50
+            max_results=20000,
+            chunk_by_month=True,   
         )
         
         processed_count = 0
@@ -1510,7 +1657,6 @@ def check_email_submissions():
     
 @app.route('/api/email-submissions', methods=['GET', 'OPTIONS'])
 def get_email_submissions():
-    """Get all email submissions for review."""
     if request.method == 'OPTIONS':
         return jsonify({})
     
@@ -1586,7 +1732,6 @@ def get_email_submissions():
 
 @app.route('/api/email-submissions/<int:email_submission_id>/review', methods=['POST', 'OPTIONS'])
 def review_email_submission(email_submission_id):
-    """Review and process an email submission."""
     if request.method == 'OPTIONS':
         return jsonify({})
     
@@ -1676,7 +1821,6 @@ def review_email_submission(email_submission_id):
         return jsonify({"detail": str(e)}), 500
 
 def send_confirmation_email(to_email, submission, action, notes=''):
-    """Send confirmation email to the sender."""
     try:
         if not gmail_service:
             print("Gmail service not configured, skipping email send")
@@ -1715,7 +1859,6 @@ PEMNet 2026 Conference Committee
 
 @app.route('/api/email-submissions/<int:email_submission_id>/view', methods=['GET', 'OPTIONS'])
 def view_email_submission(email_submission_id):
-    """Get full email submission details for viewing."""
     if request.method == 'OPTIONS':
         return jsonify({})
     
@@ -1746,97 +1889,113 @@ def view_email_submission(email_submission_id):
 
 @app.route('/api/email-submissions/sync-all', methods=['POST', 'OPTIONS'])
 def sync_all_emails():
-    """Sync all emails with attachments (both read and unread)."""
     if request.method == 'OPTIONS':
         return jsonify({})
-    
+
     try:
         if not gmail_service:
-            return jsonify({"detail": "Gmail service not configured. Please set up credentials.json"}), 503
-        
-        # Get ALL existing email message IDs from our database
+            return jsonify({"detail": "Gmail service not configured."}), 503
+
+        # Optional request body: {"deep": true} forces full-history scan
+        body = request.get_json(silent=True) or {}
+        deep_scan = bool(body.get('deep', False))
+
+        # ---- Collect existing email IDs (skip already-processed) ----
         existing_base_ids = set()
         all_existing = EmailSubmission.query.with_entities(EmailSubmission.email_message_id).all()
         for record in all_existing:
             if not record[0]:
                 continue
-            base_id = record[0].split('__att')[0]
-            existing_base_ids.add(base_id)
-        
-        print(f"Found {len(existing_base_ids)} existing email records (by base gmail id) in database")
-        
-        # Fetch ALL emails with attachments, excluding self-emails
-        query = 'has:attachment -from:pemnet26@gmail.com'
-        
+            existing_base_ids.add(record[0].split('__att')[0])
+
+        print(f"Found {len(existing_base_ids)} existing email records in database")
+
+        # ---- Find the earliest email date ----
+        if deep_scan:
+            # Try to find the true oldest email. Fall back to 5 years ago.
+            earliest = gmail_service.find_earliest_email_date(
+                query='has:attachment -from:pemnet26@gmail.com -in:spam'
+            )
+            if not earliest:
+                from datetime import date
+                earliest = date(date.today().year - 5, 1, 1)
+            print(f"📅 Deep scan: earliest email found at {earliest}")
+        else:
+            # Normal scan: last 24 months
+            from datetime import date
+            today = date.today()
+            earliest = date(today.year - 2, today.month, 1)
+
+        # ---- Fetch emails ----
+        query = 'has:attachment -from:pemnet26@gmail.com -in:spam'
+
         emails = gmail_service.get_emails_with_attachments(
             query=query,
-            max_results=100
+            max_results=20000,
+            page_size=100,
+            chunk_by_month=True,
+            chunk_by='auto',
+            earliest_date=earliest,
         )
-        
+
         processed_count = 0
         skipped_count = 0
-        invitation_skipped = 0
         errors = []
-        
+        skipped_samples = []    # first 20 subjects skipped for diagnosis
+
         for email in emails:
             if email['id'] in existing_base_ids:
                 skipped_count += 1
                 continue
-            
-            # Check if it's an invitation
+
             subject = email['subject']
-            body = email['body'] if email['body'] else ''
-            
-            invitation_keywords = [
-                'invitation', 'invite', 'INVITATION', 'INVITE',
-                'PEMNET 1ST NATIONAL EXTENSION CONFERENCE',
-                'CONFERENCE 2026',
-                'you are invited',
-                'Welcome to',
-                'Registration',
-                'register',
-                'CONFIRMATION',
-                'extension conference'
-            ]
-            
-            is_invitation = False
-            for keyword in invitation_keywords:
-                if keyword.lower() in subject.lower() or keyword.lower() in body.lower():
-                    is_invitation = True
-                    break
-            
-            if is_invitation:
-                invitation_skipped += 1
-                print(f"⏭️  Skipping invitation email: {subject}")
+            body = email['body'] or ''
+            sender_email = email['sender_email']
+
+            # Use the SAME fuzzy filters as check_email_submissions
+            should_skip, skip_reason = should_skip_email(subject, body, sender_email)
+            if should_skip:
+                if len(skipped_samples) < 20:
+                    skipped_samples.append(f"{subject} :: {skip_reason}")
                 continue
-            
-            # Process the email — may return MULTIPLE submissions (one per attachment)
+
+            if is_invitation_email(subject, body):
+                if len(skipped_samples) < 20:
+                    skipped_samples.append(f"{subject} :: invitation")
+                continue
+
+            if not is_abstract_submission(subject, body, sender_email):
+                if len(skipped_samples) < 20:
+                    skipped_samples.append(f"{subject} :: not-abstract")
+                continue
+
+            # Process the email (returns list, one per attachment)
             results = process_email_submission(email)
             if results:
                 processed_count += len(results)
-                print(f"Synced {len(results)} submission(s) from email: {email['subject']}")
+                print(f"✅ Synced {len(results)} submission(s) from: {subject}")
             else:
-                errors.append(email['subject'])
-        
+                errors.append(subject)
+
         return jsonify({
-            "message": f"Synced {len(emails)} emails",
+            "message": f"Scanned {len(emails)} emails" + (" (deep scan)" if deep_scan else ""),
             "processed": processed_count,
-            "skipped": skipped_count,
-            "invitation_skipped": invitation_skipped,
+            "skipped_already_in_db": skipped_count,
             "errors": errors,
-            "total_emails_found": len(emails)
+            "skipped_samples": skipped_samples,
+            "total_emails_found": len(emails),
+            "earliest_scanned": earliest.isoformat() if earliest else None,
+            "deep_scan": deep_scan,
         }), 200
-        
+
     except Exception as e:
-        print(f"Error syncing emails: {e}")
+        print(f"❌ Error syncing emails: {e}")
         traceback.print_exc()
         return jsonify({"detail": str(e)}), 500
-
+    
 # ========== EVALUATOR ROUTES ==========
 
 def get_submission_data(submission_id):
-    """Get submission data from either submissions or email_submissions table."""
-    
     # ===== STEP 1: Try to find in submissions table by submission_id (VARCHAR) =====
     submission = Submission.query.filter_by(submission_id=submission_id).first()
     if submission:
@@ -2157,7 +2316,6 @@ def get_discussions(submission_id):
 
 @app.route('/api/users/<int:user_id>/thematic-areas', methods=['GET', 'OPTIONS'])
 def get_user_thematic_areas_simple(user_id):
-    """Simple endpoint to get thematic areas for a user."""
     if request.method == 'OPTIONS':
         return jsonify({})
     
@@ -2179,7 +2337,6 @@ def get_user_thematic_areas_simple(user_id):
 
 @app.route('/api/users/<int:user_id>/thematic-areas', methods=['POST', 'OPTIONS'])
 def update_user_thematic_areas_simple(user_id):
-    """Simple endpoint to update a submission's thematic area for a user."""
     if request.method == 'OPTIONS':
         return jsonify({})
     
@@ -2213,7 +2370,6 @@ def update_user_thematic_areas_simple(user_id):
     
 @app.route('/api/email-submissions/<int:email_submission_id>/extracted-data', methods=['GET', 'OPTIONS'])
 def get_extracted_data(email_submission_id):
-    """Get extracted abstract data for an email submission."""
     if request.method == 'OPTIONS':
         return jsonify({})
     
@@ -2267,7 +2423,6 @@ def get_extracted_data(email_submission_id):
 
 @app.route('/api/extracted-data/<int:extracted_data_id>/edit', methods=['PUT', 'OPTIONS'])
 def edit_extracted_data(extracted_data_id):
-    """Edit extracted data and log the changes. Also moves files in Google Drive if category/thematic area changed."""
     if request.method == 'OPTIONS':
         return jsonify({})
 
@@ -2462,7 +2617,6 @@ def edit_extracted_data(extracted_data_id):
 
 @app.route('/api/extracted-data/<int:extracted_data_id>/revisions', methods=['GET', 'OPTIONS'])
 def get_extracted_data_revisions(extracted_data_id):
-    """Get all revisions for an extracted data record."""
     if request.method == 'OPTIONS':
         return jsonify({})
 
@@ -2521,7 +2675,6 @@ def get_extracted_data_revisions(extracted_data_id):
     
 @app.route('/api/submissions/<string:submission_id>/edit-history', methods=['GET', 'OPTIONS'])
 def get_submission_edit_history(submission_id):
-    """Get edit history for a system submission."""
     if request.method == 'OPTIONS':
         return jsonify({})
     
@@ -2540,7 +2693,6 @@ def get_submission_edit_history(submission_id):
     
 @app.route('/api/submissions/<string:submission_id>/edit', methods=['PUT', 'OPTIONS'])
 def edit_system_submission(submission_id):
-    """Edit a system submission and log the changes. Also moves files in Google Drive if category/thematic area changed."""
     if request.method == 'OPTIONS':
         return jsonify({})
     
@@ -2718,7 +2870,6 @@ def edit_system_submission(submission_id):
 
 @app.route('/api/master-approver/status-summary', methods=['GET', 'OPTIONS'])
 def master_approver_status_summary():
-    """Get status summary for master approver dashboard."""
     if request.method == 'OPTIONS':
         return jsonify({})
     
@@ -2732,7 +2883,6 @@ def master_approver_status_summary():
 
 @app.route('/api/master-approver/pending-submissions', methods=['GET', 'OPTIONS'])
 def master_approver_pending_submissions():
-    """Get all pending submissions with vote summaries."""
     if request.method == 'OPTIONS':
         return jsonify({})
     
@@ -2746,7 +2896,6 @@ def master_approver_pending_submissions():
 
 @app.route('/api/submissions/<string:submission_id>/master-details', methods=['GET', 'OPTIONS'])
 def get_submission_with_votes(submission_id):
-    """Get submission details with all votes and extracted data for master approver."""
     if request.method == 'OPTIONS':
         return jsonify({})
     
@@ -2760,7 +2909,6 @@ def get_submission_with_votes(submission_id):
 
 @app.route('/api/submissions/<string:submission_id>/master-status', methods=['POST', 'OPTIONS'])
 def set_master_status(submission_id):
-    """Master approver sets the final status of a submission."""
     if request.method == 'OPTIONS':
         return jsonify({})
     
@@ -2778,7 +2926,6 @@ def set_master_status(submission_id):
 
 @app.route('/api/master-approver/bulk-email', methods=['POST', 'OPTIONS'])
 def bulk_send_status_emails():
-    """Send bulk status update emails."""
     if request.method == 'OPTIONS':
         return jsonify({})
     
@@ -2796,7 +2943,6 @@ def bulk_send_status_emails():
 
 @app.route('/api/email-logs/<string:submission_id>', methods=['GET', 'OPTIONS'])
 def get_email_logs(submission_id):
-    """Get email notification logs for a submission."""
     if request.method == 'OPTIONS':
         return jsonify({})
     
@@ -2809,7 +2955,6 @@ def get_email_logs(submission_id):
 
 @app.route('/api/email-logs/all', methods=['GET', 'OPTIONS'])
 def get_all_email_logs():
-    """Get all email notification logs."""
     if request.method == 'OPTIONS':
         return jsonify({})
     
@@ -2830,7 +2975,6 @@ def get_all_email_logs():
     
 @app.route('/api/payments/upload', methods=['POST', 'OPTIONS'])
 def upload_payment_proof():
-    """Upload payment proof for a submission."""
     if request.method == 'OPTIONS':
         return jsonify({})
     
@@ -2933,7 +3077,6 @@ def upload_payment_proof():
 
 @app.route('/api/payments/submission/<string:submission_id>', methods=['GET', 'OPTIONS'])
 def get_payment_by_submission(submission_id):
-    """Get payment details for a submission."""
     if request.method == 'OPTIONS':
         return jsonify({})
     
@@ -2953,7 +3096,6 @@ def get_payment_by_submission(submission_id):
 
 @app.route('/api/payments/user/<int:user_id>', methods=['GET', 'OPTIONS'])
 def get_user_payments(user_id):
-    """Get all payments for a user."""
     if request.method == 'OPTIONS':
         return jsonify({})
     
@@ -2967,7 +3109,6 @@ def get_user_payments(user_id):
 
 @app.route('/api/payments/<int:payment_id>/verify', methods=['POST', 'OPTIONS'])
 def verify_payment(payment_id):
-    """Verify a payment (Admin/Master Approver)."""
     if request.method == 'OPTIONS':
         return jsonify({})
     
@@ -3011,7 +3152,6 @@ def verify_payment(payment_id):
 
 @app.route('/api/payments/all', methods=['GET', 'OPTIONS'])
 def get_all_payments():
-    """Get all payments (Admin/Master Approver)."""
     if request.method == 'OPTIONS':
         return jsonify({})
     

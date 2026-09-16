@@ -11,7 +11,6 @@ class PDFExtractor:
         self.text = None
     
     def extract_text(self):
-        """Extract text from PDF buffer using pdfminer for better spacing"""
         try:
             # Try using pdfminer first (better for preserving spaces)
             try:
@@ -38,10 +37,6 @@ class PDFExtractor:
             return None
 
     def _get_pdf_table_rows(self):
-        """
-        Use PyMuPDF to extract table cells from the PDF. 
-        This is the ONLY reliable way to handle the jumbled text in tables.
-        """
         try:
             doc = fitz.open(stream=self.pdf_buffer, filetype="pdf")
             table_data = {}
@@ -84,7 +79,6 @@ class PDFExtractor:
             return {}
     
     def extract_title(self):
-        """Extract main title - robustly handles multi-line text, table structures, and standard abstracts."""
         if not self.text:
             return None
         
@@ -130,7 +124,6 @@ class PDFExtractor:
         return None
     
     def extract_title_english(self):
-        """Extract English version of title"""
         if not self.text:
             return None
 
@@ -146,7 +139,6 @@ class PDFExtractor:
         return None
     
     def extract_authors(self):
-        """Extract authors - get the author names after the note and title"""
         if not self.text:
             return None
         
@@ -206,62 +198,40 @@ class PDFExtractor:
         return None
     
     def _parse_authors(self, authors_text):
-        """Helper method to parse authors text. Dynamically handles Asterisk (*), Lead Proponent, and Degrees."""
         full_text = authors_text
-        
-        # ---------------------------------------------------------
-        # 1. Extract Institution
-        # ---------------------------------------------------------
+
         institution = None
-        
-        # New format: "Institutional Affiliation: ..."
+
         institution_match = re.search(r'Institutional\s+Affiliation\s*:\s*(.+?)(?=\s*$|3\.)', authors_text, re.IGNORECASE)
         if institution_match:
             institution = institution_match.group(1).strip()
         else:
-            # Old format: "Name*/Institution; ..."
             slash_match = re.search(r'[^/]+/+\s*([^;]+)', authors_text)
             if slash_match:
                 institution = slash_match.group(1).strip()
 
-        # ---------------------------------------------------------
-        # 2. Extract Project Leader (Fixed Regex for Commas!)
-        # ---------------------------------------------------------
         project_leader = None
         
-        # New format: "Lead Proponent/ Program Leader: Dr. Maria Wendy M. Solomo"
         lead_match = re.search(r'Lead\s+Proponent/?\s*Program\s+Leader\s*:\s*(.*?)(?=\s*Members?\s*:|$)', authors_text, re.IGNORECASE | re.DOTALL)
         if lead_match:
             project_leader = lead_match.group(1).strip()
-            # Clean up degree if present
             project_leader = re.sub(r',\s*(?:MALT|PhD|Ph\.D|EdD|M\.D|MA|MSc)\s*$', '', project_leader).strip()
         else:
-            # Old format: "Dominador, Jr. B. Maquillan, MALT*"
-            # Regex captures everything up to the first comma followed by the * 
-            # OR everything up to the * if no comma is present before it
             asterisk_match = re.search(r'^(.*?)(?:,)?\s*(?:MALT|PhD|Ph\.D|EdD|M\.D|MA|MSc)?\s*\*', authors_text)
             if asterisk_match:
                 project_leader = asterisk_match.group(1).strip()
-                # Remove trailing commas/slashes and whitespace
                 project_leader = re.sub(r'[,\s/]+$', '', project_leader).strip()
 
-        # ---------------------------------------------------------
-        # 3. Extract Members
-        # ---------------------------------------------------------
         members_text = ""
         members_match = re.search(r'Members?\s*:\s*(.*?)(?=\s*Institutional\s+Affiliation)', authors_text, re.IGNORECASE | re.DOTALL)
         if members_match:
             members_text = members_match.group(1).strip()
         else:
-            # If no "Members" label, just take everything between the Leader and the Institution
             if project_leader:
                 members_text = authors_text.replace(project_leader, '', 1)
             if institution:
                 members_text = members_text.replace(institution, '')
 
-        # ---------------------------------------------------------
-        # 4. Build Authors List (Dynamic Splitting)
-        # ---------------------------------------------------------
         authors_list = []
         if project_leader:
             authors_list.append(project_leader.strip())
@@ -269,22 +239,16 @@ class PDFExtractor:
         if members_text:
             members_text = members_text.replace('\u200b', ' ').replace('\u200b', '')
             
-            # Split names based on punctuation and capitalization
-            # This regex tries to grab "First Middle Last, Degree" patterns
             patterns = re.findall(r'([A-Z][A-Za-z.\-]+(?:\s+[A-Z][A-Za-z.\-]+){0,3}(?:,\s*[A-Z][A-Za-z.\-]+)*,?\s*(?:MALT|PhD|Ph\.D|EdD|M\.D|MA|MSc)?)', members_text)
             
             for member in patterns:
                 member = member.strip()
-                # Remove the degree suffix and trailing commas
                 member = re.sub(r',\s*(?:MALT|PhD|Ph\.D|EdD|M\.D|MA|MSc)\s*$', '', member).strip()
                 member = re.sub(r'[,\s]+$', '', member).strip()
                 
                 if member and len(member) > 2 and member.lower() not in ['members', 'lead proponent', 'program leader', 'davao', 'sur', 'state', 'college']:
                     authors_list.append(member)
 
-        # ---------------------------------------------------------
-        # 5. Clean up list
-        # ---------------------------------------------------------
         cleaned_authors = []
         for author in authors_list:
             author = author.strip()
@@ -299,9 +263,6 @@ class PDFExtractor:
             if author not in cleaned_authors:
                 cleaned_authors.append(author)
         
-        # ---------------------------------------------------------
-        # 6. Append Institution
-        # ---------------------------------------------------------
         if institution:
             cleaned_authors = [f"{author} - {institution}" for author in cleaned_authors]
 
@@ -313,7 +274,6 @@ class PDFExtractor:
         }
     
     def extract_corresponding_author(self):
-        """Extract corresponding author - specifically pulls the name right before the email."""
         if not self.text:
             return None
         
@@ -363,7 +323,6 @@ class PDFExtractor:
         return None
 
     def extract_sucs(self):
-        """Extract SUCs - Case-insensitive. Uses updated DB names. Removes longer names first so shorter names CANNOT falsely match."""
         if not self.text:
             return None
         
@@ -548,7 +507,6 @@ class PDFExtractor:
         return None
     
     def extract_corresponding_author_position(self):
-        """Extract corresponding author's position (Professor, Dean, etc.)"""
         if not self.text:
             return None
         
@@ -579,10 +537,6 @@ class PDFExtractor:
         return None
     
     def _get_highlighted_text_areas(self):
-        """
-        Use PyMuPDF (fitz) to find areas with a highlight background color.
-        Returns a list of strings found in those highlighted areas.
-        """
         try:
             doc = fitz.open(stream=self.pdf_buffer, filetype="pdf")
             highlighted_texts = []
@@ -631,10 +585,6 @@ class PDFExtractor:
             return []
 
     def _get_checked_text_items(self):
-        """
-        Use pdfplumber to find text that clearly contains [X], [✓], or [/].
-        Returns a list of strings containing these markers.
-        """
         try:
             checked_items = []
             with pdfplumber.open(io.BytesIO(self.pdf_buffer)) as pdf:
@@ -654,10 +604,6 @@ class PDFExtractor:
             return []
 
     def _detect_checked_checkbox_by_position(self):
-        """
-        NEW METHOD: Detect checked checkboxes by analyzing text positions and colors.
-        This is the most reliable way to detect checkboxes with color fill.
-        """
         try:
             doc = fitz.open(stream=self.pdf_buffer, filetype="pdf")
             checked_items = []
@@ -741,7 +687,6 @@ class PDFExtractor:
             return []
 
     def _is_colored_fill(self, fill_color):
-        """Check if a fill color indicates a checked checkbox (not white or transparent)"""
         r, g, b = fill_color
         # Check if it's not white/transparent (0.95+ for all channels)
         if r > 0.9 and g > 0.9 and b > 0.9:
@@ -755,10 +700,6 @@ class PDFExtractor:
         return False
 
     def _get_highlighted_text_areas_v2(self):
-        """
-        NEW: Enhanced version that uses PyMuPDF to find text with any colored background.
-        Returns a list of strings found in highlighted areas.
-        """
         try:
             doc = fitz.open(stream=self.pdf_buffer, filetype="pdf")
             highlighted_texts = []
@@ -813,7 +754,6 @@ class PDFExtractor:
             return []
 
     def extract_paper_category(self):
-        """Extract paper category - Handles [X], [✓], [/], [ /], and other markups, then fallback to highlighted color."""
         if not self.text:
             return None
         
@@ -856,7 +796,6 @@ class PDFExtractor:
         return None
 
     def extract_thematic_area(self):
-        """Extract thematic area - Handles [X], [✓], [/], [ /], and other markups, then fallback to highlighted color."""
         if not self.text:
             return None
 
@@ -908,7 +847,6 @@ class PDFExtractor:
         return None
     
     def extract_theme(self):
-        """Extract theme - get the value after Theme:"""
         if not self.text:
             return None
         
@@ -929,9 +867,7 @@ class PDFExtractor:
         return None
     
     def extract_all(self):
-        """Extract all fields"""
         try:
-            # Extract text from PDF
             if not self.text:
                 self.extract_text()
             
@@ -964,6 +900,5 @@ class PDFExtractor:
 
     @staticmethod
     def extract_from_pdf_buffer(pdf_buffer):
-        """Static method to extract data from PDF buffer"""
         extractor = PDFExtractor(pdf_buffer)
         return extractor.extract_all()

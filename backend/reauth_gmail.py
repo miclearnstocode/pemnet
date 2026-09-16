@@ -1,6 +1,12 @@
 # reauth_gmail.py
 import os
+import sys
 import pickle
+
+script_dir = os.path.dirname(os.path.abspath(__file__))
+os.chdir(script_dir)
+sys.path.insert(0, script_dir)
+
 from gmail_service import GmailService
 
 # Delete the existing token file

@@ -1,13 +1,11 @@
 from models import db, Submission, EmailSubmission, ExtractedAbstractData, SubmissionVote, User, EmailNotificationLog
 from email_service import send_status_update_email, send_endorsement_confirmation_email
 import traceback
-import json
 
 class MasterApproverService:
     
     @staticmethod
     def get_status_summary():
-        """Get status summary for master approver dashboard."""
         try:
             # Count system submissions by status (master approver decision)
             system_total = Submission.query.count()
@@ -43,7 +41,6 @@ class MasterApproverService:
     
     @staticmethod
     def get_pending_submissions():
-        """Get all pending submissions with vote summaries."""
         try:
             results = []
             
@@ -119,7 +116,6 @@ class MasterApproverService:
     
     @staticmethod
     def get_submission_with_votes(submission_id):
-        """Get submission details with votes for master approver."""
         try:
             # First try to find in system submissions
             submission = Submission.query.filter_by(submission_id=submission_id).first()
@@ -212,11 +208,6 @@ class MasterApproverService:
     
     @staticmethod
     def set_final_status(submission_id, data):
-        """Set final status for a submission.
-        
-        IMPORTANT: Master Approver updates the 'status' column with the full status value.
-        The 'evaluation_status' is for evaluators' decisions and should not be modified.
-        """
         try:
             # The frontend sends: 'endorse', 'downgraded-non_competitive', 'downgraded-poster_only', 'pending'
             status = data.get('status')
@@ -358,7 +349,6 @@ class MasterApproverService:
     
     @staticmethod
     def bulk_send_status_emails(data):
-        """Send bulk status update emails."""
         try:
             submission_ids = data.get('submission_ids', [])
             status = data.get('status')

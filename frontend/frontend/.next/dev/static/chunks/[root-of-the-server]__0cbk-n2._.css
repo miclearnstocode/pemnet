@@ -1684,6 +1684,12 @@
     gap: calc(var(--spacing) * 16);
   }
 
+  :where(.space-y-0\.5 > :not(:last-child)) {
+    --tw-space-y-reverse: 0;
+    margin-block-start: calc(calc(var(--spacing) * .5) * var(--tw-space-y-reverse));
+    margin-block-end: calc(calc(var(--spacing) * .5) * calc(1 - var(--tw-space-y-reverse)));
+  }
+
   :where(.space-y-1 > :not(:last-child)) {
     --tw-space-y-reverse: 0;
     margin-block-start: calc(var(--spacing) * var(--tw-space-y-reverse));
@@ -2125,6 +2131,10 @@
     .bg-emerald-100\/50 {
       background-color: color-mix(in oklab, var(--color-emerald-100) 50%, transparent);
     }
+  }
+
+  .bg-emerald-400 {
+    background-color: var(--color-emerald-400);
   }
 
   .bg-emerald-500 {
@@ -3698,6 +3708,10 @@
 
     .hover\:text-emerald-700:hover {
       color: var(--color-emerald-700);
+    }
+
+    .hover\:text-emerald-800:hover {
+      color: var(--color-emerald-800);
     }
 
     .hover\:text-red-500:hover {

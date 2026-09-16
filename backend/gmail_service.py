@@ -23,14 +23,6 @@ SCOPES = [
 
 class GmailService:
     def __init__(self, creds_file='credentials.json', token_file='token.pickle', target_email=None):
-        """
-        Initialize Gmail service.
-        
-        Args:
-            creds_file: Path to credentials.json
-            token_file: Path to token.pickle
-            target_email: The email account to authenticate (e.g., 'pemnet26@gmail.com')
-        """
         self.creds_file = creds_file
         self.target_email = target_email
         
@@ -45,7 +37,6 @@ class GmailService:
         self.service = self.authenticate()
     
     def authenticate(self):
-        """Authenticate and return Gmail service."""
         creds = None
         
         # Token file stores the user's access and refresh tokens
@@ -82,7 +73,6 @@ class GmailService:
     
     
     def list_emails(self, query='', max_results=10):
-        """List emails matching the query."""
         try:
             result = self.service.users().messages().list(
                 userId='me', q=query, maxResults=max_results
@@ -101,7 +91,6 @@ class GmailService:
             return []
     
     def get_email(self, msg_id):
-        """Get full email data by ID."""
         try:
             msg = self.service.users().messages().get(
                 userId='me', id=msg_id, format='full'
@@ -151,7 +140,6 @@ class GmailService:
             return None
     
     def get_email_body(self, msg):
-        """Extract body from email."""
         body = ""
         
         if 'parts' in msg['payload']:
@@ -181,43 +169,72 @@ class GmailService:
         return body.strip()
     
     def html_to_text(self, html):
-        """Convert HTML to plain text."""
         soup = BeautifulSoup(html, 'html.parser')
         return soup.get_text(separator='\n', strip=True)
     
+    ALLOWED_ATTACHMENT_EXTENSIONS = ('.pdf', '.docx')
+
     def get_attachments(self, msg):
-        """Extract attachments from email."""
+
         attachments = []
-        
+
+        def _is_allowed(filename, mime_type):
+            fname = (filename or '').lower()
+            mt = (mime_type or '').lower()
+
+            # 1. Filename extension check
+            if fname.endswith('.pdf') or fname.endswith('.docx'):
+                return True
+
+            # 2. MIME-type fallback (Gmail sometimes sends 'attachment' as
+            #    the filename with the real type only in the mimeType field)
+            if mt == 'application/pdf':
+                return True
+            if mt == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+                return True
+
+            return False
+
+        def _maybe_append(part):
+            filename = part.get('filename') or ''
+            mime_type = part.get('mimeType') or ''
+
+            if not filename:
+                return
+
+            if not _is_allowed(filename, mime_type):
+                print(f"      ⏭️  Skipping non-document attachment: {filename} ({mime_type})")
+                return
+
+            # Only fetch the actual bytes if we're going to keep it
+            if 'body' not in part or 'attachmentId' not in part['body']:
+                print(f"      ⚠️  Skipping {filename} — no attachmentId")
+                return
+
+            attachment_data = self.get_attachment(msg['id'], part['body']['attachmentId'])
+            if not attachment_data:
+                print(f"      ⚠️  Could not download {filename} — skipping")
+                return
+
+            attachments.append({
+                'filename': filename,
+                'mimeType': mime_type,
+                'size': part['body'].get('size', 0),
+                'data': attachment_data
+            })
+
         if 'parts' in msg['payload']:
             for part in msg['payload']['parts']:
                 if part.get('filename'):
-                    # This is an attachment
-                    if 'body' in part and 'attachmentId' in part['body']:
-                        attachment_data = self.get_attachment(msg['id'], part['body']['attachmentId'])
-                        attachments.append({
-                            'filename': part['filename'],
-                            'mimeType': part['mimeType'],
-                            'size': part['body'].get('size', 0),
-                            'data': attachment_data
-                        })
+                    _maybe_append(part)
                 elif 'parts' in part:
-                    # Multipart nested
                     for subpart in part['parts']:
                         if subpart.get('filename'):
-                            if 'body' in subpart and 'attachmentId' in subpart['body']:
-                                attachment_data = self.get_attachment(msg['id'], subpart['body']['attachmentId'])
-                                attachments.append({
-                                    'filename': subpart['filename'],
-                                    'mimeType': subpart['mimeType'],
-                                    'size': subpart['body'].get('size', 0),
-                                    'data': attachment_data
-                                })
-        
+                            _maybe_append(subpart)
+
         return attachments
     
     def get_attachment(self, msg_id, attachment_id):
-        """Download attachment data."""
         try:
             attachment = self.service.users().messages().attachments().get(
                 userId='me', messageId=msg_id, id=attachment_id
@@ -229,7 +246,6 @@ class GmailService:
             return None
     
     def mark_as_read(self, msg_id):
-        """Mark email as read."""
         try:
             self.service.users().messages().modify(
                 userId='me', id=msg_id,
@@ -240,41 +256,229 @@ class GmailService:
             print(f'Error marking email as read: {error}')
             return False
     
-    def get_emails_with_attachments(self, query='', max_results=50):
-        """Get emails that have attachments (both read and unread)."""
+    def _fetch_emails_paginated(self, query, max_results, page_size):
         try:
-            # Search for emails with attachments - don't filter by read/unread status
             search_query = 'has:attachment'
             if query:
-                # If a query is provided, combine it
-                search_query = f'{query} has:attachment'
-            
-            print(f"Searching Gmail with query: {search_query}")
-            
-            result = self.service.users().messages().list(
-                userId='me', 
-                q=search_query, 
-                maxResults=max_results
-            ).execute()
-            
-            messages = result.get('messages', [])
-            print(f"Found {len(messages)} emails with attachments")
-            
+                if 'has:attachment' not in query:
+                    search_query = f'{query} has:attachment'
+                else:
+                    search_query = query
+
+            print(f"  Query: {search_query}")
+            print(f"  Paginating up to {max_results} results...")
+
+            all_message_ids = []
+            page_token = None
+            page_count = 0
+
+            while True:
+                page_count += 1
+
+                list_kwargs = {
+                    'userId': 'me',
+                    'q': search_query,
+                    'maxResults': page_size,
+                }
+                if page_token:
+                    list_kwargs['pageToken'] = page_token
+
+                result = self.service.users().messages().list(**list_kwargs).execute()
+
+                messages = result.get('messages', [])
+                all_message_ids.extend(m['id'] for m in messages)
+
+                print(f"    Page {page_count}: +{len(messages)} IDs "
+                      f"(total: {len(all_message_ids)})")
+
+                page_token = result.get('nextPageToken')
+
+                if not page_token:
+                    print(f"    No more pages")
+                    break
+                if len(all_message_ids) >= max_results:
+                    all_message_ids = all_message_ids[:max_results]
+                    break
+
             emails = []
-            for msg in messages:
-                email_data = self.get_email(msg['id'])
-                if email_data and email_data['attachments']:
-                    emails.append(email_data)
-            
+            fetch_errors = 0
+
+            for idx, msg_id in enumerate(all_message_ids, start=1):
+                try:
+                    email_data = self.get_email(msg_id)
+                    if email_data and email_data.get('attachments'):
+                        emails.append(email_data)
+                except Exception as e:
+                    fetch_errors += 1
+                    print(f"    ⚠️ Failed to fetch {msg_id}: {e}")
+
+            if fetch_errors:
+                print(f"    Retrieved {len(emails)} emails ({fetch_errors} fetch errors)")
+            else:
+                print(f"    Retrieved {len(emails)} emails")
+
             return emails
+
         except HttpError as error:
-            print(f'An error occurred: {error}')
+            print(f'  ❌ Gmail API error: {error}')
             return []
         
-    def send_email(self, to, subject, body, attachments=None, is_html=False, cc=None):
-        """Send an email using SMTP (Bypasses Gmail API weirdness)."""
+    def get_emails_with_attachments(self, query='', max_results=20000, page_size=100,
+                                     chunk_by_month=False, chunk_by='auto',
+                                     earliest_date=None):
+        if not chunk_by_month:
+            return self._fetch_emails_paginated(query, max_results, page_size)
+
+        from datetime import date, timedelta
+
+        if earliest_date is None:
+            today = date.today()
+            earliest_date = date(today.year - 2, today.month, 1)
+        else:
+            today = date.today()
+
+        all_emails = []
+        seen_ids = set()
+
+        if chunk_by == 'auto':
+            windows = self._iter_auto_windows(earliest_date, today)
+        elif chunk_by == 'week':
+            windows = self._iter_week_windows(earliest_date, today)
+        elif chunk_by == 'day':
+            windows = self._iter_day_windows(earliest_date, today)
+        else:  # 'month'
+            windows = self._iter_month_windows(earliest_date, today)
+
+        chunk_count = 0
+        for (start_date, end_date, label) in windows:
+            chunk_count += 1
+
+            chunk_query = (
+                f"{query} "
+                f"after:{start_date.strftime('%Y/%m/%d')} "
+                f"before:{(end_date + timedelta(days=1)).strftime('%Y/%m/%d')}"
+            )
+
+            print(f"\n📅 Chunk {label}: {chunk_query}")
+
+            try:
+                chunk_results = self._fetch_emails_paginated(
+                    chunk_query, max_results, page_size
+                )
+
+                if (chunk_by == 'auto'
+                        and len(chunk_results) >= max(150, page_size * 1.5)
+                        and (end_date - start_date).days > 10):
+                    print(f"   ⚠️ Chunk returned {len(chunk_results)} — re-splitting by week")
+                    sub_windows = self._iter_week_windows(start_date, end_date)
+                    for (sw_start, sw_end, sw_label) in sub_windows:
+                        sub_query = (
+                            f"{query} "
+                            f"after:{sw_start.strftime('%Y/%m/%d')} "
+                            f"before:{(sw_end + timedelta(days=1)).strftime('%Y/%m/%d')}"
+                        )
+                        print(f"     ↳ Sub-chunk {sw_label}")
+                        try:
+                            sub_results = self._fetch_emails_paginated(
+                                sub_query, max_results, page_size
+                            )
+                            for email in sub_results:
+                                if email['id'] not in seen_ids:
+                                    seen_ids.add(email['id'])
+                                    all_emails.append(email)
+                        except Exception as sub_e:
+                            print(f"     ⚠️ Sub-chunk failed: {sub_e}")
+                else:
+                    for email in chunk_results:
+                        if email['id'] not in seen_ids:
+                            seen_ids.add(email['id'])
+                            all_emails.append(email)
+
+            except Exception as e:
+                print(f"   ⚠️ Chunk failed: {e}")
+
+            if len(all_emails) >= max_results:
+                print(f"🛑 Hit max_results cap ({max_results}) — stopping")
+                all_emails = all_emails[:max_results]
+                break
+
+
+        return all_emails
+
+    def _iter_month_windows(self, start_date, end_date):
+        from datetime import date, timedelta
+        current = date(start_date.year, start_date.month, 1)
+        while current <= end_date:
+            if current.month == 12:
+                next_month = date(current.year + 1, 1, 1)
+            else:
+                next_month = date(current.year, current.month + 1, 1)
+            chunk_end = min(next_month - timedelta(days=1), end_date)
+            yield (current, chunk_end, current.strftime('%Y-%m'))
+            current = next_month
+
+    def _iter_week_windows(self, start_date, end_date):
+        from datetime import timedelta
+        current = start_date
+        while current <= end_date:
+            chunk_end = min(current + timedelta(days=6), end_date)
+            yield (current, chunk_end, f"{current.isoformat()}..{chunk_end.isoformat()}")
+            current = chunk_end + timedelta(days=1)
+
+    def _iter_day_windows(self, start_date, end_date):
+        from datetime import timedelta
+        current = start_date
+        while current <= end_date:
+            yield (current, current, current.isoformat())
+            current = current + timedelta(days=1)
+
+    def _iter_auto_windows(self, start_date, end_date):
+        yield from self._iter_month_windows(start_date, end_date)
+
+    def find_earliest_email_date(self, query='has:attachment'):
         try:
-            # Validate recipient
+            page_token = None
+            last_ids = []
+            page_count = 0
+            while True:
+                page_count += 1
+                kwargs = {
+                    'userId': 'me',
+                    'q': query,
+                    'maxResults': 500,
+                }
+                if page_token:
+                    kwargs['pageToken'] = page_token
+                result = self.service.users().messages().list(**kwargs).execute()
+                ids = [m['id'] for m in result.get('messages', [])]
+                if ids:
+                    last_ids = ids[-50:]   # keep last few for a second check
+                page_token = result.get('nextPageToken')
+                if not page_token:
+                    break
+                if page_count > 100:
+                    # safety valve; log and bail
+                    print("  ⚠️ find_earliest_email_date: page cap hit")
+                    break
+
+            if not last_ids:
+                return None
+
+            # The last id in the last page is the oldest. Fetch its internalDate.
+            oldest_id = last_ids[-1]
+            msg = self.service.users().messages().get(
+                userId='me', id=oldest_id, format='minimal'
+            ).execute()
+            internal_ms = int(msg.get('internalDate', 0))
+            from datetime import datetime as _dt
+            return _dt.utcfromtimestamp(internal_ms / 1000).date()
+        except HttpError as e:
+            print(f"  ⚠️ find_earliest_email_date failed: {e}")
+            return None
+    
+    def send_email(self, to, subject, body, attachments=None, is_html=False, cc=None):
+        try:
+
             if not to or '@' not in to:
                 print(f"❌ Invalid recipient email: {to}")
                 return None

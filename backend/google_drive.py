@@ -107,11 +107,11 @@ def get_thematic_area_folder_name(area):
         return "Uncategorized"
 
     area_map = {
-        'Food Production, Agriculture, Fisheries, and Natural Resource Systems': 'Food Production & Agriculture',
-        'Health, Nutrition, Wellness, and Community Care': 'Health & Community Care',
-        'Education, Literacy, Skills Development, and Lifelong Learning': 'Education & Skills Development',
-        'Livelihood, Entrepreneurship, Cooperatives, MSMEs, and Local Economic Development': 'Livelihood & Entrepreneurship',
-        'Environment, Climate Action, Disaster Risk Reduction, and Community Resilience': 'Environment & Climate Action',
+        'Food Production, Agriculture, Fisheries, and Natural Resource Systems': 'Food Production, Agriculture, Fisheries, and Natural Resource Systems',
+        'Health, Nutrition, Wellness, and Community Care': 'Health, Nutrition, Wellness, and Community Care',
+        'Education, Literacy, Skills Development, and Lifelong Learning': 'Education, Literacy, Skills Development, and Lifelong Learning',
+        'Livelihood, Entrepreneurship, Cooperatives, MSMEs, and Local Economic Development': 'Livelihood, Entrepreneurship, Cooperatives, MSMEs, and Local Economic Development',
+        'Environment, Climate Action, Disaster Risk Reduction, and Community Resilience': 'Environment, Climate Action, Disaster Risk Reduction, and Community Resilience',
     }
 
     for key, value in area_map.items():

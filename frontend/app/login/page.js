@@ -266,7 +266,7 @@ export default function LoginPage() {
                 <input type="checkbox" className="rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 w-4 h-4" />
                 Remember me
               </label>
-              <a href="#" className="text-blue-600 hover:text-blue-700 font-semibold transition">Forgot password?</a>
+              <a href="/forgot-password" className="text-blue-600 hover:text-blue-700 font-semibold transition">Forgot password?</a>
             </div>
 
             <button

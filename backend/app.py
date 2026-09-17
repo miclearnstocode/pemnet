@@ -14,6 +14,9 @@ from gmail_service import GmailService
 from models import SubmissionRevision, db, User, Submission, EmailSubmission, ExtractedAbstractData, SUC, SubmissionVote, EvaluatorDiscussion, Payment, ExtractedDataRevision, EmailNotificationLog
 from master_approver import MasterApproverService
 from email_service import gmail_service, send_confirmation_email
+from models import PasswordReset 
+from password_reset_service import ( PasswordResetService,PasswordResetRepository,GmailNotifier,NumericOTPGenerator,SecureTokenGenerator,)
+from cpanel_email_service import CPanelEmailService
 
 load_dotenv()
 
@@ -3185,6 +3188,104 @@ def get_all_payments():
 def health_check():
     from datetime import datetime
     return jsonify({"status": "ok", "timestamp": datetime.now().isoformat()}), 200
+
+try:
+    cpanel_email_service = CPanelEmailService()
+    print("✅ cPanel SMTP service initialized successfully")
+except Exception as e:
+    print(f"❌ cPanel SMTP service initialization failed: {e}")
+    cpanel_email_service = None
+    
+def _build_password_reset_service() -> PasswordResetService:
+    """
+    Wires the PasswordResetService.
+
+    Prefers cPanel SMTP (pemnetreply@pemnet.capsu.edu.ph) and falls back
+    to Gmail only if cPanel credentials are missing — safe for local dev.
+    """
+    if cpanel_email_service:
+        notifier = GmailNotifier(cpanel_email_service)
+        print("📧 Password reset: using cPanel SMTP")
+    elif gmail_service:
+        notifier = GmailNotifier(gmail_service)
+        print("📧 Password reset: falling back to Gmail")
+    else:
+        notifier = GmailNotifier(None)
+        print("⚠️  Password reset: no email backend configured")
+
+    return PasswordResetService(
+        bcrypt=bcrypt,
+        repository=PasswordResetRepository(db.session),
+        notifier=notifier,
+        otp_generator=NumericOTPGenerator(),
+        token_generator=SecureTokenGenerator(),
+    )
+
+
+@app.route('/api/auth/forgot-password', methods=['POST', 'OPTIONS'])
+def forgot_password():
+    if request.method == 'OPTIONS':
+        return jsonify({})
+
+    try:
+        data = request.get_json() or {}
+        email = data.get('email', '')
+        ip = request.headers.get('X-Forwarded-For', request.remote_addr or '')[:64]
+        ua = request.headers.get('User-Agent', '')
+
+        service = _build_password_reset_service()
+        result = service.request_reset(email, ip, ua)
+
+        # Return 200 for success, 400 for known-rejection reasons
+        status_code = 200 if result.get('success') else 400
+        return jsonify(result), status_code
+
+    except Exception as e:
+        print(f"❌ forgot_password error: {e}")
+        traceback.print_exc()
+        return jsonify({
+            "success": False,
+            "detail": "An unexpected error occurred. Please try again."
+        }), 500
+
+@app.route('/api/auth/verify-otp', methods=['POST', 'OPTIONS'])
+def verify_otp():
+    if request.method == 'OPTIONS':
+        return jsonify({})
+
+    try:
+        data = request.get_json() or {}
+        email = data.get('email', '')
+        otp = data.get('otp', '')
+
+        service = _build_password_reset_service()
+        result = service.verify_otp(email, otp)
+        return jsonify(result), 200 if result.get('success') else 400
+
+    except Exception as e:
+        print(f"❌ verify_otp error: {e}")
+        traceback.print_exc()
+        return jsonify({"success": False, "detail": "Server error"}), 500
+
+
+@app.route('/api/auth/reset-password', methods=['POST', 'OPTIONS'])
+def reset_password():
+    if request.method == 'OPTIONS':
+        return jsonify({})
+
+    try:
+        data = request.get_json() or {}
+        token = data.get('reset_token', '')
+        new_password = data.get('new_password', '')
+
+        service = _build_password_reset_service()
+        result = service.reset_password(token, new_password)
+        return jsonify(result), 200 if result.get('success') else 400
+
+    except Exception as e:
+        print(f"❌ reset_password error: {e}")
+        traceback.print_exc()
+        return jsonify({"success": False, "detail": "Server error"}), 500
 
 if __name__ == '__main__':
     app.run(debug=False, port=5000, host='0.0.0.0')

@@ -403,3 +403,35 @@ class FileMoveLog(db.Model):
             'trashed_folders': json.loads(self.trashed_folders) if self.trashed_folders else [],
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None
         }
+        
+class PasswordReset(db.Model):
+    __tablename__ = 'password_resets'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    email = db.Column(db.String(191), nullable=False, index=True)
+    otp_code = db.Column(db.String(6), nullable=False)          # displayed only during dev
+    otp_hash = db.Column(db.String(191), nullable=False)        # bcrypt hash of OTP
+    reset_token = db.Column(db.String(191), nullable=True)      # opaque token after verify
+    token_hash = db.Column(db.String(191), nullable=True, index=True)
+    attempts = db.Column(db.Integer, nullable=False, default=0)
+    verified = db.Column(db.Boolean, nullable=False, default=False)
+    used = db.Column(db.Boolean, nullable=False, default=False)
+    expires_at = db.Column(db.DateTime, nullable=False, index=True)
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    verified_at = db.Column(db.DateTime, nullable=True)
+    ip_address = db.Column(db.String(64), nullable=True)
+    user_agent = db.Column(db.String(255), nullable=True)
+
+    user = db.relationship('User', foreign_keys=[user_id], backref='password_resets')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'email': self.email,
+            'verified': self.verified,
+            'used': self.used,
+            'attempts': self.attempts,
+            'expires_at': self.expires_at.strftime('%Y-%m-%d %H:%M:%S') if self.expires_at else None,
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None,
+        }

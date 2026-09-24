@@ -143,12 +143,14 @@ export default function LoginPage() {
         console.log('User role:', data.user.role);
         
         // Redirect based on role
-        if (data.user.role === 'evaluator' || data.user.role === 'admin' || data.user.role === 'staff') {
+        if (data.user.role === 'evaluator' || data.user.role === 'staff') {
           window.location.href = '/review';
         } else if (data.user.role === 'master_approver') {
           window.location.href = '/master-review';
         } else if (data.user.role === 'treasurer') {
           window.location.href = '/treasurer';
+        } else if (data.user.role === 'admin') {
+          window.location.href = '/admin';
         } else {
           window.location.href = '/submit';
         }

@@ -435,3 +435,186 @@ class PasswordReset(db.Model):
             'expires_at': self.expires_at.strftime('%Y-%m-%d %H:%M:%S') if self.expires_at else None,
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None,
         }
+    
+class NewsEvent(db.Model):
+    __tablename__ = 'news_events'
+    id = db.Column(db.Integer, primary_key=True)
+    type = db.Column(db.Enum('NEWS', 'EVENT', 'ANNOUNCEMENT'), nullable=False, default='NEWS')
+    title = db.Column(db.String(500), nullable=False)
+    excerpt = db.Column(db.Text, nullable=True)
+    content = db.Column(db.Text, nullable=True)
+    date_display = db.Column(db.String(100), nullable=False)  # Display date like "May 20, 2026"
+    event_start_date = db.Column(db.DateTime, nullable=True)  # Actual date for sorting
+    event_end_date = db.Column(db.DateTime, nullable=True)
+    tag = db.Column(db.String(100), nullable=True)
+    tag_color = db.Column(db.String(100), nullable=True, default='bg-blue-50 text-blue-700 border-blue-200')
+    type_color = db.Column(db.String(100), nullable=True, default='bg-yellow-100 text-yellow-800')
+    image_url = db.Column(db.String(500), nullable=True)
+    is_published = db.Column(db.Boolean, default=True)
+    is_featured = db.Column(db.Boolean, default=False)
+    views_count = db.Column(db.Integer, default=0)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
+
+    creator = db.relationship('User', foreign_keys=[created_by])
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'type': self.type,
+            'title': self.title,
+            'excerpt': self.excerpt,
+            'content': self.content,
+            'date_display': self.date_display,
+            'event_start_date': self.event_start_date.strftime('%Y-%m-%d %H:%M:%S') if self.event_start_date else None,
+            'event_end_date': self.event_end_date.strftime('%Y-%m-%d %H:%M:%S') if self.event_end_date else None,
+            'tag': self.tag,
+            'tag_color': self.tag_color,
+            'type_color': self.type_color,
+            'image_url': self.image_url,
+            'is_published': self.is_published,
+            'is_featured': self.is_featured,
+            'views_count': self.views_count,
+            'created_by': self.created_by,
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None,
+            'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S') if self.updated_at else None
+        }
+        
+class AboutContent(db.Model):
+    __tablename__ = 'about_content'
+    id = db.Column(db.Integer, primary_key=True)
+    
+    # Section identification
+    section_key = db.Column(db.String(100), unique=True, nullable=False, index=True)
+    # e.g., 'header', 'stats', 'what_is', 'mission_vision', 'what_we_do'
+    
+    # Content fields (flexible JSON storage)
+    content = db.Column(db.Text, nullable=True)  # JSON string
+    
+    # Metadata
+    updated_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
+    
+    updater = db.relationship('User', foreign_keys=[updated_by])
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'section_key': self.section_key,
+            'content': json.loads(self.content) if self.content else {},
+            'updated_by': self.updated_by,
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None,
+            'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S') if self.updated_at else None
+        }
+
+
+class AboutStat(db.Model):
+    """Individual stats cards on the About page"""
+    __tablename__ = 'about_stats'
+    id = db.Column(db.Integer, primary_key=True)
+    
+    # Stat info
+    value = db.Column(db.String(50), nullable=False)  # e.g., "85+"
+    label = db.Column(db.String(200), nullable=False)  # e.g., "Member Institutions"
+    sublabel = db.Column(db.String(200), nullable=True)  # e.g., "Across the Philippines"
+    
+    # Styling
+    icon_type = db.Column(db.String(50), nullable=False, default='users')  # icon identifier
+    color_theme = db.Column(db.String(50), nullable=False, default='blue')  # blue, green, yellow, purple
+    
+    # Ordering
+    display_order = db.Column(db.Integer, default=0)
+    is_active = db.Column(db.Boolean, default=True)
+    
+    # Metadata
+    updated_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
+    
+    updater = db.relationship('User', foreign_keys=[updated_by])
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'value': self.value,
+            'label': self.label,
+            'sublabel': self.sublabel,
+            'icon_type': self.icon_type,
+            'color_theme': self.color_theme,
+            'display_order': self.display_order,
+            'is_active': self.is_active,
+            'updated_by': self.updated_by,
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None,
+            'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S') if self.updated_at else None
+        }
+
+
+class AboutCard(db.Model):
+    """Cards for the "What We Do" section"""
+    __tablename__ = 'about_cards'
+    id = db.Column(db.Integer, primary_key=True)
+    
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    
+    # Styling
+    icon_type = db.Column(db.String(50), nullable=False, default='document')
+    color_theme = db.Column(db.String(50), nullable=False, default='blue')
+    
+    # Ordering
+    display_order = db.Column(db.Integer, default=0)
+    is_active = db.Column(db.Boolean, default=True)
+    
+    # Metadata
+    updated_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
+    
+    updater = db.relationship('User', foreign_keys=[updated_by])
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'title': self.title,
+            'description': self.description,
+            'icon_type': self.icon_type,
+            'color_theme': self.color_theme,
+            'display_order': self.display_order,
+            'is_active': self.is_active,
+            'updated_by': self.updated_by,
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None,
+            'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S') if self.updated_at else None
+        }
+
+
+class AboutFeature(db.Model):
+    """Features/bullet points (e.g., the checkmarked list under "What is PEMNet?")"""
+    __tablename__ = 'about_features'
+    id = db.Column(db.Integer, primary_key=True)
+    
+    text = db.Column(db.Text, nullable=False)
+    section = db.Column(db.String(50), nullable=False, default='what_is')  # which section it belongs to
+    
+    display_order = db.Column(db.Integer, default=0)
+    is_active = db.Column(db.Boolean, default=True)
+    
+    # Metadata
+    updated_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
+    
+    updater = db.relationship('User', foreign_keys=[updated_by])
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'text': self.text,
+            'section': self.section,
+            'display_order': self.display_order,
+            'is_active': self.is_active,
+            'updated_by': self.updated_by,
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None,
+            'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S') if self.updated_at else None
+        }

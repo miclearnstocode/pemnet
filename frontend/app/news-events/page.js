@@ -1,70 +1,61 @@
-
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 
-// Mock Data based on the image
-const newsItems = [
-  {
-    id: 1,
-    type: 'NEWS',
-    typeColor: 'bg-yellow-100 text-yellow-800',
-    date: 'May 20, 2026',
-    title: 'New Research Grant Opportunities',
-    excerpt: 'Applications are now open for the 2026 Research Grant Program supporting innovative community-based projects.',
-    tag: 'Funding',
-    tagColor: 'bg-yellow-50 text-yellow-700 border-yellow-200',
-    image: 'https://images.unsplash.com/photo-1466692476868-aef1dfb1e735?q=80&w=2070&auto=format&fit=crop', // Plants
-  },
-  {
-    id: 2,
-    type: 'EVENT',
-    typeColor: 'bg-blue-100 text-blue-800',
-    date: 'June 15–17, 2026',
-    title: 'Community Research Symposium 2026',
-    excerpt: 'Join researchers, communities, and partners in a three-day symposium showcasing impactful research.',
-    tag: 'Symposium',
-    tagColor: 'bg-blue-50 text-blue-700 border-blue-200',
-    image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=2070&auto=format&fit=crop', // Conference
-  },
-  {
-    id: 3,
-    type: 'ANNOUNCEMENT',
-    typeColor: 'bg-green-100 text-green-800',
-    date: 'May 12, 2026',
-    title: 'Abstract Submission Extended',
-    excerpt: 'The deadline for abstract submission has been extended to May 31, 2026. Submit your abstracts now!',
-    tag: 'Deadline',
-    tagColor: 'bg-green-50 text-green-700 border-green-200',
-    image: 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?q=80&w=2070&auto=format&fit=crop', // Plant in hands
-  },
-  {
-    id: 4,
-    type: 'EVENT',
-    typeColor: 'bg-purple-100 text-purple-800',
-    date: 'June 28, 2026',
-    title: 'Research Workshop: Data for Impact',
-    excerpt: 'A hands-on workshop on data collection, analysis, and visualization for community researchers.',
-    tag: 'Workshop',
-    tagColor: 'bg-purple-50 text-purple-700 border-purple-200',
-    image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=2070&auto=format&fit=crop', // Laptop with charts
-  },
-];
+const API_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/, '') || 'http://localhost:5000';
 
 export default function NewsEventsPage() {
   const [activeTab, setActiveTab] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
+  const [newsItems, setNewsItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   const tabs = ['All', 'News', 'Events', 'Announcements'];
 
-  // Filtering Logic based on Tab and Search
+  // Fetch news/events from API
+  useEffect(() => {
+    const fetchNews = async () => {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams();
+        if (activeTab !== 'All') {
+          const typeMap = { News: 'NEWS', Events: 'EVENT', Announcements: 'ANNOUNCEMENT' };
+          params.append('type', typeMap[activeTab]);
+        }
+        if (searchTerm) {
+          params.append('search', searchTerm);
+        }
+        
+        const res = await fetch(`${API_URL}/api/news-events?${params}`);
+        if (res.ok) {
+          const data = await res.json();
+          setNewsItems(data);
+          setError('');
+        } else {
+          setError('Failed to load news & events');
+        }
+      } catch (err) {
+        console.error('Error fetching news:', err);
+        setError('Unable to connect to the server');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const debounce = setTimeout(fetchNews, 300);
+    return () => clearTimeout(debounce);
+  }, [activeTab, searchTerm]);
+
+  // Filtering Logic based on Tab and Search (client-side fallback)
   const filteredItems = newsItems.filter((item) => {
     const matchesTab = activeTab === 'All' || item.type === activeTab.toUpperCase();
-    const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          item.excerpt.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = !searchTerm || 
+                          item.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          (item.excerpt && item.excerpt.toLowerCase().includes(searchTerm.toLowerCase()));
     return matchesTab && matchesSearch;
   });
 
@@ -72,9 +63,7 @@ export default function NewsEventsPage() {
     <div className="min-h-screen flex flex-col bg-[#F8FAFC] font-sans">
       <Header />
 
-      {/* --- MAIN CONTENT --- */}
       <main className="flex-1 py-16 px-6 relative overflow-hidden">
-        {/* Background Decorative Circle */}
         <div className="absolute -top-25 left-1/2 -translate-x-1/2 w-150 h-150 bg-blue-50 rounded-full blur-3xl opacity-50 pointer-events-none"></div>
 
         <div className="max-w-6xl mx-auto relative z-10">
@@ -125,62 +114,88 @@ export default function NewsEventsPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
                 </svg>
               </div>
-              <button className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50 transition">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" />
-                </svg>
-                Filter
-              </button>
             </div>
           </div>
 
-          {/* News Cards Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {filteredItems.map((item) => (
-              <div key={item.id} className="group flex flex-col bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-lg hover:shadow-slate-200/60 hover:-translate-y-1 transition-all duration-300">
-                {/* Image */}
-                <div className="relative h-48 overflow-hidden">
-                  <img 
-                    src={item.image} 
-                    alt={item.title} 
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className={`absolute top-3 left-3 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${item.typeColor}`}>
-                    {item.type}
-                  </div>
-                </div>
+          {/* Loading State */}
+          {loading && (
+            <div className="flex items-center justify-center py-20">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+            </div>
+          )}
 
-                {/* Content */}
-                <div className="flex flex-col flex-1 p-5">
-                  <div className="text-xs font-semibold text-slate-500 mb-3">{item.date}</div>
-                  <h3 className="text-lg font-bold text-slate-900 leading-snug mb-2">{item.title}</h3>
-                  <p className="text-sm text-slate-600 leading-relaxed mb-6 line-clamp-3">{item.excerpt}</p>
+          {/* Error State */}
+          {error && !loading && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-xl text-center">
+              {error}
+            </div>
+          )}
 
-                  <div className="mt-auto flex items-center justify-between">
-                    <span className={`px-3 py-1 rounded-lg text-xs font-semibold border ${item.tagColor}`}>
-                      {item.tag}
-                    </span>
-                    <button className="text-sm font-semibold text-blue-700 hover:text-blue-900 transition flex items-center gap-1">
-                      Read more
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* View All Button */}
-          <div className="mt-12 flex justify-center">
-            <button className="flex items-center gap-2 px-8 py-3.5 bg-white border-2 border-blue-700 text-blue-700 rounded-xl font-semibold hover:bg-blue-50 transition">
-              View all news & events
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+          {/* Empty State */}
+          {!loading && !error && filteredItems.length === 0 && (
+            <div className="text-center py-20">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor" className="w-16 h-16 mx-auto text-slate-300 mb-4">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
               </svg>
-            </button>
-          </div>
+              <h3 className="text-lg font-semibold text-slate-900 mb-1">No results found</h3>
+              <p className="text-slate-500">Try adjusting your search or filter.</p>
+            </div>
+          )}
+
+          {/* News Cards Grid */}
+          {!loading && !error && filteredItems.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {filteredItems.map((item) => (
+                <div key={item.id} className="group flex flex-col bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-lg hover:shadow-slate-200/60 hover:-translate-y-1 transition-all duration-300">
+                  {/* Image */}
+                  <div className="relative h-48 overflow-hidden">
+                    {item.image_url ? (
+                      <img 
+                        src={item.image_url} 
+                        alt={item.title} 
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
+                        <svg className="w-12 h-12 text-slate-300" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                        </svg>
+                      </div>
+                    )}
+                    <div className={`absolute top-3 left-3 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${item.type_color || 'bg-blue-100 text-blue-800'}`}>
+                      {item.type}
+                    </div>
+                  </div>
+
+                  {/* Content */}
+                  <div className="flex flex-col flex-1 p-5">
+                    <div className="text-xs font-semibold text-slate-500 mb-3">{item.date_display}</div>
+                    <h3 className="text-lg font-bold text-slate-900 leading-snug mb-2">{item.title}</h3>
+                    {item.excerpt && (
+                      <p className="text-sm text-slate-600 leading-relaxed mb-6 line-clamp-3">{item.excerpt}</p>
+                    )}
+
+                    <div className="mt-auto flex items-center justify-between">
+                      {item.tag && (
+                        <span className={`px-3 py-1 rounded-lg text-xs font-semibold border ${item.tag_color || 'bg-blue-50 text-blue-700 border-blue-200'}`}>
+                          {item.tag}
+                        </span>
+                      )}
+                      <Link 
+                        href={`/news-events/${item.id}`}
+                        className="text-sm font-semibold text-blue-700 hover:text-blue-900 transition flex items-center gap-1 ml-auto"
+                      >
+                        Read more
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                        </svg>
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </main>
       <Footer />

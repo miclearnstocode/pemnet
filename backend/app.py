@@ -17,6 +17,9 @@ from email_service import gmail_service, send_confirmation_email
 from models import PasswordReset 
 from password_reset_service import ( PasswordResetService,PasswordResetRepository,GmailNotifier,NumericOTPGenerator,SecureTokenGenerator,)
 from cpanel_email_service import CPanelEmailService
+from news_routes import register_news_routes
+from about_routes import register_about_routes
+
 
 load_dotenv()
 
@@ -61,7 +64,10 @@ CORS(app,
      methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
      max_age=3600)
 
-    
+register_news_routes(app)
+register_about_routes(app)
+
+
 with app.app_context():
     try:
         db.create_all()

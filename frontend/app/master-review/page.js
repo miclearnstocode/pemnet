@@ -728,23 +728,22 @@ export default function MasterReviewPage() {
   };
 
   // Field configuration for EditSubmission
-  // Uses 'Not specified' at the top of select options so empty values default correctly
   const getEditFields = (submissionType) => {
     if (submissionType === 'email') {
       return {
-        title: { label: 'Title', icon: faFileAlt, type: 'text' },
-        project_leader: { label: 'Project Leader', icon: faUser, type: 'text' },
-        sucs: { label: 'SUC / Agency', icon: faSchool, type: 'suc' },
-        corresponding_author_name: { label: 'Corresponding Author', icon: faUserCircle, type: 'text' },
-        corresponding_author_email: { label: 'Corresponding Email', icon: faEnvelope, type: 'email' },
-        corresponding_author_position: { label: 'Corresponding Position', icon: faTag, type: 'text' },
-        authors_list: { label: 'Authors List', icon: faUsers, type: 'text' },
-        paper_category: { label: 'Paper Category', icon: faBookOpen, type: 'select', options: [
+        title: { label: 'Title', icon: faFileAlt, type: 'text', section: 'overview' },
+        project_leader: { label: 'Project Leader', icon: faUser, type: 'text', section: 'authors' },
+        sucs: { label: 'SUC / Agency', icon: faSchool, type: 'suc', section: 'authors' },
+        corresponding_author_name: { label: 'Corresponding Author', icon: faUserCircle, type: 'text', section: 'contact' },
+        corresponding_author_email: { label: 'Corresponding Email', icon: faEnvelope, type: 'email', section: 'contact' },
+        corresponding_author_position: { label: 'Corresponding Position', icon: faTag, type: 'text', section: 'contact' },
+        authors_list: { label: 'Authors List', icon: faUsers, type: 'text', section: 'authors' },
+        paper_category: { label: 'Paper Category', icon: faBookOpen, type: 'select', section: 'classification', options: [
           'Not specified',
           'Completed Extension Project Paper',
           'Ongoing Extension Project Paper'
         ]},
-        thematic_area: { label: 'Thematic Area', icon: faLayerGroup, type: 'select', options: [
+        thematic_area: { label: 'Thematic Area', icon: faLayerGroup, type: 'select', section: 'classification', options: [
           'Not specified',
           'Food Production, Agriculture, Fisheries, and Natural Resource Systems',
           'Health, Nutrition, Wellness, and Community Care',
@@ -752,25 +751,25 @@ export default function MasterReviewPage() {
           'Livelihood, Entrepreneurship, Cooperatives, MSMEs, and Local Economic Development',
           'Environment, Climate Action, Disaster Risk Reduction, and Community Resilience'
         ]},
-        theme: { label: 'Theme', icon: faFlag, type: 'text' }
+        theme: { label: 'Theme', icon: faFlag, type: 'text', section: 'classification' }
       };
     }
 
     return {
-      extension_project_title: { label: 'Title', icon: faFileAlt, type: 'text' },
-      project_leader: { label: 'Project Leader', icon: faUser, type: 'text' },
-      presenter: { label: 'Presenter', icon: faUserCircle, type: 'text' },
-      suc_agencies: { label: 'SUC / Agency', icon: faSchool, type: 'suc' },
-      corresponding_author_name: { label: 'Corresponding Author', icon: faUserCircle, type: 'text' },
-      corresponding_author_email: { label: 'Corresponding Email', icon: faEnvelope, type: 'email' },
-      corresponding_author_position: { label: 'Corresponding Position', icon: faTag, type: 'text' },
-      co_authors: { label: 'Co-Authors', icon: faUsers, type: 'text' },
-      paper_category: { label: 'Paper Category', icon: faBookOpen, type: 'select', options: [
+      extension_project_title: { label: 'Title', icon: faFileAlt, type: 'text', section: 'overview' },
+      project_leader: { label: 'Project Leader', icon: faUser, type: 'text', section: 'authors' },
+      presenter: { label: 'Presenter', icon: faUserCircle, type: 'text', section: 'authors' },
+      suc_agencies: { label: 'SUC / Agency', icon: faSchool, type: 'suc', section: 'authors' },
+      corresponding_author_name: { label: 'Corresponding Author', icon: faUserCircle, type: 'text', section: 'contact' },
+      corresponding_author_email: { label: 'Corresponding Email', icon: faEnvelope, type: 'email', section: 'contact' },
+      corresponding_author_position: { label: 'Corresponding Position', icon: faTag, type: 'text', section: 'contact' },
+      co_authors: { label: 'Co-Authors', icon: faUsers, type: 'text', section: 'authors' },
+      paper_category: { label: 'Paper Category', icon: faBookOpen, type: 'select', section: 'classification', options: [
         'Not specified',
         'Completed Extension Project Paper',
         'Ongoing Extension Project Paper'
       ]},
-      thematic_area: { label: 'Thematic Area', icon: faLayerGroup, type: 'select', options: [
+      thematic_area: { label: 'Thematic Area', icon: faLayerGroup, type: 'select', section: 'classification', options: [
         'Not specified',
         'Food Production, Agriculture, Fisheries, and Natural Resource Systems',
         'Health, Nutrition, Wellness, and Community Care',

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
 
@@ -40,7 +39,7 @@ const Toast = ({ message, type, onClose }) => {
         <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-100 rounded-b-xl overflow-hidden">
           <div className={`h-full ${progressColor} animate-progress-shrink`}></div>
         </div>
-        
+
         <div className="flex items-start gap-3">
           <div className={`shrink-0 mt-0.5 ${iconColor}`}>
             {type === 'success' ? (
@@ -59,7 +58,7 @@ const Toast = ({ message, type, onClose }) => {
             </p>
             <p className="text-sm">{message}</p>
           </div>
-          <button 
+          <button
             onClick={onClose}
             className={`shrink-0 ${textColor} hover:opacity-70 transition`}
           >
@@ -91,30 +90,26 @@ const FileViewerModal = ({ isOpen, onClose, fileUrl, fileType, title }) => {
 
   if (!isOpen || !fileUrl) return null;
 
-  // Convert Google Drive view URL to preview URL
   const getPreviewUrl = (url) => {
     if (!url) return '';
-    // Handle Google Drive URLs
     const driveMatch = url.match(/\/file\/d\/([^/]+)/);
     if (driveMatch && driveMatch[1]) {
       return `https://drive.google.com/file/d/${driveMatch[1]}/preview`;
     }
-    // If it's already a preview or other URL, use as-is
     return url;
   };
 
   const previewUrl = getPreviewUrl(fileUrl);
 
   return (
-    <div 
+    <div
       className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in"
       onClick={onClose}
     >
-      <div 
+      <div
         className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden animate-scale-in"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50">
           <div className="flex items-center gap-3 min-w-0">
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
@@ -161,7 +156,6 @@ const FileViewerModal = ({ isOpen, onClose, fileUrl, fileType, title }) => {
           </div>
         </div>
 
-        {/* Body - Embedded Preview */}
         <div className="flex-1 bg-slate-100 relative">
           <iframe
             src={previewUrl}
@@ -171,7 +165,6 @@ const FileViewerModal = ({ isOpen, onClose, fileUrl, fileType, title }) => {
           />
         </div>
 
-        {/* Footer */}
         <div className="px-6 py-3 border-t border-slate-200 bg-slate-50 flex items-center justify-between text-xs text-slate-500">
           <span>Press <kbd className="px-1.5 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-mono">Esc</kbd> to close</span>
           <a
@@ -192,7 +185,7 @@ const FileViewerModal = ({ isOpen, onClose, fileUrl, fileType, title }) => {
 };
 
 export default function SubmitPage() {
-  const [activeTab, setActiveTab] = useState('submit');
+  const [activeTab, setActiveTab] = useState('home');
   const [coAuthors, setCoAuthors] = useState(['']);
   const [chosenSuc, setChosenSuc] = useState('');
   const [showOtherSuc, setShowOtherSuc] = useState(false);
@@ -223,26 +216,23 @@ export default function SubmitPage() {
   const [userPayments, setUserPayments] = useState([]);
   const [selectedSubmission, setSelectedSubmission] = useState(null);
 
-  // File viewer modal state
   const [viewerModal, setViewerModal] = useState({
     isOpen: false,
     fileUrl: '',
-    fileType: '', // 'abstract' | 'endorsement'
+    fileType: '',
     title: ''
   });
 
-  // Accordion state
-  const [openSections, setOpenSections] = useState([1]); // 1 is open by default
+  const [openSections, setOpenSections] = useState([1]);
 
   const toggleSection = (sectionId) => {
-    setOpenSections(prev => 
-      prev.includes(sectionId) 
+    setOpenSections(prev =>
+      prev.includes(sectionId)
         ? prev.filter(id => id !== sectionId)
         : [...prev, sectionId]
     );
   };
 
-  // Open file viewer modal
   const openFileViewer = (fileUrl, fileType, title) => {
     if (!fileUrl) return;
     setViewerModal({
@@ -253,7 +243,6 @@ export default function SubmitPage() {
     });
   };
 
-  // Close file viewer modal
   const closeFileViewer = () => {
     setViewerModal({
       isOpen: false,
@@ -266,27 +255,20 @@ export default function SubmitPage() {
   useEffect(() => {
     const fetchSUCs = async () => {
       try {
-        console.log('Fetching SUCs...');
         const response = await fetch(`${API_URL}/api/sucs`);
-        
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
         const data = await response.json();
-        console.log('SUCs fetched:', data.length, 'items');
-        
         if (Array.isArray(data)) {
           const sanitizedData = data.map((suc) => ({
             ...suc,
             region: suc.region || 'Unknown Region',
             name: suc.name || 'Unknown SUC'
           }));
-          
           setSucList(sanitizedData);
           setFilteredSucList(sanitizedData);
         } else {
-          console.error('Unexpected data format:', data);
           setSucList([]);
           setFilteredSucList([]);
         }
@@ -298,11 +280,10 @@ export default function SubmitPage() {
         setIsLoadingSucs(false);
       }
     };
-    
+
     fetchSUCs();
   }, []);
 
-  // Check if user is logged in - simply check localStorage for user data
   useEffect(() => {
     const userData = localStorage.getItem('pemnet_user');
     if (!userData) {
@@ -328,8 +309,6 @@ export default function SubmitPage() {
       if (response.ok) {
         const data = await response.json();
         setUserSubmissions(data);
-      } else {
-        console.error('Failed to fetch user submissions');
       }
     } catch (error) {
       console.error('Error fetching user submissions:', error);
@@ -350,7 +329,6 @@ export default function SubmitPage() {
     }
   };
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -361,12 +339,11 @@ export default function SubmitPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Filter SUCs based on search term
   useEffect(() => {
     if (searchTerm.trim() === '') {
       setFilteredSucList(sucList);
     } else {
-      const filtered = sucList.filter(suc => 
+      const filtered = sucList.filter(suc =>
         suc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (suc.abbreviation && suc.abbreviation.toLowerCase().includes(searchTerm.toLowerCase())) ||
         suc.region.toLowerCase().includes(searchTerm.toLowerCase())
@@ -398,12 +375,12 @@ export default function SubmitPage() {
       showToast('Please select a payment proof file', 'error');
       return;
     }
-    
+
     setIsUploadingPayment(true);
-    
+
     try {
       const userData = JSON.parse(localStorage.getItem('pemnet_user'));
-      
+
       const formData = new FormData();
       formData.append('user_id', userData.id);
       formData.append('submission_id', selectedSubmission.id);
@@ -411,12 +388,12 @@ export default function SubmitPage() {
       formData.append('payment_amount', paymentAmount);
       formData.append('payment_date', paymentDate);
       formData.append('payment_proof', paymentFile);
-      
+
       const response = await fetch(`${API_URL}/api/payments/upload`, {
         method: 'POST',
         body: formData
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         showToast('Payment proof uploaded successfully!', 'success');
@@ -495,7 +472,6 @@ export default function SubmitPage() {
     setError('');
     setToast(null);
 
-    // Check if user exists in localStorage
     const userData = localStorage.getItem('pemnet_user');
     if (!userData) {
       const errorMsg = 'You are not logged in. Please login again.';
@@ -538,9 +514,9 @@ export default function SubmitPage() {
 
     const formData = new FormData(e.target);
     const filteredCoAuthors = coAuthors.filter(c => c.trim() !== '');
-    
+
     let finalSuc = chosenSuc;
-    
+
     if (showOtherSuc) {
       finalSuc = otherSucName.trim();
       if (!finalSuc) {
@@ -560,7 +536,6 @@ export default function SubmitPage() {
       return;
     }
 
-    // Check if the SUC exists in the database, if not, add it
     const existingSuc = sucList.find(s => s.name.toLowerCase() === finalSuc.toLowerCase());
     if (!existingSuc && showOtherSuc) {
       try {
@@ -585,7 +560,6 @@ export default function SubmitPage() {
       }
     }
 
-    // Build FormData for submission
     const submitData = new FormData();
 
     submitData.append('user_id', parsedUser.id);
@@ -624,27 +598,15 @@ export default function SubmitPage() {
     const safeEndorsementFile = new File([endorsementFile], safeEndorsementName, { type: 'application/pdf' });
     submitData.append('endorsement_file', safeEndorsementFile);
 
-    console.log('Submitting data with user_id:', parsedUser.id);
-    for (let pair of submitData.entries()) {
-      if (pair[0].includes('file')) {
-        console.log(pair[0] + ': ' + (pair[1]?.name || 'No file'));
-      } else {
-        console.log(pair[0] + ': ' + pair[1]);
-      }
-    }
-
     try {
       const res = await fetch(`${API_URL}/api/submit`, {
         method: 'POST',
         body: submitData,
       });
 
-      console.log('Response status:', res.status);
-      
       let data;
       const text = await res.text();
-      console.log('Response text:', text);
-      
+
       try {
         data = JSON.parse(text);
       } catch (parseError) {
@@ -653,7 +615,6 @@ export default function SubmitPage() {
       }
 
       if (res.ok) {
-        console.log('Submission successful:', data);
         showToast('Abstract submitted successfully!', 'success');
         setAbstractFile(null);
         setEndorsementFile(null);
@@ -665,14 +626,13 @@ export default function SubmitPage() {
           setActiveTab('my-submissions');
         }, 1000);
       } else {
-        console.error('Submission failed:', data);
         const errorMsg = data.detail || data.error || data.msg || 'Submission failed. Please try again.';
         setError(errorMsg);
         showToast(errorMsg, 'error');
       }
     } catch (err) {
       console.error('Submission network error:', err);
-      const errorMsg = err.message || 'Network error. Is the backend running on port 5000?';
+      const errorMsg = err.message || 'Network error. Is the backend running?';
       setError(errorMsg);
       showToast(errorMsg, 'error');
     } finally {
@@ -792,7 +752,6 @@ export default function SubmitPage() {
                 </div>
               </div>
 
-              {/* Integrated Payment Section */}
               <div className="mt-4 pt-4 border-t border-slate-100">
                 <div className="flex items-center gap-2 mb-2">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-slate-500">
@@ -809,21 +768,21 @@ export default function SubmitPage() {
                     Payment available once your submission is accepted.
                   </div>
                 ) : existingPayment ? (
-                   <div className={`p-3 rounded-lg border text-sm ${
-                     existingPayment.payment_status === 'verified' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' :
-                     existingPayment.payment_status === 'rejected' ? 'bg-red-50 border-red-200 text-red-700' :
-                     'bg-yellow-50 border-yellow-200 text-yellow-700'
-                   }`}>
-                     <div className="flex items-center justify-between">
-                       <span>Status: <strong>{existingPayment.payment_status.toUpperCase()}</strong></span>
-                       {existingPayment.payment_proof_view_url && (
-                         <a href={existingPayment.payment_proof_view_url} target="_blank" rel="noopener noreferrer" className="underline font-medium">View Proof</a>
-                       )}
-                     </div>
-                     {existingPayment.payment_status === 'rejected' && existingPayment.rejection_reason && (
-                       <p className="text-xs mt-1">Reason: {existingPayment.rejection_reason}</p>
-                     )}
-                   </div>
+                  <div className={`p-3 rounded-lg border text-sm ${
+                    existingPayment.payment_status === 'verified' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' :
+                    existingPayment.payment_status === 'rejected' ? 'bg-red-50 border-red-200 text-red-700' :
+                    'bg-yellow-50 border-yellow-200 text-yellow-700'
+                  }`}>
+                    <div className="flex items-center justify-between">
+                      <span>Status: <strong>{existingPayment.payment_status.toUpperCase()}</strong></span>
+                      {existingPayment.payment_proof_view_url && (
+                        <a href={existingPayment.payment_proof_view_url} target="_blank" rel="noopener noreferrer" className="underline font-medium">View Proof</a>
+                      )}
+                    </div>
+                    {existingPayment.payment_status === 'rejected' && existingPayment.rejection_reason && (
+                      <p className="text-xs mt-1">Reason: {existingPayment.rejection_reason}</p>
+                    )}
+                  </div>
                 ) : (
                   <form onSubmit={handlePaymentUpload} className="bg-slate-50 p-4 rounded-lg border border-slate-200 space-y-3">
                     <p className="text-xs text-slate-500 mb-2">Please provide your payment details or upload proof of payment.</p>
@@ -856,7 +815,7 @@ export default function SubmitPage() {
                           type="date"
                           value={paymentDate}
                           onChange={(e) => setPaymentDate(e.target.value)}
-                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none [&::-webkit-datetime-edit]:text-slate-500 [&::-webkit-datetime-edit-fields-wrapper]:text-slate-500 [&::-webkit-calendar-picker-indicator]:opacity-60"
+                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                           required
                         />
                       </div>
@@ -902,17 +861,15 @@ export default function SubmitPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
-      {/* Toast Notification */}
+    <div className="min-h-screen bg-slate-50 flex flex-col">
       {toast && (
-        <Toast 
-          message={toast.message} 
-          type={toast.type} 
-          onClose={hideToast} 
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={hideToast}
         />
       )}
 
-      {/* File Viewer Modal */}
       <FileViewerModal
         isOpen={viewerModal.isOpen}
         onClose={closeFileViewer}
@@ -921,130 +878,93 @@ export default function SubmitPage() {
         title={viewerModal.title}
       />
 
-      {/* --- SIDEBAR --- */}
-      <aside className="w-64 bg-white border-r border-slate-100 hidden md:flex flex-col sticky top-0 h-screen">
-        <div className="p-6 border-b border-slate-100 flex items-center gap-3">
-          <div className="w-10 h-10 bg-linear-to-br from-blue-50 to-emerald-50 rounded-xl p-1.5 flex items-center justify-center">
-            <img src="/images/pemnet_logo.png" alt="PEMNet Logo" width={32} height={32} className="object-contain" />
+      {/* --- TOP NAVBAR --- */}
+      <header className="bg-white border-b border-slate-100 sticky top-0 z-40">
+        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-linear-to-br from-blue-50 to-emerald-50 rounded-xl p-1.5 flex items-center justify-center">
+              <img src="/images/pemnet_logo.png" alt="PEMNet Logo" width={32} height={32} className="object-contain" />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold text-slate-900 leading-tight">PEMNet</h1>
+              <p className="text-[10px] text-slate-500 leading-tight hidden sm:block">Philippine Extension and Management Network</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-lg font-bold text-slate-900 leading-tight">PEMNet</h1>
-            <p className="text-[10px] text-slate-500 leading-tight">Philippine Extension and<br/>Management Network</p>
-          </div>
-        </div>
 
-        <nav className="flex-1 p-4 space-y-1">
-          <button
-            onClick={() => setActiveTab('home')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition ${
-              activeTab === 'home' 
-                ? 'bg-blue-50 text-blue-700' 
-                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-            }`}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
-            </svg>
-            Home
-          </button>
-          <button
-            onClick={() => setActiveTab('submit')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition ${
-              activeTab === 'submit' 
-                ? 'bg-blue-50 text-blue-700' 
-                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-            }`}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-            </svg>
-            Submit Abstract
-          </button>
-          <button
-            onClick={() => {
-              setActiveTab('my-submissions');
-              fetchUserSubmissions(user.id);
-            }}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition ${
-              activeTab === 'my-submissions' 
-                ? 'bg-blue-50 text-blue-700' 
-                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-            }`}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
-            </svg>
-            My Submissions
-          </button>
-        </nav>
-      </aside>
-
-      {/* --- MAIN CONTENT --- */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Top Header */}
-        <header className="bg-white border-b border-slate-100 sticky top-0 z-40 px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3 md:hidden">
-             <img src="/images/pemnet_logo.png" alt="PEMNet Logo" width={32} height={32} className="object-contain" />
-             <h1 className="text-xl font-bold text-slate-900">PEMNet</h1>
-          </div>
-          <div className="hidden md:block"></div> {/* Spacer for desktop */}
-          
           <div className="flex items-center gap-4">
-            <span className="text-sm text-slate-600">Welcome, {user.full_name}</span>
-            <Link href="/login" className="inline-flex items-center gap-2 text-red-600 hover:text-red-700 font-medium text-sm transition-all hover:bg-red-50 px-4 py-2 rounded-xl">
+            <span className="text-sm text-slate-600 hidden sm:inline">Welcome, {user.full_name}</span>
+            <button
+              onClick={() => {
+                localStorage.removeItem('pemnet_user');
+                window.location.href = '/login';
+              }}
+              className="inline-flex items-center gap-2 text-red-600 hover:text-red-700 font-medium text-sm transition-all hover:bg-red-50 px-4 py-2 rounded-xl"
+            >
               <FontAwesomeIcon icon={faSignOutAlt} className="w-4 h-4" />
               Logout
-            </Link>
+            </button>
           </div>
-        </header>
+        </div>
+      </header>
 
-        {/* Content Area */}
-        <main className="flex-1 p-6 overflow-y-auto">
+      {/* --- MAIN CONTENT --- */}
+      <main className="flex-1 p-6">
+        <div className="max-w-5xl mx-auto">
+
           {activeTab === 'home' && (
-             <div className="max-w-4xl mx-auto">
-               <div className="bg-gradient-to-r from-blue-500 to-emerald-500 rounded-2xl p-8 text-white mb-8 relative overflow-hidden">
-                 <div className="relative z-10">
-                   <h1 className="text-4xl font-bold mb-2">Welcome to PEMNet</h1>
-                   <p className="text-lg text-white/90">Manage your extension project abstracts and conference submissions.</p>
-                 </div>
-                 <div className="absolute right-0 bottom-0 opacity-10">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-64 h-64 -mb-10 -mr-10">
-                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+            <div className="max-w-4xl mx-auto">
+              <div className="bg-gradient-to-r from-blue-500 to-emerald-500 rounded-2xl p-8 text-white mb-8 relative overflow-hidden">
+                <div className="relative z-10">
+                  <h1 className="text-4xl font-bold mb-2">Welcome to PEMNet</h1>
+                  <p className="text-lg text-white/90">Manage your extension project abstracts and conference submissions.</p>
+                </div>
+                <div className="absolute right-0 bottom-0 opacity-10">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-64 h-64 -mb-10 -mr-10">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+                  </svg>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <button onClick={() => setActiveTab('submit')} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition text-left group">
+                  <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-4 group-hover:bg-blue-200 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-blue-600">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                     </svg>
-                 </div>
-               </div>
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900 mb-1">Submit Abstract</h3>
+                  <p className="text-sm text-slate-500">Create and submit your extension project abstract for review.</p>
+                </button>
 
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                 {/* Card 1 - Submit Abstract */}
-                 <button onClick={() => setActiveTab('submit')} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition text-left group">
-                   <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-4 group-hover:bg-blue-200 transition">
-                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-blue-600">
-                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                     </svg>
-                   </div>
-                   <h3 className="text-lg font-bold text-slate-900 mb-1">Submit Abstract</h3>
-                   <p className="text-sm text-slate-500">Create and submit your extension project abstract for review.</p>
-                 </button>
-
-                 {/* Card 2 - My Submissions */}
-                 <button onClick={() => { setActiveTab('my-submissions'); fetchUserSubmissions(user.id); }} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition text-left group">
-                   <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center mb-4 group-hover:bg-emerald-200 transition">
-                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-emerald-600">
-                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
-                     </svg>
-                   </div>
-                   <h3 className="text-lg font-bold text-slate-900 mb-1">My Submissions</h3>
-                   <p className="text-sm text-slate-500">View and track your submitted abstracts and their status.</p>
-                 </button>
-               </div>
-             </div>
+                <button onClick={() => { setActiveTab('my-submissions'); fetchUserSubmissions(user.id); }} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition text-left group">
+                  <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center mb-4 group-hover:bg-emerald-200 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-emerald-600">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900 mb-1">My Submissions</h3>
+                  <p className="text-sm text-slate-500">View and track your submitted abstracts and their status.</p>
+                </button>
+              </div>
+            </div>
           )}
 
           {activeTab === 'submit' && (
             <div className="max-w-4xl mx-auto">
-              <div className="mb-6">
-                <h1 className="text-2xl font-bold text-slate-900">Submit Abstract</h1>
-                <p className="text-slate-500 text-sm mt-1">Fill out the required information for your extension project abstract.</p>
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h1 className="text-2xl font-bold text-slate-900">Submit Abstract</h1>
+                  <p className="text-slate-500 text-sm mt-1">Fill out the required information for your extension project abstract.</p>
+                </div>
+                <button
+                  onClick={() => setActiveTab('home')}
+                  className="text-slate-600 hover:text-slate-900 font-semibold text-sm inline-flex items-center gap-1 transition bg-slate-100 px-4 py-2 rounded-xl"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+                  </svg>
+                  Back to Home
+                </button>
               </div>
 
               {error && !toast && (
@@ -1057,8 +977,6 @@ export default function SubmitPage() {
               )}
 
               <form onSubmit={handleSubmit} className="space-y-4">
-                
-                {/* Section 1: Project Information */}
                 <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
                   <button
                     type="button"
@@ -1075,15 +993,15 @@ export default function SubmitPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
                     </svg>
                   </button>
-                  
+
                   {openSections.includes(1) && (
                     <div className="p-6 border-t border-slate-100 space-y-5">
                       <div>
                         <label className="block text-sm font-semibold text-slate-700 mb-1.5">Project Title <span className="text-red-500">*</span></label>
-                        <input 
-                          name="title" 
-                          type="text" 
-                          required 
+                        <input
+                          name="title"
+                          type="text"
+                          required
                           placeholder="Enter your project title"
                           className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
                         />
@@ -1092,9 +1010,9 @@ export default function SubmitPage() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div>
                           <label className="block text-sm font-semibold text-slate-700 mb-1.5">Thematic Area <span className="text-red-500">*</span></label>
-                          <select 
-                            name="thematicArea" 
-                            required 
+                          <select
+                            name="thematicArea"
+                            required
                             className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
                           >
                             <option value="">Select thematic area</option>
@@ -1106,9 +1024,9 @@ export default function SubmitPage() {
 
                         <div>
                           <label className="block text-sm font-semibold text-slate-700 mb-1.5">Paper Category <span className="text-red-500">*</span></label>
-                          <select 
-                            name="paperCategory" 
-                            required 
+                          <select
+                            name="paperCategory"
+                            required
                             className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
                           >
                             <option value="">Select category</option>
@@ -1121,7 +1039,7 @@ export default function SubmitPage() {
 
                       <div ref={dropdownRef}>
                         <label className="block text-sm font-semibold text-slate-700 mb-1.5">SUC / Agency <span className="text-red-500">*</span></label>
-                        
+
                         {!showOtherSuc ? (
                           <div className="relative">
                             <div className="relative">
@@ -1161,7 +1079,7 @@ export default function SubmitPage() {
                                   ))
                                 ) : (
                                   <div className="px-4 py-3 text-sm text-slate-500">
-                                    No SUCs found. 
+                                    No SUCs found.
                                     <button
                                       type="button"
                                       onClick={handleAddOther}
@@ -1237,7 +1155,6 @@ export default function SubmitPage() {
                   )}
                 </div>
 
-                {/* Section 2: Author Information */}
                 <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
                   <button
                     type="button"
@@ -1254,16 +1171,16 @@ export default function SubmitPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
                     </svg>
                   </button>
-                  
+
                   {openSections.includes(2) && (
                     <div className="p-6 border-t border-slate-100 space-y-5">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div>
                           <label className="block text-sm font-semibold text-slate-700 mb-1.5">Project Leader <span className="text-red-500">*</span></label>
-                          <input 
-                            name="project_leader" 
-                            type="text" 
-                            required 
+                          <input
+                            name="project_leader"
+                            type="text"
+                            required
                             placeholder="Project Leader Name"
                             className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
                           />
@@ -1271,10 +1188,10 @@ export default function SubmitPage() {
 
                         <div>
                           <label className="block text-sm font-semibold text-slate-700 mb-1.5">Paper Presenter <span className="text-red-500">*</span></label>
-                          <input 
-                            name="presenter" 
-                            type="text" 
-                            required 
+                          <input
+                            name="presenter"
+                            type="text"
+                            required
                             placeholder="Presenter Name"
                             className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
                           />
@@ -1282,9 +1199,9 @@ export default function SubmitPage() {
 
                         <div>
                           <label className="block text-sm font-semibold text-slate-700 mb-1.5">Corresponding Author Name</label>
-                          <input 
-                            name="correspondingAuthorName" 
-                            type="text" 
+                          <input
+                            name="correspondingAuthorName"
+                            type="text"
                             placeholder="Corresponding Author Name"
                             className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
                           />
@@ -1292,19 +1209,19 @@ export default function SubmitPage() {
 
                         <div>
                           <label className="block text-sm font-semibold text-slate-700 mb-1.5">Corresponding Author Position/Designation</label>
-                          <input 
-                            name="correspondingAuthorPosition" 
-                            type="text" 
-                            placeholder="e.g., Professor, Research Director, Extension Coordinator"
+                          <input
+                            name="correspondingAuthorPosition"
+                            type="text"
+                            placeholder="e.g., Professor, Research Director"
                             className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
                           />
                         </div>
 
                         <div>
                           <label className="block text-sm font-semibold text-slate-700 mb-1.5">Corresponding Author Email</label>
-                          <input 
-                            name="correspondingAuthorEmail" 
-                            type="email" 
+                          <input
+                            name="correspondingAuthorEmail"
+                            type="email"
                             placeholder="corresponding@email.com"
                             className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
                           />
@@ -1318,19 +1235,19 @@ export default function SubmitPage() {
                             {coAuthors.length} {coAuthors.length === 1 ? 'Author' : 'Authors'}
                           </span>
                         </div>
-                        
+
                         <div className="flex flex-wrap gap-2">
                           {coAuthors.map((author, index) => (
-                            <div 
-                              key={index} 
+                            <div
+                              key={index}
                               className="flex items-center gap-1.5 px-3 h-10 bg-slate-50 border border-slate-200 rounded-xl transition-colors hover:border-blue-300 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20"
                             >
                               <span className="text-xs font-bold text-blue-600">
                                 {index + 1}.
                               </span>
-                              
-                              <input 
-                                type="text" 
+
+                              <input
+                                type="text"
                                 value={author}
                                 onChange={(e) => handleCoAuthorChange(index, e.target.value)}
                                 placeholder={`Author ${index + 1}`}
@@ -1338,8 +1255,8 @@ export default function SubmitPage() {
                               />
 
                               {coAuthors.length > 1 && (
-                                <button 
-                                  type="button" 
+                                <button
+                                  type="button"
                                   onClick={() => removeCoAuthor(index)}
                                   className="w-5 h-5 shrink-0 flex items-center justify-center rounded-full text-slate-300 hover:text-red-500 hover:bg-red-50 transition"
                                   title="Remove"
@@ -1353,8 +1270,8 @@ export default function SubmitPage() {
                           ))}
                         </div>
 
-                        <button 
-                          type="button" 
+                        <button
+                          type="button"
                           onClick={addCoAuthor}
                           className="mt-3 inline-flex items-center gap-2 px-4 h-10 rounded-xl border-2 border-dashed border-blue-300 text-blue-600 font-semibold text-sm hover:border-blue-500 hover:bg-blue-50 transition"
                         >
@@ -1368,7 +1285,6 @@ export default function SubmitPage() {
                   )}
                 </div>
 
-                {/* Section 3: File Uploads */}
                 <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
                   <button
                     type="button"
@@ -1385,7 +1301,7 @@ export default function SubmitPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
                     </svg>
                   </button>
-                  
+
                   {openSections.includes(3) && (
                     <div className="p-6 border-t border-slate-100 space-y-5">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -1396,10 +1312,10 @@ export default function SubmitPage() {
                             </svg>
                           </div>
                           <label className="block text-sm font-semibold text-slate-700 mb-2">Abstract PDF <span className="text-red-500">*</span></label>
-                          <input 
-                            type="file" 
-                            accept=".pdf" 
-                            required 
+                          <input
+                            type="file"
+                            accept=".pdf"
+                            required
                             onChange={(e) => setAbstractFile(e.target.files[0])}
                             className="w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-5 file:rounded-xl file:border-0 file:bg-blue-700 file:text-white file:font-semibold hover:file:bg-blue-800 cursor-pointer transition"
                           />
@@ -1414,10 +1330,10 @@ export default function SubmitPage() {
                             </svg>
                           </div>
                           <label className="block text-sm font-semibold text-slate-700 mb-2">Endorsement PDF <span className="text-red-500">*</span></label>
-                          <input 
-                            type="file" 
-                            accept=".pdf" 
-                            required 
+                          <input
+                            type="file"
+                            accept=".pdf"
+                            required
                             onChange={(e) => setEndorsementFile(e.target.files[0])}
                             className="w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-5 file:rounded-xl file:border-0 file:bg-emerald-600 file:text-white file:font-semibold hover:file:bg-emerald-700 cursor-pointer transition"
                           />
@@ -1430,10 +1346,9 @@ export default function SubmitPage() {
                   )}
                 </div>
 
-                {/* Submit Button */}
                 <div className="pt-4">
-                  <button 
-                    type="submit" 
+                  <button
+                    type="submit"
                     disabled={submitting || loading}
                     className="w-full bg-linear-to-r from-blue-700 to-blue-800 text-white py-4 rounded-xl font-bold text-lg hover:from-blue-800 hover:to-blue-900 transition shadow-lg shadow-blue-700/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
@@ -1454,18 +1369,29 @@ export default function SubmitPage() {
                   <h1 className="text-2xl font-bold text-slate-900">My Submissions</h1>
                   <p className="text-slate-500 text-sm mt-1">View and manage your submitted abstracts and payment status.</p>
                 </div>
-                <button
-                  onClick={() => {
-                    setActiveTab('submit');
-                    fetchUserSubmissions(user.id);
-                  }}
-                  className="text-blue-600 hover:text-blue-700 font-semibold text-sm inline-flex items-center gap-1 transition bg-blue-50 px-4 py-2 rounded-xl"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                  </svg>
-                  Submit New Abstract
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setActiveTab('home')}
+                    className="text-slate-600 hover:text-slate-900 font-semibold text-sm inline-flex items-center gap-1 transition bg-slate-100 px-4 py-2 rounded-xl"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+                    </svg>
+                    Back to Home
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveTab('submit');
+                      fetchUserSubmissions(user.id);
+                    }}
+                    className="text-blue-600 hover:text-blue-700 font-semibold text-sm inline-flex items-center gap-1 transition bg-blue-50 px-4 py-2 rounded-xl"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                    Submit New Abstract
+                  </button>
+                </div>
               </div>
 
               <div className="mt-4">
@@ -1473,10 +1399,9 @@ export default function SubmitPage() {
               </div>
             </div>
           )}
-        </main>
-      </div>
+        </div>
+      </main>
 
-      {/* Tailwind animations */}
       <style jsx>{`
         @keyframes slideIn {
           from {

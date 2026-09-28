@@ -3,43 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-  faCheckCircle,
-  faTimesCircle,
-  faClock,
-  faFileAlt,
-  faEnvelope,
-  faSearch,
-  faFilter,
-  faSync,
-  faUserCircle,
-  faSignOutAlt,
-  faGavel,
-  faInfoCircle,
-  faFolderOpen,
-  faInbox,
-  faSpinner,
-  faEye,
-  faFilePdf,
-  faCalendarAlt,
-  faTag,
-  faUser,
-  faSchool,
-  faFlag,
-  faExclamationTriangle,
-  faWarning,
-  faPaperPlane,
-  faComment,
-  faThumbsUp,
-  faThumbsDown,
-  faArrowDown,
-  faUsers,
-  faBookOpen,
-  faLayerGroup,
-  faCertificate,
-  faEdit,
-  faHistory
-} from '@fortawesome/free-solid-svg-icons';
+import { faCheckCircle, faTimesCircle, faClock, faFileAlt, faEnvelope, faSearch, faFilter, faSync, faUserCircle, faSignOutAlt, faGavel, faInfoCircle, faFolderOpen, faInbox, faSpinner, faFilePdf, faCalendarAlt, faTag, faUser, faSchool, faFlag, faExclamationTriangle, faThumbsUp, faThumbsDown, faArrowDown, faUsers, faBookOpen, faLayerGroup, faEdit,  faHistory} from '@fortawesome/free-solid-svg-icons';
 import ConfirmModal from '../components/ConfirmModal';
 import DowngradeModal from '../components/DowngradeModal';
 import EditSubmission from '../components/EditSubmission';
@@ -48,6 +12,73 @@ import ViewHistory from '../components/ViewHistory';
 import DecisionSummary from '../components/DecisionSummary';
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL).replace(/\/+$/, '');
+
+// ---------- Reusable modal sub-components ----------
+function SectionTitle({ icon, color = 'slate', label }) {
+  const colorMap = {
+    indigo:  'text-indigo-600 bg-indigo-50 border-indigo-100',
+    blue:    'text-blue-600 bg-blue-50 border-blue-100',
+    emerald: 'text-emerald-600 bg-emerald-50 border-emerald-100',
+    purple:  'text-purple-600 bg-purple-50 border-purple-100',
+    slate:   'text-slate-600 bg-slate-100 border-slate-200',
+  };
+  const cls = colorMap[color] || colorMap.slate;
+  return (
+    <div className="flex items-center gap-2.5 mb-4">
+      <span className={`w-8 h-8 rounded-lg flex items-center justify-center border ${cls}`}>
+        <FontAwesomeIcon icon={icon} className="w-3.5 h-3.5" />
+      </span>
+      <h4 className="text-xs font-bold uppercase tracking-widest text-slate-600">
+        {label}
+      </h4>
+      <span className="flex-1 h-px bg-slate-200" />
+    </div>
+  );
+}
+
+function Label({ children }) {
+  return (
+    <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
+      {children}
+    </p>
+  );
+}
+
+function InfoCard({ label, value, span = 1, emphasis = false, mono = false, badgeClass = null }) {
+  const colSpan = span === 2 ? 'md:col-span-2' : '';
+  return (
+    <div className={`${colSpan} bg-slate-50 rounded-xl border border-slate-200 p-4 hover:bg-white hover:border-slate-300 transition`}>
+      <Label>{label}</Label>
+      {badgeClass ? (
+        <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${badgeClass}`}>
+          {value}
+        </span>
+      ) : (
+        <p className={`${
+          emphasis ? 'text-base font-bold text-slate-900' : 'text-sm font-semibold text-slate-700'
+        } ${mono ? 'font-mono text-[13px] break-all' : ''} leading-relaxed`}>
+          {value || 'Not specified'}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function VoteStat({ label, value, color = 'slate' }) {
+  const colorMap = {
+    emerald: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+    orange:  'bg-orange-50 text-orange-700 border-orange-100',
+    blue:    'bg-blue-50 text-blue-700 border-blue-100',
+    slate:   'bg-slate-50 text-slate-700 border-slate-100',
+  };
+  const cls = colorMap[color] || colorMap.slate;
+  return (
+    <div className={`p-4 rounded-xl border text-center ${cls}`}>
+      <p className="text-2xl font-bold">{value}</p>
+      <p className="text-[11px] font-semibold uppercase tracking-wider opacity-80 mt-0.5">{label}</p>
+    </div>
+  );
+}
 
 export default function MasterReviewPage() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -856,132 +887,166 @@ export default function MasterReviewPage() {
       {/* Details Modal */}
       {isModalOpen && selectedSubmission && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsModalOpen(false)}></div>
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity"
+            onClick={() => setIsModalOpen(false)}
+          ></div>
+
           <div className="relative min-h-full flex items-center justify-center p-4">
-            <div className="relative w-full max-w-6xl bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[95vh]">
-              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-linear-to-r from-purple-50 to-blue-50 sticky top-0 z-10">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <FontAwesomeIcon icon={faFileAlt} className="w-5 h-5 text-purple-600" />
+            <div className="relative w-full max-w-7xl bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden max-h-[95vh] flex flex-col">
+
+              {/* ================= HEADER ================= */}
+              <div className="bg-white border-b border-slate-200 sticky top-0 z-20">
+                {/* thin accent bar */}
+                <div className="h-1 w-full bg-gradient-to-r from-indigo-400 via-purple-400 to-blue-400" />
+
+                <div className="px-8 py-5 flex items-start justify-between gap-6">
+                  <div className="flex items-start gap-4 min-w-0 flex-1">
+                    <div className="w-12 h-12 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center shrink-0">
+                      <FontAwesomeIcon
+                        icon={activeTab === 'system' ? faFileAlt : faEnvelope}
+                        className="w-5 h-5 text-indigo-600"
+                      />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">
+                          {activeTab === 'system' ? 'System Submission' : 'Email Submission'}
+                        </span>
+                        <span className="w-1 h-1 rounded-full bg-slate-300" />
+                        <span className={`inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide border ${
+                          isEndorsed(selectedSubmission.status)
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            : isPending(selectedSubmission.status)
+                              ? 'bg-amber-50 text-amber-700 border-amber-200'
+                              : 'bg-slate-100 text-slate-600 border-slate-200'
+                        }`}>
+                          {getStatusDisplay(selectedSubmission.status || 'pending')}
+                        </span>
+                      </div>
+                      <h3 className="text-lg font-bold text-slate-900 leading-snug line-clamp-2">
+                        {getField('title')}
+                      </h3>
+                      <p className="text-sm text-slate-500 mt-0.5 truncate">
+                        {getField('projectLeader')}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-slate-900">
-                      {activeTab === 'system' ? 'Submission Details' : 'Email Details'}
-                    </h3>
-                    <p className="text-sm text-slate-500 truncate max-w-md">{getField('title')}</p>
+
+                  <div className="flex items-center gap-3 shrink-0">
+                    {getEmailStatusBadge()}
+                    <button
+                      onClick={() => setIsModalOpen(false)}
+                      aria-label="Close"
+                      className="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 transition"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  {getEmailStatusBadge()}
+
+                {/* Quick-action toolbar */}
+                <div className="px-8 pb-4 flex flex-wrap items-center gap-2">
                   <button
-                    onClick={() => setIsModalOpen(false)}
-                    className="w-10 h-10 flex items-center justify-center rounded-lg bg-white text-slate-600 hover:bg-slate-100 transition shadow-sm"
+                    onClick={() => setShowHistoryModal(true)}
+                    className="inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                    <FontAwesomeIcon icon={faHistory} className="w-3.5 h-3.5" />
+                    View History
                   </button>
+                  <button
+                    onClick={() => setShowEditModal(true)}
+                    disabled={!selectedSubmission}
+                    className="inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-100 transition disabled:opacity-50"
+                  >
+                    <FontAwesomeIcon icon={faEdit} className="w-3.5 h-3.5" />
+                    Edit Details
+                  </button>
+                  {activeTab === 'email' && emailExtractedData && (
+                    <span className="ml-auto text-[11px] text-slate-400 italic">
+                      Use Edit to correct any extracted field before final decision
+                    </span>
+                  )}
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 h-[calc(95vh-80px)]">
-                {/* Left Column - Submission Information */}
-                <div className="p-6 overflow-y-auto border-r border-slate-200">
-                  <div className="flex items-center justify-between mb-4">
-                    <h4 className="text-base font-bold text-slate-700 uppercase">Submission Information</h4>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => setShowHistoryModal(true)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-all font-medium"
-                      >
-                        <FontAwesomeIcon icon={faHistory} className="w-3 h-3" />
-                        View History
-                      </button>
-                      <button
-                        onClick={() => setShowEditModal(true)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-all font-medium"
-                        disabled={!selectedSubmission}
-                      >
-                        <FontAwesomeIcon icon={faEdit} className="w-3 h-3" />
-                        Edit Details
-                      </button>
-                    </div>
-                  </div>
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-sm text-slate-600 font-medium">Title</p>
-                      <p className="text-lg font-semibold text-slate-900">{getField('title')}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-slate-600 font-medium">Project Leader</p>
-                      <p className="text-lg font-semibold text-slate-900">{getField('projectLeader')}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-slate-600 font-medium">Authors</p>
-                      <p className="text-lg font-semibold text-slate-900">{getAuthorsList()}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-slate-600 font-medium">SUC / Agency</p>
-                      <p className="text-lg font-semibold text-slate-900">{getField('suc')}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-slate-600 font-medium">Corresponding Author</p>
-                      <p className="text-lg font-semibold text-slate-900">{getField('correspondingAuthorName')}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-slate-600 font-medium">Corresponding Author Email</p>
-                      <p className="text-lg font-semibold text-slate-900 break-all">{getField('correspondingAuthorEmail')}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-slate-600 font-medium">Corresponding Author Position</p>
-                      <p className="text-lg font-semibold text-slate-900">{getField('correspondingAuthorPos')}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-slate-600 font-medium">Theme</p>
-                      <p className="text-lg font-semibold text-slate-900">{getField('theme')}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-slate-600 font-medium">Paper Category</p>
-                      <span className={`inline-flex px-3 py-1.5 rounded-full text-sm font-medium ${getCategoryColor(getField('paperCategory'))}`}>
-                        {getField('paperCategory')?.includes('Completed') ? 'Completed' :
-                         getField('paperCategory')?.includes('Ongoing') ? 'Ongoing' :
-                         getField('paperCategory') || 'Not specified'}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="text-sm text-slate-600 font-medium">Thematic Area</p>
-                      <p className="text-lg font-semibold text-slate-900">{getField('thematicArea')}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-slate-600 font-medium">Source</p>
-                      <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium ${
-                        activeTab === 'email' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
-                      }`}>
-                        {activeTab === 'email' ? '📧 Email Submission' : '📝 System Submission'}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="text-sm text-slate-600 font-medium">Master Approver Status</p>
-                      <span className={`inline-flex px-3 py-1.5 rounded-full text-sm font-medium ${getStatusColor(selectedSubmission.status || 'pending')}`}>
-                        {getStatusDisplay(selectedSubmission.status || 'pending')}
-                      </span>
-                    </div>
+              {/* ================= BODY ================= */}
+              <div className="grid grid-cols-1 lg:grid-cols-5 flex-1 overflow-hidden min-h-0">
 
-                    <div>
-                      <p className="text-sm text-slate-600 font-medium">Email Notification</p>
+                {/* ---------- LEFT: INFO COLUMN ---------- */}
+                <div className="lg:col-span-3 p-8 overflow-y-auto bg-white">
+
+                  {/* SECTION: Paper Overview */}
+                  <SectionTitle icon={faFileAlt} color="indigo" label="Paper Overview" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                    <InfoCard label="Full Title" value={getField('title')} span={2} emphasis />
+                    <InfoCard
+                      label="Paper Category"
+                      value={
+                        getField('paperCategory')?.includes('Completed') ? 'Completed Extension Project Paper'
+                        : getField('paperCategory')?.includes('Ongoing') ? 'Ongoing Extension Project Paper'
+                        : getField('paperCategory') || 'Not specified'
+                      }
+                      badgeClass={getCategoryColor(getField('paperCategory'))}
+                    />
+                    <InfoCard label="Theme" value={getField('theme')} />
+                    <InfoCard label="Thematic Area" value={getField('thematicArea')} span={2} />
+                  </div>
+
+                  {/* SECTION: Authors & Affiliation */}
+                  <SectionTitle icon={faUsers} color="blue" label="Authors & Affiliation" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                    <InfoCard label="Project Leader" value={getField('projectLeader')} />
+                    <InfoCard label="SUC / Agency" value={getField('suc')} />
+                    <InfoCard label="Authors / Co-Authors" value={getAuthorsList()} span={2} />
+                  </div>
+
+                  {/* SECTION: Corresponding Author */}
+                  <SectionTitle icon={faUserCircle} color="emerald" label="Corresponding Author" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                    <InfoCard label="Full Name" value={getField('correspondingAuthorName')} />
+                    <InfoCard label="Position / Designation" value={getField('correspondingAuthorPos')} />
+                    <InfoCard
+                      label="Email Address"
+                      value={getField('correspondingAuthorEmail')}
+                      span={2}
+                      mono
+                    />
+                  </div>
+
+                  {/* SECTION: Submission Metadata */}
+                  <SectionTitle icon={faInfoCircle} color="slate" label="Submission Metadata" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                    <InfoCard
+                      label="Source"
+                      value={activeTab === 'email' ? 'Email Submission' : 'System Submission'}
+                    />
+                    <InfoCard
+                      label="Master Approver Status"
+                      value={getStatusDisplay(selectedSubmission.status || 'pending')}
+                      badgeClass={getStatusColor(selectedSubmission.status || 'pending')}
+                    />
+                    <div className="md:col-span-2">
+                      <Label>Email Notification Log</Label>
                       {loadingEmailLogs ? (
-                        <span className="inline-flex items-center gap-2 text-sm text-slate-500">
-                          <FontAwesomeIcon icon={faSpinner} className="w-4 h-4 animate-spin" />
-                          Loading...
-                        </span>
+                        <div className="flex items-center gap-2 text-sm text-slate-500 py-3 px-4 bg-slate-50 border border-slate-200 rounded-xl">
+                          <FontAwesomeIcon icon={faSpinner} className="w-4 h-4 animate-spin text-indigo-500" />
+                          Loading email history…
+                        </div>
                       ) : emailLogs.length > 0 ? (
                         <div className="space-y-2">
                           {emailLogs.map((log) => (
-                            <div key={log.id} className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg border border-slate-200 text-sm">
-                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
-                                log.status === 'sent' ? 'bg-emerald-100 text-emerald-700' :
-                                log.status === 'failed' ? 'bg-red-100 text-red-700' :
-                                'bg-yellow-100 text-yellow-700'
+                            <div
+                              key={log.id}
+                              className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200 text-sm"
+                            >
+                              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold ${
+                                log.status === 'sent' ? 'bg-emerald-100 text-emerald-700'
+                                : log.status === 'failed' ? 'bg-red-100 text-red-700'
+                                : 'bg-amber-100 text-amber-700'
                               }`}>
                                 <FontAwesomeIcon
                                   icon={log.status === 'sent' ? faCheckCircle : log.status === 'failed' ? faTimesCircle : faClock}
@@ -989,87 +1054,89 @@ export default function MasterReviewPage() {
                                 />
                                 {log.status === 'sent' ? 'Sent' : log.status === 'failed' ? 'Failed' : 'Pending'}
                               </span>
-                              <span className="text-xs text-slate-500 truncate max-w-37.5">{log.recipient_email}</span>
-                              <span className="text-xs text-slate-400 ml-auto">
+                              <span className="text-xs text-slate-600 truncate flex-1 font-medium">
+                                {log.recipient_email}
+                              </span>
+                              <span className="text-[11px] text-slate-400 whitespace-nowrap">
                                 {log.sent_at ? new Date(log.sent_at).toLocaleString() : 'Not sent'}
                               </span>
                             </div>
                           ))}
                         </div>
                       ) : (
-                        <span className="text-sm text-slate-400">No email sent</span>
+                        <p className="text-sm text-slate-400 py-3 px-4 bg-slate-50 border border-dashed border-slate-200 rounded-xl italic">
+                          No confirmation email has been sent yet.
+                        </p>
                       )}
                     </div>
                   </div>
 
-                  {/* Evaluator Votes */}
+                  {/* SECTION: Evaluator Votes */}
                   {submissionDetails?.votes && submissionDetails.votes.length > 0 && (
-                    <div className="mt-6 pt-6 border-t border-slate-200">
-                      <h4 className="text-base font-bold text-slate-700 uppercase mb-4">
-                        Evaluator Votes ({submissionDetails.votes.length}/3)
-                      </h4>
-                      <div className="space-y-3">
+                    <>
+                      <SectionTitle icon={faUserCircle} color="purple" label={`Evaluator Votes (${submissionDetails.votes.length}/3)`} />
+                      <div className="space-y-3 mb-4">
                         {submissionDetails.votes.map((vote, idx) => (
-                          <div key={idx} className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
-                            <div className="flex justify-between items-center">
-                              <span className="font-semibold text-sm text-slate-900">
-                                <FontAwesomeIcon icon={faUserCircle} className="w-4 h-4 text-slate-400 mr-2" />
+                          <div
+                            key={idx}
+                            className="p-4 bg-slate-50 border border-slate-200 rounded-xl hover:border-slate-300 transition"
+                          >
+                            <div className="flex justify-between items-center gap-3">
+                              <span className="font-semibold text-sm text-slate-800 flex items-center gap-2">
+                                <span className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold">
+                                  {getEvaluatorName(vote.evaluator_id).charAt(0)}
+                                </span>
                                 {getEvaluatorName(vote.evaluator_id)}
                               </span>
-                              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(vote.vote_status)}`}>
+                              <span className={`px-2.5 py-1 rounded-full text-[11px] font-semibold ${getStatusColor(vote.vote_status)}`}>
                                 <FontAwesomeIcon icon={getVoteIcon(vote.vote_status)} className="w-3 h-3 mr-1" />
                                 {vote.vote_status.charAt(0).toUpperCase() + vote.vote_status.slice(1)}
                               </span>
                             </div>
                             {vote.vote_notes && (
-                              <p className="text-sm text-slate-500 mt-2 italic">"{vote.vote_notes}"</p>
+                              <p className="text-sm text-slate-600 mt-3 italic border-l-2 border-slate-300 pl-3">
+                                "{vote.vote_notes}"
+                              </p>
                             )}
                             {vote.vote_reassign_to && (
-                              <p className="text-sm text-blue-600 mt-1">
-                                <FontAwesomeIcon icon={faSync} className="w-3 h-3 mr-1" />
-                                Reassigned to: {vote.vote_reassign_to}
+                              <p className="text-xs text-blue-600 mt-2 flex items-center gap-1.5">
+                                <FontAwesomeIcon icon={faSync} className="w-3 h-3" />
+                                Reassigned to: <strong>{vote.vote_reassign_to}</strong>
                               </p>
                             )}
                             {vote.vote_downgrade_to && (
-                              <p className="text-sm text-orange-600 mt-1">
-                                <FontAwesomeIcon icon={faArrowDown} className="w-3 h-3 mr-1" />
-                                Downgrade type: {vote.vote_downgrade_to}
+                              <p className="text-xs text-orange-600 mt-2 flex items-center gap-1.5">
+                                <FontAwesomeIcon icon={faArrowDown} className="w-3 h-3" />
+                                Downgrade type: <strong>{vote.vote_downgrade_to}</strong>
                               </p>
                             )}
                           </div>
                         ))}
                       </div>
-
-                      <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-                        <div className="bg-emerald-50 p-3 rounded-xl">
-                          <p className="text-2xl font-bold text-emerald-600">{submissionDetails.vote_stats?.endorse || 0}</p>
-                          <p className="text-xs text-slate-500">Endorse</p>
-                        </div>
-                        <div className="bg-orange-50 p-3 rounded-xl">
-                          <p className="text-2xl font-bold text-orange-600">{submissionDetails.vote_stats?.downgrade || 0}</p>
-                          <p className="text-xs text-slate-500">Downgrade</p>
-                        </div>
-                        <div className="bg-blue-50 p-3 rounded-xl">
-                          <p className="text-2xl font-bold text-blue-600">{submissionDetails.vote_stats?.reassign || 0}</p>
-                          <p className="text-xs text-slate-500">Reassign</p>
-                        </div>
+                      <div className="grid grid-cols-3 gap-3 mb-8">
+                        <VoteStat label="Endorse" value={submissionDetails.vote_stats?.endorse || 0} color="emerald" />
+                        <VoteStat label="Downgrade" value={submissionDetails.vote_stats?.downgrade || 0} color="orange" />
+                        <VoteStat label="Reassign" value={submissionDetails.vote_stats?.reassign || 0} color="blue" />
                       </div>
-                    </div>
+                    </>
                   )}
 
-                  {/* Evaluator Discussion Section */}
-                  <div className="mt-6 pt-6 border-t border-slate-200">
+                  {/* SECTION: Discussion */}
+                  <SectionTitle icon={faUsers} color="indigo" label="Evaluator Discussion" />
+                  <div className="mb-8 bg-slate-50 rounded-xl border border-slate-200 p-4">
                     <DiscussionSection
                       submissionId={selectedSubmission?.submission_id}
                       currentUserId={currentUser?.id}
                       currentUserName={currentUser?.full_name}
                       isMasterApprover={true}
-                      title="Evaluator Discussion"
-                      maxHeight="200px"
+                      title=""
+                      maxHeight="240px"
                     />
                   </div>
-                  {/* Decision Summary */}
-                  <div className="mt-6 pt-6 border-t border-slate-200">
+
+                  {/* SECTION: Decision Summary */}
+                  <SectionTitle icon={faGavel} color="blue" label="Decision Summary" />
+                  <div className="mb-8 bg-slate-50 rounded-xl border border-slate-200 p-4">
                     <DecisionSummary
                       submissionStatus={selectedSubmission.status || 'pending'}
                       evaluationStatus={selectedSubmission.evaluation_status || 'pending'}
@@ -1079,28 +1146,36 @@ export default function MasterReviewPage() {
                       showEvaluators={true}
                     />
                   </div>
-                  {/* Master Approver Controls */}
-                  <div className="mt-6 pt-6 border-t-2 border-purple-200">
-                    <h4 className="text-base font-bold text-purple-700 uppercase mb-3 flex items-center gap-2">
-                      <FontAwesomeIcon icon={faGavel} className="w-5 h-5" />
-                      Master Approver Control
-                    </h4>
-                    <p className="text-xs text-slate-500 mb-3">Set the final decision for this abstract</p>
+
+                  {/* SECTION: Master Approver Controls */}
+                  <div className="rounded-xl border border-purple-200 bg-purple-50/40 p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-9 h-9 rounded-lg bg-purple-100 border border-purple-200 flex items-center justify-center">
+                        <FontAwesomeIcon icon={faGavel} className="w-4 h-4 text-purple-700" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-purple-900 uppercase tracking-wide">
+                          Master Approver Decision
+                        </h4>
+                        <p className="text-xs text-purple-700/70">
+                          This action is final and will notify the corresponding author
+                        </p>
+                      </div>
+                    </div>
 
                     <div className="space-y-3">
                       <button
                         onClick={() => confirmStatusChange('endorse')}
                         disabled={selectedSubmission.status === 'endorse'}
-                        className="w-full bg-emerald-600 text-white py-3 rounded-xl font-semibold hover:bg-emerald-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        className="w-full bg-emerald-600 text-white py-3 rounded-lg font-semibold hover:bg-emerald-700 transition shadow-sm hover:shadow disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
                       >
-                        <FontAwesomeIcon icon={faThumbsUp} className="w-5 h-5" />
+                        <FontAwesomeIcon icon={faThumbsUp} className="w-4 h-4" />
                         {getField('paperCategory')?.includes('Ongoing')
                           ? 'Endorse for Non-Competitive Presentation'
                           : 'Endorse for Presentation'}
-                        <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">📧</span>
+                        <span className="text-[10px] bg-white/25 px-2 py-0.5 rounded-full ml-1">📧 Email</span>
                       </button>
 
-                      {/* Downgrade button — ONLY shown for Completed Extension Project Papers */}
                       {getField('paperCategory')?.includes('Completed') && (
                         <button
                           onClick={handleOpenDowngradeModal}
@@ -1109,20 +1184,19 @@ export default function MasterReviewPage() {
                             selectedSubmission.status === 'downgraded-poster_only' ||
                             selectedSubmission.status === 'downgraded'
                           }
-                          className="w-full bg-yellow-500 text-white py-3 rounded-xl font-semibold hover:bg-yellow-600 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                          className="w-full bg-amber-500 text-white py-3 rounded-lg font-semibold hover:bg-amber-600 transition shadow-sm hover:shadow disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
                         >
-                          <FontAwesomeIcon icon={faThumbsDown} className="w-5 h-5" />
-                          Downgrade
+                          <FontAwesomeIcon icon={faThumbsDown} className="w-4 h-4" />
+                          Downgrade Submission
                         </button>
                       )}
 
-                      {/* Informational note for Ongoing papers */}
                       {getField('paperCategory')?.includes('Ongoing') && (
-                        <div className="w-full bg-blue-50 border border-blue-200 text-blue-700 py-3 px-4 rounded-xl text-sm flex items-start gap-2">
+                        <div className="w-full bg-blue-50 border border-blue-200 text-blue-800 py-3 px-4 rounded-lg text-xs flex items-start gap-2">
                           <FontAwesomeIcon icon={faInfoCircle} className="w-4 h-4 mt-0.5 shrink-0" />
                           <span>
-                            Ongoing Extension Project Papers are presented as <strong>non-competitive</strong> entries.
-                            They can only be <strong>Endorsed</strong> — no downgrade action applies.
+                            Ongoing Extension Project Papers are presented as <strong>non-competitive</strong> entries
+                            and can only be <strong>Endorsed</strong>. No downgrade action applies.
                           </span>
                         </div>
                       )}
@@ -1130,19 +1204,31 @@ export default function MasterReviewPage() {
                   </div>
                 </div>
 
-                {/* Right Column - File Viewer */}
-                <div className="bg-slate-50 p-6 overflow-y-auto">
-                  <h4 className="text-base font-bold text-slate-700 uppercase mb-4">File Viewer</h4>
+                {/* ---------- RIGHT: FILE VIEWER ---------- */}
+                <div className="lg:col-span-2 bg-slate-50 p-8 overflow-y-auto border-l border-slate-200">
+                  <SectionTitle icon={faFolderOpen} color="slate" label="Document Preview" />
 
                   {activeTab === 'system' ? (
                     <div className="space-y-6">
                       <div>
-                        <p className="text-sm font-semibold text-slate-700 mb-3">
-                          <FontAwesomeIcon icon={faFilePdf} className="w-4 h-4 text-red-500 mr-2" />
-                          Abstract PDF
-                        </p>
+                        <div className="flex items-center justify-between mb-3">
+                          <p className="text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-2">
+                            <FontAwesomeIcon icon={faFilePdf} className="w-3.5 h-3.5 text-red-500" />
+                            Abstract PDF
+                          </p>
+                          {selectedSubmission.abstract_view_url && (
+                            <a
+                              href={selectedSubmission.abstract_view_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800"
+                            >
+                              Open in new tab ↗
+                            </a>
+                          )}
+                        </div>
                         {selectedSubmission.abstract_view_url ? (
-                          <div className="border rounded-lg bg-white overflow-hidden" style={{ height: '450px' }}>
+                          <div className="border border-slate-200 rounded-xl bg-white overflow-hidden shadow-sm" style={{ height: '480px' }}>
                             <iframe
                               src={`https://drive.google.com/file/d/${extractGoogleDriveId(selectedSubmission.abstract_view_url)}/preview?embedded=true`}
                               className="w-full h-full"
@@ -1150,7 +1236,9 @@ export default function MasterReviewPage() {
                             />
                           </div>
                         ) : (
-                          <div className="text-center py-16 text-slate-500 bg-white rounded-lg border text-lg">No Abstract Available</div>
+                          <div className="text-center py-16 text-slate-500 bg-white rounded-xl border border-dashed border-slate-300 text-sm italic">
+                            No Abstract Available
+                          </div>
                         )}
                       </div>
 
@@ -1158,21 +1246,21 @@ export default function MasterReviewPage() {
                         <div>
                           <button
                             onClick={() => setShowEndorsement(!showEndorsement)}
-                            className="w-full flex items-center justify-between p-3 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition"
+                            className="w-full flex items-center justify-between p-4 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition shadow-sm"
                           >
-                            <span className="text-sm font-semibold text-slate-700">
-                              <FontAwesomeIcon icon={faFilePdf} className="w-4 h-4 text-emerald-500 mr-2" />
+                            <span className="text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-2">
+                              <FontAwesomeIcon icon={faFilePdf} className="w-3.5 h-3.5 text-emerald-500" />
                               Endorsement PDF
                             </span>
                             <div className="flex items-center gap-2">
-                              <span className="text-xs text-slate-500">
+                              <span className="text-[11px] text-slate-500 font-medium">
                                 {showEndorsement ? 'Hide' : 'Show'}
                               </span>
                               <svg
                                 xmlns="http://www.w3.org/2000/svg"
                                 fill="none"
                                 viewBox="0 0 24 24"
-                                strokeWidth={2}
+                                strokeWidth={2.5}
                                 stroke="currentColor"
                                 className={`w-4 h-4 text-slate-500 transition-transform duration-200 ${showEndorsement ? 'rotate-180' : ''}`}
                               >
@@ -1182,7 +1270,7 @@ export default function MasterReviewPage() {
                           </button>
 
                           {showEndorsement && (
-                            <div className="mt-3 border rounded-lg bg-white overflow-hidden transition-all duration-300" style={{ height: '350px' }}>
+                            <div className="mt-3 border border-slate-200 rounded-xl bg-white overflow-hidden shadow-sm" style={{ height: '380px' }}>
                               <iframe
                                 src={`https://drive.google.com/file/d/${extractGoogleDriveId(selectedSubmission.endorsement_view_url)}/preview?embedded=true`}
                                 className="w-full h-full"
@@ -1195,18 +1283,30 @@ export default function MasterReviewPage() {
                     </div>
                   ) : (
                     <div>
-                      <p className="text-sm font-semibold text-slate-700 mb-3">
-                        <FontAwesomeIcon icon={faFilePdf} className="w-4 h-4 text-rose-500 mr-2" />
-                        Attachment
-                      </p>
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-2">
+                          <FontAwesomeIcon icon={faFilePdf} className="w-3.5 h-3.5 text-rose-500" />
+                          Attachment
+                        </p>
+                        {selectedSubmission.attachment_view_url && (
+                          <a
+                            href={selectedSubmission.attachment_view_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800"
+                          >
+                            Open in new tab ↗
+                          </a>
+                        )}
+                      </div>
                       {selectedSubmission.attachment_filename && (
-                        <p className="text-sm text-slate-500 mb-3 flex items-center gap-2 bg-white px-4 py-2 rounded-xl border border-slate-200">
-                          <FontAwesomeIcon icon={faFileAlt} className="w-4 h-4 text-slate-400" />
-                          {selectedSubmission.attachment_filename}
+                        <p className="text-xs text-slate-600 mb-3 flex items-center gap-2 bg-white px-4 py-2.5 rounded-lg border border-slate-200">
+                          <FontAwesomeIcon icon={faFileAlt} className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                          <span className="truncate font-medium">{selectedSubmission.attachment_filename}</span>
                         </p>
                       )}
                       {selectedSubmission.attachment_view_url ? (
-                        <div className="border rounded-lg bg-white overflow-hidden" style={{ height: '550px' }}>
+                        <div className="border border-slate-200 rounded-xl bg-white overflow-hidden shadow-sm" style={{ height: '600px' }}>
                           <iframe
                             src={`https://drive.google.com/file/d/${extractGoogleDriveId(selectedSubmission.attachment_view_url)}/preview?embedded=true`}
                             className="w-full h-full"
@@ -1214,7 +1314,9 @@ export default function MasterReviewPage() {
                           />
                         </div>
                       ) : (
-                        <div className="text-center py-16 text-slate-500 bg-white rounded-lg border text-lg">No Attachment Available</div>
+                        <div className="text-center py-16 text-slate-500 bg-white rounded-xl border border-dashed border-slate-300 text-sm italic">
+                          No Attachment Available
+                        </div>
                       )}
                     </div>
                   )}

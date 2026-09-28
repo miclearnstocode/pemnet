@@ -634,7 +634,7 @@ export default function AdminAboutPage() {
 
       {/* STAT MODAL */}
       {editingStat && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={() => !saving && setEditingStat(null)} />
           <div className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-bold text-slate-900 mb-5">{editingStat.id ? 'Edit Stat' : 'New Stat'}</h3>
@@ -712,7 +712,7 @@ export default function AdminAboutPage() {
 
       {/* FEATURE MODAL */}
       {editingFeature && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={() => !saving && setEditingFeature(null)} />
           <div className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6">
             <h3 className="text-lg font-bold text-slate-900 mb-5">{editingFeature.id ? 'Edit Feature' : 'New Feature'}</h3>
@@ -754,7 +754,7 @@ export default function AdminAboutPage() {
 
       {/* CARD MODAL */}
       {editingCard && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={() => !saving && setEditingCard(null)} />
           <div className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-bold text-slate-900 mb-5">{editingCard.id ? 'Edit Card' : 'New Card'}</h3>
@@ -832,7 +832,7 @@ export default function AdminAboutPage() {
 
       {/* DELETE CONFIRM */}
       {deleteConfirm && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={() => setDeleteConfirm(null)} />
           <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
             <div className="flex items-center gap-4 mb-4">

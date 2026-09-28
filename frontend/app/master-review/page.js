@@ -898,7 +898,7 @@ export default function MasterReviewPage() {
               {/* ================= HEADER ================= */}
               <div className="bg-white border-b border-slate-200 sticky top-0 z-20">
                 {/* thin accent bar */}
-                <div className="h-1 w-full bg-gradient-to-r from-indigo-400 via-purple-400 to-blue-400" />
+                <div className="h-1 w-full bg-linear-to-r from-indigo-400 via-purple-400 to-blue-400" />
 
                 <div className="px-8 py-5 flex items-start justify-between gap-6">
                   <div className="flex items-start gap-4 min-w-0 flex-1">

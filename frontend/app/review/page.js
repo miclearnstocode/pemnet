@@ -3,64 +3,66 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-  faFileAlt,
-  faEnvelope,
-  faUsers,
-  faClock,
-  faCheckCircle,
-  faArrowDown,
-  faSearch,
-  faFilter,
-  faSync,
-  faEdit,
-  faHistory,
-  faSave,
-  faTimes,
-  faComment,
-  faPaperPlane,
-  faThumbsUp,
-  faThumbsDown,
-  faChevronLeft,
-  faUserCircle,
-  faSignOutAlt,
-  faFilePdf,
-  faEye,
-  faDownload,
-  faCheck,
-  faExclamationTriangle,
-  faList,
-  faGavel,
-  faChartBar,
-  faFolderOpen,
-  faInbox,
-  faSpinner,
-  faInfoCircle,
-  faArrowRight,
-  faClipboard,
-  faUser,
-  faSchool,
-  faTag,
-  faCalendarAlt,
-  faPlus,
-  faReply,
-  faShare,
-  faBookOpen,
-  faLayerGroup,
-  faCertificate,
-  faFlag,
-  faWarning,
-  faPlusCircle
-} from '@fortawesome/free-solid-svg-icons';
+import { faFileAlt, faEnvelope, faUsers, faClock, faCheckCircle, faArrowDown, faSearch, faFilter, faEdit, faHistory, faTimes, faThumbsUp, faThumbsDown, faUserCircle, faSignOutAlt, faFilePdf, faExclamationTriangle, faGavel, faFolderOpen, faInbox, faSpinner, faInfoCircle,  faUser, faSchool, faTag, faCalendarAlt, faBookOpen, faLayerGroup, faFlag, faWarning } from '@fortawesome/free-solid-svg-icons';
 import ReassignModal from '../components/ReassignModal';
 import DowngradeModal from '../components/DowngradeModal';
 import ConfirmModal from '../components/ConfirmModal';
-// Import the reusable components
 import EditSubmission from '../components/EditSubmission';
 import ViewHistory from '../components/ViewHistory';
 import DiscussionSection from '../components/DiscussionSection';
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL).replace(/\/+$/, '');
+
+// ---------- Reusable modal sub-components ----------
+function SectionTitle({ icon, color = 'slate', label }) {
+  const colorMap = {
+    indigo:  'text-indigo-600 bg-indigo-50 border-indigo-100',
+    blue:    'text-blue-600 bg-blue-50 border-blue-100',
+    emerald: 'text-emerald-600 bg-emerald-50 border-emerald-100',
+    purple:  'text-purple-600 bg-purple-50 border-purple-100',
+    slate:   'text-slate-600 bg-slate-100 border-slate-200',
+  };
+  const cls = colorMap[color] || colorMap.slate;
+  return (
+    <div className="flex items-center gap-2.5 mb-4">
+      <span className={`w-8 h-8 rounded-lg flex items-center justify-center border ${cls}`}>
+        <FontAwesomeIcon icon={icon} className="w-3.5 h-3.5" />
+      </span>
+      <h4 className="text-xs font-bold uppercase tracking-widest text-slate-600">
+        {label}
+      </h4>
+      <span className="flex-1 h-px bg-slate-200" />
+    </div>
+  );
+}
+
+function Label({ children }) {
+  return (
+    <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
+      {children}
+    </p>
+  );
+}
+
+function InfoCard({ label, value, span = 1, emphasis = false, mono = false, badgeClass = null }) {
+  const colSpan = span === 2 ? 'md:col-span-2' : '';
+  return (
+    <div className={`${colSpan} bg-slate-50 rounded-xl border border-slate-200 p-4 hover:bg-white hover:border-slate-300 transition`}>
+      <Label>{label}</Label>
+      {badgeClass ? (
+        <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${badgeClass}`}>
+          {value}
+        </span>
+      ) : (
+        <p className={`${
+          emphasis ? 'text-base font-bold text-slate-900' : 'text-sm font-semibold text-slate-700'
+        } ${mono ? 'font-mono text-[13px] break-all' : ''} leading-relaxed`}>
+          {value || 'Not specified'}
+        </p>
+      )}
+    </div>
+  );
+}
 
 export default function ReviewPage() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -856,7 +858,6 @@ export default function ReviewPage() {
         currentUser={currentUser}
         isMasterApprover={false}
         title={activeTab === 'email' ? 'Edit Email Submission Details' : 'Edit Submission Details'}
-        fields={getEditFields(activeTab === 'email' ? 'email' : 'system')}
         submissionType={activeTab === 'email' ? 'email' : 'system'}
       />
 
@@ -872,328 +873,339 @@ export default function ReviewPage() {
       
       {selectedSubmission && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setSelectedSubmission(null)}></div>
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity"
+            onClick={() => setSelectedSubmission(null)}
+          ></div>
+
           <div className="relative min-h-full flex items-center justify-center p-4">
-            <div className="relative w-full max-w-7xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100">
-              <div className="flex items-center justify-between px-8 py-5 border-b border-slate-100 bg-linear-to-r from-blue-50/50 to-white">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-linear-to-brrom-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/25">
-                    <FontAwesomeIcon icon={activeTab === 'system' ? faFileAlt : faEnvelope} className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-slate-900">
-                      {activeTab === 'system' ? 'Submission Details' : 'Email Details'}
-                    </h3>
-                    <p className="text-sm text-slate-500 truncate max-w-md">{getTitle()}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button 
-                    onClick={() => setSelectedSubmission(null)} 
-                    className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 transition-all"
-                  >
-                    <FontAwesomeIcon icon={faTimes} className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
+            <div className="relative w-full max-w-7xl bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden max-h-[95vh] flex flex-col">
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 h-full min-h-150">
-                <div className="p-8 overflow-y-auto max-h-[80vh] border-r border-slate-100 bg-white">
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-3">
-                      <FontAwesomeIcon icon={faClipboard} className="w-5 h-5 text-blue-600" />
-                      <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Submission Information</h4>
+              {/* ================= HEADER ================= */}
+              <div className="bg-white border-b border-slate-200 sticky top-0 z-20">
+                {/* thin accent bar */}
+                <div className="h-1 w-full bg-gradient-to-r from-indigo-400 via-purple-400 to-blue-400" />
+
+                <div className="px-8 py-5 flex items-start justify-between gap-6">
+                  <div className="flex items-start gap-4 min-w-0 flex-1">
+                    <div className="w-12 h-12 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center shrink-0">
+                      <FontAwesomeIcon
+                        icon={activeTab === 'system' ? faFileAlt : faEnvelope}
+                        className="w-5 h-5 text-indigo-600"
+                      />
                     </div>
-
-                    {/* Fixed Buttons with Labels */}
-                    <div className="flex items-center gap-2">
-                      <button 
-                        onClick={() => setShowHistoryModal(true)}
-                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-all text-xs font-semibold"
-                        title="View History"
-                      >
-                        <FontAwesomeIcon icon={faHistory} className="w-4 h-4" />
-                        View History
-                      </button>
-                      <button 
-                        onClick={() => setShowEditModal(true)}
-                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-all text-xs font-semibold"
-                        title="Edit Details"
-                      >
-                        <FontAwesomeIcon icon={faEdit} className="w-4 h-4" />
-                        Edit Details
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-6">
-                    <div className="group">
-                      <div className="flex items-center gap-2 text-sm font-medium text-slate-500 mb-1.5">
-                        <FontAwesomeIcon icon={faFileAlt} className="w-4 h-4 text-blue-400" />
-                        Title
-                      </div>
-                      <p className="text-base font-semibold text-slate-900 leading-relaxed">{getTitle() || 'No title'}</p>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="group">
-                        <div className="flex items-center gap-2 text-sm font-medium text-slate-500 mb-1.5">
-                          <FontAwesomeIcon icon={faUser} className="w-4 h-4 text-emerald-400" />
-                          Project Leader
-                        </div>
-                        <p className="text-base font-semibold text-slate-900">{getProjectLeader()}</p>
-                      </div>
-
-                      <div className="group">
-                        <div className="flex items-center gap-2 text-sm font-medium text-slate-500 mb-1.5">
-                          <FontAwesomeIcon icon={faUsers} className="w-4 h-4 text-blue-400" />
-                          Authors
-                        </div>
-                        <p className="text-base font-semibold text-slate-900">{getAuthorsList()}</p>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="group">
-                        <div className="flex items-center gap-2 text-sm font-medium text-slate-500 mb-1.5">
-                          <FontAwesomeIcon icon={faSchool} className="w-4 h-4 text-amber-400" />
-                          SUC / Agency
-                        </div>
-                        <p className="text-base font-semibold text-slate-900">{getSuc()}</p>
-                      </div>
-
-                      <div className="group">
-                        <div className="flex items-center gap-2 text-sm font-medium text-slate-500 mb-1.5">
-                          <FontAwesomeIcon icon={faUserCircle} className="w-4 h-4 text-cyan-400" />
-                          Corresponding Author
-                        </div>
-                        <p className="text-sm font-medium text-slate-900">{getCorrespondingAuthorName()}</p>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="group">
-                        <div className="flex items-center gap-2 text-sm font-medium text-slate-500 mb-1.5">
-                          <FontAwesomeIcon icon={faEnvelope} className="w-4 h-4 text-red-400" />
-                          Corresponding Author Email
-                        </div>
-                        <p className="text-sm font-medium text-slate-900 break-all">{getCorrespondingAuthorEmail()}</p>
-                      </div>
-
-                      <div className="group">
-                        <div className="flex items-center gap-2 text-sm font-medium text-slate-500 mb-1.5">
-                          <FontAwesomeIcon icon={faTag} className="w-4 h-4 text-purple-400" />
-                          Corresponding Author Position
-                        </div>
-                        <p className="text-sm font-medium text-slate-900">{getCorrespondingAuthorPosition()}</p>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="group">
-                        <div className="flex items-center gap-2 text-sm font-medium text-slate-500 mb-1.5">
-                          <FontAwesomeIcon icon={faFlag} className="w-4 h-4 text-rose-400" />
-                          Theme
-                        </div>
-                        <p className="text-base font-semibold text-slate-900">{getTheme()}</p>
-                      </div>
-
-                      <div className="group">
-                        <div className="flex items-center gap-2 text-sm font-medium text-slate-500 mb-1.5">
-                          <FontAwesomeIcon icon={faBookOpen} className="w-4 h-4 text-purple-400" />
-                          Paper Category
-                        </div>
-                        <span className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-sm font-medium border ${getCategoryColor(getPaperCategory())}`}>
-                          <FontAwesomeIcon icon={faBookOpen} className="w-3 h-3" />
-                          {getPaperCategory()?.includes('Completed') ? 'Completed' : getPaperCategory() || 'Not specified'}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">
+                          {activeTab === 'system' ? 'System Submission' : 'Email Submission'}
                         </span>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="group">
-                        <div className="flex items-center gap-2 text-sm font-medium text-slate-500 mb-1.5">
-                          <FontAwesomeIcon icon={faLayerGroup} className="w-4 h-4 text-indigo-400" />
-                          Thematic Area
-                        </div>
-                        <p className="text-base font-semibold text-slate-900">{getThematicArea()}</p>
-                      </div>
-
-                      <div className="group">
-                        <div className="flex items-center gap-2 text-sm font-medium text-slate-500 mb-1.5">
-                          <FontAwesomeIcon icon={faCertificate} className="w-4 h-4 text-violet-400" />
-                          Final Status
-                        </div>
-                        <span className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-xl text-sm font-medium border ${getStatusColor(votes.evaluation_status)}`}>
-                          <FontAwesomeIcon icon={getStatusIcon(votes.evaluation_status)} className="w-3.5 h-3.5" />
+                        <span className="w-1 h-1 rounded-full bg-slate-300" />
+                        <span className={`inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide border ${
+                          getStatusColor(votes.evaluation_status)
+                        }`}>
                           {getStatusDisplay(votes.evaluation_status)}
                         </span>
                       </div>
+                      <h3 className="text-lg font-bold text-slate-900 leading-snug line-clamp-2">
+                        {getTitle() || 'Untitled submission'}
+                      </h3>
+                      <p className="text-sm text-slate-500 mt-0.5 truncate">
+                        {getProjectLeader()}
+                      </p>
                     </div>
                   </div>
 
-                  {/* Vote Buttons - Always visible for evaluators to vote */}
-                  <div className="mt-8 pt-6 border-t border-slate-200 space-y-3">
-                      <div className="flex items-center gap-2 mb-2">
-                          <FontAwesomeIcon icon={faGavel} className="w-4 h-4 text-slate-400" />
-                          <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Cast Your Vote</span>
-                          {votes.evaluation_status !== 'pending' && (
-                              <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-50 text-blue-600 border border-blue-200">
-                                  <FontAwesomeIcon icon={faCheckCircle} className="w-2.5 h-2.5" />
-                                  Finalized by Master Approver
+                  <div className="flex items-center gap-3 shrink-0">
+                    <button
+                      onClick={() => setSelectedSubmission(null)}
+                      aria-label="Close"
+                      className="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 transition"
+                    >
+                      <FontAwesomeIcon icon={faTimes} className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Quick-action toolbar */}
+                <div className="px-8 pb-4 flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={() => setShowHistoryModal(true)}
+                    className="inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition"
+                  >
+                    <FontAwesomeIcon icon={faHistory} className="w-3.5 h-3.5" />
+                    View History
+                  </button>
+                  <button
+                    onClick={() => setShowEditModal(true)}
+                    disabled={!selectedSubmission}
+                    className="inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-100 transition disabled:opacity-50"
+                  >
+                    <FontAwesomeIcon icon={faEdit} className="w-3.5 h-3.5" />
+                    Edit Details
+                  </button>
+                  {activeTab === 'email' && emailExtractedData && (
+                    <span className="ml-auto text-[11px] text-slate-400 italic">
+                      Use Edit to correct any extracted field before final decision
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* ================= BODY ================= */}
+              <div className="grid grid-cols-1 lg:grid-cols-5 flex-1 overflow-hidden min-h-0">
+
+                {/* ---------- LEFT: INFO COLUMN ---------- */}
+                <div className="lg:col-span-3 p-8 overflow-y-auto bg-white">
+
+                  {/* SECTION: Paper Overview */}
+                  <SectionTitle icon={faFileAlt} color="indigo" label="Paper Overview" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                    <InfoCard label="Full Title" value={getTitle()} span={2} emphasis />
+                    <InfoCard
+                      label="Paper Category"
+                      value={
+                        getPaperCategory()?.includes('Completed') ? 'Completed Extension Project Paper'
+                        : getPaperCategory()?.includes('Ongoing') ? 'Ongoing Extension Project Paper'
+                        : getPaperCategory() || 'Not specified'
+                      }
+                      badgeClass={getCategoryColor(getPaperCategory())}
+                    />
+                    <InfoCard label="Theme" value={getTheme()} />
+                    <InfoCard label="Thematic Area" value={getThematicArea()} span={2} />
+                  </div>
+
+                  {/* SECTION: Authors & Affiliation */}
+                  <SectionTitle icon={faUsers} color="blue" label="Authors & Affiliation" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                    <InfoCard label="Project Leader" value={getProjectLeader()} />
+                    <InfoCard label="SUC / Agency" value={getSuc()} />
+                    <InfoCard label="Authors / Co-Authors" value={getAuthorsList()} span={2} />
+                  </div>
+
+                  {/* SECTION: Corresponding Author */}
+                  <SectionTitle icon={faUserCircle} color="emerald" label="Corresponding Author" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                    <InfoCard label="Full Name" value={getCorrespondingAuthorName()} />
+                    <InfoCard label="Position / Designation" value={getCorrespondingAuthorPosition()} />
+                    <InfoCard
+                      label="Email Address"
+                      value={getCorrespondingAuthorEmail()}
+                      span={2}
+                      mono
+                    />
+                  </div>
+
+                  {/* SECTION: Evaluator Votes */}
+                  <SectionTitle icon={faUserCircle} color="purple" label={`Evaluator Votes (${(votes.votes || []).length}/3)`} />
+                  {(votes.votes || []).length > 0 ? (
+                    <>
+                      <div className="space-y-3 mb-4">
+                        {(votes.votes || []).map((vote, idx) => (
+                          <div
+                            key={idx}
+                            className="p-4 bg-slate-50 border border-slate-200 rounded-xl hover:border-slate-300 transition"
+                          >
+                            <div className="flex justify-between items-center gap-3">
+                              <span className="font-semibold text-sm text-slate-800 flex items-center gap-2">
+                                <span className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold">
+                                  {(vote.evaluator_id === currentEvaluatorId
+                                    ? (currentUser?.full_name || 'You')
+                                    : getEvaluatorName(vote.evaluator_id)
+                                  ).charAt(0)}
+                                </span>
+                                {vote.evaluator_id === currentEvaluatorId
+                                  ? `${currentUser?.full_name || 'You'} (You)`
+                                  : getEvaluatorName(vote.evaluator_id)}
                               </span>
-                          )}
-                      </div>
-                      
-                      <button 
-                          onClick={handleEndorseWithConfirm} 
-                          className="w-full inline-flex items-center justify-center gap-3 bg-linear-to-r from-emerald-500 to-emerald-600 text-white py-3.5 rounded-2xl font-semibold text-sm hover:from-emerald-600 hover:to-emerald-700 transition-all shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-                          disabled={votes.evaluation_status !== 'pending'}
-                          title={votes.evaluation_status !== 'pending' ? 'This submission has been finalized by the Master Approver' : ''}
-                      >
-                          <FontAwesomeIcon icon={faThumbsUp} className="w-5 h-5" />
-                          Endorse for Presentation
-                      </button>
-                      
-                      <button 
-                          onClick={handleOpenDowngradeModal} 
-                          className="w-full inline-flex items-center justify-center gap-3 bg-amber-50 text-amber-700 py-3.5 rounded-2xl font-semibold text-sm hover:bg-amber-100 transition-all border border-amber-200 hover:border-amber-300 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-                          disabled={votes.evaluation_status !== 'pending'}
-                          title={votes.evaluation_status !== 'pending' ? 'This submission has been finalized by the Master Approver' : ''}
-                      >
-                          <FontAwesomeIcon icon={faThumbsDown} className="w-5 h-5" />
-                          Downgrade
-                      </button>
-                  </div>
-
-                  <div className="mt-8 pt-6 border-t border-slate-200">
-                    <div className="flex items-center gap-3 mb-4">
-                      <FontAwesomeIcon icon={faUsers} className="w-5 h-5 text-blue-600" />
-                      <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Live Votes</h4>
-                      <span className="text-xs text-slate-400">({(votes.votes || []).length}/3)</span>
-                    </div>
-                    <div className="space-y-3">
-                      {(votes.votes || []).map((vote, idx) => (
-                        <div key={idx} className="p-4 bg-linear-to-br from-slate-50 to-white border border-slate-200 rounded-2xl shadow-sm">
-                          <div className="flex justify-between items-center">
-                            <p className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-                              <FontAwesomeIcon icon={faUserCircle} className="w-4 h-4 text-slate-400" />
-                              {vote.evaluator_id === currentEvaluatorId 
-                                ? `${currentUser?.full_name || 'You'} (You)` 
-                                : getEvaluatorName(vote.evaluator_id)}
-                            </p>
-                            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-medium border ${getStatusColor(vote.vote_status)}`}>
-                              <FontAwesomeIcon icon={getStatusIcon(vote.vote_status)} className="w-3 h-3" />
-                              {vote.vote_status === 'endorse' ? 'Endorse' : 
-                               vote.vote_status === 'downgrade' ? 'Downgraded' :
-                               vote.vote_status?.replace('_', ' ').toUpperCase()}
-                            </span>
+                              <span className={`px-2.5 py-1 rounded-full text-[11px] font-semibold border ${getStatusColor(vote.vote_status)}`}>
+                                <FontAwesomeIcon icon={getStatusIcon(vote.vote_status)} className="w-3 h-3 mr-1" />
+                                {vote.vote_status === 'endorse' ? 'Endorse'
+                                  : vote.vote_status === 'downgrade' ? 'Downgraded'
+                                  : vote.vote_status?.replace('_', ' ').toUpperCase()}
+                              </span>
+                            </div>
+                            {vote.vote_notes && (
+                              <p className="text-sm text-slate-600 mt-3 italic border-l-2 border-slate-300 pl-3">
+                                "{vote.vote_notes}"
+                              </p>
+                            )}
                           </div>
-                          {vote.vote_notes && (
-                            <p className="mt-2 text-sm text-slate-500 italic bg-white p-3 rounded-xl border border-slate-100">
-                              "{vote.vote_notes}"
-                            </p>
-                          )}
-                        </div>
-                      ))}
-                      {(votes.votes || []).length === 0 && (
-                        <p className="text-center text-slate-400 text-sm py-4">No votes yet</p>
-                      )}
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-center py-8 text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-sm italic mb-8">
+                      No votes yet
                     </div>
-                  </div>
+                  )}
 
-                  {/* REPLACED: Reusable DiscussionSection Component */}
-                  <div className="mt-8 pt-6 border-t border-slate-200">
+                  {/* SECTION: Discussion */}
+                  <SectionTitle icon={faUsers} color="indigo" label="Evaluator Discussion" />
+                  <div className="mb-8 bg-slate-50 rounded-xl border border-slate-200 p-4">
                     <DiscussionSection
                       submissionId={selectedSubmission?.submission_id || selectedSubmission?.id}
                       currentUserId={currentEvaluatorId}
                       currentUserName={currentUser?.full_name}
                       isMasterApprover={false}
-                      title="Evaluator Discussion"
-                      maxHeight="300px"
+                      title=""
+                      maxHeight="240px"
                     />
+                  </div>
+
+                  {/* SECTION: Cast Your Vote */}
+                  <div className="rounded-xl border border-blue-200 bg-blue-50/40 p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-9 h-9 rounded-lg bg-blue-100 border border-blue-200 flex items-center justify-center">
+                        <FontAwesomeIcon icon={faGavel} className="w-4 h-4 text-blue-700" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-blue-900 uppercase tracking-wide">
+                          Cast Your Vote
+                        </h4>
+                        <p className="text-xs text-blue-700/70">
+                          Your vote contributes to the evaluation decision
+                        </p>
+                      </div>
+                      {votes.evaluation_status !== 'pending' && (
+                        <span className="ml-auto inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-white text-blue-700 border border-blue-200">
+                          <FontAwesomeIcon icon={faCheckCircle} className="w-3 h-3" />
+                          Finalized by Master Approver
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="space-y-3">
+                      <button
+                        onClick={handleEndorseWithConfirm}
+                        disabled={votes.evaluation_status !== 'pending'}
+                        className="w-full bg-emerald-600 text-white py-3 rounded-lg font-semibold hover:bg-emerald-700 transition shadow-sm hover:shadow disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
+                        title={votes.evaluation_status !== 'pending' ? 'This submission has been finalized by the Master Approver' : ''}
+                      >
+                        <FontAwesomeIcon icon={faThumbsUp} className="w-4 h-4" />
+                        Endorse for Presentation
+                      </button>
+
+                      <button
+                        onClick={handleOpenDowngradeModal}
+                        disabled={votes.evaluation_status !== 'pending'}
+                        className="w-full bg-amber-500 text-white py-3 rounded-lg font-semibold hover:bg-amber-600 transition shadow-sm hover:shadow disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
+                        title={votes.evaluation_status !== 'pending' ? 'This submission has been finalized by the Master Approver' : ''}
+                      >
+                        <FontAwesomeIcon icon={faThumbsDown} className="w-4 h-4" />
+                        Downgrade Submission
+                      </button>
+                    </div>
                   </div>
                 </div>
 
-                <div className="bg-linear-to-br from-slate-50 to-blue-50/20 p-6 overflow-y-auto max-h-[80vh]">
-                  <div className="flex items-center gap-3 mb-4">
-                    <FontAwesomeIcon icon={faEye} className="w-5 h-5 text-indigo-600" />
-                    <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider">File Viewer</h4>
-                  </div>
-                  
+                {/* ---------- RIGHT: FILE VIEWER ---------- */}
+                <div className="lg:col-span-2 bg-slate-50 p-8 overflow-y-auto border-l border-slate-200">
+                  <SectionTitle icon={faFolderOpen} color="slate" label="Document Preview" />
+
                   {activeTab === 'system' ? (
                     <div className="space-y-6">
                       <div>
-                        <div className="flex items-center gap-2 text-sm font-medium text-slate-600 mb-3">
-                          <FontAwesomeIcon icon={faFilePdf} className="w-4 h-4 text-red-500" />
-                          Abstract PDF
+                        <div className="flex items-center justify-between mb-3">
+                          <p className="text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-2">
+                            <FontAwesomeIcon icon={faFilePdf} className="w-3.5 h-3.5 text-red-500" />
+                            Abstract PDF
+                          </p>
+                          {selectedSubmission.abstract_view_url && (
+                            <a
+                              href={selectedSubmission.abstract_view_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800"
+                            >
+                              Open in new tab ↗
+                            </a>
+                          )}
                         </div>
                         {selectedSubmission.abstract_view_url ? (
-                          <div className="border border-slate-200 rounded-2xl bg-white overflow-hidden shadow-lg shadow-slate-200/50" style={{ height: '500px' }}>
-                            <iframe 
-                              src={`https://drive.google.com/file/d/${extractGoogleDriveId(selectedSubmission.abstract_view_url)}/preview?embedded=true`} 
-                              className="w-full h-full" 
-                              allow="autoplay" 
-                              onLoad={() => setIsModalLoading(false)} 
+                          <div className="border border-slate-200 rounded-xl bg-white overflow-hidden shadow-sm" style={{ height: '480px' }}>
+                            <iframe
+                              src={`https://drive.google.com/file/d/${extractGoogleDriveId(selectedSubmission.abstract_view_url)}/preview?embedded=true`}
+                              className="w-full h-full"
+                              allow="autoplay"
                             />
                           </div>
                         ) : (
-                          <div className="text-center py-16 text-slate-400 bg-white rounded-2xl border-2 border-dashed border-slate-200">
-                            <FontAwesomeIcon icon={faFilePdf} className="w-12 h-12 text-slate-300 mb-3" />
-                            <p className="text-sm font-medium">No Abstract Available</p>
+                          <div className="text-center py-16 text-slate-500 bg-white rounded-xl border border-dashed border-slate-300 text-sm italic">
+                            No Abstract Available
                           </div>
                         )}
                       </div>
+
                       <div>
-                        <div className="flex items-center gap-2 text-sm font-medium text-slate-600 mb-3">
-                          <FontAwesomeIcon icon={faFilePdf} className="w-4 h-4 text-emerald-500" />
-                          Endorsement PDF
+                        <div className="flex items-center justify-between mb-3">
+                          <p className="text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-2">
+                            <FontAwesomeIcon icon={faFilePdf} className="w-3.5 h-3.5 text-emerald-500" />
+                            Endorsement PDF
+                          </p>
+                          {selectedSubmission.endorsement_view_url && (
+                            <a
+                              href={selectedSubmission.endorsement_view_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800"
+                            >
+                              Open in new tab ↗
+                            </a>
+                          )}
                         </div>
                         {selectedSubmission.endorsement_view_url ? (
-                          <div className="border border-slate-200 rounded-2xl bg-white overflow-hidden shadow-lg shadow-slate-200/50" style={{ height: '500px' }}>
-                            <iframe 
-                              src={`https://drive.google.com/file/d/${extractGoogleDriveId(selectedSubmission.endorsement_view_url)}/preview?embedded=true`} 
-                              className="w-full h-full" 
-                              allow="autoplay" 
+                          <div className="border border-slate-200 rounded-xl bg-white overflow-hidden shadow-sm" style={{ height: '380px' }}>
+                            <iframe
+                              src={`https://drive.google.com/file/d/${extractGoogleDriveId(selectedSubmission.endorsement_view_url)}/preview?embedded=true`}
+                              className="w-full h-full"
+                              allow="autoplay"
                             />
                           </div>
                         ) : (
-                          <div className="text-center py-16 text-slate-400 bg-white rounded-2xl border-2 border-dashed border-slate-200">
-                            <FontAwesomeIcon icon={faFilePdf} className="w-12 h-12 text-slate-300 mb-3" />
-                            <p className="text-sm font-medium">No Endorsement Available</p>
+                          <div className="text-center py-16 text-slate-500 bg-white rounded-xl border border-dashed border-slate-300 text-sm italic">
+                            No Endorsement Available
                           </div>
                         )}
                       </div>
                     </div>
                   ) : (
-                    <div className="space-y-4">
-                      <div>
-                        <div className="flex items-center gap-2 text-sm font-medium text-slate-600 mb-3">
-                          <FontAwesomeIcon icon={faFilePdf} className="w-4 h-4 text-rose-500" />
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-2">
+                          <FontAwesomeIcon icon={faFilePdf} className="w-3.5 h-3.5 text-rose-500" />
                           Attachment
-                        </div>
-                        {selectedSubmission.attachment_filename && (
-                          <p className="text-sm text-slate-500 mb-3 flex items-center gap-2 bg-white px-4 py-2 rounded-xl border border-slate-200">
-                            <FontAwesomeIcon icon={faFileAlt} className="w-4 h-4 text-slate-400" />
-                            {selectedSubmission.attachment_filename}
-                          </p>
-                        )}
-                        {selectedSubmission.attachment_view_url ? (
-                          <div className="border border-slate-200 rounded-2xl bg-white overflow-hidden shadow-lg shadow-slate-200/50" style={{ height: '600px' }}>
-                            <iframe 
-                              src={`https://drive.google.com/file/d/${extractGoogleDriveId(selectedSubmission.attachment_view_url)}/preview?embedded=true`} 
-                              className="w-full h-full" 
-                              allow="autoplay" 
-                              onLoad={() => setIsModalLoading(false)} 
-                            />
-                          </div>
-                        ) : (
-                          <div className="text-center py-16 text-slate-400 bg-white rounded-2xl border-2 border-dashed border-slate-200">
-                            <FontAwesomeIcon icon={faFileAlt} className="w-12 h-12 text-slate-300 mb-3" />
-                            <p className="text-sm font-medium">No Attachment Available</p>
-                          </div>
+                        </p>
+                        {selectedSubmission.attachment_view_url && (
+                          <a
+                            href={selectedSubmission.attachment_view_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800"
+                          >
+                            Open in new tab ↗
+                          </a>
                         )}
                       </div>
+                      {selectedSubmission.attachment_filename && (
+                        <p className="text-xs text-slate-600 mb-3 flex items-center gap-2 bg-white px-4 py-2.5 rounded-lg border border-slate-200">
+                          <FontAwesomeIcon icon={faFileAlt} className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                          <span className="truncate font-medium">{selectedSubmission.attachment_filename}</span>
+                        </p>
+                      )}
+                      {selectedSubmission.attachment_view_url ? (
+                        <div className="border border-slate-200 rounded-xl bg-white overflow-hidden shadow-sm" style={{ height: '600px' }}>
+                          <iframe
+                            src={`https://drive.google.com/file/d/${extractGoogleDriveId(selectedSubmission.attachment_view_url)}/preview?embedded=true`}
+                            className="w-full h-full"
+                            allow="autoplay"
+                          />
+                        </div>
+                      ) : (
+                        <div className="text-center py-16 text-slate-500 bg-white rounded-xl border border-dashed border-slate-300 text-sm italic">
+                          No Attachment Available
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

@@ -80,8 +80,8 @@ export default function EditSubmission({
   const [showConfirm, setShowConfirm] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
-  // ---------- Field configs ----------
-  const systemFields = {
+  // ---------- Field configs (hoisted so they're stable references) ----------
+  const SYSTEM_FIELDS = {
     extension_project_title: { label: 'Title', icon: faFileAlt, type: 'text', section: 'overview' },
     project_leader:          { label: 'Project Leader', icon: faUser, type: 'text', section: 'authors' },
     presenter:               { label: 'Presenter', icon: faUserCircle, type: 'text', section: 'authors' },
@@ -105,7 +105,7 @@ export default function EditSubmission({
     ]}
   };
 
-  const emailFields = {
+  const EMAIL_FIELDS = {
     title:                    { label: 'Title', icon: faFileAlt, type: 'text', section: 'overview' },
     project_leader:           { label: 'Project Leader', icon: faUser, type: 'text', section: 'authors' },
     sucs:                     { label: 'SUC / Agency', icon: faSchool, type: 'suc', section: 'authors' },
@@ -129,7 +129,7 @@ export default function EditSubmission({
     theme:                    { label: 'Theme', icon: faFlag, type: 'text', section: 'classification' }
   };
 
-  const defaultFields = submissionType === 'email' ? emailFields : systemFields;
+  const defaultFields = submissionType === 'email' ? EMAIL_FIELDS : SYSTEM_FIELDS;
   const fieldConfig = fields || defaultFields;
 
   // Section metadata (order + display) — mirrors the submission details modal layout
@@ -140,7 +140,8 @@ export default function EditSubmission({
     classification: { label: 'Classification',         icon: faLayerGroup, color: 'purple',  gridCols: 2 },
   };
 
-  // ---------- Form initialization ----------
+  const fieldKeys = Object.keys(fieldConfig).join('|');
+
   useEffect(() => {
     if (isOpen && data) {
       const initialForm = {};
@@ -155,7 +156,8 @@ export default function EditSubmission({
       setEditForm(initialForm);
       setHasChanges(false);
     }
-  }, [isOpen, data, fieldConfig]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, data, fieldKeys]);
 
   useEffect(() => {
     if (isOpen) fetchSucs();

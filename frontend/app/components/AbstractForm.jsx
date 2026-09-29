@@ -25,64 +25,77 @@ export function AbstractPreview({ data }) {
     <>
       <style jsx global>{`
         @page {
-          size: A4;
-          margin: 0;
+        size: A4;
+        margin: 0;
         }
 
         @media print {
-          html, body {
+        html, body {
             background: #fff !important;
             margin: 0 !important;
             padding: 0 !important;
             overflow: visible !important;
-          }
-          body * {
+            width: 210mm !important;
+            height: 297mm !important;
+        }
+        body * {
             visibility: hidden !important;
-          }
-          .a4-preview-wrapper,
-          .a4-preview-wrapper * {
+        }
+        .a4-preview-wrapper,
+        .a4-preview-wrapper * {
             visibility: visible !important;
-          }
-          .a4-preview-wrapper {
+        }
+        .a4-preview-wrapper {
             position: absolute !important;
             top: 0 !important;
             left: 0 !important;
-            width: 100% !important;
+            width: 210mm !important;
             padding: 0 !important;
             margin: 0 !important;
             background: #fff !important;
             overflow: visible !important;
             min-height: 0 !important;
-          }
-          .a4-sheets-container {
+        }
+        .a4-sheets-container {
             gap: 0 !important;
             padding: 0 !important;
             margin: 0 !important;
             display: block !important;
-          }
-          .a4-sheet {
+        }
+        .a4-sheet {
+            /* Crucial: Use border-box so padding is included in the 210mm width */
+            box-sizing: border-box !important;
+            
             width: 210mm !important;
             height: 297mm !important;
             box-shadow: none !important;
             margin: 0 !important;
-            padding: 18mm 16mm !important;
+            
+            /* Keep padding but ensure it's inside the 210mm */
+            padding: 0 16mm !important; 
+            
             page-break-after: always !important;
             break-after: page !important;
             page-break-inside: avoid !important;
             break-inside: avoid !important;
-          }
-          .a4-sheet:last-child {
+            overflow: hidden !important;
+            
+            /* Ensure flex layout is preserved */
+            display: flex !important;
+            flex-direction: column !important;
+        }
+        .a4-sheet:last-child {
             page-break-after: auto !important;
             break-after: auto !important;
-          }
-          .a4-sheet,
-          .a4-sheet * {
+        }
+        .a4-sheet,
+        .a4-sheet * {
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
-          }
-          .no-print {
+        }
+        .no-print {
             display: none !important;
-          }
+        }
         }
       `}</style>
 

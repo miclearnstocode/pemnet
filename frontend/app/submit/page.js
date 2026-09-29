@@ -5,19 +5,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
 import AbstractForm from '@/app/components/AbstractForm';
 
-const thematicAreas = [
-  "Food Production, Agricultural, Fisheries, and Natural Resource Systems",
-  "Health, Nutrition, Wellness, and Community Care",
-  "Education, Literacy, Skills Development, and Lifelong Learning",
-  "Livelihood, Entrepreneurships; Cooperatives, MSMEs, and Local Economic Development",
-  "Environment, Climate Action, Disaster Risk Reduction, and Community Resilience"
-];
-
-const paperCategories = [
-  "Completed Extension Project Papers",
-  "Ongoing Extension Project Papers"
-];
-
 const API_URL = (process.env.NEXT_PUBLIC_API_URL).replace(/\/+$/, '');
 
 // Toast Component

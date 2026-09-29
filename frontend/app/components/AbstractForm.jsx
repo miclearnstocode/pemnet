@@ -903,7 +903,7 @@ export default function AbstractForm({
               </div>
               <div className="flex flex-wrap gap-2">
                 {coAuthors.map((a, i) => (
-                  <div key={i} className="flex items-center gap-1.5 px-3 h-10 bg-slate-50 border border-slate-200 rounded-xl">
+                  <div key={i} className="flex items-center gap-1.5 px-3 h-10 bg-slate-50 border text-slate-700 border-slate-200 rounded-xl">
                     <span className="text-xs font-bold text-blue-600">{i + 1}.</span>
                     <input
                       type="text"
@@ -968,18 +968,21 @@ export default function AbstractForm({
               </label>
               <div className="space-y-2">
                 {paperCategories.map((c) => (
-                  <label key={c} className="flex items-center gap-2 cursor-pointer text-sm">
+                    <label
+                    key={c}
+                    className="flex items-center gap-2 cursor-pointer text-sm text-slate-800"
+                    >
                     <input
-                      type="radio"
-                      name="paper_category"
-                      value={c}
-                      required
-                      checked={formData.paper_category === c}
-                      onChange={handleChange}
-                      className="w-4 h-4 text-blue-600"
+                        type="radio"
+                        name="paper_category"
+                        value={c}
+                        required
+                        checked={formData.paper_category === c}
+                        onChange={handleChange}
+                        className="w-4 h-4 text-blue-600 accent-blue-600"
                     />
-                    {c}
-                  </label>
+                    <span className="text-slate-800">{c}</span>
+                    </label>
                 ))}
               </div>
             </div>
@@ -990,18 +993,21 @@ export default function AbstractForm({
               </label>
               <div className="space-y-2">
                 {thematicAreas.map((t) => (
-                  <label key={t} className="flex items-start gap-2 cursor-pointer text-sm">
+                    <label
+                    key={t}
+                    className="flex items-start gap-2 cursor-pointer text-sm text-slate-800"
+                    >
                     <input
-                      type="radio"
-                      name="thematic_area"
-                      value={t}
-                      required
-                      checked={formData.thematic_area === t}
-                      onChange={handleChange}
-                      className="w-4 h-4 mt-0.5 text-blue-600"
+                        type="radio"
+                        name="thematic_area"
+                        value={t}
+                        required
+                        checked={formData.thematic_area === t}
+                        onChange={handleChange}
+                        className="w-4 h-4 mt-0.5 text-blue-600 accent-blue-600"
                     />
-                    {t}
-                  </label>
+                    <span className="text-slate-800 leading-snug">{t}</span>
+                    </label>
                 ))}
               </div>
             </div>
@@ -1021,7 +1027,7 @@ export default function AbstractForm({
                       setShowDropdown(true);
                     }}
                     onFocus={() => setShowDropdown(true)}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                   />
                   {showDropdown && (
                     <div className="absolute z-20 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
@@ -1033,7 +1039,7 @@ export default function AbstractForm({
                             key={suc.id}
                             type="button"
                             onClick={() => handleSucSelect(suc)}
-                            className="w-full px-4 py-2.5 text-left hover:bg-blue-50 flex justify-between border-b border-slate-50 last:border-0"
+                            className="w-full px-4 py-2.5 text-left hover:bg-blue-50 text-slate-700  flex justify-between border-b border-slate-50 last:border-0"
                           >
                             <span className="text-sm">{suc.name}</span>
                             <span className="text-xs text-slate-400">{suc.region}</span>
@@ -1259,7 +1265,7 @@ function Field({ label, required, hint, ...props }) {
       <input
         {...props}
         required={required}
-        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
+        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
       />
     </div>
   );
@@ -1275,7 +1281,7 @@ function NarrativeField({ label, hint, rows = 4, ...props }) {
       <textarea
         {...props}
         rows={rows}
-        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition resize-y"
+        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition resize-y"
       />
     </div>
   );

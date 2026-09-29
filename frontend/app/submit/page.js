@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
+import AbstractForm from '@/app/components/AbstractForm';
 
 const thematicAreas = [
   "Food Production, Agricultural, Fisheries, and Natural Resource Systems",
@@ -103,7 +104,7 @@ const FileViewerModal = ({ isOpen, onClose, fileUrl, fileType, title }) => {
 
   return (
     <div
-      className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-10000 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in"
       onClick={onClose}
     >
       <div
@@ -913,7 +914,7 @@ export default function SubmitPage() {
 
           {activeTab === 'home' && (
             <div className="max-w-4xl mx-auto">
-              <div className="bg-gradient-to-r from-blue-500 to-emerald-500 rounded-2xl p-8 text-white mb-8 relative overflow-hidden">
+              <div className="bg-linear-to-r from-blue-500 to-emerald-500 rounded-2xl p-8 text-white mb-8 relative overflow-hidden">
                 <div className="relative z-10">
                   <h1 className="text-4xl font-bold mb-2">Welcome to PEMNet</h1>
                   <p className="text-lg text-white/90">Manage your extension project abstracts and conference submissions.</p>
@@ -950,11 +951,13 @@ export default function SubmitPage() {
           )}
 
           {activeTab === 'submit' && (
-            <div className="max-w-4xl mx-auto">
+            <div className="max-w-5xl mx-auto">
               <div className="flex justify-between items-center mb-6">
                 <div>
                   <h1 className="text-2xl font-bold text-slate-900">Submit Abstract</h1>
-                  <p className="text-slate-500 text-sm mt-1">Fill out the required information for your extension project abstract.</p>
+                  <p className="text-slate-500 text-sm mt-1">
+                    Complete all sections based on the PEMNet Abstract Template.
+                  </p>
                 </div>
                 <button
                   onClick={() => setActiveTab('home')}
@@ -967,398 +970,57 @@ export default function SubmitPage() {
                 </button>
               </div>
 
-              {error && !toast && (
-                <div className="bg-red-50 border border-red-100 text-red-600 text-sm p-4 rounded-xl mb-6 flex items-start gap-2">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 shrink-0 mt-0.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-                  </svg>
-                  {error}
-                </div>
-              )}
+              <AbstractForm
+                user={user}
+                submitting={submitting}
+                error={error}
+                sucList={sucList}
+                isLoadingSucs={isLoadingSucs}
+                onSucAdded={(newSuc) => setSucList((prev) => [...prev, newSuc])}
+                onSubmit={async (payload) => {
+                  // Called when the child form is ready to submit
+                  if (payload.error) {
+                    setError(payload.error);
+                    showToast(payload.error, 'error');
+                    return;
+                  }
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-                  <button
-                    type="button"
-                    onClick={() => toggleSection(1)}
-                    className="w-full flex items-center justify-between p-5 bg-slate-50/50 hover:bg-slate-50 transition text-left"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
-                        1
-                      </div>
-                      <h2 className="text-lg font-bold text-slate-900">Project Information</h2>
-                    </div>
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className={`w-5 h-5 text-slate-400 transition-transform ${openSections.includes(1) ? 'rotate-180' : ''}`}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                    </svg>
-                  </button>
+                  setSubmitting(true);
+                  setError('');
 
-                  {openSections.includes(1) && (
-                    <div className="p-6 border-t border-slate-100 space-y-5">
-                      <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-1.5">Project Title <span className="text-red-500">*</span></label>
-                        <input
-                          name="title"
-                          type="text"
-                          required
-                          placeholder="Enter your project title"
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
-                        />
-                      </div>
+                  try {
+                    const res = await fetch(`${API_URL}/api/submit`, {
+                      method: 'POST',
+                      body: payload.formData,
+                    });
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <div>
-                          <label className="block text-sm font-semibold text-slate-700 mb-1.5">Thematic Area <span className="text-red-500">*</span></label>
-                          <select
-                            name="thematicArea"
-                            required
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
-                          >
-                            <option value="">Select thematic area</option>
-                            {thematicAreas.map((area) => (
-                              <option key={area} value={area}>{area}</option>
-                            ))}
-                          </select>
-                        </div>
+                    const text = await res.text();
+                    let data;
+                    try {
+                      data = JSON.parse(text);
+                    } catch {
+                      throw new Error(`Server returned non-JSON response: ${text.substring(0, 100)}`);
+                    }
 
-                        <div>
-                          <label className="block text-sm font-semibold text-slate-700 mb-1.5">Paper Category <span className="text-red-500">*</span></label>
-                          <select
-                            name="paperCategory"
-                            required
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
-                          >
-                            <option value="">Select category</option>
-                            {paperCategories.map((cat) => (
-                              <option key={cat} value={cat}>{cat}</option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-
-                      <div ref={dropdownRef}>
-                        <label className="block text-sm font-semibold text-slate-700 mb-1.5">SUC / Agency <span className="text-red-500">*</span></label>
-
-                        {!showOtherSuc ? (
-                          <div className="relative">
-                            <div className="relative">
-                              <input
-                                type="text"
-                                placeholder="Search SUC/Agency..."
-                                value={searchTerm}
-                                onChange={handleSearchChange}
-                                onFocus={() => setShowDropdown(true)}
-                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
-                              />
-                              {isLoadingSucs && (
-                                <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-500 border-t-transparent"></div>
-                                </div>
-                              )}
-                            </div>
-
-                            {showDropdown && (
-                              <div className="absolute z-20 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
-                                {filteredSucList.length > 0 ? (
-                                  filteredSucList.map((suc) => (
-                                    <button
-                                      key={suc.id}
-                                      type="button"
-                                      onClick={() => handleSucSelect(suc)}
-                                      className="w-full px-4 py-2.5 text-left hover:bg-blue-50 transition flex items-center justify-between border-b border-slate-50 last:border-0"
-                                    >
-                                      <div>
-                                        <span className="text-sm font-medium text-slate-900">{suc.name}</span>
-                                        {suc.abbreviation && (
-                                          <span className="text-xs text-slate-500 ml-2">({suc.abbreviation})</span>
-                                        )}
-                                      </div>
-                                      <span className="text-xs text-slate-400">{suc.region}</span>
-                                    </button>
-                                  ))
-                                ) : (
-                                  <div className="px-4 py-3 text-sm text-slate-500">
-                                    No SUCs found.
-                                    <button
-                                      type="button"
-                                      onClick={handleAddOther}
-                                      className="text-blue-600 font-semibold hover:underline ml-1"
-                                    >
-                                      Add "{searchTerm}" as new SUC
-                                    </button>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-
-                            {chosenSuc && !showOtherSuc && (
-                              <div className="mt-2 flex items-center gap-2">
-                                <span className="text-sm text-emerald-600 font-medium">Selected: {chosenSuc}</span>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setChosenSuc('');
-                                    setSearchTerm('');
-                                  }}
-                                  className="text-xs text-red-500 hover:text-red-700"
-                                >
-                                  Clear
-                                </button>
-                              </div>
-                            )}
-
-                            <button
-                              type="button"
-                              onClick={handleAddOther}
-                              className="mt-2 text-sm text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                              </svg>
-                              Can't find your SUC? Add it here
-                            </button>
-                          </div>
-                        ) : (
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <input
-                                type="text"
-                                name="sucAgenciesOther"
-                                value={otherSucName}
-                                onChange={handleOtherSucChange}
-                                placeholder="Enter your SUC/Agency name"
-                                required
-                                className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setShowOtherSuc(false);
-                                  setOtherSucName('');
-                                  setChosenSuc('');
-                                }}
-                                className="px-3 py-3 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-xl transition"
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                              </button>
-                            </div>
-                            <p className="text-xs text-slate-500 mt-1.5">
-                              This SUC/Agency will be added when you submit.
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-                  <button
-                    type="button"
-                    onClick={() => toggleSection(2)}
-                    className="w-full flex items-center justify-between p-5 bg-slate-50/50 hover:bg-slate-50 transition text-left"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
-                        2
-                      </div>
-                      <h2 className="text-lg font-bold text-slate-900">Author Information</h2>
-                    </div>
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className={`w-5 h-5 text-slate-400 transition-transform ${openSections.includes(2) ? 'rotate-180' : ''}`}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                    </svg>
-                  </button>
-
-                  {openSections.includes(2) && (
-                    <div className="p-6 border-t border-slate-100 space-y-5">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <div>
-                          <label className="block text-sm font-semibold text-slate-700 mb-1.5">Project Leader <span className="text-red-500">*</span></label>
-                          <input
-                            name="project_leader"
-                            type="text"
-                            required
-                            placeholder="Project Leader Name"
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-semibold text-slate-700 mb-1.5">Paper Presenter <span className="text-red-500">*</span></label>
-                          <input
-                            name="presenter"
-                            type="text"
-                            required
-                            placeholder="Presenter Name"
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-semibold text-slate-700 mb-1.5">Corresponding Author Name</label>
-                          <input
-                            name="correspondingAuthorName"
-                            type="text"
-                            placeholder="Corresponding Author Name"
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-semibold text-slate-700 mb-1.5">Corresponding Author Position/Designation</label>
-                          <input
-                            name="correspondingAuthorPosition"
-                            type="text"
-                            placeholder="e.g., Professor, Research Director"
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-semibold text-slate-700 mb-1.5">Corresponding Author Email</label>
-                          <input
-                            name="correspondingAuthorEmail"
-                            type="email"
-                            placeholder="corresponding@email.com"
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition"
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <div className="flex items-center justify-between mb-3">
-                          <label className="block text-sm font-semibold text-slate-700">Co-Authors</label>
-                          <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full">
-                            {coAuthors.length} {coAuthors.length === 1 ? 'Author' : 'Authors'}
-                          </span>
-                        </div>
-
-                        <div className="flex flex-wrap gap-2">
-                          {coAuthors.map((author, index) => (
-                            <div
-                              key={index}
-                              className="flex items-center gap-1.5 px-3 h-10 bg-slate-50 border border-slate-200 rounded-xl transition-colors hover:border-blue-300 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20"
-                            >
-                              <span className="text-xs font-bold text-blue-600">
-                                {index + 1}.
-                              </span>
-
-                              <input
-                                type="text"
-                                value={author}
-                                onChange={(e) => handleCoAuthorChange(index, e.target.value)}
-                                placeholder={`Author ${index + 1}`}
-                                className="w-32 bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none"
-                              />
-
-                              {coAuthors.length > 1 && (
-                                <button
-                                  type="button"
-                                  onClick={() => removeCoAuthor(index)}
-                                  className="w-5 h-5 shrink-0 flex items-center justify-center rounded-full text-slate-300 hover:text-red-500 hover:bg-red-50 transition"
-                                  title="Remove"
-                                >
-                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3 h-3">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                  </svg>
-                                </button>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={addCoAuthor}
-                          className="mt-3 inline-flex items-center gap-2 px-4 h-10 rounded-xl border-2 border-dashed border-blue-300 text-blue-600 font-semibold text-sm hover:border-blue-500 hover:bg-blue-50 transition"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                          </svg>
-                          Add Co-Author
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-                  <button
-                    type="button"
-                    onClick={() => toggleSection(3)}
-                    className="w-full flex items-center justify-between p-5 bg-slate-50/50 hover:bg-slate-50 transition text-left"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-yellow-500 rounded-lg flex items-center justify-center text-white font-bold text-sm">
-                        3
-                      </div>
-                      <h2 className="text-lg font-bold text-slate-900">File Uploads</h2>
-                    </div>
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className={`w-5 h-5 text-slate-400 transition-transform ${openSections.includes(3) ? 'rotate-180' : ''}`}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                    </svg>
-                  </button>
-
-                  {openSections.includes(3) && (
-                    <div className="p-6 border-t border-slate-100 space-y-5">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-6 hover:border-blue-300 transition text-center">
-                          <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-blue-600">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-                            </svg>
-                          </div>
-                          <label className="block text-sm font-semibold text-slate-700 mb-2">Abstract PDF <span className="text-red-500">*</span></label>
-                          <input
-                            type="file"
-                            accept=".pdf"
-                            required
-                            onChange={(e) => setAbstractFile(e.target.files[0])}
-                            className="w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-5 file:rounded-xl file:border-0 file:bg-blue-700 file:text-white file:font-semibold hover:file:bg-blue-800 cursor-pointer transition"
-                          />
-                          {abstractFile && (
-                            <p className="text-xs text-emerald-600 mt-2">{abstractFile.name}</p>
-                          )}
-                        </div>
-                        <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-6 hover:border-blue-300 transition text-center">
-                          <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-emerald-600">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
-                            </svg>
-                          </div>
-                          <label className="block text-sm font-semibold text-slate-700 mb-2">Endorsement PDF <span className="text-red-500">*</span></label>
-                          <input
-                            type="file"
-                            accept=".pdf"
-                            required
-                            onChange={(e) => setEndorsementFile(e.target.files[0])}
-                            className="w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-5 file:rounded-xl file:border-0 file:bg-emerald-600 file:text-white file:font-semibold hover:file:bg-emerald-700 cursor-pointer transition"
-                          />
-                          {endorsementFile && (
-                            <p className="text-xs text-emerald-600 mt-2">{endorsementFile.name}</p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="pt-4">
-                  <button
-                    type="submit"
-                    disabled={submitting || loading}
-                    className="w-full bg-linear-to-r from-blue-700 to-blue-800 text-white py-4 rounded-xl font-bold text-lg hover:from-blue-800 hover:to-blue-900 transition shadow-lg shadow-blue-700/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
-                    </svg>
-                    {submitting ? "Submitting..." : "Submit Abstract"}
-                  </button>
-                </div>
-              </form>
+                    if (res.ok) {
+                      showToast('Abstract submitted successfully!', 'success');
+                      fetchUserSubmissions(user.id);
+                      setTimeout(() => setActiveTab('my-submissions'), 1000);
+                    } else {
+                      const msg = data.detail || data.error || data.msg || 'Submission failed.';
+                      setError(msg);
+                      showToast(msg, 'error');
+                    }
+                  } catch (err) {
+                    console.error('Submission error:', err);
+                    const msg = err.message || 'Network error.';
+                    setError(msg);
+                    showToast(msg, 'error');
+                  } finally {
+                    setSubmitting(false);
+                  }
+                }}
+              />
             </div>
           )}
 

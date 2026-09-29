@@ -22,34 +22,84 @@ export function AbstractPreview({ data }) {
 
   return (
     <>
-      <style jsx global>{`
-        @page {
-          size: A4;
-          margin: 0;
+    <style jsx global>{`
+    @page {
+        size: A4;
+        margin: 0;
+    }
+
+    @media print {
+        /* Reset page background */
+        html, body {
+        background: #fff !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
         }
 
-        @media print {
-          body {
-            background: #fff !important;
-          }
-          .a4-sheets-container {
-            gap: 0 !important;
-          }
-          .a4-sheet {
-            box-shadow: none !important;
-            margin: 0 !important;
-            page-break-after: always;
-            break-after: page;
-          }
-          .a4-sheet:last-child {
-            page-break-after: auto;
-            break-after: auto;
-          }
-          .no-print {
-            display: none !important;
-          }
+        /* Hide EVERYTHING by default */
+        body * {
+        visibility: hidden !important;
         }
-      `}</style>
+
+        /* Reveal ONLY the A4 preview wrapper and everything inside it */
+        .a4-preview-wrapper,
+        .a4-preview-wrapper * {
+        visibility: visible !important;
+        }
+
+        /* Position the wrapper at the top-left of the page */
+        .a4-preview-wrapper {
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        background: #fff !important;
+        overflow: visible !important;
+        min-height: 0 !important;
+        }
+
+        /* Make sure the sheets container doesn't add extra spacing */
+        .a4-sheets-container {
+        gap: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: block !important;
+        }
+
+        /* Each A4 sheet prints as its own physical page */
+        .a4-sheet {
+        width: 210mm !important;
+        height: 297mm !important;
+        box-shadow: none !important;
+        margin: 0 !important;
+        padding: 18mm 16mm !important;
+        page-break-after: always !important;
+        break-after: page !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        }
+
+        .a4-sheet:last-child {
+        page-break-after: auto !important;
+        break-after: auto !important;
+        }
+
+        /* Ensure colors print correctly */
+        .a4-sheet,
+        .a4-sheet * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        }
+
+        /* Hide preview toolbar / navbars / anything else */
+        .no-print {
+        display: none !important;
+        }
+    }
+    `}</style>
 
       <A4Paginator data={data} BLUE={BLUE} LIGHT={LIGHT} BORDER={BORDER} />
     </>
@@ -773,7 +823,7 @@ export default function AbstractForm({
           </div>
         </div>
 
-        <div className="p-6 overflow-auto bg-slate-100 min-h-screen">
+        <div className="a4-preview-wrapper p-6 overflow-auto bg-slate-100 min-h-screen">
           <AbstractPreview data={previewData} />
         </div>
       </div>

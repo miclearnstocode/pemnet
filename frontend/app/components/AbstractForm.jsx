@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from 'react';
+import PrintA4SheetsButton from "@/app/components/PrintA4Sheets";
 
 const thematicAreas = [
   "Food Production, Agricultural, Fisheries, and Natural Resource Systems",
@@ -63,24 +64,15 @@ export function AbstractPreview({ data }) {
             display: block !important;
         }
         .a4-sheet {
-            /* Crucial: Use border-box so padding is included in the 210mm width */
             box-sizing: border-box !important;
-            
             width: 210mm !important;
-            height: 297mm !important;
+            height: auto !important;
             box-shadow: none !important;
             margin: 0 !important;
-            
-            /* Keep padding but ensure it's inside the 210mm */
             padding: 0 16mm !important; 
-            
             page-break-after: always !important;
             break-after: page !important;
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
             overflow: hidden !important;
-            
-            /* Ensure flex layout is preserved */
             display: flex !important;
             flex-direction: column !important;
         }
@@ -105,6 +97,185 @@ export function AbstractPreview({ data }) {
 }
 
 
+/* ===================================================================== */
+/*  A4 GEOMETRY — mirrors <A4Sheet> exactly (96 DPI CSS px)               */
+/* ===================================================================== */
+const MM_TO_PX = 3.7795275591;
+const IN_TO_PX = 96;
+const A4_HEIGHT_PX = 297 * MM_TO_PX;                                   // ≈ 1122.5
+const HEADER_ZONE_PX = 0.1 * IN_TO_PX + 18 * MM_TO_PX;                 // ≈ 77.6  (0.1in + 18mm)
+const FOOTER_ZONE_PX = 0.2 * IN_TO_PX + 18 * MM_TO_PX;                 // ≈ 87.2  (0.2in + 18mm)
+const CONTENT_HEIGHT_PX = A4_HEIGHT_PX - HEADER_ZONE_PX - FOOTER_ZONE_PX; // ≈ 957.7 (pages 2+)
+
+const SAFETY_PX = 3;                       // absorbs offsetHeight rounding across many blocks
+const LAST_PAGE_OVERFLOW_ALLOWANCE_PX = 120; // last page may run this far past the content area
+const MAX_LOOP_GUARD = 10000;              // hard stop for pathological input
+const DEBUG_PAGINATION = false;            // true → logs every narrative placement decision
+
+const escapeHtml = (s) =>
+  String(s ?? '').replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[c]));
+
+/* ===================================================================== */
+/*  PACKING (pure — no DOM access except through `measure`)               */
+/* ===================================================================== */
+function packBlocks(blocks, { measure, boxHTML, titleHeight }) {
+  const boxedBody = (text) => boxHTML(escapeHtml(text));
+
+  const AVAIL_FIRST = CONTENT_HEIGHT_PX - titleHeight - SAFETY_PX;
+  const AVAIL_REST = CONTENT_HEIGHT_PX - SAFETY_PX;
+
+  // ---- measure every block once ----
+  const prepared = blocks.map((b) => {
+    if (b.kind === 'atomic') return { ...b, totalH: measure(b.html) };
+    const headingHtml = b.heading + (b.hintHTML || '');
+    const headingH = measure(headingHtml);
+    return {
+      ...b,
+      headingHtml,
+      headingH,
+      totalH: headingH + measure(boxedBody(b.bodyText)),
+    };
+  });
+
+  // tailH[i] = height of blocks i..end (used for the last-page overflow rule)
+  const tailH = new Array(prepared.length + 1).fill(0);
+  for (let i = prepared.length - 1; i >= 0; i--) {
+    tailH[i] = tailH[i + 1] + prepared[i].totalH;
+  }
+
+  // Smallest body we accept at the bottom of a page: the empty-box minimum
+  // (46px ≈ one or two lines). Heading + hint + this must fit to START a block here.
+  const minStartBoxH = measure(boxHTML('A'));
+
+  // ---- tokenised word-splitting that preserves newlines/spacing ----
+  const tokenize = (t) => String(t ?? '').match(/\S+\s*/g) || [];
+  const fitTokens = (text, maxH, force) => {
+    const toks = tokenize(text);
+    if (!toks.length) return { fitText: '', restText: '' };
+    const join = (n) => toks.slice(0, n).join('').trimEnd();
+    let lo = 0, hi = toks.length - 1, best = 0; // full text is known NOT to fit
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      if (measure(boxedBody(join(mid))) <= maxH) { best = mid; lo = mid + 1; }
+      else hi = mid - 1;
+    }
+    if (force) best = Math.max(best, 1);                 // guarantee progress
+    else if (best < 2 && toks.length > 2) best = 0;      // widow/orphan guard
+    return { fitText: join(best), restText: toks.slice(best).join('') };
+  };
+
+  // ---- page state ----
+  const result = [];
+  let cur = [];
+  let curH = 0;
+  const avail = () => (result.length === 0 ? AVAIL_FIRST : AVAIL_REST);
+  const flush = () => {
+    if (!cur.length) return;
+    result.push({ blocks: cur, isFirstPage: result.length === 0 });
+    cur = [];
+    curH = 0;
+  };
+  const place = (html, h) => { cur.push({ html }); curH += h; };
+  const dumpFrom = (idx) => {
+    for (let j = idx; j < prepared.length; j++) {
+      const b = prepared[j];
+      if (b.kind === 'atomic') place(b.html, b.totalH);
+      else { place(b.headingHtml, b.headingH); place(boxedBody(b.bodyText), b.totalH - b.headingH); }
+    }
+  };
+
+  // ---- main loop ----
+  let done = false;
+  for (let bi = 0; bi < prepared.length && !done; bi++) {
+    const block = prepared[bi];
+
+    // ---------- atomic ----------
+    if (block.kind === 'atomic') {
+      // Everything left fits (or overflows only slightly) → last page.
+      if (curH + tailH[bi] <= avail() + LAST_PAGE_OVERFLOW_ALLOWANCE_PX) {
+        dumpFrom(bi);
+        done = true;
+        break;
+      }
+      // keepWithNext: a heading-like block must be followed by ≥ heading + 2 lines.
+      let need = block.totalH;
+      const next = prepared[bi + 1];
+      if (block.keepWithNext && next) {
+        need += next.kind === 'narrative' ? next.headingH + minStartBoxH : next.totalH;
+      }
+      if (curH + need > avail()) flush(); // no-op on an empty page → oversized block just overflows
+      place(block.html, block.totalH);
+      continue;
+    }
+
+    // ---------- narrative ----------
+    let text = block.bodyText;
+    let headingShown = false;
+    const placeChunk = (chunk, h) => {
+      if (!headingShown) { place(block.headingHtml, block.headingH); headingShown = true; }
+      place(boxedBody(chunk), h);
+    };
+
+    for (let guard = 0; ; guard++) {
+      if (guard > MAX_LOOP_GUARD) {                 // safety valve
+        placeChunk(text, 0);
+        break;
+      }
+      const pendingH = headingShown ? 0 : block.headingH;
+      const fullH = measure(boxedBody(text));
+      const need = pendingH + fullH;
+      const room = avail() - curH;
+
+      // 1. whole remainder fits
+      if (need <= room) { placeChunk(text, fullH); break; }
+
+      // 2. remainder + everything after fits within the last-page allowance
+      if (need + tailH[bi + 1] <= room + LAST_PAGE_OVERFLOW_ALLOWANCE_PX) {
+        placeChunk(text, fullH);
+        dumpFrom(bi + 1);
+        done = true;
+        break;
+      }
+
+      if (DEBUG_PAGINATION) {
+        console.log('[paginate]', block.headingHtml.replace(/<[^>]+>/g, '').trim().slice(0, 40),
+          { page: result.length + 1, room: Math.round(room), pendingH, minStartBoxH, fullH });
+      }
+
+      // 3. heading (+hint) + minimum box fit → start here and split the box
+      if (room >= pendingH + minStartBoxH) {
+        const { fitText, restText } = fitTokens(text, room - pendingH, false);
+        if (fitText) {
+          placeChunk(fitText, room - pendingH);
+          flush();
+          text = restText;
+          if (!text) break;
+          continue;
+        }
+      }
+
+      // 4. doesn't fit here → next page (never leave a heading orphaned)
+      if (cur.length) { flush(); continue; }
+
+      // 5. page is already empty and still nothing fits → force progress
+      const forced = fitTokens(text, room - pendingH, true);
+      if (!forced.fitText) { placeChunk(text, fullH); break; }
+      placeChunk(forced.fitText, room - pendingH);
+      flush();
+      text = forced.restText;
+      if (!text) break;
+    }
+  }
+
+  flush();
+  return result;
+}
+
+/* ===================================================================== */
+/*  A4 PAGINATOR                                                          */
+/* ===================================================================== */
 function A4Paginator({ data, BLUE, LIGHT, BORDER }) {
   const [pages, setPages] = useState(null);
   const [containerWidth, setContainerWidth] = useState(0);
@@ -126,196 +297,52 @@ function A4Paginator({ data, BLUE, LIGHT, BORDER }) {
 
   useEffect(() => {
     if (!measureRef.current || containerWidth === 0) return;
-    const probeWidthPx = measureRef.current.offsetWidth;
-    if (probeWidthPx === 0) return;
+    let cancelled = false;
 
-    // -------- Page geometry ----------------------------------------
-    const MM_TO_PX = 3.7795275591;
-    const PAGE_HEIGHT = 297 * MM_TO_PX;
-    const PAGE_PADDING_TOP = 18 * MM_TO_PX;
-    const PAGE_PADDING_BOTTOM = 18 * MM_TO_PX;
-    const FOOTER_RESERVE = 20;
-    const RUNNING_HEADER_RESERVE = 40;
-    const USABLE_HEIGHT =
-      PAGE_HEIGHT - PAGE_PADDING_TOP - PAGE_PADDING_BOTTOM - FOOTER_RESERVE;
+    const run = () => {
+      const host = measureRef.current;
+      if (cancelled || !host) return;
+      const probeWidthPx = host.offsetWidth; // 178mm
+      if (!probeWidthPx) return;
 
-    // -------- Measure helper ---------------------------------------
-    const measure = (html) => {
+      // One reusable probe. position:absolute → own BFC, so outer margins
+      // of the measured block are included (same as a flex/BFC parent).
       const probe = document.createElement('div');
-      probe.style.position = 'absolute';
-      probe.style.visibility = 'hidden';
-      probe.style.width = probeWidthPx + 'px';
-      probe.style.fontFamily = 'Times New Roman, Georgia, serif';
-      probe.style.fontSize = '11pt';
-      probe.style.lineHeight = '1.4';
-      probe.innerHTML = html;
-      measureRef.current.appendChild(probe);
-      const h = probe.offsetHeight;
-      measureRef.current.removeChild(probe);
-      return h;
-    };
-
-    // Split a text into N words and return the HTML of the wrapping box
-    const boxedBody = (text) => `
-      <div style="border:1px solid ${BORDER};min-height:46px;color:${BLUE};font-family:Arial;font-size:10pt;padding:6px 8px;white-space:pre-wrap;">${text}</div>
-    `;
-
-    // Given plain text and a target height, find how many words fit
-    const fitWordsToHeight = (text, maxHeight) => {
-      const words = String(text || '').split(/\s+/).filter(Boolean);
-      if (words.length === 0) return { fitText: '', restText: '' };
-      if (measure(boxedBody(words.join(' '))) <= maxHeight) {
-        return { fitText: words.join(' '), restText: '' };
-      }
-      let lo = 0, hi = words.length, best = 0;
-      while (lo < hi) {
-        const mid = Math.floor((lo + hi) / 2);
-        if (measure(boxedBody(words.slice(0, mid).join(' '))) <= maxHeight) {
-          best = mid;
-          lo = mid + 1;
-        } else {
-          hi = mid;
-        }
-      }
-      // widow control — never leave fewer than 2 words behind
-      if (best < 2 && words.length > 2) best = 0;
-      return {
-        fitText: words.slice(0, best).join(' '),
-        restText: words.slice(best).join(' '),
+      probe.style.cssText =
+        `position:absolute;visibility:hidden;left:0;top:0;width:${probeWidthPx}px;` +
+        `font-family:'Times New Roman',Georgia,serif;font-size:11pt;line-height:1.4;`;
+      host.appendChild(probe);
+      const measure = (html) => {
+        probe.innerHTML = html;
+        return probe.offsetHeight;
       };
-    };
 
-    // -------- Page 1 header height ---------------------------------
-    const firstPageHeaderHeight = measure(
-      firstPageHeaderHTML(BLUE, LIGHT, BORDER)
-    );
+      const boxHTML = (inner) =>
+        `<div style="border:1px solid ${BORDER};min-height:46px;color:${BLUE};font-family:Arial;font-size:10pt;padding:6px 8px;white-space:pre-wrap;">${inner}</div>`;
 
-    // -------- Prepare measured blocks ------------------------------
-    const prepared = blocks.map((b) => {
-      if (b.kind === 'atomic') {
-        return { ...b, totalH: measure(b.html) };
-      }
-      // Narrative: heading + hint + box
-      const headingH = measure(b.heading);
-      const hintH = b.hintHTML ? measure(b.hintHTML) : 0;
-      const boxH = measure(boxedBody(b.bodyText));
-      return {
-        ...b,
-        headingH,
-        hintH,
-        boxH,
-        totalH: headingH + hintH + boxH,
-      };
-    });
-
-    // -------- Packing loop -----------------------------------------
-    const result = [];
-    let currentBlocks = [];
-    let currentHeight = 0;
-    let isFirstPage = true;
-
-    const getAvailable = () =>
-      isFirstPage
-        ? USABLE_HEIGHT - firstPageHeaderHeight
-        : USABLE_HEIGHT - RUNNING_HEADER_RESERVE;
-
-    const flushPage = () => {
-      if (currentBlocks.length > 0) {
-        result.push({ blocks: currentBlocks, isFirstPage });
-        isFirstPage = false;
-        currentBlocks = [];
-        currentHeight = 0;
+      try {
+        // Same markup A4Sheet renders on page 1 → exact height.
+        const titleHeight = measure(firstPageTitleHTML(BLUE, LIGHT, BORDER));
+        setPages(packBlocks(blocks, { measure, boxHTML, titleHeight }));
+      } finally {
+        host.removeChild(probe);
       }
     };
 
-    for (const block of prepared) {
-    if (block.kind === 'atomic') {
-        const avail = getAvailable();
-        if (currentHeight + block.totalH <= avail) {
-        currentBlocks.push({ html: block.html });
-        currentHeight += block.totalH;
-        } else {
-        flushPage();
-        currentBlocks.push({ html: block.html });
-        currentHeight = block.totalH;
-        }
-        continue;
+    // Web fonts change line breaks — measure only once they're ready.
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(run, run);
+    } else {
+      run();
     }
-
-    // ------- Narrative block -------
-    let remainingText = block.bodyText;
-    const headingAndHint = block.headingH + (block.hintHTML ? block.hintH : 0);
-
-    const EMPTY_BOX_H = measure(boxedBody(''));
-    const minChunkH = headingAndHint + EMPTY_BOX_H;
-
-    const pushHeadingIfNeeded = () => {
-      if (block.hintHTML && block.hintHTMLShown !== 'true') {
-        currentBlocks.push({ html: block.heading + block.hintHTML });
-        block.headingShown = 'true';
-        block.hintHTMLShown = 'true';
-      } else if (block.headingShown !== 'true') {
-        currentBlocks.push({ html: block.heading });
-        block.headingShown = 'true';
-      }
-    };
-
-    while (true) {
-      const avail = getAvailable();
-
-      const fullBodyH = measure(boxedBody(remainingText));
-      if (currentHeight + headingAndHint + fullBodyH <= avail) {
-        pushHeadingIfNeeded();
-        currentBlocks.push({ html: boxedBody(remainingText) });
-        currentHeight += headingAndHint + fullBodyH;
-        break;
-      }
-
-      if (
-        currentHeight + headingAndHint < avail &&
-        block.headingShown !== 'true'
-      ) {
-        pushHeadingIfNeeded();
-        currentHeight += headingAndHint;
-
-        const bodySpaceLeft = avail - currentHeight;
-
-        // Fit as many words as possible into that space
-        const { fitText, restText } = fitWordsToHeight(
-          remainingText,
-          bodySpaceLeft
-        );
-
-        currentBlocks.push({ html: boxedBody(fitText) });
-        flushPage();
-
-        remainingText = restText;
-        if (!remainingText) break;
-
-        continue;
-      }
-
-      flushPage();
-      
-      if (getAvailable() < minChunkH) {
-        // Force render to avoid infinite loop
-        pushHeadingIfNeeded();
-        currentBlocks.push({ html: boxedBody(remainingText) });
-        currentHeight = minChunkH;
-        break;
-      }
-    }
-    }
-    flushPage();
-
-    setPages(result);
+    return () => { cancelled = true; };
   }, [blocks, containerWidth, BLUE, LIGHT, BORDER]);
 
   const totalPages = pages ? pages.length : 1;
 
   return (
     <div ref={wrapperRef} className="w-full flex justify-center">
-      {/* Hidden measurement container */}
+      {/* Hidden measurement container — must stay 178mm (210mm − 2×16mm) */}
       <div
         ref={measureRef}
         style={{
@@ -333,7 +360,7 @@ function A4Paginator({ data, BLUE, LIGHT, BORDER }) {
       />
 
       {/* Rendered pages */}
-      <div className="a4-sheets-container flex flex-col items-center gap-6">
+      <div className="a4-sheets-container flex flex-col items-center gap-16">
         {!pages ? (
           <div className="text-center py-12 text-slate-500 text-sm">
             Measuring content…
@@ -345,6 +372,7 @@ function A4Paginator({ data, BLUE, LIGHT, BORDER }) {
               pageNumber={idx + 1}
               totalPages={totalPages}
               isFirstPage={page.isFirstPage}
+              allowOverflow={idx === pages.length - 1}
               BLUE={BLUE}
               LIGHT={LIGHT}
               BORDER={BORDER}
@@ -360,7 +388,7 @@ function A4Paginator({ data, BLUE, LIGHT, BORDER }) {
   );
 }
 
-function A4Sheet({ pageNumber, isFirstPage, children, BLUE, LIGHT, BORDER }) {
+function A4Sheet({ pageNumber, isFirstPage, allowOverflow = false, children, BLUE, LIGHT, BORDER }) {
   const HEADER_H = '0.1in';
   const FOOTER_H = '0.2in';
   const TOP_PADDING = '18mm';
@@ -373,7 +401,8 @@ function A4Sheet({ pageNumber, isFirstPage, children, BLUE, LIGHT, BORDER }) {
       className="a4-sheet bg-white shadow-2xl"
       style={{
         width: '210mm',
-        height: '297mm',
+        // last page may grow past 297mm; all others are fixed A4
+        ...(allowOverflow ? { minHeight: '297mm' } : { height: '297mm' }),
         padding: '0 16mm',               
         fontFamily: 'Times New Roman, Georgia, serif',
         fontSize: '11pt',
@@ -381,7 +410,7 @@ function A4Sheet({ pageNumber, isFirstPage, children, BLUE, LIGHT, BORDER }) {
         color: '#111',
         display: 'flex',
         flexDirection: 'column',
-        overflow: 'hidden',
+        overflow: 'visible',
         position: 'relative',
       }}
     >
@@ -421,53 +450,12 @@ function A4Sheet({ pageNumber, isFirstPage, children, BLUE, LIGHT, BORDER }) {
         </span>
       </div>
 
-      {/* ===== PAGE-1 TITLE BLOCK ===== */}
+      {/* ===== PAGE-1 TITLE BLOCK (same HTML the paginator measures) ===== */}
       {isFirstPage && (
-        <>
-          <div style={{ textAlign: 'center', marginBottom: '20px', flexShrink: 0 }}>
-            <h2
-              style={{
-                color: BLUE,
-                fontWeight: 700,
-                fontFamily: 'Arial, Helvetica, sans-serif',
-                fontSize: '13pt',
-                margin: '0 0 12px 0',
-              }}
-            >
-              ABSTRACT TEMPLATE
-            </h2>
-            <p style={{ fontSize: '11pt', lineHeight: 1.3, color: '#000', margin: 0 }}>
-              <span style={{ fontWeight: 400, fontFamily: 'Arial', fontSize: '10.5pt' }}>
-                Theme:{' '}
-              </span>
-              <span style={{ fontWeight: 700, fontFamily: 'Calibri', fontSize: '11pt' }}>
-                HEIs at the Forefront of Transformative Extension: Advancing
-                Evidence-Based, Inclusive, Sustainable, and Resilient Community
-                Development
-              </span>
-            </p>
-          </div>
-
-          <div
-            style={{
-              backgroundColor: LIGHT,
-              border: `1px solid ${BORDER}`,
-              color: BLUE,
-              fontFamily: 'Arial, Helvetica, sans-serif',
-              fontSize: '9pt',
-              lineHeight: 1.3,
-              padding: '6px 12px',
-              marginBottom: '20px',
-              borderRadius: '2px',
-              flexShrink: 0,
-            }}
-          >
-            <span style={{ fontWeight: 700 }}>Instructions:</span> Complete all
-            sections. Select only one paper category and one thematic area. Use
-            clear, evidence-based statements and avoid unsupported outcome or
-            impact claims.
-          </div>
-        </>
+        <div
+          style={{ flexShrink: 0 }}
+          dangerouslySetInnerHTML={{ __html: firstPageTitleHTML(BLUE, LIGHT, BORDER) }}
+        />
       )}
 
       {/* ===== CONTENT ===== */}
@@ -475,7 +463,7 @@ function A4Sheet({ pageNumber, isFirstPage, children, BLUE, LIGHT, BORDER }) {
         style={{
           flex: '1 1 auto',
           minHeight: 0,
-          overflow: 'hidden',
+          overflow: 'visible',
           position: 'relative',
           zIndex: 1,
         }}
@@ -499,10 +487,20 @@ function A4Sheet({ pageNumber, isFirstPage, children, BLUE, LIGHT, BORDER }) {
           fontFamily: 'Cambria',
           fontSize: '9pt',
           color: '#8EA9C7',
-          overflow: 'hidden',
-          position: 'relative',
-          zIndex: 10,
-          background: '#fff',
+          overflow: 'visible',
+          // On an overflowing last page the footer stays at the A4 boundary
+          // (297mm) instead of following the grown sheet's bottom edge.
+          ...(allowOverflow
+            ? {
+                position: 'absolute',
+                top: `calc(297mm - ${FOOTER_ZONE_H})`,
+                left: '16mm',
+                right: '16mm',
+                zIndex: 0,
+                background: 'transparent',
+                pointerEvents: 'none',
+              }
+            : { position: 'relative', zIndex: 10, background: '#fff' }),
           lineHeight: 1,
         }}
       >
@@ -518,27 +516,14 @@ function A4Sheet({ pageNumber, isFirstPage, children, BLUE, LIGHT, BORDER }) {
 }
 
 
-function firstPageHeaderHTML(BLUE, LIGHT, BORDER) {
-  return `
-    <div style="text-align:center;margin-bottom:20px;">
-      <h1 style="color:${BLUE};font-weight:600;font-family:Arial;font-size:12pt;line-height:1.2;margin:0;">
-        1<sup>st</sup> PEMNet National Extension Conference 2026
-      </h1>
-      <h2 style="color:${BLUE};font-weight:700;font-family:Arial;font-size:12pt;margin-top:4px;margin-bottom:0;">
-        ABSTRACT TEMPLATE
-      </h2>
-      <p style="font-size:11pt;margin-top:12px;line-height:1.3;color:#000;">
-        <span style="font-weight:400;font-family:Arial;font-size:10.5pt;">Theme: </span>
-        <span style="font-weight:700;font-family:Calibri;font-size:11pt;">
-          HEIs at the Forefront of Transformative Extension: Advancing
-          Evidence-Based, Inclusive, Sustainable, and Resilient Community Development
-        </span>
-      </p>
-    </div>
-    <div style="background:${LIGHT};border:1px solid ${BORDER};color:${BLUE};font-family:Arial,Helvetica,sans-serif;font-size:9pt;line-height:1.3;padding:6px 12px;margin-bottom:20px;">
-      <span style="font-weight:700;">Instructions:</span> Complete all sections. Select only one paper category and one thematic area. Use clear, evidence-based statements and avoid unsupported outcome or impact claims.
-    </div>
-  `;
+/* Single source of truth for the page-1 title + instructions block.
+   Used BOTH by A4Sheet (rendered) and A4Paginator (measured). */
+function firstPageTitleHTML(BLUE, LIGHT, BORDER) {
+  return `<div style="text-align:center;margin-bottom:20px;">
+  <h2 style="color:${BLUE};font-weight:700;font-family:Arial,Helvetica,sans-serif;font-size:13pt;margin:0 0 12px 0;">ABSTRACT TEMPLATE</h2>
+  <p style="font-size:11pt;line-height:1.3;color:#000;margin:0;"><span style="font-weight:400;font-family:Arial;font-size:10.5pt;">Theme: </span><span style="font-weight:700;font-family:Calibri;font-size:11pt;">HEIs at the Forefront of Transformative Extension: Advancing Evidence-Based, Inclusive, Sustainable, and Resilient Community Development</span></p>
+</div>
+<div style="background-color:${LIGHT};border:1px solid ${BORDER};color:${BLUE};font-family:Arial,Helvetica,sans-serif;font-size:9pt;line-height:1.3;padding:6px 12px;margin-bottom:20px;border-radius:2px;"><span style="font-weight:700;">Instructions:</span> Complete all sections. Select only one paper category and one thematic area. Use clear, evidence-based statements and avoid unsupported outcome or impact claims.</div>`;
 }
 
 /* ===================================================================== */
@@ -699,7 +684,7 @@ function buildBlocks({ data, BLUE, LIGHT, BORDER }) {
 
   return [
     { kind: 'atomic', html: sectionA },
-    { kind: 'atomic', html: sectionBHeading },
+    { kind: 'atomic', html: sectionBHeading, keepWithNext: true },
     narrativeBlock(
       '5.',
       'Community or Sectoral Need Addressed',
@@ -718,7 +703,7 @@ function buildBlocks({ data, BLUE, LIGHT, BORDER }) {
       'Describe in not more than 300 words the major extension approaches, methods, strategies, or activities implemented.',
       data.extension_methods
     ),
-    { kind: 'atomic', html: block8Head },
+    { kind: 'atomic', html: block8Head, keepWithNext: true },
     subBlock('a. Major Outputs or Emerging Results', null, data.major_outputs),
     subBlock(
       'b. Evidence of Outcomes, Adoption, or Utilization',
@@ -942,16 +927,14 @@ export default function AbstractForm({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => window.print()}
-              className="px-4 py-2 text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition inline-flex items-center gap-2"
+            <PrintA4SheetsButton
+            className="px-4 py-2 text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition inline-flex items-center gap-2"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0l.229 2.523a1.125 1.125 0 01-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0021 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 00-1.913-.247M6.34 18H5.25A2.25 2.25 0 013 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 011.913-.247m10.5 0a48.536 48.536 0 00-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659" />
-              </svg>
-              Print
-            </button>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0l.229 2.523a1.125 1.125 0 01-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0021 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 00-1.913-.247M6.34 18H5.25A2.25 2.25 0 013 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 011.913-.247m10.5 0a48.536 48.536 0 00-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659" />
+            </svg>
+            Print
+            </PrintA4SheetsButton>
             <button
               type="button"
               onClick={() => setShowPreview(false)}

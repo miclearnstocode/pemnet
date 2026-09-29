@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 
 const thematicAreas = [
   "Food Production, Agricultural, Fisheries, and Natural Resource Systems",
@@ -15,133 +15,264 @@ const paperCategories = [
   "Ongoing Extension Project Paper"
 ];
 
-
 export function AbstractPreview({ data }) {
-  const formatList = (val) => {
-    if (!val) return '—';
-    if (Array.isArray(val)) return val.filter(v => v && v.trim()).join(', ') || '—';
-    return val;
-  };
-
   const BLUE = '#1F3864';
   const LIGHT = '#E8EEF7';
   const BORDER = '#B4C6E0';
 
   return (
     <>
-      {/* ============ PRINT STYLES ============ */}
       <style jsx global>{`
         @page {
           size: A4;
-          margin: 22mm 16mm 20mm 16mm;
-
-          @top-center {
-            content: "1st PEMNet National Extension Conference 2026";
-            font-family: Arial, Helvetica, sans-serif;
-            font-size: 10pt;
-            font-weight: 600;
-            color: ${BLUE};
-          }
-
-          @bottom-left {
-            content: "Abstract";
-            font-family: Arial, Helvetica, sans-serif;
-            font-size: 9pt;
-            color: ${BLUE};
-          }
-
-          @bottom-right {
-            content: counter(page);
-            font-family: Arial, Helvetica, sans-serif;
-            font-size: 9pt;
-            color: ${BLUE};
-          }
+          margin: 0;
         }
 
         @media print {
           body {
             background: #fff !important;
           }
-
-          body * {
-            visibility: hidden;
+          .a4-sheets-container {
+            gap: 0 !important;
           }
-
-          .a4-print-area,
-          .a4-print-area * {
-            visibility: visible;
-          }
-
-          .a4-print-area {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
+          .a4-sheet {
             box-shadow: none !important;
-            border: none !important;
-            padding: 0 !important;
-            min-height: 0 !important;
+            margin: 0 !important;
+            page-break-after: always;
+            break-after: page;
           }
-
-          .screen-only-header,
-          .screen-only-footer {
+          .a4-sheet:last-child {
+            page-break-after: auto;
+            break-after: auto;
+          }
+          .no-print {
             display: none !important;
-          }
-        }
-
-        @media screen {
-          .print-only {
-            display: none;
           }
         }
       `}</style>
 
-      <div className="w-full flex justify-center">
-        <div
-          className="bg-white shadow-2xl a4-print-area"
+      <A4Paginator data={data} BLUE={BLUE} LIGHT={LIGHT} BORDER={BORDER} />
+    </>
+  );
+}
+
+function A4Paginator({ data, BLUE, LIGHT, BORDER }) {
+  const [pages, setPages] = useState(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+  const measureRef = useRef(null);
+  const wrapperRef = useRef(null);
+
+  const blocks = useMemo(
+    () => buildBlocks({ data, BLUE, LIGHT, BORDER }),
+    [data, BLUE, LIGHT, BORDER]
+  );
+
+  // Track container width once mounted
+  useEffect(() => {
+    if (!wrapperRef.current) return;
+    const update = () => setContainerWidth(wrapperRef.current.offsetWidth);
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+
+  useEffect(() => {
+    if (!measureRef.current || containerWidth === 0) return;
+
+    const probeWidthPx = measureRef.current.offsetWidth;
+    if (probeWidthPx === 0) return;
+
+    // A4 page usable height (mm -> px conversion at 96dpi)
+    const MM_TO_PX = 3.7795275591;
+    const PAGE_HEIGHT = 297 * MM_TO_PX;
+    const PAGE_PADDING_TOP = 18 * MM_TO_PX;
+    const PAGE_PADDING_BOTTOM = 18 * MM_TO_PX;
+    const FOOTER_RESERVE = 30;             // px for footer
+    const RUNNING_HEADER_RESERVE = 40;     // px for page 2+ running header
+    const USABLE_HEIGHT = PAGE_HEIGHT - PAGE_PADDING_TOP - PAGE_PADDING_BOTTOM - FOOTER_RESERVE;
+
+    // Measure each block in isolation
+    const measured = blocks.map((b) => {
+      const probe = document.createElement('div');
+      probe.style.position = 'absolute';
+      probe.style.visibility = 'hidden';
+      probe.style.width = probeWidthPx + 'px';
+      probe.style.fontFamily = 'Times New Roman, Georgia, serif';
+      probe.style.fontSize = '11pt';
+      probe.style.lineHeight = '1.4';
+      probe.innerHTML = b.html;
+      measureRef.current.appendChild(probe);
+      const h = probe.offsetHeight;
+      measureRef.current.removeChild(probe);
+      return { ...b, heightPx: h };
+    });
+
+    // Measure first-page header (rendered to a probe)
+    const headerProbe = document.createElement('div');
+    headerProbe.style.position = 'absolute';
+    headerProbe.style.visibility = 'hidden';
+    headerProbe.style.width = probeWidthPx + 'px';
+    headerProbe.innerHTML = firstPageHeaderHTML(BLUE, LIGHT, BORDER);
+    measureRef.current.appendChild(headerProbe);
+    const firstPageHeaderHeight = headerProbe.offsetHeight;
+    measureRef.current.removeChild(headerProbe);
+
+    // Distribute blocks across pages
+    const result = [];
+    let currentBlocks = [];
+    let currentHeight = 0;
+    let isFirstPage = true;
+
+    for (const block of measured) {
+      const available =
+        (isFirstPage ? USABLE_HEIGHT - firstPageHeaderHeight : USABLE_HEIGHT - RUNNING_HEADER_RESERVE);
+
+      // Block fits on this page
+      if (currentHeight + block.heightPx <= available) {
+        currentBlocks.push(block);
+        currentHeight += block.heightPx;
+      } else {
+        // Doesn't fit — close current page
+        if (currentBlocks.length > 0) {
+          result.push({ blocks: currentBlocks, isFirstPage });
+          isFirstPage = false;
+          currentBlocks = [];
+          currentHeight = 0;
+        }
+
+        // If the block alone is still bigger than a full page, put it on its own page (it will be clipped by overflow:hidden)
+        const freshAvailable = isFirstPage
+          ? USABLE_HEIGHT - firstPageHeaderHeight
+          : USABLE_HEIGHT - RUNNING_HEADER_RESERVE;
+
+        if (block.heightPx > freshAvailable) {
+          result.push({ blocks: [block], isFirstPage });
+          isFirstPage = false;
+        } else {
+          currentBlocks.push(block);
+          currentHeight = block.heightPx;
+        }
+      }
+    }
+    if (currentBlocks.length > 0) {
+      result.push({ blocks: currentBlocks, isFirstPage });
+    }
+
+    setPages(result);
+  }, [blocks, containerWidth, BLUE, LIGHT, BORDER]);
+
+  const totalPages = pages ? pages.length : 1;
+
+  return (
+    <div
+      ref={wrapperRef}
+      className="w-full flex justify-center"
+    >
+      {/* Hidden measurement container */}
+      <div
+        ref={measureRef}
+        style={{
+          position: 'absolute',
+          visibility: 'hidden',
+          pointerEvents: 'none',
+          width: '178mm', // A4 width minus 2×16mm padding
+          fontFamily: 'Times New Roman, Georgia, serif',
+          fontSize: '11pt',
+          lineHeight: 1.4,
+          left: '-99999px',
+          top: 0,
+        }}
+        aria-hidden="true"
+      />
+
+      {/* Rendered pages */}
+      <div className="a4-sheets-container flex flex-col items-center gap-6">
+        {!pages ? (
+          <div className="text-center py-12 text-slate-500 text-sm">
+            Measuring content…
+          </div>
+        ) : (
+          pages.map((page, idx) => (
+            <A4Sheet
+              key={idx}
+              pageNumber={idx + 1}
+              totalPages={totalPages}
+              isFirstPage={page.isFirstPage}
+              BLUE={BLUE}
+              LIGHT={LIGHT}
+              BORDER={BORDER}
+            >
+              {page.blocks.map((b, i) => (
+                <div key={i} dangerouslySetInnerHTML={{ __html: b.html }} />
+              ))}
+            </A4Sheet>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+function A4Sheet({ pageNumber, isFirstPage, children, BLUE, LIGHT, BORDER }) {
+  return (
+    <div
+      className="a4-sheet bg-white shadow-2xl"
+      style={{
+        width: '210mm',
+        height: '297mm',
+        padding: '18mm 16mm',
+        fontFamily: 'Times New Roman, Georgia, serif',
+        fontSize: '11pt',
+        lineHeight: 1.4,
+        color: '#111',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+      }}
+    >
+      {/* ===== RUNNING HEADER — every page ===== */}
+      <div style={{ textAlign: 'center', flexShrink: 0 }}>
+        <span
           style={{
-            width: '210mm',
-            minHeight: '297mm',
-            padding: '18mm 16mm',
-            fontFamily: 'Times New Roman, Georgia, serif',
-            fontSize: '11pt',
-            lineHeight: 1.4,
-            color: '#111',
-            display: 'flex',
-            flexDirection: 'column',
+            display: 'inline-block',
+            color: BLUE,
+            fontFamily: 'Arial, Helvetica, sans-serif',
+            fontSize: '12pt',
+            opacity: '0.7',
+            fontWeight: 600,
           }}
         >
-          {/* ============ SCREEN-ONLY HEADER ============ */}
-          <div className="screen-only-header text-center mb-5">
-            <h1
-              className="text-[12pt] leading-tight"
-              style={{ color: BLUE, fontWeight: 600, fontFamily: 'Arial' }}
-            >
-              1<sup>st</sup> PEMNet National Extension Conference 2026
-            </h1>
+          1<sup>st</sup> PEMNet National Extension Conference 2026
+        </span>
+      </div>
+
+      {/* ===== PAGE 1 ONLY — title block + instructions ===== */}
+      {isFirstPage && (
+        <>
+          <div style={{ textAlign: 'center', marginBottom: '20px', flexShrink: 0 }}>
             <h2
-              className="text-[12pt] mt-1"
-              style={{ color: BLUE, fontWeight: 700, fontFamily: 'Arial' }}
+              style={{
+                color: BLUE,
+                fontWeight: 700,
+                fontFamily: 'Arial, Helvetica, sans-serif',
+                fontSize: '13pt',
+                margin: '0 0 12px 0',
+              }}
             >
               ABSTRACT TEMPLATE
             </h2>
-            <p className="text-[11pt] mt-3 leading-snug text-black">
-              <span
-                style={{
-                  fontWeight: 400,
-                  fontFamily: 'Arial',
-                  fontSize: '10.5pt',
-                }}
-              >
+            <p
+              style={{
+                fontSize: '11pt',
+                lineHeight: 1.3,
+                color: '#000',
+                margin: 0,
+              }}
+            >
+              <span style={{ fontWeight: 400, fontFamily: 'Arial', fontSize: '10.5pt' }}>
                 Theme:{' '}
               </span>
-              <span
-                style={{
-                  fontWeight: 700,
-                  fontFamily: 'Calibri',
-                  fontSize: '11pt',
-                }}
-              >
+              <span style={{ fontWeight: 700, fontFamily: 'Calibri', fontSize: '11pt' }}>
                 HEIs at the Forefront of Transformative Extension: Advancing
                 Evidence-Based, Inclusive, Sustainable, and Resilient Community
                 Development
@@ -149,567 +280,278 @@ export function AbstractPreview({ data }) {
             </p>
           </div>
 
-          {/* ============ CONTENT AREA (grows to fill) ============ */}
-          <div className="flex-1">
-            {/* Instructions box */}
-            <div
-              className="rounded-sm px-3 py-2 mb-5 leading-snug"
-              style={{
-                backgroundColor: LIGHT,
-                border: `1px solid ${BORDER}`,
-                color: BLUE,
-                fontFamily: 'Arial, Helvetica, sans-serif',
-                fontSize: '9pt',
-              }}
-            >
-              <span className="font-bold">Instructions:</span> Complete all
-              sections. Select only one paper category and one thematic area.
-              Use clear, evidence-based statements and avoid unsupported outcome
-              or impact claims.
-            </div>
-
-            {/* ============ A. PAPER INFORMATION ============ */}
-            <h3
-              className="text-[13pt] font-bold mb-2"
-              style={{ color: BLUE, fontFamily: 'Arial', fontSize: '11pt' }}
-            >
-              A. Paper Information
-            </h3>
-
-            <table
-              className="w-full border-collapse"
-              style={{ border: `1px solid ${BORDER}`, fontSize: '10.5pt' }}
-            >
-              <tbody>
-                {/* Row 1: Title */}
-                <tr>
-                  <th
-                    className="align-top text-left px-3 py-2 w-[42%]"
-                    style={{
-                      backgroundColor: LIGHT,
-                      color: BLUE,
-                      borderRight: `1px solid ${BORDER}`,
-                      borderBottom: `1px solid ${BORDER}`,
-                      fontWeight: 700,
-                      fontFamily: 'Arial',
-                      fontSize: '11pt',
-                    }}
-                  >
-                    1. Title of the Extension Project Paper
-                  </th>
-                  <td
-                    className="align-top px-3 py-2"
-                    style={{ borderBottom: `1px solid ${BORDER}` }}
-                  >
-                    {data.title || <span className="text-slate-300">—</span>}
-                  </td>
-                </tr>
-
-                {/* Row 2: Author/s */}
-                <tr>
-                  <th
-                    className="align-top text-left px-3 py-2"
-                    style={{
-                      backgroundColor: LIGHT,
-                      color: BLUE,
-                      borderRight: `1px solid ${BORDER}`,
-                      borderBottom: `1px solid ${BORDER}`,
-                      fontWeight: 700,
-                      fontFamily: 'Arial',
-                      fontSize: '11pt',
-                    }}
-                  >
-                    2. Author/s and Institutional Affiliation/s
-                    <p
-                      className="font-normal italic mt-1"
-                      style={{
-                        color: BLUE,
-                        fontFamily: 'Arial',
-                        fontSize: '8pt',
-                      }}
-                    >
-                      Note: Use an asterisk (*) after the name of the project
-                      leader. If the presenter is not the project leader, write
-                      "paper presenter" after the name.
-                    </p>
-                  </th>
-                  <td
-                    className="align-top px-3 py-2"
-                    style={{ borderBottom: `1px solid ${BORDER}` }}
-                  >
-                    {[
-                      data.project_leader && `${data.project_leader}*`,
-                      data.presenter && `${data.presenter} (paper presenter)`,
-                      ...(Array.isArray(data.co_authors) ? data.co_authors : []),
-                    ]
-                      .filter(Boolean)
-                      .join('; ') || (
-                      <span className="text-slate-300">—</span>
-                    )}
-                  </td>
-                </tr>
-
-                {/* Row 3: Corresponding Author */}
-                <tr>
-                  <th
-                    className="align-top text-left px-3 py-2"
-                    style={{
-                      backgroundColor: LIGHT,
-                      color: BLUE,
-                      borderRight: `1px solid ${BORDER}`,
-                      borderBottom: `1px solid ${BORDER}`,
-                      fontWeight: 700,
-                      fontFamily: 'Arial',
-                      fontSize: '11pt',
-                    }}
-                  >
-                    3. Name and Email Address of Corresponding Author
-                  </th>
-                  <td
-                    className="align-top px-3 py-2"
-                    style={{ borderBottom: `1px solid ${BORDER}` }}
-                  >
-                    {[
-                      data.corresponding_author_name,
-                      data.corresponding_author_position &&
-                        `(${data.corresponding_author_position})`,
-                      data.corresponding_author_email &&
-                        `<${data.corresponding_author_email}>`,
-                    ]
-                      .filter(Boolean)
-                      .join(' ') || (
-                      <span className="text-slate-300">—</span>
-                    )}
-                  </td>
-                </tr>
-
-                {/* Row 4: Paper Category */}
-                <tr>
-                  <th
-                    className="align-top text-left px-3 py-2"
-                    style={{
-                      backgroundColor: LIGHT,
-                      color: BLUE,
-                      borderRight: `1px solid ${BORDER}`,
-                      borderBottom: `1px solid ${BORDER}`,
-                      fontWeight: 700,
-                      fontFamily: 'Arial',
-                      fontSize: '11pt',
-                    }}
-                  >
-                    4. Paper Category
-                  </th>
-                  <td
-                    className="align-top px-3 py-2"
-                    style={{
-                      borderBottom: `1px solid ${BORDER}`,
-                      fontFamily: 'Arial',
-                      fontSize: '10.5pt',
-                    }}
-                  >
-                    <div className="space-y-0.5">
-                      {paperCategories.map((c) => (
-                        <div key={c} className="flex items-start gap-1.5">
-                          <span
-                            className="inline-block text-center"
-                            style={{ color: BLUE, minWidth: '14px' }}
-                          >
-                            [{data.paper_category === c ? '✓' : ' '}]
-                          </span>
-                          <span>{c}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </td>
-                </tr>
-
-                {/* Row 5: Thematic Area */}
-                <tr>
-                  <th
-                    className="align-top text-left px-3 py-2"
-                    style={{
-                      backgroundColor: LIGHT,
-                      color: BLUE,
-                      borderRight: `1px solid ${BORDER}`,
-                      fontWeight: 700,
-                      fontFamily: 'Arial',
-                      fontSize: '11pt',
-                    }}
-                  >
-                    5. Thematic Area (choose 1 only)
-                  </th>
-                  <td
-                    className="align-top px-3 py-2"
-                    style={{
-                      borderBottom: `1px solid ${BORDER}`,
-                      fontFamily: 'Arial',
-                      fontSize: '10.5pt',
-                    }}
-                  >
-                    <div className="space-y-0.5">
-                      {thematicAreas.map((t) => (
-                        <div key={t} className="flex items-start gap-1.5">
-                          <span
-                            className="inline-block text-center"
-                            style={{ color: BLUE, minWidth: '14px' }}
-                          >
-                            [{data.thematic_area === t ? '✓' : ' '}]
-                          </span>
-                          <span>{t}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-
-            {/* ============ B. EXTENDED ABSTRACT NARRATIVE ============ */}
-            <h3
-              className="text-[13pt] font-bold mt-6 mb-2"
-              style={{ color: BLUE, fontFamily: 'Arial', fontSize: '11pt' }}
-            >
-              B. Extended Abstract Narrative
-            </h3>
-            <p
-              className="text-[10.5pt] mb-4"
-              style={{ color: BLUE, fontFamily: 'Arial', fontSize: '9pt' }}
-            >
-              <span className="font-bold">Guide:</span>{' '}
-              <span className="font-normal">
-                Write concise paragraphs under each required component.
-              </span>
-            </p>
-
-            {/* 5. Community or Sectoral Need Addressed */}
-            <NarrativeBlock
-              number="5."
-              title="Community or Sectoral Need Addressed"
-              hint="Briefly describe in not more than 150 words the validated community, institutional, or sectoral need addressed by the project."
-              body={data.community_need}
-              BLUE={BLUE}
-              BORDER={BORDER}
-            />
-
-            {/* 6. Project Objectives */}
-            <NarrativeBlock
-              number="6."
-              title="Project Objectives"
-              hint="State the main objective/s of the extension project."
-              body={data.project_objectives}
-              BLUE={BLUE}
-              BORDER={BORDER}
-            />
-
-            {/* 7. Extension Methods */}
-            <NarrativeBlock
-              number="7."
-              title="Extension Methods, Strategies, or Activities Implemented"
-              hint="Describe in not more than 300 words the major extension approaches, methods, strategies, or activities implemented."
-              body={data.extension_methods}
-              BLUE={BLUE}
-              BORDER={BORDER}
-            />
-
-            {/* 8. Key Outputs */}
-            <div className="mt-5">
-              <h4
-                className="text-[12pt] font-bold mb-1.5"
-                style={{ color: BLUE, fontFamily: 'Arial', fontSize: '11pt' }}
-              >
-                8. Key Outputs, Emerging Results, and Evidence of Outcomes,
-                Adoption, or Utilization
-              </h4>
-              <p
-                className="text-[10.5pt] mb-3 leading-snug"
-                style={{ color: BLUE, fontFamily: 'Arial', fontSize: '9pt' }}
-              >
-                Briefly present in not more than 300 words the documented
-                outputs and emerging results of the project. Include available
-                evidence of outcomes, adoption, utilization,
-                capability-building, institutional change, or public value, if
-                applicable. Claims must be supported by verifiable evidence.
-              </p>
-
-              {/* a. Major Outputs */}
-              <div className="mb-3">
-                <p
-                  className="text-[11pt] font-bold mb-1"
-                  style={{ color: BLUE, fontFamily: 'Arial', fontSize: '11pt' }}
-                >
-                  a. Major Outputs or Emerging Results
-                </p>
-                <div
-                  className="px-2 py-1.5 text-[10.5pt] whitespace-pre-wrap"
-                  style={{
-                    border: `1px solid ${BORDER}`,
-                    minHeight: '46px',
-                    color: BLUE,
-                    fontFamily: 'Arial',
-                    fontSize: '10pt',
-                  }}
-                >
-                  {data.major_outputs || ''}
-                </div>
-              </div>
-
-              {/* b. Evidence */}
-              <div className="mb-3">
-                <p
-                  className="text-[11pt] font-bold mb-1"
-                  style={{ color: BLUE, fontFamily: 'Arial', fontSize: '11pt' }}
-                >
-                  b. Evidence of Outcomes, Adoption, or Utilization
-                </p>
-                <p
-                  className="text-[9pt] mb-1"
-                  style={{ color: BLUE, fontFamily: 'Arial', fontSize: '9pt' }}
-                >
-                  [Type response here. If not yet available, write: &ldquo;Not
-                  yet available.&rdquo;]
-                </p>
-                <div
-                  className="px-2 py-1.5 text-[9pt] whitespace-pre-wrap"
-                  style={{
-                    border: `1px solid ${BORDER}`,
-                    minHeight: '46px',
-                    color: BLUE,
-                    fontFamily: 'Arial',
-                    fontSize: '10pt',
-                  }}
-                >
-                  {data.evidence_outcomes || ''}
-                </div>
-              </div>
-
-              {/* c. Supporting Documents */}
-              <div className="mb-3">
-                <p
-                  className="text-[11pt] font-bold mb-1"
-                  style={{ color: BLUE, fontFamily: 'Arial', fontSize: '11pt' }}
-                >
-                  c. Supporting Documents/Evidence Available
-                </p>
-                <p
-                  className="text-[9pt] mb-1 leading-snug"
-                  style={{ color: BLUE, fontFamily: 'Arial', fontSize: '9pt' }}
-                >
-                  [Examples: attendance sheets, monitoring reports, photos,
-                  testimonials, adoption records, partnership agreements, policy
-                  issuances, utilization reports, or other proof.]
-                </p>
-                <div
-                  className="px-2 py-1.5 text-[10.5pt] whitespace-pre-wrap"
-                  style={{
-                    border: `1px solid ${BORDER}`,
-                    minHeight: '46px',
-                    color: BLUE,
-                    fontFamily: 'Arial',
-                    fontSize: '10pt',
-                  }}
-                >
-                  {data.supporting_docs || ''}
-                </div>
-              </div>
-            </div>
-
-            {/* 9. Sustainability Direction */}
-            <div className="mt-5">
-              <h4
-                className="text-[11pt] font-bold mb-1.5"
-                style={{ color: BLUE, fontFamily: 'Arial' }}
-              >
-                9. Sustainability Direction or Next Steps
-              </h4>
-              <p
-                className="text-[9pt] mb-2 leading-snug"
-                style={{ color: BLUE, fontFamily: 'Arial' }}
-              >
-                Explain in not more than 150 words how the project will be
-                sustained, institutionalized, scaled, or improved, or state the
-                next steps for ongoing projects.
-              </p>
-              <div
-                className="px-2 py-1.5 text-[10.5pt] whitespace-pre-wrap"
-                style={{
-                  border: `1px solid ${BORDER}`,
-                  minHeight: '46px',
-                  color: BLUE,
-                  fontFamily: 'Arial',
-                  fontSize: '10pt',
-                }}
-              >
-                {data.sustainability || ''}
-              </div>
-            </div>
-
-            {/* ============ C. KEYWORDS ============ */}
-            <h3
-              className="text-[11pt] font-bold mt-7 mb-3"
-              style={{ color: BLUE, fontFamily: 'Arial' }}
-            >
-              C. Keywords
-            </h3>
-            <div
-              className="px-2 py-1.5 text-[10.5pt] whitespace-pre-wrap"
-              style={{
-                border: `1px solid ${BORDER}`,
-                minHeight: '46px',
-                color: BLUE,
-                fontFamily: 'Arial',
-                fontSize: '10pt',
-              }}
-            >
-              {data.keywords ? formatList(data.keywords) : ''}
-            </div>
-
-            {/* For PEMNet Review Committee */}
-            <div className="mt-6">
-              <p
-                className="text-[10.5pt] font-bold"
-                style={{ color: BLUE, fontFamily: 'Arial' }}
-              >
-                For PEMnet Abstract Review Committee Use Only:
-              </p>
-              <div
-                className="mt-2 ml-8 space-y-0.5"
-                style={{ color: BLUE, fontFamily: 'Arial', fontSize: '10.5pt' }}
-              >
-                <div className="flex items-start gap-1.5">
-                  <span
-                    style={{
-                      minWidth: '14px',
-                      fontFamily: 'Arial',
-                      fontSize: '10.5pt',
-                    }}
-                  >
-                    [ ]
-                  </span>
-                  <span className="text-[11pt]">
-                    Recommended for Acceptance
-                  </span>
-                </div>
-                <div className="flex items-start gap-1.5">
-                  <span
-                    style={{
-                      minWidth: '14px',
-                      fontFamily: 'Arial',
-                      fontSize: '10.5pt',
-                    }}
-                  >
-                    [ ]
-                  </span>
-                  <span className="text-[11pt]">
-                    Not Recommended for Acceptance
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Reviewed by */}
-            <div className="mt-10 flex justify-end">
-              <div className="w-[65%]">
-                <div className="flex items-end gap-2">
-                  <p
-                    className="text-[10.5pt] whitespace-nowrap"
-                    style={{ color: BLUE, fontFamily: 'Arial' }}
-                  >
-                    Reviewed by:
-                  </p>
-                  <div
-                    className="flex-1"
-                    style={{
-                      borderBottom: `1px solid ${BLUE}`,
-                      height: '1px',
-                      marginBottom: '4px',
-                    }}
-                  />
-                </div>
-                <p
-                  className="text-[10.5pt] font-bold text-right mt-1"
-                  style={{
-                    color: BLUE,
-                    fontFamily: 'Arial',
-                    marginTop: '-5px',
-                  }}
-                >
-                  Chair, PEMNet Scientific / Abstract Review Committee
-                </p>
-              </div>
-            </div>
-          </div>
-          {/* ============ END CONTENT AREA ============ */}
-
-          {/* ============ SCREEN-ONLY FOOTER ============ */}
           <div
-            className="screen-only-footer mt-8 pt-3 flex items-right"
             style={{
-              fontFamily: 'Arial',
-              fontSize: '9pt',
+              backgroundColor: LIGHT,
+              border: `1px solid ${BORDER}`,
               color: BLUE,
+              fontFamily: 'Arial, Helvetica, sans-serif',
+              fontSize: '9pt',
+              lineHeight: 1.3,
+              padding: '6px 12px',
+              marginBottom: '20px',
+              borderRadius: '2px',
+              flexShrink: 0,
             }}
           >
-            <span>Abstract</span>
-            <span>2</span>
+            <span style={{ fontWeight: 700 }}>Instructions:</span> Complete all
+            sections. Select only one paper category and one thematic area. Use
+            clear, evidence-based statements and avoid unsupported outcome or
+            impact claims.
           </div>
-        </div>
-      </div>
-    </>
-  );
-}
-
-function NarrativeBlock({ number, title, hint, body, BLUE, BORDER }) {
-  return (
-    <div className="mt-4">
-      <p
-        className="text-[11pt] font-bold mb-1"
-        style={{ color: BLUE, fontFamily: 'Arial' }}
-      >
-        {number} {title}
-      </p>
-      {hint && (
-        <p
-          className="text-[9pt] mb-1 leading-snug"
-          style={{ color: BLUE, fontFamily: 'Arial' }}
-        >
-          {hint}
-        </p>
+        </>
       )}
+
+      {/* ===== CONTENT AREA ===== */}
+      <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+        {children}
+      </div>
+
+      {/* ===== FOOTER — every page ===== */}
       <div
-        className="px-2 py-1.5 text-[10.5pt] whitespace-pre-wrap"
         style={{
-          border: `1px solid ${BORDER}`,
-          minHeight: '46px',
-          color: BLUE,
+          display: 'flex',
+          justifyContent: 'flex-end',
+          alignItems: 'center',
+          gap: '64px',
+          marginTop: '16px',
+          flexShrink: 0,
+          fontFamily: 'Cambria',
+          fontSize: '9pt',
+          color: '#8EA9C7',
         }}
       >
-        {body || ''}
+        <span>Abstract</span>
+        <span>{pageNumber}</span>
       </div>
     </div>
   );
 }
 
-function SubBlock({ label, body, BORDER }) {
-  return (
-    <div>
-      <p className="font-semibold text-[10.5pt]">{label}</p>
-      <div
-        className="px-2 py-1.5 mt-0.5 text-[10.5pt] whitespace-pre-wrap"
-        style={{
-          border: `1px solid ${BORDER}`,
-          minHeight: '40px',
-        }}
-      >
-        {body || <span className="text-slate-300">—</span>}
-      </div>
+function firstPageHeaderHTML(BLUE, LIGHT, BORDER) {
+  return `
+    <div style="text-align:center;margin-bottom:20px;">
+      <h1 style="color:${BLUE};font-weight:600;font-family:Arial;font-size:12pt;line-height:1.2;margin:0;">
+        1<sup>st</sup> PEMNet National Extension Conference 2026
+      </h1>
+      <h2 style="color:${BLUE};font-weight:700;font-family:Arial;font-size:12pt;margin-top:4px;margin-bottom:0;">
+        ABSTRACT TEMPLATE
+      </h2>
+      <p style="font-size:11pt;margin-top:12px;line-height:1.3;color:#000;">
+        <span style="font-weight:400;font-family:Arial;font-size:10.5pt;">Theme: </span>
+        <span style="font-weight:700;font-family:Calibri;font-size:11pt;">
+          HEIs at the Forefront of Transformative Extension: Advancing
+          Evidence-Based, Inclusive, Sustainable, and Resilient Community Development
+        </span>
+      </p>
     </div>
-  );
+    <div style="background:${LIGHT};border:1px solid ${BORDER};color:${BLUE};font-family:Arial,Helvetica,sans-serif;font-size:9pt;line-height:1.3;padding:6px 12px;margin-bottom:20px;">
+      <span style="font-weight:700;">Instructions:</span> Complete all sections. Select only one paper category and one thematic area. Use clear, evidence-based statements and avoid unsupported outcome or impact claims.
+    </div>
+  `;
 }
 
 
-/* ------------------------------------------------------------------ */
-/*  ABSTRACT FORM (A4-style inputs + live preview toggle)              */
-/* ------------------------------------------------------------------ */
+function buildBlocks({ data, BLUE, LIGHT, BORDER }) {
+  const safe = (v) => (v == null ? '' : String(v));
+
+  const rowHTML = (label, value, opts = {}) => `
+    <tr>
+      <th style="background:${LIGHT};color:${BLUE};border-right:1px solid ${BORDER};border-bottom:1px solid ${BORDER};font-weight:700;font-family:Arial;font-size:11pt;text-align:left;vertical-align:top;padding:8px 12px;${
+    opts.width ? `width:${opts.width};` : ''
+  }">
+        ${label}
+        ${
+          opts.note
+            ? `<p style="color:${BLUE};font-family:Arial;font-size:8pt;font-style:italic;font-weight:400;margin-top:4px;">${opts.note}</p>`
+            : ''
+        }
+      </th>
+      <td style="border-bottom:1px solid ${BORDER};vertical-align:top;padding:8px 12px;">${value}</td>
+    </tr>
+  `;
+
+  const sectionHeading = (text, mt = 0) => `
+    <h3 style="color:${BLUE};font-family:Arial;font-size:11pt;font-weight:700;margin-top:${mt}px;margin-bottom:8px;">${text}</h3>
+  `;
+
+  const narrativeBlockHTML = (number, title, hint, body) => `
+    <div style="margin-top:16px;">
+      <p style="color:${BLUE};font-family:Arial;font-size:11pt;font-weight:700;margin-bottom:4px;">${number} ${title}</p>
+      ${
+        hint
+          ? `<p style="color:${BLUE};font-family:Arial;font-size:9pt;margin-bottom:4px;line-height:1.3;">${hint}</p>`
+          : ''
+      }
+      <div style="border:1px solid ${BORDER};min-height:46px;color:${BLUE};font-family:Arial;font-size:10pt;padding:6px 8px;white-space:pre-wrap;">${safe(body)}</div>
+    </div>
+  `;
+
+  // ---- Section A ----
+  const sectionA = `
+    ${sectionHeading('A. Paper Information')}
+    <table style="width:100%;border-collapse:collapse;border:1px solid ${BORDER};font-size:10.5pt;">
+      <tbody>
+        ${rowHTML('1. Title of the Extension Project Paper', safe(data.title), { width: '42%' })}
+        ${rowHTML(
+          '2. Author/s and Institutional Affiliation/s',
+          [
+            data.project_leader && `${data.project_leader}*`,
+            data.presenter && `${data.presenter} (paper presenter)`,
+            ...(Array.isArray(data.co_authors) ? data.co_authors : []),
+          ]
+            .filter(Boolean)
+            .join('; '),
+          {
+            note: 'Note: Use an asterisk (*) after the name of the project leader. If the presenter is not the project leader, write "paper presenter" after the name.',
+          }
+        )}
+        ${rowHTML(
+          '3. Name and Email Address of Corresponding Author',
+          [
+            data.corresponding_author_name,
+            data.corresponding_author_position && `(${data.corresponding_author_position})`,
+            data.corresponding_author_email && `<${data.corresponding_author_email}>`,
+          ]
+            .filter(Boolean)
+            .join(' ')
+        )}
+        ${rowHTML(
+          '4. Paper Category',
+          paperCategories
+            .map(
+              (c) =>
+                `<div style="display:flex;gap:6px;"><span style="color:${BLUE};min-width:14px;">[${
+                  data.paper_category === c ? '✓' : ' '
+                }]</span><span>${c}</span></div>`
+            )
+            .join('')
+        )}
+        ${rowHTML(
+          '5. Thematic Area (choose 1 only)',
+          thematicAreas
+            .map(
+              (t) =>
+                `<div style="display:flex;gap:6px;"><span style="color:${BLUE};min-width:14px;">[${
+                  data.thematic_area === t ? '✓' : ' '
+                }]</span><span>${t}</span></div>`
+            )
+            .join('')
+        )}
+      </tbody>
+    </table>
+  `;
+
+  // ---- Section B heading ----
+  const sectionBHeading = `
+    ${sectionHeading('B. Extended Abstract Narrative', 24)}
+    <p style="color:${BLUE};font-family:Arial;font-size:9pt;margin-bottom:16px;">
+      <span style="font-weight:700;">Guide:</span> Write concise paragraphs under each required component.
+    </p>
+  `;
+
+  // ---- Blocks 5, 6, 7 ----
+  const block5 = narrativeBlockHTML(
+    '5.',
+    'Community or Sectoral Need Addressed',
+    'Briefly describe in not more than 150 words the validated community, institutional, or sectoral need addressed by the project.',
+    data.community_need
+  );
+
+  const block6 = narrativeBlockHTML(
+    '6.',
+    'Project Objectives',
+    'State the main objective/s of the extension project.',
+    data.project_objectives
+  );
+
+  const block7 = narrativeBlockHTML(
+    '7.',
+    'Extension Methods, Strategies, or Activities Implemented',
+    'Describe in not more than 300 words the major extension approaches, methods, strategies, or activities implemented.',
+    data.extension_methods
+  );
+
+  // ---- Block 8 ----
+  const block8 = `
+    <div style="margin-top:20px;">
+      <h4 style="color:${BLUE};font-family:Arial;font-size:11pt;font-weight:700;margin-bottom:6px;">
+        8. Key Outputs, Emerging Results, and Evidence of Outcomes, Adoption, or Utilization
+      </h4>
+      <p style="color:${BLUE};font-family:Arial;font-size:9pt;line-height:1.3;margin-bottom:12px;">
+        Briefly present in not more than 300 words the documented outputs and emerging results of the project. Include available evidence of outcomes, adoption, utilization, capability-building, institutional change, or public value, if applicable. Claims must be supported by verifiable evidence.
+      </p>
+
+      <div style="margin-bottom:12px;">
+        <p style="color:${BLUE};font-family:Arial;font-size:11pt;font-weight:700;margin-bottom:4px;">a. Major Outputs or Emerging Results</p>
+        <div style="border:1px solid ${BORDER};min-height:46px;color:${BLUE};font-family:Arial;font-size:10pt;padding:6px 8px;white-space:pre-wrap;">${safe(data.major_outputs)}</div>
+      </div>
+
+      <div style="margin-bottom:12px;">
+        <p style="color:${BLUE};font-family:Arial;font-size:11pt;font-weight:700;margin-bottom:4px;">b. Evidence of Outcomes, Adoption, or Utilization</p>
+        <p style="color:${BLUE};font-family:Arial;font-size:9pt;margin-bottom:4px;">[Type response here. If not yet available, write: &ldquo;Not yet available.&rdquo;]</p>
+        <div style="border:1px solid ${BORDER};min-height:46px;color:${BLUE};font-family:Arial;font-size:10pt;padding:6px 8px;white-space:pre-wrap;">${safe(data.evidence_outcomes)}</div>
+      </div>
+
+      <div style="margin-bottom:12px;">
+        <p style="color:${BLUE};font-family:Arial;font-size:11pt;font-weight:700;margin-bottom:4px;">c. Supporting Documents/Evidence Available</p>
+        <p style="color:${BLUE};font-family:Arial;font-size:9pt;line-height:1.3;margin-bottom:4px;">[Examples: attendance sheets, monitoring reports, photos, testimonials, adoption records, partnership agreements, policy issuances, utilization reports, or other proof.]</p>
+        <div style="border:1px solid ${BORDER};min-height:46px;color:${BLUE};font-family:Arial;font-size:10pt;padding:6px 8px;white-space:pre-wrap;">${safe(data.supporting_docs)}</div>
+      </div>
+    </div>
+  `;
+
+  // ---- Block 9 ----
+  const block9 = `
+    <div style="margin-top:20px;">
+      <h4 style="color:${BLUE};font-family:Arial;font-size:11pt;font-weight:700;margin-bottom:6px;">9. Sustainability Direction or Next Steps</h4>
+      <p style="color:${BLUE};font-family:Arial;font-size:9pt;line-height:1.3;margin-bottom:8px;">
+        Explain in not more than 150 words how the project will be sustained, institutionalized, scaled, or improved, or state the next steps for ongoing projects.
+      </p>
+      <div style="border:1px solid ${BORDER};min-height:46px;color:${BLUE};font-family:Arial;font-size:10pt;padding:6px 8px;white-space:pre-wrap;">${safe(data.sustainability)}</div>
+    </div>
+  `;
+
+  // ---- Section C ----
+  const blockC = `
+    ${sectionHeading('C. Keywords', 28)}
+    <div style="border:1px solid ${BORDER};min-height:46px;color:${BLUE};font-family:Arial;font-size:10pt;padding:6px 8px;white-space:pre-wrap;">${safe(data.keywords)}</div>
+  `;
+
+  // ---- Review + signature ----
+  const blockReview = `
+    <div style="margin-top:24px;">
+      <p style="color:${BLUE};font-family:Arial;font-size:10.5pt;font-weight:700;">For PEMnet Abstract Review Committee Use Only:</p>
+      <div style="color:${BLUE};font-family:Arial;font-size:10.5pt;margin-top:8px;margin-left:32px;">
+        <div style="display:flex;gap:6px;"><span style="min-width:14px;">[ ]</span><span>Recommended for Acceptance</span></div>
+        <div style="display:flex;gap:6px;"><span style="min-width:14px;">[ ]</span><span>Not Recommended for Acceptance</span></div>
+      </div>
+    </div>
+
+    <div style="margin-top:40px;display:flex;justify-content:flex-end;">
+      <div style="width:65%;">
+        <div style="display:flex;align-items:flex-end;gap:8px;">
+          <p style="color:${BLUE};font-family:Arial;font-size:10.5pt;white-space:nowrap;margin:0;">Reviewed by:</p>
+          <div style="flex:1;border-bottom:1px solid ${BLUE};height:1px;margin-bottom:4px;"></div>
+        </div>
+        <p style="color:${BLUE};font-family:Arial;font-size:10.5pt;font-weight:700;text-align:right;margin-top:-5px;">Chair, PEMNet Scientific / Abstract Review Committee</p>
+      </div>
+    </div>
+  `;
+
+  return [
+    { id: 'A', html: sectionA },
+    { id: 'B-head', html: sectionBHeading },
+    { id: '5', html: block5 },
+    { id: '6', html: block6 },
+    { id: '7', html: block7 },
+    { id: '8', html: block8 },
+    { id: '9', html: block9 },
+    { id: 'C', html: blockC },
+    { id: 'review', html: blockReview },
+  ];
+}
+
 export default function AbstractForm({
   user,
   onSubmit,
@@ -823,17 +665,19 @@ export default function AbstractForm({
       return;
     }
 
-    // Auto-add new SUC if not existing
     const existing = (sucList || []).find(
       (s) => s.name.toLowerCase() === finalSuc.toLowerCase()
     );
     if (!existing && showOtherSuc) {
       try {
-        const res = await fetch(`${(process.env.NEXT_PUBLIC_API_URL || '').replace(/\/+$/, '')}/api/sucs`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: finalSuc, region: 'Other' }),
-        });
+        const res = await fetch(
+          `${(process.env.NEXT_PUBLIC_API_URL || '').replace(/\/+$/, '')}/api/sucs`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: finalSuc, region: 'Other' }),
+          }
+        );
         if (res.ok) {
           const newSuc = await res.json();
           onSucAdded?.(newSuc);
@@ -872,7 +716,14 @@ export default function AbstractForm({
       new File([endorsementFile], safeName, { type: 'application/pdf' })
     );
 
-    onSubmit({ formData: submitData, rawData: { ...formData, co_authors: filteredCoAuthors, suc_agencies: finalSuc } });
+    onSubmit({
+      formData: submitData,
+      rawData: {
+        ...formData,
+        co_authors: filteredCoAuthors,
+        suc_agencies: finalSuc,
+      },
+    });
   };
 
   const previewData = {
@@ -885,7 +736,7 @@ export default function AbstractForm({
   if (showPreview) {
     return (
       <div>
-        <div className="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-slate-200 px-6 py-3 flex items-center justify-between">
+        <div className="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-slate-200 px-6 py-3 flex items-center justify-between no-print">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-blue-600">
@@ -929,7 +780,7 @@ export default function AbstractForm({
     );
   }
 
-  /* ---------------- Form mode (A4-styled) ---------------- */
+  /* ---------------- Form mode ---------------- */
   return (
     <form onSubmit={handleSubmit}>
       {error && (
@@ -942,7 +793,6 @@ export default function AbstractForm({
       )}
 
       <div className="max-w-4xl mx-auto bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-        {/* Header bar */}
         <div className="bg-linear-to-r from-blue-700 to-blue-800 px-6 py-4 flex items-center justify-between">
           <div className="text-white">
             <h1 className="text-lg font-bold">Abstract Submission</h1>
@@ -964,7 +814,7 @@ export default function AbstractForm({
         </div>
 
         <div className="p-6 space-y-6">
-          {/* ============ A. PAPER INFORMATION ============ */}
+          {/* A. PAPER INFORMATION */}
           <SectionBlock letter="A" title="Paper Information">
             <Field
               label="1. Title of the Extension Project Paper"
@@ -1062,7 +912,6 @@ export default function AbstractForm({
               placeholder="email@example.com"
             />
 
-            {/* Paper Category */}
             <div>
               <label className="text-sm font-semibold text-slate-700 mb-2 block">
                 4. Paper Category <span className="text-red-500">*</span>
@@ -1085,7 +934,6 @@ export default function AbstractForm({
               </div>
             </div>
 
-            {/* Thematic Area */}
             <div>
               <label className="text-sm font-semibold text-slate-700 mb-2 block">
                 5. Thematic Area (choose 1 only) <span className="text-red-500">*</span>
@@ -1108,7 +956,6 @@ export default function AbstractForm({
               </div>
             </div>
 
-            {/* SUC / Agency */}
             <div ref={dropdownRef} className="relative">
               <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
                 SUC / Agency <span className="text-red-500">*</span>
@@ -1196,7 +1043,7 @@ export default function AbstractForm({
             </div>
           </SectionBlock>
 
-          {/* ============ B. EXTENDED ABSTRACT NARRATIVE ============ */}
+          {/* B. EXTENDED ABSTRACT NARRATIVE */}
           <SectionBlock letter="B" title="Extended Abstract Narrative">
             <NarrativeField
               label="6. Community or Sectoral Need Addressed"
@@ -1272,7 +1119,7 @@ export default function AbstractForm({
             />
           </SectionBlock>
 
-          {/* ============ C. KEYWORDS ============ */}
+          {/* C. KEYWORDS */}
           <SectionBlock letter="C" title="Keywords">
             <Field
               label="Keywords (3–5, comma-separated)"
@@ -1284,7 +1131,7 @@ export default function AbstractForm({
             />
           </SectionBlock>
 
-          {/* ============ FILE UPLOAD ============ */}
+          {/* D. FILE UPLOAD */}
           <SectionBlock letter="D" title="File Upload">
             <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-5 text-center">
               <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center mx-auto mb-3">
@@ -1309,7 +1156,6 @@ export default function AbstractForm({
             </div>
           </SectionBlock>
 
-          {/* Actions */}
           <div className="flex flex-col sm:flex-row gap-3 pt-2">
             <button
               type="button"
@@ -1337,7 +1183,6 @@ export default function AbstractForm({
 }
 
 /* ---------- Reusable sub-components ---------- */
-
 function SectionBlock({ letter, title, children }) {
   return (
     <div className="border border-slate-200 rounded-xl overflow-hidden">

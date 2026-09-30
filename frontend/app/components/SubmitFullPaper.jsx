@@ -100,6 +100,8 @@ function packBlocks(blocks, { measure, boxHTML, titleHeight }) {
     const block = prepared[bi];
 
     if (block.kind === 'atomic') {
+      if (block.forceNewPage && cur.length) flush();
+
       if (curH + tailH[bi] <= avail() + LAST_PAGE_OVERFLOW_ALLOWANCE_PX) {
         dumpFrom(bi);
         done = true;
@@ -182,9 +184,7 @@ function packBlocks(blocks, { measure, boxHTML, titleHeight }) {
   return result;
 }
 
-/* ============================================================
- *  Full Paper Preview
- * ============================================================ */
+
 export function FullPaperPreview({ data }) {
   const BLUE = '#4C1D95';
   const LIGHT = '#F3E8FF';
@@ -322,7 +322,12 @@ function A4Paginator({ data, BLUE, LIGHT, BORDER }) {
     };
   }, [blocks, containerWidth, BLUE, LIGHT, BORDER]);
 
-  const totalPages = pages ? pages.length : 1;
+  // Total = 1 cover page + however many continuation pages packBlocks produced
+  // (minus the merged-first-page if packBlocks already produced one).
+  const extraPages = pages
+    ? (pages[0]?.isFirstPage ? pages.length - 1 : pages.length)
+    : 0;
+  const totalPages = 1 + extraPages;
 
   return (
     <div ref={wrapperRef} className="w-full flex justify-center">
@@ -348,22 +353,43 @@ function A4Paginator({ data, BLUE, LIGHT, BORDER }) {
             Measuring content…
           </div>
         ) : (
-          pages.map((page, idx) => (
+          <>
+            {/* ---- Always-rendered cover page ---- */}
             <A4Sheet
-              key={idx}
-              pageNumber={idx + 1}
+              key="cover"
+              pageNumber={1}
               totalPages={totalPages}
-              isFirstPage={page.isFirstPage}
-              allowOverflow={idx === pages.length - 1}
+              isFirstPage={true}
+              allowOverflow={extraPages === 0}
               BLUE={BLUE}
               LIGHT={LIGHT}
               BORDER={BORDER}
             >
-              {page.blocks.map((b, i) => (
-                <div key={i} dangerouslySetInnerHTML={{ __html: b.html }} />
-              ))}
+              {null}
             </A4Sheet>
-          ))
+
+            {/* ---- Continuation pages ---- */}
+            {pages
+              .map((page, idx) => (
+                <A4Sheet
+                  key={`page-${idx + 2}`}
+                  pageNumber={idx + 2}
+                  totalPages={totalPages}
+                  isFirstPage={false}
+                  allowOverflow={idx === extraPages - 1}
+                  BLUE={BLUE}
+                  LIGHT={LIGHT}
+                  BORDER={BORDER}
+                >
+                  {page.blocks.map((b, i) => (
+                    <div
+                      key={i}
+                      dangerouslySetInnerHTML={{ __html: b.html }}
+                    />
+                  ))}
+                </A4Sheet>
+              ))}
+          </>
         )}
       </div>
     </div>
@@ -372,6 +398,7 @@ function A4Paginator({ data, BLUE, LIGHT, BORDER }) {
 
 function A4Sheet({
   pageNumber,
+  totalPages,
   isFirstPage,
   allowOverflow = false,
   children,
@@ -399,6 +426,7 @@ function A4Sheet({
         position: 'relative',
       }}
     >
+      {/* ---------- Header zone ---------- */}
       <div
         style={{
           height: HEADER_ZONE_H,
@@ -407,33 +435,17 @@ function A4Sheet({
           flexShrink: 0,
           flexGrow: 0,
           display: 'flex',
-          alignItems: 'flex-start',
+          alignItems: 'center',
           justifyContent: 'center',
-          paddingTop: '4mm',
           overflow: 'hidden',
           position: 'relative',
           zIndex: 10,
           background: '#fff',
         }}
       >
-        <span
-          style={{
-            display: 'block',
-            color: BLUE,
-            fontFamily: 'Arial',
-            fontSize: '12pt',
-            opacity: 0.7,
-            fontWeight: 600,
-            lineHeight: 1,
-            whiteSpace: 'nowrap',
-            marginTop: '40px',
-            padding: 0,
-          }}
-        >
-          1<sup>st</sup> PEMNet National Extension Conference 2026
-        </span>
       </div>
 
+      {/* ---------- First-page title block ---------- */}
       {isFirstPage && (
         <div
           style={{ flexShrink: 0 }}
@@ -443,6 +455,7 @@ function A4Sheet({
         />
       )}
 
+      {/* ---------- Dynamic content ---------- */}
       <div
         style={{
           flex: '1 1 auto',
@@ -455,6 +468,7 @@ function A4Sheet({
         {children}
       </div>
 
+      {/* ---------- Footer ---------- */}
       <div
         style={{
           height: FOOTER_ZONE_H,
@@ -463,11 +477,11 @@ function A4Sheet({
           flexShrink: 0,
           flexGrow: 0,
           display: 'flex',
-          alignItems: 'flex-end',
+          flexDirection: 'column',
+          alignItems: 'flex-start',
           justifyContent: 'flex-end',
-          gap: '64px',
-          paddingBottom: '18mm',
-          fontFamily: 'Cambria',
+          paddingBottom: '10mm',
+          fontFamily: 'Cambria, Georgia, serif',
           fontSize: '9pt',
           color: '#A78BFA',
           overflow: 'visible',
@@ -486,14 +500,14 @@ function A4Sheet({
                 zIndex: 10,
                 background: '#fff',
               }),
-          lineHeight: 1,
+          lineHeight: 1.3,
         }}
       >
-        <span style={{ display: 'block', lineHeight: 1, margin: 0, padding: 0 }}>
-          Full Paper
+        <span style={{ display: 'block', margin: 0, padding: 0 }}>
+          © 2026 Ricky P. Becodo, All Rights Reserved.
         </span>
-        <span style={{ display: 'block', lineHeight: 1, margin: 0, padding: 0 }}>
-          {pageNumber}
+        <span style={{ display: 'block', margin: 0, padding: 0 }}>
+          Prepared for the Philippine Extension Managers Network (PEMNet), Inc.
         </span>
       </div>
     </div>
@@ -501,71 +515,1290 @@ function A4Sheet({
 }
 
 function firstPageTitleHTML(BLUE, LIGHT, BORDER) {
-  return `<div style="text-align:center;margin-bottom:20px;">
-    <h2 style="color:${BLUE};font-weight:700;font-family:Arial,Helvetica,sans-serif;font-size:13pt;margin:0 0 12px 0;">FULL PAPER SUBMISSION</h2>
-    <p style="font-size:11pt;line-height:1.3;color:#000;margin:0;"><span style="font-weight:400;font-family:Arial;font-size:10.5pt;">Theme: </span><span style="font-weight:700;font-family:Calibri;font-size:11pt;">HEIs at the Forefront of Transformative Extension: Advancing Evidence-Based, Inclusive, Sustainable, and Resilient Community Development</span></p>
-  </div>
-  <div style="background-color:${LIGHT};border:1px solid ${BORDER};color:${BLUE};font-family:Arial,Helvetica,sans-serif;font-size:9pt;line-height:1.3;padding:6px 12px;margin-bottom:20px;border-radius:2px;"><span style="font-weight:700;">Full Paper:</span> This document accompanies the previously accepted abstract and is submitted for review under the same project.</div>`;
+  return `
+    <div style="border:1px dashed #999;padding:10px 14px;margin-bottom:24px;display:flex;align-items:center;gap:16px;">
+      <img
+        src="/images/pemnet_logo.png"
+        alt="PEMNet Logo"
+        style="width:70px;height:70px;object-fit:contain;flex-shrink:0;"
+      />
+      <div style="flex:1;text-align:center;">
+        <p style="margin:0 0 8px 0;font-family:Arial,Helvetica,sans-serif;font-size:12pt;font-weight:700;color:#000;letter-spacing:0.3px;">
+          PHILIPPINE EXTENSION MANAGERS NETWORK (PEMNet), INC.
+        </p>
+        <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12pt;font-weight:700;color:#000;">
+          1st NATIONAL EXTENSION CONFERENCE 2026
+        </p>
+      </div>
+    </div>
+
+    <div style="margin-bottom:20px;">
+      <p style="margin:0 0 4px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;">
+        Theme:
+      </p>
+      <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-style:italic;color:#000;line-height:1.4;">
+        HEIs at the Forefront of Transformative Extension: Advancing Evidence-Based, Inclusive, Sustainable, and Resilient Community Development
+      </p>
+    </div>
+
+    <p style="margin:0 0 16px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;text-transform:uppercase;">
+      COMPLETED EXTENSION PROJECT FULL PAPER TEMPLATE
+    </p>
+
+    <p style="margin:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;">
+      General Manuscript Format
+    </p>
+
+    <div style="font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.5;margin-bottom:14px;">
+      <p style="margin:0;"><span style="font-weight:700;">Length:</span> Approximately 3,000–7,000 words, excluding references and appendices</p>
+      <p style="margin:0;"><span style="font-weight:700;">Font:</span> Arial, 11 points</p>
+      <p style="margin:0;"><span style="font-weight:700;">Spacing:</span> Single</p>
+      <p style="margin:0;"><span style="font-weight:700;">Margins:</span> 1 inch on all sides</p>
+      <p style="margin:0;"><span style="font-weight:700;">Citation and Reference Style:</span> APA 7th Edition</p>
+      <p style="margin:0;"><span style="font-weight:700;">File Format:</span> Microsoft Word (.docx)</p>
+    </div>
+
+    <p style="margin:0 0 20px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.5;text-align:justify;">
+      The manuscript should be written as a <span style="font-weight:700;">scholarly extension paper</span>, not merely as a chronological accomplishment report. It should demonstrate the relationship among the <span style="font-weight:700;">identified need, intervention, evidence, results, interpretation, and implications for extension practice.</span>
+    </p>
+  `;
 }
 
-function buildBlocks({ data, BLUE, LIGHT, BORDER }) {
-  const safe = (v) => (v == null ? '' : String(v));
+function consentPageHTML(BLUE, LIGHT, BORDER) {
+  const para = (html) =>
+    `<p style="margin:0 0 12px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.5;text-align:justify;">${html}</p>`;
+  const li = (html) =>
+    `<li style="margin:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.5;text-align:justify;">${html}</li>`;
 
-  const sectionHeading = (text, mt = 0) => `
-    <h3 style="color:${BLUE};font-family:Arial;font-size:11pt;font-weight:700;margin-top:${mt}px;margin-bottom:8px;">${text}</h3>
+  return `
+    <p style="margin:0 0 16px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;">Please read</p>
+
+    <h2 style="margin:0 0 16px 0;font-family:Arial,Helvetica,sans-serif;font-size:13pt;font-weight:700;color:#000;text-align:center;text-transform:uppercase;letter-spacing:0.3px;">
+      AUTHOR CONSENT AND LIMITED PUBLICATION LICENSE
+    </h2>
+
+    ${para(`By submitting a full paper to the <b>PEMNet 1st National Extension Conference 2026</b>, the author/s acknowledge and agree that the submitted manuscript may be received, stored, reviewed, evaluated, analyzed, and processed by the <b>Philippine Extension and Management Network, Inc. (PEMNet)</b> for purposes related to the conference, scholarly documentation, knowledge dissemination, research, and possible publication.`)}
+
+    ${para(`The author/s grant PEMNet a <b>non-exclusive, royalty-free permission</b> to use the submitted manuscript, in whole or in part, for the following purposes:`)}
+
+    <ol style="margin:0 0 14px 0;padding-left:26px;">
+      ${li(`peer, technical, editorial, and quality review of the manuscript;`)}
+      ${li(`analysis and synthesis of information, evidence, findings, practices, outcomes, and lessons contained in the submitted paper;`)}
+      ${li(`preparation of conference proceedings, reports, scholarly publications, policy or practice briefs, research syntheses, databases, and other knowledge products arising from or related to the conference;`)}
+      ${li(`use of appropriate data, findings, tables, figures, quotations, or summarized information from the manuscript for scholarly, research, or publication purposes, subject to proper acknowledgment and citation of the original author/s and source; and`)}
+      ${li(`editorial processing, including reasonable formatting, copyediting, language editing, and other modifications necessary to meet publication standards, without materially changing the meaning of the author's work.`)}
+    </ol>
+
+    ${para(`The author/s <b>retain copyright and ownership</b> of the submitted manuscript. Submission to PEMNet does not constitute an assignment or transfer of copyright to PEMNet.`)}
+
+    ${para(`The author/s further certify that the manuscript is their original work; that all sources have been properly acknowledged; and that they have secured the necessary permission for copyrighted materials, data, photographs, figures, instruments, or other materials owned by third parties that are included in the manuscript.`)}
+
+    ${para(`Where information from submitted papers is subsequently used as a source of data for research, synthesis, comparative analysis, or scholarly publication undertaken or authorized by PEMNet, such use shall observe accepted principles of <b>research ethics, responsible scholarship, proper attribution, and applicable data privacy requirements.</b> Personally identifiable or confidential information shall not be disclosed beyond what is legitimately included and authorized for scholarly dissemination.`)}
+
+    ${para(`Submission of the full paper signifies that the author/s have read, understood, and accepted these conditions. <b>Acceptance of a manuscript for conference presentation does not automatically guarantee its publication</b>, as inclusion in conference proceedings or other scholarly publications may remain subject to further editorial, technical, ethical, and/or peer-review requirements.`)}
   `;
+}
 
-  const narrativeBlock = (number, title, hint, bodyText) => ({
-    kind: 'narrative',
-    heading: `
-      <div style="margin-top:16px;">
-        <p style="color:${BLUE};font-family:Arial;font-size:11pt;font-weight:700;margin-bottom:4px;">${number} ${title}</p>
-      </div>
-    `,
-    hintHTML: hint
-      ? `<p style="color:${BLUE};font-family:Arial;font-size:9pt;margin-bottom:4px;line-height:1.3;">${hint}</p>`
-      : '',
-    bodyText: safe(bodyText),
-  });
+const THEMATIC_AREAS = [
+  'Food Production, Agriculture, Fisheries, and Natural Resource Systems',
+  'Health, Nutrition, Wellness, and Community Care',
+  'Education, Literacy, Skills Development, and Lifelong Learning',
+  'Livelihood, Entrepreneurship, Cooperatives, MSMEs, and Local Economic Development',
+  'Environment, Climate Action, Disaster Risk Reduction, and Community Resilience',
+];
 
-  const sectionA = `
-    ${sectionHeading('A. Full Paper Information')}
-    <table style="width:100%;border-collapse:collapse;border:1px solid ${BORDER};font-size:10.5pt;">
+function titleAuthorPageHTML(data, BLUE, LIGHT, BORDER) {
+  const safe = (v) => (v == null ? '' : String(v));
+  const placeholder = (text) =>
+    `<span style="color:#94A3B8;font-style:italic;">${text}</span>`;
+  const filled = (text) => `<span style="color:#000;">${text}</span>`;
+
+  const fieldBox = (inner) =>
+    `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:10.5pt;line-height:1.4;min-height:30px;">${inner}</div>`;
+
+  const titleHTML = safe(data.title).trim()
+    ? filled(safe(data.title))
+    : placeholder('[Insert a concise, informative, and scholarly title]');
+
+  const authorsHTML = safe(data.authors).trim()
+    ? filled(safe(data.authors))
+    : placeholder(
+        'Click or tap here and enter all author names, using superscript affiliation numbers as applicable.'
+      );
+
+  const affiliationsHTML = safe(data.affiliations).trim()
+    ? filled(safe(data.affiliations))
+    : placeholder(
+        'Click or tap here and enter the corresponding institutional affiliation/s.'
+      );
+
+  const thematicLine = data.thematicArea
+    ? filled(`${data.thematicArea}. ${safe(data.thematicAreaTitle) || ''}`)
+    : placeholder(
+        'Click or tap here and enter the selected thematic area number and full title.'
+      );
+
+  return `
+    <p style="margin:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;font-size:12pt;font-weight:700;color:#000;text-transform:uppercase;">
+      TITLE OF THE PAPER
+    </p>
+    <div style="border:1px solid ${BORDER};padding:8px 12px;margin:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.4;">
+      ${titleHTML}
+    </div>
+    <p style="margin:0 0 12px 0;font-family:Arial,Helvetica,sans-serif;font-size:10.5pt;color:#000;line-height:1.45;text-align:justify;">
+      The title should communicate the central intervention or extension issue, major outcome or focus, and context where appropriate. Avoid titles consisting only of the institutional project name or acronym.
+    </p>
+    <p style="margin:0 0 4px 0;font-family:Arial,Helvetica,sans-serif;font-size:10.5pt;font-weight:700;color:#000;">
+      Example structure:
+    </p>
+    <p style="margin:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;font-size:10.5pt;font-style:italic;color:${BLUE};line-height:1.45;">
+      Implementation and Outcomes of a Community-Based Natural Farming Extension Program among Smallholder Farmers in [Location]
+    </p>
+    <p style="margin:0 0 4px 0;font-family:Arial,Helvetica,sans-serif;font-size:10.5pt;color:#000;">
+      rather than:
+    </p>
+    <p style="margin:0 0 18px 0;font-family:Arial,Helvetica,sans-serif;font-size:10.5pt;font-style:italic;color:${BLUE};line-height:1.45;">
+      Project UMWAD: An Extension Program
+    </p>
+
+    <p style="margin:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;font-size:12pt;font-weight:700;color:#000;text-transform:uppercase;">
+      AUTHOR INFORMATION
+    </p>
+    <p style="margin:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;font-size:10.5pt;color:${BLUE};font-weight:700;line-height:1.5;">
+      First Author<sup>1</sup>, Second Author<sup>2</sup>, Third Author<sup>3</sup>
+    </p>
+    <p style="margin:0 0 2px 0;font-family:Arial,Helvetica,sans-serif;font-size:10pt;color:${BLUE};line-height:1.45;">
+      <sup>1</sup>Department/College/Unit, University/Institution, City, Philippines
+    </p>
+    <p style="margin:0 0 2px 0;font-family:Arial,Helvetica,sans-serif;font-size:10pt;color:${BLUE};line-height:1.45;">
+      <sup>2</sup>Department/College/Unit, University/Institution, City, Philippines
+    </p>
+    <p style="margin:0 0 12px 0;font-family:Arial,Helvetica,sans-serif;font-size:10pt;color:${BLUE};line-height:1.45;">
+      <sup>3</sup>Partner Institution, if applicable
+    </p>
+    ${fieldBox(authorsHTML)}
+    ${fieldBox(affiliationsHTML)}
+
+    <p style="margin:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:${BLUE};">
+      Corresponding Author:
+    </p>
+    <table style="width:100%;border-collapse:collapse;margin:0 0 16px 0;font-family:Arial,Helvetica,sans-serif;font-size:10.5pt;">
       <tbody>
         <tr>
-          <th style="background:${LIGHT};color:${BLUE};border-right:1px solid ${BORDER};border-bottom:1px solid ${BORDER};font-weight:700;font-family:Arial;font-size:11pt;text-align:left;vertical-align:top;padding:8px 12px;width:42%;">1. Linked Accepted Abstract</th>
-          <td style="border-bottom:1px solid ${BORDER};vertical-align:top;padding:8px 12px;">${safe(data.linked_abstract_title) || '—'}</td>
+          <td style="width:30%;padding:6px 0;color:${BLUE};font-weight:700;">Name:</td>
+          <td style="padding:4px 0;">
+            <div style="border-bottom:1px solid ${BORDER};min-height:22px;line-height:22px;">
+              ${safe(data.correspondingName).trim() ? filled(safe(data.correspondingName)) : placeholder('Enter name')}
+            </div>
+          </td>
         </tr>
         <tr>
-          <th style="background:${LIGHT};color:${BLUE};border-right:1px solid ${BORDER};border-bottom:1px solid ${BORDER};font-weight:700;font-family:Arial;font-size:11pt;text-align:left;vertical-align:top;padding:8px 12px;">2. Full Paper Title</th>
-          <td style="border-bottom:1px solid ${BORDER};vertical-align:top;padding:8px 12px;">${safe(data.title) || '—'}</td>
+          <td style="padding:6px 0;color:${BLUE};font-weight:700;">Email Address:</td>
+          <td style="padding:4px 0;">
+            <div style="border-bottom:1px solid ${BORDER};min-height:22px;line-height:22px;">
+              ${safe(data.correspondingEmail).trim() ? filled(safe(data.correspondingEmail)) : placeholder('Enter email address')}
+            </div>
+          </td>
         </tr>
         <tr>
-          <th style="background:${LIGHT};color:${BLUE};border-right:1px solid ${BORDER};border-bottom:1px solid ${BORDER};font-weight:700;font-family:Arial;font-size:11pt;text-align:left;vertical-align:top;padding:8px 12px;">3. Author/s</th>
-          <td style="border-bottom:1px solid ${BORDER};vertical-align:top;padding:8px 12px;">${safe(data.authors) || '—'}</td>
-        </tr>
-        <tr>
-          <th style="background:${LIGHT};color:${BLUE};border-right:1px solid ${BORDER};border-bottom:1px solid ${BORDER};font-weight:700;font-family:Arial;font-size:11pt;text-align:left;vertical-align:top;padding:8px 12px;">4. Keywords</th>
-          <td style="border-bottom:1px solid ${BORDER};vertical-align:top;padding:8px 12px;">${safe(data.keywords) || '—'}</td>
+          <td style="padding:6px 0;color:${BLUE};font-weight:700;">ORCID:</td>
+          <td style="padding:4px 0;">
+            <div style="border-bottom:1px solid ${BORDER};min-height:22px;line-height:22px;">
+              ${safe(data.correspondingOrcid).trim() ? filled(safe(data.correspondingOrcid)) : placeholder('Enter ORCID, if available')}
+            </div>
+          </td>
         </tr>
       </tbody>
     </table>
-  `;
 
-  const sectionBHeading = `
-    ${sectionHeading('B. Abstract', 24)}
+    <p style="margin:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${BLUE};">
+      <b>Paper Category:</b> Completed Extension Project Paper
+    </p>
+    <p style="margin:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:${BLUE};">
+      Thematic Area:
+    </p>
+    <p style="margin:0 0 4px 0;font-family:Arial,Helvetica,sans-serif;font-size:10.5pt;color:#000;">
+      [Select only one]
+    </p>
+    <ol style="margin:0 0 10px 0;padding-left:24px;font-family:Arial,Helvetica,sans-serif;font-size:10.5pt;color:#000;line-height:1.5;">
+      ${THEMATIC_AREAS.map((a) => `<li style="margin:0 0 2px 0;">${a}</li>`).join('')}
+    </ol>
+    <p style="margin:0 0 10px 0;font-family:Arial,Helvetica,sans-serif;font-size:10.5pt;color:#000;line-height:1.45;text-align:justify;">
+      These five areas are the official thematic classifications of the conference, and authors are expected to select the area representing the project's primary intended outcome and strongest evidence of public value.
+    </p>
+    ${fieldBox(thematicLine)}
   `;
+}
 
+function bodyPageHTML(data, BLUE, LIGHT, BORDER) {
+  const safe = (v) => (v == null ? '' : String(v));
+  const placeholder = (text) =>
+    `<span style="color:#94A3B8;font-style:italic;">${text}</span>`;
+  const filled = (text) => `<span style="color:#000;">${text}</span>`;
+
+  // Body typography: 11pt, line-height 1.0 (per template requirements)
+  const H_SECTION = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 6px 0;`;
+  const H_SUB = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 4px 0;`;
+  const P = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
+  const P_TIGHT = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 4px 0;`;
+  const NOTE = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#2563EB;line-height:1.0;margin:0 0 6px 0;`;
+  const LI = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 2px 0;`;
+
+  const fieldBox = (inner) =>
+    `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;min-height:80px;">${inner}</div>`;
+
+  const abstractHTML = safe(data.abstract).trim()
+    ? filled(safe(data.abstract))
+    : placeholder(
+        'Click or tap here and write the 250–300-word abstract as one coherent paragraph.'
+      );
+
+  const keywordsHTML = safe(data.keywords).trim()
+    ? filled(safe(data.keywords))
+    : placeholder(
+        'Click or tap here and enter 4–6 keywords separated by semicolons.'
+      );
+
+  return `
+    <!-- ===================== ABSTRACT ===================== -->
+    <p style="${H_SECTION}text-transform:uppercase;">ABSTRACT</p>
+    <p style="${NOTE}">Recommended length: 250–300 words</p>
+    <p style="${P}">
+      Provide a concise, self-contained summary of the entire paper. The abstract should contain the following elements, preferably as one coherent paragraph:
+    </p>
+    <p style="${P_TIGHT}">
+      <b>Background/Need:</b> Briefly identify the community, institutional, or sectoral condition that justified the extension project.
+    </p>
+    <p style="${P_TIGHT}">
+      <b>Objective:</b> State the principal objective or purpose of the project.
+    </p>
+    <p style="${P_TIGHT}">
+      <b>Methods/Approach:</b> Briefly describe the setting, intended users or beneficiaries, extension intervention, implementation approach, and methods used to assess results.
+    </p>
+    <p style="${P_TIGHT}">
+      <b>Results:</b> Present the most important quantitative and/or qualitative findings. Give actual evidence rather than merely stating that the project was "successful."
+    </p>
+    <p style="${P_TIGHT}">
+      <b>Conclusion:</b> State what the evidence indicates and its principal implication for extension practice, sustainability, policy, or public value.
+    </p>
+    <p style="${P}">
+      Do not introduce claims in the abstract that are not supported in the main paper.
+    </p>
+    ${fieldBox(abstractHTML)}
+
+    <p style="${P_TIGHT}"><b>Keywords:</b> [4–6 keywords, separated by semicolons]</p>
+    ${fieldBox(keywordsHTML)}
+
+    <!-- ===================== 1. INTRODUCTION ===================== -->
+    <p style="${H_SECTION}margin-top:16px;">1. INTRODUCTION</p>
+    <p style="${NOTE}">Recommended maximum: 900–1,100 words</p>
+    <p style="${P}">
+      The Introduction should establish the scholarly and development basis of the extension project.
+    </p>
+
+    <p style="${H_SUB}">1.1 Background and Context</p>
+    <p style="${P}">
+      Describe the community, institutional, sectoral, environmental, economic, educational, health, or development context within which the project was implemented.
+    </p>
+    <p style="${P}">
+      Explain the significance of the issue being addressed.
+    </p>
+    <p style="${P}">
+      Where appropriate, provide relevant statistics, policies, research findings, or documented community evidence.
+    </p>
+    ${fieldBox(
+      placeholder('Click or tap here and replace this text with your response.')
+    )}
+
+    <p style="${H_SUB}">1.2 Evidence of the Problem or Development Need</p>
+    <p style="${P}">
+      Explain how the need, condition, gap, or opportunity was established.
+    </p>
+    <p style="${P}">Evidence may come from:</p>
+    <ul style="margin:0 0 10px 0;padding-left:22px;list-style-type:disc;">
+      <li style="${LI}">situational or needs assessment;</li>
+      <li style="${LI}">baseline data;</li>
+      <li style="${LI}">community consultations;</li>
+      <li style="${LI}">surveys;</li>
+      <li style="${LI}">focus group discussions;</li>
+      <li style="${LI}">key informant interviews;</li>
+      <li style="${LI}">institutional records;</li>
+      <li style="${LI}">government statistics;</li>
+      <li style="${LI}">previous research;</li>
+      <li style="${LI}">technical assessments; or</li>
+    </ul>
+    ${fieldBox(
+      placeholder('Click or tap here and replace this text with your response.')
+    )}
+  `;
+}
+
+function bodyPage2HTML(data, BLUE, LIGHT, BORDER) {
+  const placeholder = (text) =>
+    `<span style="color:#94A3B8;font-style:italic;">${text}</span>`;
+
+  // Body typography: 11pt, line-height 1.0
+  const H_SECTION = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 6px 0;`;
+  const H_SUB = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 4px 0;`;
+  const P = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
+  const P_TIGHT = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 4px 0;`;
+  const NOTE = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#2563EB;line-height:1.0;margin:0 0 6px 0;`;
+  const LI = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 2px 0;`;
+
+  const fieldBox = (inner) =>
+    `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;min-height:44px;">${inner}</div>`;
+
+  const answer = placeholder(
+    'Click or tap here and replace this text with your response.'
+  );
+
+  return `
+    <!-- ========== continuation of 1.2 bullet list ========== -->
+    <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
+      <li style="${LI}">other credible sources.</li>
+    </ul>
+    <p style="${P}">
+      Avoid relying solely on statements such as "the community requested training."
+    </p>
+    ${fieldBox(answer)}
+
+    <!-- ===================== 1.3 ===================== -->
+    <p style="${H_SUB}">1.3 Related Literature and Extension Evidence</p>
+    <p style="${P}">
+      Provide a focused synthesis of relevant scholarly and technical literature concerning:
+    </p>
+    <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
+      <li style="${LI}">the issue being addressed;</li>
+      <li style="${LI}">comparable interventions;</li>
+      <li style="${LI}">relevant extension approaches;</li>
+      <li style="${LI}">documented factors influencing adoption or outcomes; and</li>
+      <li style="${LI}">the knowledge or practice gap the project sought to address.</li>
+    </ul>
+    <p style="${P}">
+      This section should not become an exhaustive review of literature. Its purpose is to demonstrate that the extension intervention was informed by existing knowledge and to establish how the project contributes to extension knowledge or practice.
+    </p>
+    ${fieldBox(answer)}
+
+    <!-- ===================== 1.4 ===================== -->
+    <p style="${H_SUB}">1.4 Rationale and Contribution of the Project</p>
+    <p style="${P}">
+      Explain why the intervention was appropriate given the identified problem, available evidence, community context, and institutional expertise.
+    </p>
+    <p style="${P}">
+      Clearly identify what is potentially distinctive or useful about the project.
+    </p>
+    ${fieldBox(answer)}
+
+    <!-- ===================== 1.5 ===================== -->
+    <p style="${H_SUB}">1.5 Objectives</p>
+    <p style="${P}">
+      State the general and specific objectives.
+    </p>
+    <p style="${P}">
+      The objectives reported here should correspond with the results presented later in the paper.
+    </p>
+    ${fieldBox(answer)}
+
+    <!-- ===================== 2. MATERIALS AND METHODS ===================== -->
+    <p style="${H_SECTION}margin-top:16px;">2. MATERIALS AND METHODS / EXTENSION PROJECT METHODOLOGY</p>
+    <p style="${NOTE}">Recommended maximum: 1,100–1,400 words</p>
+    <p style="${P}">
+      This section must be sufficiently detailed to allow readers to understand what was done, with whom, how, why, and how results were determined.
+    </p>
+
+    <!-- ===================== 2.1 ===================== -->
+    <p style="${H_SUB}">2.1 Project Setting and Duration</p>
+    <p style="${P}">Describe:</p>
+    <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
+      <li style="${LI}">project site;</li>
+      <li style="${LI}">relevant characteristics of the community or institution;</li>
+      <li style="${LI}">implementation period; and</li>
+      <li style="${LI}">contextual conditions important to understanding the intervention.</li>
+    </ul>
+    <p style="${P}">
+      A map may be included when genuinely useful.
+    </p>
+    ${fieldBox(answer)}
+
+    <!-- ===================== 2.2 ===================== -->
+    <p style="${H_SUB}">2.2 Participants, Intended Users, or Beneficiaries</p>
+    <p style="${P}">Describe:</p>
+    <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
+      <li style="${LI}">target population;</li>
+      <li style="${LI}">participant selection or inclusion criteria;</li>
+      <li style="${LI}">number of participants or households/institutions reached;</li>
+      <li style="${LI}">relevant demographic or sectoral characteristics; and</li>
+      <li style="${LI}">involvement of women, youth, vulnerable groups, or other relevant sectors where applicable.</li>
+    </ul>
+    ${fieldBox(answer)}
+  `;
+}
+
+function bodyPage3HTML(data, BLUE, LIGHT, BORDER) {
+  const placeholder = (text) =>
+    `<span style="color:#94A3B8;font-style:italic;">${text}</span>`;
+
+  const H_SECTION = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 6px 0;`;
+  const H_SUB = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 4px 0;`;
+  const P = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
+  const P_TIGHT = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 4px 0;`;
+  const NOTE = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#2563EB;line-height:1.0;margin:0 0 6px 0;`;
+  const LI = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 2px 0;`;
+
+  const fieldBox = (inner) =>
+    `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;min-height:44px;">${inner}</div>`;
+
+  const answer = placeholder(
+    'Click or tap here and replace this text with your response.'
+  );
+
+  return `
+    <!-- ========== continuation of 2.2 ========== -->
+    <p style="${P}">
+      Distinguish between persons reached by project activities and the population for whom outcome data were actually obtained.
+    </p>
+    ${fieldBox(answer)}
+
+    <!-- ===================== 2.3 ===================== -->
+    <p style="${H_SUB}">2.3 Situational Analysis and Baseline</p>
+    <p style="${P}">
+      Describe how the initial situation was established.
+    </p>
+    <p style="${P}">Identify:</p>
+    <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
+      <li style="${LI}">information collected;</li>
+      <li style="${LI}">data sources;</li>
+      <li style="${LI}">methods or instruments used;</li>
+      <li style="${LI}">baseline indicators, where available; and</li>
+      <li style="${LI}">major findings that informed project design.</li>
+    </ul>
+    ${fieldBox(answer)}
+
+    <!-- ===================== 2.4 ===================== -->
+    <p style="${H_SUB}">2.4 Project or Intervention Design</p>
+    <p style="${P}">
+      Describe the extension intervention and its underlying logic.
+    </p>
+    <p style="${P}">
+      Authors are encouraged to present a project logic or results pathway such as:
+    </p>
+
+    <!-- Project Design / Results Pathway diagram -->
+    <div style="margin:6px 0 14px 0;text-align:center;">
+      <img
+        src="/images/project%20design.png"
+        alt="Project Design and Results Pathway"
+        style="width:100%;max-width:100%;height:auto;display:block;margin:0 auto;"
+      />
+    </div>
+
+    <p style="${P}">
+      Explain why the selected intervention was expected to address the identified condition.
+    </p>
+    ${fieldBox(answer)}
+
+    <!-- ===================== 2.5 ===================== -->
+    <p style="${H_SUB}">2.5 Implementation Strategies</p>
+    <p style="${P}">
+      Describe the major strategies used, such as:
+    </p>
+    <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
+      <li style="${LI}">capability-building;</li>
+      <li style="${LI}">technical assistance;</li>
+      <li style="${LI}">demonstrations;</li>
+      <li style="${LI}">mentoring or coaching;</li>
+      <li style="${LI}">community organizing;</li>
+      <li style="${LI}">communication interventions;</li>
+      <li style="${LI}">technology transfer;</li>
+    </ul>
+    ${fieldBox(answer)}
+  `;
+}
+
+function bodyPage4HTML(data, BLUE, LIGHT, BORDER) {
+  const placeholder = (text) =>
+    `<span style="color:#94A3B8;font-style:italic;">${text}</span>`;
+
+  const H_SECTION = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 6px 0;`;
+  const H_SUB = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 4px 0;`;
+  const P = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
+  const P_TIGHT = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 4px 0;`;
+  const NOTE = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#2563EB;line-height:1.0;margin:0 0 6px 0;`;
+  const LI = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 2px 0;`;
+
+  const fieldBox = (inner) =>
+    `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;min-height:44px;">${inner}</div>`;
+
+  const answer = placeholder(
+    'Click or tap here and replace this text with your response.'
+  );
+
+  return `
+    <!-- ========== continuation of 2.5 bullet list ========== -->
+    <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
+      <li style="${LI}">enterprise development;</li>
+      <li style="${LI}">policy or institutional development;</li>
+      <li style="${LI}">partnership building;</li>
+      <li style="${LI}">participatory planning; or</li>
+      <li style="${LI}">other relevant approaches.</li>
+    </ul>
+    <p style="${P}">
+      Avoid presenting a simple chronological list of activities unless chronology is analytically important.
+    </p>
+    ${fieldBox(answer)}
+
+    <!-- ===================== 2.6 ===================== -->
+    <p style="${H_SUB}">2.6 Partnership and Stakeholder Participation</p>
+    <p style="${P}">
+      Identify important partners and explain their actual roles, rather than merely listing organizations.
+    </p>
+    <p style="${P}">
+      Describe relevant community participation in:
+    </p>
+    <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
+      <li style="${LI}">project planning;</li>
+      <li style="${LI}">implementation;</li>
+      <li style="${LI}">monitoring;</li>
+      <li style="${LI}">decision-making;</li>
+      <li style="${LI}">resource mobilization; or</li>
+      <li style="${LI}">sustainability mechanisms.</li>
+    </ul>
+    ${fieldBox(answer)}
+
+    <!-- ===================== 2.7 ===================== -->
+    <p style="${H_SUB}">2.7 Monitoring and Evaluation Design</p>
+    <p style="${P}">
+      Explain how the project's results were measured or verified.
+    </p>
+    <p style="${P}">Identify:</p>
+    <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
+      <li style="${LI}">indicators;</li>
+      <li style="${LI}">data sources;</li>
+      <li style="${LI}">instruments;</li>
+      <li style="${LI}">timing of measurements;</li>
+      <li style="${LI}">persons or groups from whom data were obtained;</li>
+      <li style="${LI}">follow-up procedures; and</li>
+      <li style="${LI}">methods used to verify or triangulate evidence.</li>
+    </ul>
+    <p style="${P}">
+      Where baseline and endline measurements were conducted, describe them clearly.
+    </p>
+    ${fieldBox(answer)}
+
+    <!-- ===================== 2.8 ===================== -->
+    <p style="${H_SUB}">2.8 Data Analysis</p>
+    <p style="${P}">
+      Describe how quantitative and/or qualitative data were analyzed.
+    </p>
+    <p style="${P}">Examples include:</p>
+    <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
+      <li style="${LI}">frequencies and percentages;</li>
+      <li style="${LI}">means or other descriptive statistics;</li>
+      <li style="${LI}">pre-post comparison;</li>
+      <li style="${LI}">appropriate statistical tests;</li>
+      <li style="${LI}">thematic analysis;</li>
+      <li style="${LI}">content analysis; or</li>
+      <li style="${LI}">triangulation of multiple evidence sources.</li>
+    </ul>
+    <p style="${P}">
+      Do not employ statistical tests merely to make the manuscript appear more scholarly. The analysis must be appropriate to the data and evaluation design.
+    </p>
+    ${fieldBox(answer)}
+  `;
+}
+
+function bodyPage5HTML(data, BLUE, LIGHT, BORDER) {
+  const placeholder = (text) =>
+    `<span style="color:#94A3B8;font-style:italic;">${text}</span>`;
+
+  const H_SECTION = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 6px 0;`;
+  const H_SUB = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 4px 0;`;
+  const P = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
+  const P_TIGHT = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 4px 0;`;
+  const NOTE = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#2563EB;line-height:1.0;margin:0 0 6px 0;`;
+  const LI = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 2px 0;`;
+
+  const fieldBox = (inner) =>
+    `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;min-height:44px;">${inner}</div>`;
+
+  const answer = placeholder(
+    'Click or tap here and replace this text with your response.'
+  );
+
+  return `
+    <!-- ===================== 2.9 ===================== -->
+    <p style="${H_SUB}">2.9 Ethical Considerations</p>
+    <p style="${P}">
+      Explain relevant safeguards concerning:
+    </p>
+    <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
+      <li style="${LI}">informed participation or consent;</li>
+      <li style="${LI}">confidentiality;</li>
+      <li style="${LI}">privacy;</li>
+      <li style="${LI}">community data;</li>
+      <li style="${LI}">photographs;</li>
+      <li style="${LI}">interviews and testimonies;</li>
+      <li style="${LI}">vulnerable participants; and</li>
+      <li style="${LI}">institutional records.</li>
+    </ul>
+    <p style="${P}">
+      Where formal ethics clearance was required and obtained, state the approving body and approval/reference number.
+    </p>
+    ${fieldBox(answer)}
+
+    <!-- ===================== 3. RESULTS ===================== -->
+    <p style="${H_SECTION}margin-top:16px;">3. RESULTS</p>
+    <p style="${NOTE}">Recommended maximum: 1,200–1,600 words</p>
+    <p style="${P}">
+      Present the evidence objectively and systematically.
+    </p>
+    <p style="${P}">
+      Results should correspond directly with the project objectives and indicators.
+    </p>
+
+    <!-- ===================== 3.1 ===================== -->
+    <p style="${H_SUB}">3.1 Project Reach and Implementation</p>
+    <p style="${P}">
+      Briefly report important implementation evidence, including:
+    </p>
+    <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
+      <li style="${LI}">actual participants reached;</li>
+      <li style="${LI}">interventions delivered;</li>
+      <li style="${LI}">completion levels;</li>
+      <li style="${LI}">major products or outputs; and</li>
+      <li style="${LI}">significant deviations from the original project design.</li>
+    </ul>
+    <p style="${P}">
+      Do not allow activity counts to dominate the Results section.
+    </p>
+    ${fieldBox(answer)}
+
+    <!-- ===================== 3.2 ===================== -->
+    <p style="${H_SUB}">3.2 Immediate Results</p>
+    <p style="${P}">
+      Present documented immediate changes following the intervention, where applicable.
+    </p>
+    <p style="${P}">Examples include changes in:</p>
+    <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
+      <li style="${LI}">knowledge;</li>
+      <li style="${LI}">skills;</li>
+      <li style="${LI}">practices;</li>
+      <li style="${LI}">confidence;</li>
+      <li style="${LI}">organizational capacity;</li>
+      <li style="${LI}">access;</li>
+      <li style="${LI}">productivity;</li>
+      <li style="${LI}">service delivery; or</li>
+      <li style="${LI}">institutional processes.</li>
+    </ul>
+    ${fieldBox(answer)}
+
+    <!-- ===================== 3.3 ===================== -->
+    <p style="${H_SUB}">3.3 Outcomes</p>
+    <p style="${P}">
+      Present evidence of changes that occurred beyond immediate project outputs.
+    </p>
+    <p style="${P}">
+      Where possible, distinguish clearly among:
+    </p>
+    <p style="${P_TIGHT}">
+      <b>Output</b> – what the project produced
+    </p>
+    <p style="${P_TIGHT}">
+      <b>Immediate result</b> – what changed shortly after the intervention
+    </p>
+  `;
+}
+
+function bodyPage6HTML(data, BLUE, LIGHT, BORDER) {
+  const placeholder = (text) =>
+    `<span style="color:#94A3B8;font-style:italic;">${text}</span>`;
+
+  const H_SUB = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 4px 0;`;
+  const P = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
+  const P_TIGHT = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 4px 0;`;
+  const LI = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 2px 0;`;
+
+  const fieldBox = (inner) =>
+    `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;min-height:44px;">${inner}</div>`;
+
+  const answer = placeholder(
+    'Click or tap here and replace this text with your response.'
+  );
+
+  return `
+    <!-- ========== continuation of 3.3 ========== -->
+    <p style="${P_TIGHT}">
+      <b>Outcome</b> – meaningful change in practice, behavior, condition, performance, or institutional capacity
+    </p>
+    ${fieldBox(answer)}
+
+    <!-- ===================== 3.4 ===================== -->
+    <p style="${H_SUB}">3.4 Adoption, Utilization, Adaptation, or Continuation</p>
+    <p style="${P}">
+      Where applicable, report evidence that project participants or partners:
+    </p>
+    <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
+      <li style="${LI}">used acquired knowledge or technologies;</li>
+      <li style="${LI}">adopted recommended practices;</li>
+      <li style="${LI}">adapted an intervention to local circumstances;</li>
+      <li style="${LI}">continued activities beyond project-supported delivery; or</li>
+      <li style="${LI}">replicated project practices.</li>
+    </ul>
+    <p style="${P}">
+      Specify who adopted what, how many, to what extent, and based on what evidence whenever the data permit.
+    </p>
+    ${fieldBox(answer)}
+
+    <!-- ===================== 3.5 ===================== -->
+    <p style="${H_SUB}">3.5 Institutionalization and Sustainability</p>
+    <p style="${P}">
+      Present documented evidence of mechanisms such as:
+    </p>
+    <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
+      <li style="${LI}">partner policies;</li>
+      <li style="${LI}">local ordinances or resolutions;</li>
+      <li style="${LI}">budget allocations;</li>
+      <li style="${LI}">integration into regular programs;</li>
+      <li style="${LI}">institutional structures;</li>
+      <li style="${LI}">trained local implementers;</li>
+      <li style="${LI}">community management mechanisms;</li>
+      <li style="${LI}">continuing partnerships;</li>
+      <li style="${LI}">locally generated resources; or</li>
+      <li style="${LI}">other arrangements supporting continuation.</li>
+    </ul>
+    ${fieldBox(answer)}
+
+    <!-- ===================== 3.6 ===================== -->
+    <p style="${H_SUB}">3.6 Public Value and Broader Benefits</p>
+    <p style="${P}">
+      Where supported by evidence, describe the project's contribution to community or institutional benefit.
+    </p>
+    <p style="${P}">Possible areas include:</p>
+    <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
+      <li style="${LI}">improved livelihood;</li>
+      <li style="${LI}">health or wellbeing;</li>
+      <li style="${LI}">educational improvement;</li>
+      <li style="${LI}">strengthened institutional capacity;</li>
+      <li style="${LI}">increased resilience;</li>
+      <li style="${LI}">improved environmental practices;</li>
+      <li style="${LI}">empowerment;</li>
+      <li style="${LI}">improved service delivery; or</li>
+      <li style="${LI}">other documented public benefits.</li>
+    </ul>
+    ${fieldBox(answer)}
+
+    <!-- ===================== Important Evidence Rule ===================== -->
+    <p style="${H_SUB}">Important Evidence Rule</p>
+    <p style="${P}">
+      Attendance sheets, photographs, certificates, and activity reports can verify that an activity occurred, but they should not by themselves be used as proof that an outcome, adoption, utilization, or impact occurred. This distinction is expressly reflected in PEMNet's conference requirements.
+    </p>
+  `;
+}
+
+function bodyPage7HTML(data, BLUE, LIGHT, BORDER) {
+  const placeholder = (text) =>
+    `<span style="color:#94A3B8;font-style:italic;">${text}</span>`;
+
+  const H_SECTION = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 6px 0;`;
+  const H_SUB = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 4px 0;`;
+  const P = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
+  const NOTE = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#2563EB;line-height:1.0;margin:0 0 6px 0;`;
+  const LI = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 2px 0;`;
+
+  const fieldBox = (inner) =>
+    `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;min-height:44px;">${inner}</div>`;
+
+  const answer = placeholder(
+    'Click or tap here and replace this text with your response.'
+  );
+
+  return `
+    <!-- ========== closing note from section 3 ========== -->
+    <p style="${P}">
+      Authors should not feel compelled to claim "impact." The conference guidelines specifically recognize that completed projects need not claim long-term impact when such evidence is unavailable.
+    </p>
+
+    <!-- ===================== 4. DISCUSSION ===================== -->
+    <p style="${H_SECTION}margin-top:16px;">4. DISCUSSION</p>
+    <p style="${NOTE}">Recommended maximum: 1,000–1,400 words</p>
+    <p style="${P}">
+      This is essential if PEMNet wants these papers eventually to become publishable scholarly manuscripts.
+    </p>
+    <p style="${P}">
+      The Discussion should explain what the results mean, rather than repeat the Results section.
+    </p>
+    <p style="${P}">
+      Address the following as applicable.
+    </p>
+
+    <!-- ===================== 4.1 ===================== -->
+    <p style="${H_SUB}">4.1 Interpretation of Major Findings</p>
+    <p style="${P}">
+      Explain the most important findings.
+    </p>
+    <p style="${P}">
+      Why did the intervention appear to work—or not work?
+    </p>
+    <p style="${P}">
+      What conditions may explain the observed results?
+    </p>
+    ${fieldBox(answer)}
+
+    <!-- ===================== 4.2 ===================== -->
+    <p style="${H_SUB}">4.2 Relationship to Previous Research and Extension Literature</p>
+    <p style="${P}">
+      Compare the results with relevant published studies, extension literature, policies, frameworks, or previous interventions.
+    </p>
+    <p style="${P}">Explain whether the results:</p>
+    <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
+      <li style="${LI}">support;</li>
+      <li style="${LI}">extend;</li>
+      <li style="${LI}">differ from; or</li>
+      <li style="${LI}">qualify</li>
+    </ul>
+    <p style="${P}">
+      what is already known.
+    </p>
+    ${fieldBox(answer)}
+
+    <!-- ===================== 4.3 ===================== -->
+    <p style="${H_SUB}">4.3 Factors Affecting Implementation and Outcomes</p>
+    <p style="${P}">
+      Discuss important enabling or constraining factors, such as:
+    </p>
+    <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
+      <li style="${LI}">community participation;</li>
+      <li style="${LI}">leadership;</li>
+      <li style="${LI}">institutional support;</li>
+      <li style="${LI}">local culture;</li>
+      <li style="${LI}">resources;</li>
+      <li style="${LI}">partnerships;</li>
+      <li style="${LI}">market conditions;</li>
+      <li style="${LI}">environmental conditions;</li>
+      <li style="${LI}">policy context;</li>
+      <li style="${LI}">implementation fidelity; or</li>
+      <li style="${LI}">other contextual factors.</li>
+    </ul>
+    ${fieldBox(answer)}
+
+    <!-- ===================== 4.4 ===================== -->
+    <p style="${H_SUB}">4.4 Inclusion, Sustainability, and Resilience</p>
+    <p style="${P}">
+      Where applicable, interpret how the project addressed:
+    </p>
+    <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
+      <li style="${LI}">gender and social inclusion;</li>
+      <li style="${LI}">participation of vulnerable or underserved groups;</li>
+      <li style="${LI}">sustainability;</li>
+      <li style="${LI}">resilience;</li>
+    </ul>
+  `;
+}
+
+function bodyPage8HTML(data, BLUE, LIGHT, BORDER) {
+  const placeholder = (text) =>
+    `<span style="color:#94A3B8;font-style:italic;">${text}</span>`;
+
+  const H_SECTION = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 6px 0;`;
+  const H_SUB = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 4px 0;`;
+  const P = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
+  const NOTE = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#2563EB;line-height:1.0;margin:0 0 6px 0;`;
+  const LI = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 2px 0;`;
+
+  const fieldBox = (inner) =>
+    `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;min-height:44px;">${inner}</div>`;
+
+  const answer = placeholder(
+    'Click or tap here and replace this text with your response.'
+  );
+
+  return `
+    <!-- ========== continuation of 4.4 bullet list ========== -->
+    <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
+      <li style="${LI}">institutional ownership; and</li>
+      <li style="${LI}">local capacity.</li>
+    </ul>
+    ${fieldBox(answer)}
+
+    <!-- ===================== 4.5 ===================== -->
+    <p style="${H_SUB}">4.5 Transferability, Replication, or Scaling</p>
+    <p style="${P}">
+      Discuss whether the intervention may reasonably be:
+    </p>
+    <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
+      <li style="${LI}">replicated;</li>
+      <li style="${LI}">adapted;</li>
+      <li style="${LI}">scaled;</li>
+      <li style="${LI}">institutionalized; or</li>
+      <li style="${LI}">transferred to another context.</li>
+    </ul>
+    <p style="${P}">
+      Do not automatically recommend scaling solely because participants were satisfied with the project.
+    </p>
+    ${fieldBox(answer)}
+
+    <!-- ===================== 4.6 ===================== -->
+    <p style="${H_SUB}">4.6 Limitations</p>
+    <p style="${P}">
+      Clearly acknowledge relevant limitations, including possible weaknesses in:
+    </p>
+    <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
+      <li style="${LI}">baseline information;</li>
+      <li style="${LI}">participant selection;</li>
+      <li style="${LI}">sample size;</li>
+      <li style="${LI}">absence of a comparison group;</li>
+      <li style="${LI}">duration of follow-up;</li>
+      <li style="${LI}">reliance on self-reported information;</li>
+      <li style="${LI}">missing data;</li>
+      <li style="${LI}">measurement instruments;</li>
+      <li style="${LI}">attribution of outcomes; or</li>
+      <li style="${LI}">other methodological constraints.</li>
+    </ul>
+    <p style="${P}">
+      A credible limitations section strengthens, rather than weakens, a scholarly paper.
+    </p>
+    ${fieldBox(answer)}
+
+    <!-- ===================== 5. IMPLICATIONS ===================== -->
+    <p style="${H_SECTION}margin-top:16px;">5. IMPLICATIONS FOR EXTENSION PRACTICE AND POLICY</p>
+    <p style="${NOTE}">Recommended maximum: 400–500 words</p>
+    <p style="${P}">
+      Explain what extension managers, HEIs, practitioners, LGUs, partner institutions, policymakers, or other stakeholders can reasonably learn from the project.
+    </p>
+    <p style="${P}">Possible implications may concern:</p>
+    <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
+      <li style="${LI}">extension project design;</li>
+      <li style="${LI}">community engagement;</li>
+      <li style="${LI}">monitoring and evaluation;</li>
+      <li style="${LI}">evidence generation;</li>
+      <li style="${LI}">institutional partnerships;</li>
+      <li style="${LI}">technology adoption;</li>
+      <li style="${LI}">capability-building;</li>
+      <li style="${LI}">sustainability mechanisms;</li>
+      <li style="${LI}">quality assurance;</li>
+      <li style="${LI}">policy development; or</li>
+      <li style="${LI}">scaling and replication.</li>
+    </ul>
+    <p style="${P}">
+      Recommendations must arise from the evidence presented in the paper.
+    </p>
+    ${fieldBox(answer)}
+  `;
+}
+
+function bodyPage9HTML(data, BLUE, LIGHT, BORDER) {
+  const placeholder = (text) =>
+    `<span style="color:#94A3B8;font-style:italic;">${text}</span>`;
+
+  const H_SECTION = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 6px 0;text-transform:uppercase;`;
+  const P = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
+  const P_TIGHT = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 4px 0;`;
+  const NOTE = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#2563EB;line-height:1.0;margin:0 0 6px 0;`;
+
+  const fieldBox = (inner) =>
+    `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;min-height:44px;">${inner}</div>`;
+
+  const answer = placeholder(
+    'Click or tap here and replace this text with your response.'
+  );
+
+  return `
+    <!-- ===================== 6. CONCLUSION ===================== -->
+    <p style="${H_SECTION}">6. CONCLUSION</p>
+    <p style="${NOTE}">Recommended maximum: 300–500 words</p>
+    <p style="${P}">
+      Provide a concise synthesis of:
+    </p>
+    <ol style="margin:0 0 6px 0;padding-left:24px;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;">
+      <li style="margin:0 0 2px 0;">the development issue addressed;</li>
+      <li style="margin:0 0 2px 0;">the principal intervention;</li>
+      <li style="margin:0 0 2px 0;">the strongest documented results;</li>
+      <li style="margin:0 0 2px 0;">the significance of those results; and</li>
+      <li style="margin:0 0 2px 0;">the central implication for transformative extension.</li>
+    </ol>
+    <p style="${P}">
+      Do not introduce new data or literature in the Conclusion.
+    </p>
+    <p style="${P}">
+      Avoid exaggerated claims such as "the project completely transformed the community" unless such a conclusion is genuinely supported by the evidence.
+    </p>
+    ${fieldBox(answer)}
+
+    <!-- ===================== ACKNOWLEDGMENTS ===================== -->
+    <p style="${H_SECTION}margin-top:16px;">ACKNOWLEDGMENTS</p>
+    <p style="${P}">
+      Acknowledge institutions, communities, partners, funders, technical personnel, or individuals who contributed materially to the project but do not qualify for authorship.
+    </p>
+    <p style="${P}">
+      Do not use this section merely to list officials.
+    </p>
+    ${fieldBox(answer)}
+
+    <!-- ===================== FUNDING STATEMENT ===================== -->
+    <p style="${H_SECTION}margin-top:16px;">FUNDING STATEMENT</p>
+    <p style="${P}">Example:</p>
+    <p style="${P}">
+      This extension project was funded by [Institution/Agency] under [program/grant, if applicable].
+    </p>
+    <p style="${P}">or</p>
+    <p style="${P}">
+      The authors received no external funding for the implementation of this project.
+    </p>
+    ${fieldBox(answer)}
+
+    <!-- ===================== CONFLICT OF INTEREST ===================== -->
+    <p style="${H_SECTION}margin-top:16px;">CONFLICT OF INTEREST</p>
+    <p style="${P}">Example:</p>
+    <p style="${P}">
+      The authors declare no conflict of interest.
+    </p>
+    <p style="${P}">
+      Where a relevant conflict exists, it should be disclosed.
+    </p>
+    ${fieldBox(answer)}
+
+    <!-- ===================== ETHICS AND INFORMED CONSENT ===================== -->
+    <p style="${H_SECTION}margin-top:16px;">ETHICS AND INFORMED CONSENT STATEMENT</p>
+    <p style="${P}">Where applicable:</p>
+    <p style="${P}">
+      The project and associated data-gathering procedures were reviewed/approved by [appropriate body]. Informed consent was obtained from participants prior to data collection and/or use of identifiable photographs and testimonies.
+    </p>
+    <p style="${P}">
+      Adapt the statement according to what actually occurred. Authors should not claim ethical clearance that was not obtained.
+    </p>
+    ${fieldBox(answer)}
+
+    <!-- ===================== DATA AVAILABILITY ===================== -->
+    <p style="${H_SECTION}margin-top:16px;">DATA AVAILABILITY STATEMENT</p>
+    <p style="${P}">
+      Where appropriate:
+    </p>
+  `;
+}
+
+function bodyPage10HTML(data, BLUE, LIGHT, BORDER) {
+  const placeholder = (text) =>
+    `<span style="color:#94A3B8;font-style:italic;">${text}</span>`;
+
+  const H_SECTION = `font-family:Arial;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 6px 0;text-transform:uppercase;`;
+  const P = `font-family:Arial;font-size:11pt;color:#000;line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
+  const P_TIGHT = `font-family:Arial;font-size:11pt;color:#000;line-height:1.0;margin:0 0 4px 0;`;
+  const LI = `font-family:Arial;font-size:11pt;color:#000;line-height:1.0;margin:0 0 2px 0;`;
+  const REF_LINE = `font-family:Arial;font-size:11pt;color:#000;line-height:1.0;margin:0 0 2px 0;`;
+
+  const fieldBox = (inner, minH = 44) =>
+    `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;min-height:${minH}px;">${inner}</div>`;
+
+  const answer = placeholder(
+    'Click or tap here and replace this text with your response.'
+  );
+
+  const refPlaceholder = placeholder(
+    'Click or tap here and enter the complete APA 7th Edition reference list.'
+  );
+
+  return `
+    <!-- ========== Data Availability (continuation) ========== -->
+    <p style="${P}">
+      The data supporting the findings of this paper are available from the corresponding author upon reasonable request, subject to applicable privacy, consent, institutional, and data-protection requirements.
+    </p>
+    ${fieldBox(answer)}
+
+    <!-- ===================== AUTHOR CONTRIBUTIONS ===================== -->
+    <p style="${H_SECTION}margin-top:16px;">AUTHOR CONTRIBUTIONS</p>
+    <p style="${P}">
+      For stronger publication readiness, PEMNet can encourage the CRediT-style contributor approach.
+    </p>
+    <p style="${P}">Example:</p>
+    <div style="margin:0 0 10px 0;">
+      <p style="${REF_LINE}">Conceptualization: A.A., B.B.</p>
+      <p style="${REF_LINE}">Project Implementation: A.A., B.B., C.C.</p>
+      <p style="${REF_LINE}">Methodology: A.A., C.C.</p>
+      <p style="${REF_LINE}">Data Collection: B.B., C.C.</p>
+      <p style="${REF_LINE}">Data Analysis: A.A.</p>
+      <p style="${REF_LINE}">Writing – Original Draft: A.A.</p>
+      <p style="${REF_LINE}">Writing – Review and Editing: A.A., B.B., C.C.</p>
+      <p style="${REF_LINE}">Project Administration: B.B.</p>
+    </div>
+    <p style="${P}">
+      This can be optional for the conference version but is valuable for eventual journal submission.
+    </p>
+    ${fieldBox(answer)}
+
+    <!-- ===================== REFERENCES ===================== -->
+    <p style="${H_SECTION}margin-top:16px;">REFERENCES</p>
+    <p style="${P}">
+      Use APA 7th Edition consistently.
+    </p>
+    <p style="${P}">Authors should prioritize:</p>
+    <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
+      <li style="${LI}">peer-reviewed journal articles;</li>
+      <li style="${LI}">scholarly books;</li>
+      <li style="${LI}">government publications;</li>
+      <li style="${LI}">official institutional reports;</li>
+      <li style="${LI}">authoritative technical publications; and</li>
+      <li style="${LI}">other credible primary sources.</li>
+    </ul>
+    <p style="${P}">
+      References appearing in the list must be cited in the manuscript, and all cited works must appear in the reference list.
+    </p>
+
+    <p style="${P_TIGHT}"><b>Journal Article</b></p>
+    <p style="${P_TIGHT}">
+      Author, A. A., &amp; Author, B. B. (Year). Title of article. <i>Journal Title</i>, <u>Volume</u>(Issue), xx–xx. DOI
+    </p>
+
+    <p style="${P_TIGHT}margin-top:8px;"><b>Government/Institutional Report</b></p>
+    <p style="${P_TIGHT}">
+      Institution. (Year). <i>Title of report</i>. Publisher/Institution. URL
+    </p>
+
+    <p style="${P_TIGHT}margin-top:8px;"><b>Book</b></p>
+    <p style="${P_TIGHT}">
+      Author, A. A. (Year). <i>Title of book</i>. Publisher.
+    </p>
+
+    ${fieldBox(refPlaceholder, 120)}
+
+    <!-- ===================== APPENDICES ===================== -->
+    <p style="${H_SECTION}margin-top:16px;">APPENDICES</p>
+    <p style="${P}">
+      Appendices are optional and should contain only evidence necessary for understanding or verifying the manuscript.
+    </p>
+    <p style="${P}">Possible appendices include:</p>
+    <p style="${P_TIGHT}">Appendix A: Project Results Framework</p>
+    <p style="${P_TIGHT}">Appendix B: Major Monitoring Indicators</p>
+  `;
+}
+
+function bodyPage11HTML(data, BLUE, LIGHT, BORDER) {
+  const placeholder = (text) =>
+    `<span style="color:#94A3B8;font-style:italic;">${text}</span>`;
+
+  const H_SUB = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 4px 0;`;
+  const P = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
+  const P_TIGHT = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 4px 0;`;
+  const NOTE_ITALIC = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-style:italic;color:#000;line-height:1.0;margin:0 0 6px 0;`;
+  const RED_NOTE = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#DC2626;line-height:1.0;margin:0 0 6px 0;`;
+
+  const fieldBox = (inner, minH = 44) =>
+    `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;min-height:${minH}px;">${inner}</div>`;
+
+  const answer = placeholder(
+    'Click or tap here and replace this text with your response.'
+  );
+
+  // -------- Sample table cells --------
+  const thStyle = `border:1px solid #94A3B8;background:#F1F5F9;font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;padding:6px 8px;text-align:left;`;
+  const tdStyle = `border:1px solid #94A3B8;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;padding:6px 8px;`;
+  const tdPlaceholder = `border:1px solid #94A3B8;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#94A3B8;font-style:italic;line-height:1.0;padding:6px 8px;`;
+
+  return `
+    <!-- ========== continuation of Appendices ========== -->
+    <p style="${P_TIGHT}">Appendix C: Relevant Data Collection Instrument</p>
+    <p style="${P_TIGHT}">Appendix D: Additional Results Table</p>
+    <p style="${P_TIGHT}">Appendix E: Evidence of Institutionalization</p>
+    <p style="${P}">
+      Do not turn the manuscript into a portfolio of certificates, attendance sheets, photographs, and administrative documents.
+    </p>
+    ${fieldBox(
+      placeholder(
+        'Click or tap here to insert or list only the appendices necessary for understanding or verifying the manuscript.'
+      )
+    )}
+
+    <!-- ===================== TABLE AND FIGURE FORMAT ===================== -->
+    <p style="${H_SUB}margin-top:16px;text-transform:uppercase;">TABLE AND FIGURE FORMAT</p>
+    <p style="${P_TIGHT}">Table 1</p>
+
+    <table style="width:100%;border-collapse:collapse;margin:0 0 8px 0;">
+      <thead>
+        <tr>
+          <th style="${thStyle}">Indicator</th>
+          <th style="${thStyle}">Baseline</th>
+          <th style="${thStyle}">Endline/Follow-up</th>
+          <th style="${thStyle}">Change</th>
+          <th style="${thStyle}">Source of Evidence</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="${tdStyle}">Indicator 1</td>
+          <td style="${tdPlaceholder}">[Type here]</td>
+          <td style="${tdPlaceholder}">[Type here]</td>
+          <td style="${tdPlaceholder}">[Type here]</td>
+          <td style="${tdPlaceholder}">[Type here]</td>
+        </tr>
+        <tr>
+          <td style="${tdStyle}">Indicator 2</td>
+          <td style="${tdPlaceholder}">[Type here]</td>
+          <td style="${tdPlaceholder}">[Type here]</td>
+          <td style="${tdPlaceholder}">[Type here]</td>
+          <td style="${tdPlaceholder}">[Type here]</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p style="${NOTE_ITALIC}">
+      Baseline and Post-Intervention Status of Selected Indicators. Note. Explain abbreviations or important qualifications.
+    </p>
+    <p style="${P}">
+      Every table must be discussed in the text.
+    </p>
+
+    <!-- ===================== FIGURE FORMAT ===================== -->
+    <p style="${P_TIGHT}margin-top:10px;">Figure 1</p>
+    <p style="${NOTE_ITALIC}">Extension Project Results Pathway</p>
+
+    <div style="border:1px solid #94A3B8;background:#F8FAFC;padding:24px 12px;margin:0 0 6px 0;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-style:italic;color:#94A3B8;line-height:1.0;">
+      [Insert figure]
+    </div>
+
+    <p style="${NOTE_ITALIC}">
+      Note. Source or explanatory note, where necessary.
+    </p>
+
+    <p style="${P}">
+      Tables and figures should communicate evidence, not simply decorate the manuscript.
+    </p>
+    <p style="${P}">
+      PEMNet's existing requirements similarly provide that tables and figures be properly numbered, labeled, explained in the text, and directly relevant to the claims being presented.
+    </p>
+    ${fieldBox(
+      placeholder(
+        'Click or tap here to enter the source or explanatory note, where necessary.'
+      )
+    )}
+
+    <!-- ===================== Closing notes ===================== -->
+    <p style="${RED_NOTE}margin-top:24px;">
+      Note: please submit this template both in PDF and in Word file.
+    </p>
+
+    <p style="${P}margin-top:28px;">
+      NOTE: By submitting this manuscript, the author/s confirm their acceptance of the Author Consent and Limited Publication License stated earlier in this template.
+    </p>
+  `;
+}
+
+function buildBlocks({ data, BLUE, LIGHT, BORDER }) {
   return [
-    { kind: 'atomic', html: sectionA },
-    { kind: 'atomic', html: sectionBHeading, keepWithNext: true },
-    narrativeBlock('', '', null, data.abstract),
+    { kind: 'atomic', html: consentPageHTML(BLUE, LIGHT, BORDER), forceNewPage: true },
+    { kind: 'atomic', html: titleAuthorPageHTML(data, BLUE, LIGHT, BORDER), forceNewPage: true },
+    { kind: 'atomic', html: bodyPageHTML(data, BLUE, LIGHT, BORDER), forceNewPage: true },
+    { kind: 'atomic', html: bodyPage2HTML(data, BLUE, LIGHT, BORDER), forceNewPage: true },
+    { kind: 'atomic', html: bodyPage3HTML(data, BLUE, LIGHT, BORDER), forceNewPage: true },
+    { kind: 'atomic', html: bodyPage4HTML(data, BLUE, LIGHT, BORDER), forceNewPage: true },
+    { kind: 'atomic', html: bodyPage5HTML(data, BLUE, LIGHT, BORDER), forceNewPage: true },
+    { kind: 'atomic', html: bodyPage6HTML(data, BLUE, LIGHT, BORDER), forceNewPage: true },
+    { kind: 'atomic', html: bodyPage7HTML(data, BLUE, LIGHT, BORDER), forceNewPage: true },
+    { kind: 'atomic', html: bodyPage8HTML(data, BLUE, LIGHT, BORDER), forceNewPage: true },
+    { kind: 'atomic', html: bodyPage9HTML(data, BLUE, LIGHT, BORDER), forceNewPage: true },
+    { kind: 'atomic', html: bodyPage10HTML(data, BLUE, LIGHT, BORDER), forceNewPage: true },
+    { kind: 'atomic', html: bodyPage11HTML(data, BLUE, LIGHT, BORDER), forceNewPage: true },
   ];
 }
 
-/* ============================================================
- *  PDF generation (same as AbstractForm)
- * ============================================================ */
 async function generateFullPaperPdfBlob(previewData) {
   const { createRoot } = await import('react-dom/client');
   const { flushSync } = await import('react-dom');
@@ -611,6 +1844,19 @@ async function generateFullPaperPdfBlob(previewData) {
     }
     await new Promise((r) => setTimeout(r, 150));
 
+    // Ensure all images (e.g., the PEMNet logo) are loaded before capture.
+    const imgs = Array.from(host.querySelectorAll('img'));
+    await Promise.all(
+      imgs.map((img) =>
+        img.complete
+          ? Promise.resolve()
+          : new Promise((resolve) => {
+              img.addEventListener('load', resolve, { once: true });
+              img.addEventListener('error', resolve, { once: true });
+            })
+      )
+    );
+
     return await captureA4SheetsAsPDF({
       selector: '.a4-sheet',
       root: host,
@@ -640,8 +1886,14 @@ export default function SubmitFullPaper({
   const [submissionId, setSubmissionId] = useState('');
   const [title, setTitle] = useState('');
   const [authors, setAuthors] = useState('');
+  const [affiliations, setAffiliations] = useState('');
   const [keywords, setKeywords] = useState('');
   const [abstract, setAbstract] = useState('');
+  const [correspondingName, setCorrespondingName] = useState('');
+  const [correspondingEmail, setCorrespondingEmail] = useState('');
+  const [correspondingOrcid, setCorrespondingOrcid] = useState('');
+  const [thematicArea, setThematicArea] = useState('');
+  const [thematicAreaTitle, setThematicAreaTitle] = useState('');
   const [file, setFile] = useState(null);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -677,8 +1929,14 @@ export default function SubmitFullPaper({
     setSubmissionId('');
     setTitle('');
     setAuthors('');
+    setAffiliations('');
     setKeywords('');
     setAbstract('');
+    setCorrespondingName('');
+    setCorrespondingEmail('');
+    setCorrespondingOrcid('');
+    setThematicArea('');
+    setThematicAreaTitle('');
     setFile(null);
     setError('');
   };
@@ -687,7 +1945,15 @@ export default function SubmitFullPaper({
     if (!submissionId) return 'Please select the linked accepted abstract.';
     if (!title.trim()) return 'Full paper title is required.';
     if (!authors.trim()) return 'Author/s is required.';
+    if (!affiliations.trim()) return 'Author affiliations are required.';
     if (!keywords.trim()) return 'Keywords are required.';
+    if (!correspondingName.trim())
+      return 'Corresponding author name is required.';
+    if (!correspondingEmail.trim())
+      return 'Corresponding author email is required.';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correspondingEmail))
+      return 'Please enter a valid email address.';
+    if (!thematicArea) return 'Please select a thematic area.';
     if (!file) return 'Please attach the full paper PDF.';
     if (!file.name.toLowerCase().endsWith('.pdf'))
       return 'Full paper must be a PDF file.';
@@ -711,7 +1977,6 @@ export default function SubmitFullPaper({
       const userData = JSON.parse(localStorage.getItem('pemnet_user') || '{}');
       if (!userData.id) throw new Error('Session expired. Please login again.');
 
-      // ---- Generate full paper PDF (A4 preview) ----
       const linked = acceptedSubmissions.find(
         (s) => String(s.id) === String(submissionId)
       );
@@ -719,10 +1984,16 @@ export default function SubmitFullPaper({
         linked_abstract_title: linked?.extension_project_title || '',
         title,
         authors,
+        affiliations,
         keywords,
         abstract,
+        correspondingName,
+        correspondingEmail,
+        correspondingOrcid,
+        thematicArea,
+        thematicAreaTitle,
       };
-
+      
       try {
         setGeneratingPdf(true);
         previewBlob = await generateFullPaperPdfBlob(previewData);
@@ -736,21 +2007,23 @@ export default function SubmitFullPaper({
         setGeneratingPdf(false);
       }
 
-      // ---- Build form data ----
       const fd = new FormData();
-      fd.append('user_id', userData.id);
-      fd.append('submission_id', submissionId);
       fd.append('full_paper_title', title);
       fd.append('full_paper_authors', authors);
+      fd.append('full_paper_affiliations', affiliations);
       fd.append('full_paper_keywords', keywords);
       fd.append('full_paper_abstract', abstract);
+      fd.append('full_paper_corresponding_name', correspondingName);
+      fd.append('full_paper_corresponding_email', correspondingEmail);
+      fd.append('full_paper_corresponding_orcid', correspondingOrcid);
+      fd.append('full_paper_thematic_area', thematicArea);
+      fd.append('full_paper_thematic_area_title', thematicAreaTitle);
 
       const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
       fd.append(
         'full_paper_file',
         new File([file], safeName, { type: 'application/pdf' })
       );
-      // The generated A4 preview PDF (this is what gets archived in Drive)
       fd.append(
         'full_paper_preview_file',
         previewBlob,
@@ -806,8 +2079,14 @@ export default function SubmitFullPaper({
         ?.extension_project_title || '',
     title,
     authors,
+    affiliations,
     keywords,
     abstract,
+    correspondingName,
+    correspondingEmail,
+    correspondingOrcid,
+    thematicArea,
+    thematicAreaTitle,
   };
 
   /* ---------------- Preview mode ---------------- */
@@ -911,7 +2190,9 @@ export default function SubmitFullPaper({
             </div>
           )}
 
-          {/* Linked abstract */}
+          {/* ============================================================
+           * Linked Abstract
+           * ============================================================ */}
           <div>
             <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
               Linked Accepted Abstract <span className="text-red-500">*</span>
@@ -947,7 +2228,9 @@ export default function SubmitFullPaper({
             )}
           </div>
 
-          {/* Title */}
+          {/* ============================================================
+           * Title of the Paper
+           * ============================================================ */}
           <div>
             <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
               Full Paper Title <span className="text-red-500">*</span>
@@ -956,12 +2239,17 @@ export default function SubmitFullPaper({
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Enter the title of your full paper"
+              placeholder="Enter a concise, informative, and scholarly title"
               className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
             />
+            <p className="text-xs text-slate-500 mt-1">
+              Communicate the central intervention or extension issue, major outcome, and context. Avoid titles with only the institutional project name or acronym.
+            </p>
           </div>
 
-          {/* Authors */}
+          {/* ============================================================
+           * Author Information
+           * ============================================================ */}
           <div>
             <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
               Author/s <span className="text-red-500">*</span>
@@ -970,15 +2258,118 @@ export default function SubmitFullPaper({
               type="text"
               value={authors}
               onChange={(e) => setAuthors(e.target.value)}
-              placeholder="e.g., Juan Dela Cruz*, Maria Santos, Pedro Reyes"
+              placeholder="e.g., Juan Dela Cruz¹, Maria Santos², Pedro Reyes³"
               className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
             />
             <p className="text-xs text-slate-500 mt-1">
-              Use an asterisk (*) after the project leader&apos;s name.
+              List all authors with superscript affiliation numbers (¹, ², ³). Use an asterisk (*) after the project leader&apos;s name.
             </p>
           </div>
 
-          {/* Keywords */}
+          {/* Affiliations */}
+          <div>
+            <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
+              Author Affiliations <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              value={affiliations}
+              onChange={(e) => setAffiliations(e.target.value)}
+              placeholder={`e.g.,\n¹Department of Agriculture, University of the Philippines Los Baños, Laguna, Philippines\n²College of Education, Central Mindanao University, Bukidnon, Philippines\n³Partner Institution, if applicable`}
+              rows={3}
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+            />
+            <p className="text-xs text-slate-500 mt-1">
+              One affiliation per line. Use superscript numbers matching the author list.
+            </p>
+          </div>
+
+          {/* ============================================================
+           * Corresponding Author
+           * ============================================================ */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
+                Corresponding Author Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={correspondingName}
+                onChange={(e) => setCorrespondingName(e.target.value)}
+                placeholder="e.g., Juan Dela Cruz"
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
+                Corresponding Author Email <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="email"
+                value={correspondingEmail}
+                onChange={(e) => setCorrespondingEmail(e.target.value)}
+                placeholder="e.g., juan@university.edu.ph"
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
+              />
+            </div>
+          </div>
+
+          {/* ORCID */}
+          <div>
+            <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
+              Corresponding Author ORCID{' '}
+              <span className="text-slate-400 font-normal">(optional)</span>
+            </label>
+            <input
+              type="text"
+              value={correspondingOrcid}
+              onChange={(e) => setCorrespondingOrcid(e.target.value)}
+              placeholder="e.g., 0000-0002-1825-0097"
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
+            />
+          </div>
+
+          {/* ============================================================
+           * Thematic Area
+           * ============================================================ */}
+          <div>
+            <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
+              Thematic Area <span className="text-red-500">*</span>
+            </label>
+            <p className="text-xs text-slate-500 mb-2">
+              Select the area representing the project&apos;s primary intended outcome and strongest evidence of public value.
+            </p>
+            <select
+              value={thematicArea}
+              onChange={(e) => {
+                const num = e.target.value;
+                setThematicArea(num);
+                const idx = parseInt(num, 10) - 1;
+                if (THEMATIC_AREAS[idx]) setThematicAreaTitle(THEMATIC_AREAS[idx]);
+              }}
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none mb-3"
+            >
+              <option value="">— Select a thematic area —</option>
+              {THEMATIC_AREAS.map((area, idx) => (
+                <option key={idx} value={String(idx + 1)}>
+                  {idx + 1}. {area}
+                </option>
+              ))}
+            </select>
+            <input
+              type="text"
+              value={thematicAreaTitle}
+              onChange={(e) => setThematicAreaTitle(e.target.value)}
+              placeholder="Full title of the selected thematic area"
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
+            />
+            <p className="text-xs text-slate-500 mt-1">
+              Auto-filled when you pick a number above; edit if needed.
+            </p>
+          </div>
+
+          {/* ============================================================
+           * Keywords
+           * ============================================================ */}
           <div>
             <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
               Keywords <span className="text-red-500">*</span>
@@ -992,7 +2383,9 @@ export default function SubmitFullPaper({
             />
           </div>
 
-          {/* Abstract */}
+          {/* ============================================================
+           * Abstract
+           * ============================================================ */}
           <div>
             <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
               Abstract (for the full paper)
@@ -1006,7 +2399,9 @@ export default function SubmitFullPaper({
             />
           </div>
 
-          {/* File upload */}
+          {/* ============================================================
+           * File upload
+           * ============================================================ */}
           <div>
             <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
               Full Paper File (PDF) <span className="text-red-500">*</span>
@@ -1032,61 +2427,6 @@ export default function SubmitFullPaper({
                 PDF only. Max 64 MB.
               </p>
             </div>
-          </div>
-
-          {/* Actions */}
-          <div className="flex flex-col sm:flex-row gap-3 pt-2">
-            <button
-              type="button"
-              onClick={() => setShowPreview(true)}
-              className="sm:flex-1 py-3 rounded-xl font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition inline-flex items-center justify-center gap-2"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              Preview Full Paper
-            </button>
-            <button
-              type="button"
-              disabled={
-                submitting ||
-                generatingPdf ||
-                acceptedSubmissions.length === 0 ||
-                !submissionId ||
-                !file ||
-                !title.trim() ||
-                !authors.trim() ||
-                !keywords.trim()
-              }
-              onClick={handleSubmit}
-              className="sm:flex-2 py-3 rounded-xl font-bold text-white bg-linear-to-r from-purple-700 to-purple-800 hover:from-purple-800 hover:to-purple-900 transition shadow-lg shadow-purple-700/20 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
-            >
-              {generatingPdf ? (
-                <>
-                  <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                  </svg>
-                  Generating PDF…
-                </>
-              ) : submitting ? (
-                <>
-                  <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                  </svg>
-                  Submitting…
-                </>
-              ) : (
-                <>
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-                  </svg>
-                  Submit Full Paper
-                </>
-              )}
-            </button>
           </div>
         </div>
       </div>

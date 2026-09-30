@@ -2386,780 +2386,820 @@ export default function SubmitFullPaper({
             height: 100% !important;
           }
         `}</style>
-
-        <div className="flex flex-col" style={{ height: 'calc(100vh - 73px)' }}>
-          {/* Toolbar — sits below PEMNet header, never scrolls */}
-          <div className="flex-shrink-0 bg-white/95 backdrop-blur border-b border-slate-200 px-6 py-3 flex items-center justify-between no-print shadow-sm">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-purple-600">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
+          <div className="flex flex-col" style={{ height: 'calc(100vh - 73px)' }}>
+            {/* Toolbar — sits below PEMNet header, never scrolls */}
+            <div className="shrink-0 bg-white/95 backdrop-blur border-b border-slate-200 px-6 py-3 flex items-center justify-between no-print shadow-sm">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-purple-600">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="font-bold text-slate-900">Full Paper Preview (A4)</h2>
+                  <p className="text-xs text-slate-500">Review before submitting</p>
+                </div>
               </div>
-              <div>
-                <h2 className="font-bold text-slate-900">Full Paper Preview (A4)</h2>
-                <p className="text-xs text-slate-500">Review before submitting</p>
+              <div className="flex items-center gap-2">
+                <PrintA4SheetsButton
+                  className="px-4 py-2 text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition inline-flex items-center gap-2"
+                  documentTitle="FullPaper"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0l.229 2.523a1.125 1.125 0 01-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0021 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 00-1.913-.247M6.34 18H5.25A2.25 2.25 0 013 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 011.913-.247m10.5 0a48.536 48.536 0 00-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659" />
+                  </svg>
+                  Print
+                </PrintA4SheetsButton>
+                <button
+                  type="button"
+                  onClick={() => setShowPreview(false)}
+                  className="px-4 py-2 text-sm font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-xl transition inline-flex items-center gap-2"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
+                  </svg>
+                  Edit
+                </button>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <PrintA4SheetsButton
-                className="px-4 py-2 text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition inline-flex items-center gap-2"
-                documentTitle="FullPaper"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0l.229 2.523a1.125 1.125 0 01-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0021 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 00-1.913-.247M6.34 18H5.25A2.25 2.25 0 013 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 011.913-.247m10.5 0a48.536 48.536 0 00-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659" />
-                </svg>
-                Print
-              </PrintA4SheetsButton>
-              <button
-                type="button"
-                onClick={() => setShowPreview(false)}
-                className="px-4 py-2 text-sm font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-xl transition inline-flex items-center gap-2"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
-                </svg>
-                Edit
-              </button>
+
+            {/* Canvas — the ONLY scrollable area (scrollbar on its right edge) */}
+            <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden bg-slate-100">
+              <div className="a4-preview-wrapper p-6">
+                <FullPaperPreview data={previewData} />
+              </div>
             </div>
           </div>
+        </>
+      );
+    }
 
-          {/* Canvas — the ONLY scrollable area (scrollbar on its right edge) */}
-          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden bg-slate-100">
-            <div className="a4-preview-wrapper p-6">
-              <FullPaperPreview data={previewData} />
-            </div>
-          </div>
-        </div>
-      </>
-    );
-  }
-
-  /* ---------------- Form mode ---------------- */
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">
-            Submit Full Paper
-          </h1>
-          <p className="text-slate-500 text-sm mt-1">
-            Upload the full paper corresponding to your accepted abstract.
-          </p>
-        </div>
-        <button
-          onClick={onBack}
-          className="text-slate-600 hover:text-slate-900 font-semibold text-sm inline-flex items-center gap-1 transition bg-slate-100 px-4 py-2 rounded-xl"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-          </svg>
-          Back to Home
-        </button>
-      </div>
+    <>
+      <style jsx global>{`
+        html, body {
+          overflow: hidden !important;
+          height: 100% !important;
+        }
 
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-        <div className="bg-linear-to-r from-purple-700 to-purple-800 px-6 py-4 flex items-center justify-between">
-          <div className="text-white">
-            <h2 className="text-lg font-bold">Full Paper Submission</h2>
-            <p className="text-xs text-purple-100">
-              1<sup>st</sup> PEMNet National Extension Conference 2026
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setShowPreview(true)}
-            className="px-4 py-2 text-sm font-semibold text-purple-800 bg-white hover:bg-purple-50 rounded-xl transition inline-flex items-center gap-2"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            Preview A4
-          </button>
-        </div>
+        /* Force the form scrollbar to always be visible */
+        .form-scroll::-webkit-scrollbar {
+          width: 12px;
+        }
+        .form-scroll::-webkit-scrollbar-thumb {
+          background: #94a3b8;
+          border-radius: 6px;
+          border: 2px solid #f1f5f9;
+        }
+        .form-scroll::-webkit-scrollbar-thumb:hover {
+          background: #64748b;
+        }
+        .form-scroll::-webkit-scrollbar-track {
+          background: #f1f5f9;
+        }
 
-        <div className="p-6 space-y-5">
-          {error && (
-            <div className="bg-red-50 border border-red-100 text-red-600 text-sm p-4 rounded-xl flex items-start gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 shrink-0 mt-0.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-              </svg>
-              {error}
+        /* Firefox */
+        .form-scroll {
+          scrollbar-width: auto;
+          scrollbar-color: #94a3b8 #f1f5f9;
+        }
+      `}</style>
+
+      <div
+        className="flex flex-col"
+        style={{ height: 'calc(100vh - 73px)' }}
+      >
+        {/* ---- Pinned header: title + Back to Home ---- */}
+        <div className="shrink-0 w-full">
+          <div className="max-w-4xl mx-auto px-6 pt-6 pb-4 flex justify-between items-center">
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900">
+                Submit Full Paper
+              </h1>
+              <p className="text-slate-500 text-sm mt-1">
+                Upload the full paper corresponding to your accepted abstract.
+              </p>
             </div>
-          )}
+            <button
+              onClick={onBack}
+              className="text-slate-600 hover:text-slate-900 font-semibold text-sm inline-flex items-center gap-1 transition bg-slate-100 px-4 py-2 rounded-xl"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+              </svg>
+              Back to Home
+            </button>
+          </div>
+        </div>
 
-          {/* ============ Linked Accepted Abstract ============ */}
-          <div>
-            <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
-              Linked Accepted Abstract <span className="text-red-500">*</span>
-            </label>
-            <p className="text-xs text-slate-500 mb-2">
-              Select which of your accepted abstracts this full paper belongs to.
-            </p>
-            {acceptedSubmissions.length === 0 ? (
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-amber-600 shrink-0 mt-0.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-                </svg>
-                <div className="text-sm text-amber-800">
-                  <p className="font-semibold">No accepted abstracts yet</p>
-                  <p className="text-xs mt-0.5">
-                    Full paper submission is only available after your abstract has been accepted.
+        {/* ---- Scrollable form area ---- */}
+        <div className="flex-1 min-h-0 px-6 pb-6">
+          <div className="form-scroll max-w-4xl mx-auto h-full overflow-y-scroll">
+            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm">
+              <div className="bg-linear-to-r from-purple-700 to-purple-800 px-6 py-4 flex items-center justify-between">
+                <div className="text-white">
+                  <h2 className="text-lg font-bold">Full Paper Submission</h2>
+                  <p className="text-xs text-purple-100">
+                    1<sup>st</sup> PEMNet National Extension Conference 2026
                   </p>
                 </div>
-              </div>
-            ) : (
-              <select
-                value={submissionId}
-                onChange={(e) => setSubmissionId(e.target.value)}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
-              >
-                <option value="">— Select an accepted abstract —</option>
-                {acceptedSubmissions.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.extension_project_title}
-                  </option>
-                ))}
-              </select>
-            )}
-          </div>
-
-          {/* ============ Title of the Paper ============ */}
-          <div>
-            <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
-              Full Paper Title <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Enter a concise, informative, and scholarly title"
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
-            />
-          </div>
-
-          {/* ============ Author Information ============ */}
-          <div>
-            <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
-              Author/s <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={authors}
-              onChange={(e) => setAuthors(e.target.value)}
-              placeholder="e.g., Juan Dela Cruz¹, Maria Santos², Pedro Reyes³"
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
-            />
-          </div>
-
-          <div>
-            <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
-              Author Affiliations <span className="text-red-500">*</span>
-            </label>
-            <textarea
-              value={affiliations}
-              onChange={(e) => setAffiliations(e.target.value)}
-              placeholder={`e.g.,\n¹Department of Agriculture, University of the Philippines Los Baños, Laguna, Philippines\n²College of Education, Central Mindanao University, Bukidnon, Philippines`}
-              rows={3}
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
-                Corresponding Author Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={correspondingName}
-                onChange={(e) => setCorrespondingName(e.target.value)}
-                placeholder="e.g., Juan Dela Cruz"
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
-                Corresponding Author Email <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="email"
-                value={correspondingEmail}
-                onChange={(e) => setCorrespondingEmail(e.target.value)}
-                placeholder="e.g., juan@university.edu.ph"
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
-              Corresponding Author ORCID{' '}
-              <span className="text-slate-400 font-normal">(optional)</span>
-            </label>
-            <input
-              type="text"
-              value={correspondingOrcid}
-              onChange={(e) => setCorrespondingOrcid(e.target.value)}
-              placeholder="e.g., 0000-0002-1825-0097"
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
-            />
-          </div>
-
-          {/* ============ Thematic Area ============ */}
-          <div>
-            <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
-              Thematic Area <span className="text-red-500">*</span>
-            </label>
-            <select
-              value={thematicArea}
-              onChange={(e) => {
-                const num = e.target.value;
-                setThematicArea(num);
-                const idx = parseInt(num, 10) - 1;
-                if (THEMATIC_AREAS[idx]) setThematicAreaTitle(THEMATIC_AREAS[idx]);
-              }}
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none mb-3"
-            >
-              <option value="">— Select a thematic area —</option>
-              {THEMATIC_AREAS.map((area, idx) => (
-                <option key={idx} value={String(idx + 1)}>
-                  {idx + 1}. {area}
-                </option>
-              ))}
-            </select>
-            <input
-              type="text"
-              value={thematicAreaTitle}
-              onChange={(e) => setThematicAreaTitle(e.target.value)}
-              placeholder="Full title of the selected thematic area"
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
-            />
-          </div>
-
-          {/* ============ Keywords ============ */}
-          <div>
-            <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
-              Keywords <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={keywords}
-              onChange={(e) => setKeywords(e.target.value)}
-              placeholder="e.g., community extension; sustainable agriculture; resilience"
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
-            />
-          </div>
-
-          {/* ============ Abstract ============ */}
-          <div>
-            <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
-              Abstract <span className="text-red-500">*</span>
-            </label>
-            <textarea
-              value={abstract}
-              onChange={(e) => setAbstract(e.target.value)}
-              placeholder="Write the 250–300-word abstract as one coherent paragraph"
-              rows={6}
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
-            />
-          </div>
-
-          {/* =====================================================
-           * 1. INTRODUCTION
-           * ===================================================== */}
-          <div className="border-t border-slate-200 pt-5">
-            <h3 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">
-              1. Introduction
-            </h3>
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">1.1 Background and Context</label>
-                <textarea
-                  value={backgroundContext}
-                  onChange={(e) => setBackgroundContext(e.target.value)}
-                  placeholder="Describe the community, institutional, sectoral, environmental, economic, educational, health, or development context..."
-                  rows={4}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">1.2 Evidence of the Problem or Development Need</label>
-                <textarea
-                  value={evidenceNeed}
-                  onChange={(e) => setEvidenceNeed(e.target.value)}
-                  placeholder="Explain how the need, condition, gap, or opportunity was established..."
-                  rows={4}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">1.3 Related Literature and Extension Evidence</label>
-                <textarea
-                  value={relatedLiterature}
-                  onChange={(e) => setRelatedLiterature(e.target.value)}
-                  placeholder="Focused synthesis of relevant scholarly and technical literature..."
-                  rows={4}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">1.4 Rationale and Contribution of the Project</label>
-                <textarea
-                  value={rationale}
-                  onChange={(e) => setRationale(e.target.value)}
-                  placeholder="Why the intervention was appropriate given the problem, evidence, community context, and institutional expertise..."
-                  rows={3}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">1.5 Objectives</label>
-                <textarea
-                  value={objectives}
-                  onChange={(e) => setObjectives(e.target.value)}
-                  placeholder="General and specific objectives of the extension project..."
-                  rows={3}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* =====================================================
-           * 2. MATERIALS AND METHODS
-           * ===================================================== */}
-          <div className="border-t border-slate-200 pt-5">
-            <h3 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">
-              2. Materials and Methods / Extension Project Methodology
-            </h3>
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.1 Project Setting and Duration</label>
-                  <textarea
-                    value={settingDuration}
-                    onChange={(e) => setSettingDuration(e.target.value)}
-                    placeholder="Project site, community characteristics, implementation period, contextual conditions..."
-                    rows={4}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.2 Participants, Intended Users, or Beneficiaries</label>
-                  <textarea
-                    value={participantsDesc}
-                    onChange={(e) => setParticipantsDesc(e.target.value)}
-                    placeholder="Target population, selection criteria, number reached, demographics..."
-                    rows={4}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
-                  Distinguish reach vs. population for whom outcome data were obtained
-                </label>
-                <textarea
-                  value={reachPopulation}
-                  onChange={(e) => setReachPopulation(e.target.value)}
-                  placeholder="Explain the distinction between reach and the population that provided outcome data..."
-                  rows={2}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.3 Situational Analysis and Baseline</label>
-                <textarea
-                  value={situationalAnalysis}
-                  onChange={(e) => setSituationalAnalysis(e.target.value)}
-                  placeholder="Information collected, data sources, methods/instruments, baseline indicators, major findings..."
-                  rows={4}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.4 Project / Intervention Design — Rationale</label>
-                <textarea
-                  value={interventionRationale}
-                  onChange={(e) => setInterventionRationale(e.target.value)}
-                  placeholder="Explain why the selected intervention was expected to address the identified condition..."
-                  rows={3}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.5 Implementation Strategies</label>
-                <textarea
-                  value={implementationStrategies}
-                  onChange={(e) => setImplementationStrategies(e.target.value)}
-                  placeholder="Capability-building, technical assistance, demonstrations, mentoring, community organizing, etc..."
-                  rows={3}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.6 Partnership and Stakeholder Participation</label>
-                <textarea
-                  value={partnership}
-                  onChange={(e) => setPartnership(e.target.value)}
-                  placeholder="Partners and their actual roles; community participation in planning, implementation, monitoring..."
-                  rows={3}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
-                />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.7 Monitoring and Evaluation Design</label>
-                  <textarea
-                    value={monitoringEval}
-                    onChange={(e) => setMonitoringEval(e.target.value)}
-                    placeholder="Indicators, data sources, instruments, timing, follow-up, triangulation..."
-                    rows={4}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.8 Data Analysis</label>
-                  <textarea
-                    value={dataAnalysis}
-                    onChange={(e) => setDataAnalysis(e.target.value)}
-                    placeholder="Quantitative and/or qualitative analysis methods..."
-                    rows={4}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.9 Ethical Considerations</label>
-                <textarea
-                  value={ethicalConsiderations}
-                  onChange={(e) => setEthicalConsiderations(e.target.value)}
-                  placeholder="Informed consent, confidentiality, privacy, community data, ethics clearance..."
-                  rows={3}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* =====================================================
-           * 3. RESULTS
-           * ===================================================== */}
-          <div className="border-t border-slate-200 pt-5">
-            <h3 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">3. Results</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">3.1 Project Reach and Implementation</label>
-                <textarea
-                  value={reachImplementation}
-                  onChange={(e) => setReachImplementation(e.target.value)}
-                  placeholder="Actual participants, interventions delivered, completion levels, major outputs..."
-                  rows={3}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">3.2 Immediate Results</label>
-                <textarea
-                  value={immediateResults}
-                  onChange={(e) => setImmediateResults(e.target.value)}
-                  placeholder="Documented changes in knowledge, skills, practices, confidence, capacity..."
-                  rows={3}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">3.3 Outcomes</label>
-                <textarea
-                  value={outcomes}
-                  onChange={(e) => setOutcomes(e.target.value)}
-                  placeholder="Meaningful change in practice, behavior, condition, performance, or institutional capacity..."
-                  rows={3}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">3.4 Adoption, Utilization, Adaptation, or Continuation</label>
-                <textarea
-                  value={adoption}
-                  onChange={(e) => setAdoption(e.target.value)}
-                  placeholder="Who adopted what, how many, to what extent, on what evidence..."
-                  rows={3}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">3.5 Institutionalization and Sustainability</label>
-                <textarea
-                  value={institutionalization}
-                  onChange={(e) => setInstitutionalization(e.target.value)}
-                  placeholder="Partner policies, ordinances, budget allocations, integration into programs..."
-                  rows={3}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">3.6 Public Value and Broader Benefits</label>
-                <textarea
-                  value={publicValue}
-                  onChange={(e) => setPublicValue(e.target.value)}
-                  placeholder="Improved livelihood, health, education, resilience, environment, empowerment..."
-                  rows={3}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* =====================================================
-           * 4. DISCUSSION
-           * ===================================================== */}
-          <div className="border-t border-slate-200 pt-5">
-            <h3 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">4. Discussion</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">4.1 Interpretation of Major Findings</label>
-                <textarea
-                  value={interpretation}
-                  onChange={(e) => setInterpretation(e.target.value)}
-                  placeholder="Most important findings, why the intervention worked (or not), conditions explaining results..."
-                  rows={3}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">4.2 Relationship to Previous Research and Extension Literature</label>
-                <textarea
-                  value={relationshipLiterature}
-                  onChange={(e) => setRelationshipLiterature(e.target.value)}
-                  placeholder="Supporting, extending, differing from, or qualifying what is already known..."
-                  rows={3}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">4.3 Factors Affecting Implementation and Outcomes</label>
-                <textarea
-                  value={factorsAffecting}
-                  onChange={(e) => setFactorsAffecting(e.target.value)}
-                  placeholder="Enabling or constraining factors: participation, leadership, resources, culture, policy..."
-                  rows={3}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">4.4 Inclusion, Sustainability, and Resilience</label>
-                <textarea
-                  value={inclusionResilience}
-                  onChange={(e) => setInclusionResilience(e.target.value)}
-                  placeholder="Gender and social inclusion, vulnerable groups, sustainability, resilience, ownership, local capacity..."
-                  rows={3}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">4.5 Transferability, Replication, or Scaling</label>
-                <textarea
-                  value={transferability}
-                  onChange={(e) => setTransferability(e.target.value)}
-                  placeholder="Replicated, adapted, scaled, institutionalized, or transferred to another context..."
-                  rows={3}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">4.6 Limitations</label>
-                <textarea
-                  value={limitations}
-                  onChange={(e) => setLimitations(e.target.value)}
-                  placeholder="Baseline, sample size, comparison group, follow-up, self-report, missing data, measurement..."
-                  rows={3}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* =====================================================
-           * 5. IMPLICATIONS
-           * ===================================================== */}
-          <div className="border-t border-slate-200 pt-5">
-            <h3 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">
-              5. Implications for Extension Practice and Policy
-            </h3>
-            <textarea
-              value={implications}
-              onChange={(e) => setImplications(e.target.value)}
-              placeholder="What extension managers, HEIs, LGUs, policymakers, and partners can learn from the project..."
-              rows={4}
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
-            />
-          </div>
-
-          {/* =====================================================
-           * 6. CONCLUSION + BACK MATTER
-           * ===================================================== */}
-          <div className="border-t border-slate-200 pt-5">
-            <h3 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">
-              6. Conclusion and Back Matter
-            </h3>
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">6. Conclusion</label>
-                <textarea
-                  value={conclusion}
-                  onChange={(e) => setConclusion(e.target.value)}
-                  placeholder="Synthesis of issue, intervention, strongest results, significance, and central implication..."
-                  rows={4}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Acknowledgments</label>
-                <textarea
-                  value={acknowledgments}
-                  onChange={(e) => setAcknowledgments(e.target.value)}
-                  placeholder="Institutions, communities, partners, funders, technical personnel who contributed..."
-                  rows={3}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Funding Statement</label>
-                <textarea
-                  value={funding}
-                  onChange={(e) => setFunding(e.target.value)}
-                  placeholder="e.g., This extension project was funded by [Institution/Agency]..."
-                  rows={2}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Conflict of Interest</label>
-                <textarea
-                  value={conflictOfInterest}
-                  onChange={(e) => setConflictOfInterest(e.target.value)}
-                  placeholder="e.g., The authors declare no conflict of interest."
-                  rows={2}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Ethics and Informed Consent Statement</label>
-                <textarea
-                  value={ethicsStatement}
-                  onChange={(e) => setEthicsStatement(e.target.value)}
-                  placeholder="e.g., The project was reviewed/approved by [appropriate body]. Informed consent was obtained..."
-                  rows={3}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Data Availability Statement</label>
-                <textarea
-                  value={dataAvailability}
-                  onChange={(e) => setDataAvailability(e.target.value)}
-                  placeholder="e.g., Data are available from the corresponding author upon reasonable request..."
-                  rows={2}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Author Contributions (CRediT-style)</label>
-                <textarea
-                  value={authorContributions}
-                  onChange={(e) => setAuthorContributions(e.target.value)}
-                  placeholder={`e.g.,\nConceptualization: A.A., B.B.\nMethodology: A.A., C.C.\nWriting – Original Draft: A.A.`}
-                  rows={4}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">References (APA 7th Edition)</label>
-                <textarea
-                  value={references}
-                  onChange={(e) => setReferences(e.target.value)}
-                  placeholder="Enter the complete APA 7th Edition reference list, one entry per line..."
-                  rows={6}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Appendices</label>
-                <textarea
-                  value={appendices}
-                  onChange={(e) => setAppendices(e.target.value)}
-                  placeholder="List or describe appendices that support the manuscript..."
-                  rows={3}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* ============ Actions ============ */}
-          <div className="flex flex-col sm:flex-row gap-3 pt-2">
-            <button
-              type="button"
-              onClick={() => setShowPreview(true)}
-              className="sm:flex-1 py-3 rounded-xl font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition inline-flex items-center justify-center gap-2"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              Preview Full Paper
-            </button>
-            <button
-              type="button"
-              disabled={
-                submitting ||
-                generatingPdf ||
-                acceptedSubmissions.length === 0 ||
-                !submissionId ||
-                !file ||
-                !title.trim() ||
-                !authors.trim() ||
-                !affiliations.trim() ||
-                !keywords.trim() ||
-                !correspondingName.trim() ||
-                !correspondingEmail.trim() ||
-                !thematicArea
-              }
-              onClick={handleSubmit}
-              className="sm:flex-2 py-3 rounded-xl font-bold text-white bg-linear-to-r from-purple-700 to-purple-800 hover:from-purple-800 hover:to-purple-900 transition shadow-lg shadow-purple-700/20 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
-            >
-              {generatingPdf ? (
-                <>
-                  <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                <button
+                  type="button"
+                  onClick={() => setShowPreview(true)}
+                  className="px-4 py-2 text-sm font-semibold text-purple-800 bg-white hover:bg-purple-50 rounded-xl transition inline-flex items-center gap-2"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
-                  Generating PDF…
-                </>
-              ) : submitting ? (
-                <>
-                  <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                  </svg>
-                  Submitting…
-                </>
-              ) : (
-                <>
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-                  </svg>
-                  Submit Full Paper
-                </>
-              )}
-            </button>
+                  Preview A4
+                </button>
+              </div>
+
+              <div className="p-6 space-y-5">
+                {error && (
+                  <div className="bg-red-50 border border-red-100 text-red-600 text-sm p-4 rounded-xl flex items-start gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 shrink-0 mt-0.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                    </svg>
+                    {error}
+                  </div>
+                )}
+
+                {/* ============ Linked Accepted Abstract ============ */}
+                <div>
+                  <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
+                    Linked Accepted Abstract <span className="text-red-500">*</span>
+                  </label>
+                  <p className="text-xs text-slate-500 mb-2">
+                    Select which of your accepted abstracts this full paper belongs to.
+                  </p>
+                  {acceptedSubmissions.length === 0 ? (
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-amber-600 shrink-0 mt-0.5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                      </svg>
+                      <div className="text-sm text-amber-800">
+                        <p className="font-semibold">No accepted abstracts yet</p>
+                        <p className="text-xs mt-0.5">
+                          Full paper submission is only available after your abstract has been accepted.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <select
+                      value={submissionId}
+                      onChange={(e) => setSubmissionId(e.target.value)}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
+                    >
+                      <option value="">— Select an accepted abstract —</option>
+                      {acceptedSubmissions.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.extension_project_title}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+
+                {/* ============ Title of the Paper ============ */}
+                <div>
+                  <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
+                    Full Paper Title <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Enter a concise, informative, and scholarly title"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
+                  />
+                </div>
+
+                {/* ============ Author Information ============ */}
+                <div>
+                  <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
+                    Author/s <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={authors}
+                    onChange={(e) => setAuthors(e.target.value)}
+                    placeholder="e.g., Juan Dela Cruz¹, Maria Santos², Pedro Reyes³"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
+                    Author Affiliations <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    value={affiliations}
+                    onChange={(e) => setAffiliations(e.target.value)}
+                    placeholder={`e.g.,\n¹Department of Agriculture, University of the Philippines Los Baños, Laguna, Philippines\n²College of Education, Central Mindanao University, Bukidnon, Philippines`}
+                    rows={3}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
+                      Corresponding Author Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={correspondingName}
+                      onChange={(e) => setCorrespondingName(e.target.value)}
+                      placeholder="e.g., Juan Dela Cruz"
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
+                      Corresponding Author Email <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      value={correspondingEmail}
+                      onChange={(e) => setCorrespondingEmail(e.target.value)}
+                      placeholder="e.g., juan@university.edu.ph"
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
+                    Corresponding Author ORCID{' '}
+                    <span className="text-slate-400 font-normal">(optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={correspondingOrcid}
+                    onChange={(e) => setCorrespondingOrcid(e.target.value)}
+                    placeholder="e.g., 0000-0002-1825-0097"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
+                  />
+                </div>
+
+                {/* ============ Thematic Area ============ */}
+                <div>
+                  <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
+                    Thematic Area <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={thematicArea}
+                    onChange={(e) => {
+                      const num = e.target.value;
+                      setThematicArea(num);
+                      const idx = parseInt(num, 10) - 1;
+                      if (THEMATIC_AREAS[idx]) setThematicAreaTitle(THEMATIC_AREAS[idx]);
+                    }}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none mb-3"
+                  >
+                    <option value="">— Select a thematic area —</option>
+                    {THEMATIC_AREAS.map((area, idx) => (
+                      <option key={idx} value={String(idx + 1)}>
+                        {idx + 1}. {area}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="text"
+                    value={thematicAreaTitle}
+                    onChange={(e) => setThematicAreaTitle(e.target.value)}
+                    placeholder="Full title of the selected thematic area"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
+                  />
+                </div>
+
+                {/* ============ Keywords ============ */}
+                <div>
+                  <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
+                    Keywords <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={keywords}
+                    onChange={(e) => setKeywords(e.target.value)}
+                    placeholder="e.g., community extension; sustainable agriculture; resilience"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
+                  />
+                </div>
+
+                {/* ============ Abstract ============ */}
+                <div>
+                  <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
+                    Abstract <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    value={abstract}
+                    onChange={(e) => setAbstract(e.target.value)}
+                    placeholder="Write the 250–300-word abstract as one coherent paragraph"
+                    rows={6}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                  />
+                </div>
+
+                {/* =====================================================
+                * 1. INTRODUCTION
+                * ===================================================== */}
+                <div className="border-t border-slate-200 pt-5">
+                  <h3 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">
+                    1. Introduction
+                  </h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">1.1 Background and Context</label>
+                      <textarea
+                        value={backgroundContext}
+                        onChange={(e) => setBackgroundContext(e.target.value)}
+                        placeholder="Describe the community, institutional, sectoral, environmental, economic, educational, health, or development context..."
+                        rows={4}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">1.2 Evidence of the Problem or Development Need</label>
+                      <textarea
+                        value={evidenceNeed}
+                        onChange={(e) => setEvidenceNeed(e.target.value)}
+                        placeholder="Explain how the need, condition, gap, or opportunity was established..."
+                        rows={4}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">1.3 Related Literature and Extension Evidence</label>
+                      <textarea
+                        value={relatedLiterature}
+                        onChange={(e) => setRelatedLiterature(e.target.value)}
+                        placeholder="Focused synthesis of relevant scholarly and technical literature..."
+                        rows={4}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">1.4 Rationale and Contribution of the Project</label>
+                      <textarea
+                        value={rationale}
+                        onChange={(e) => setRationale(e.target.value)}
+                        placeholder="Why the intervention was appropriate given the problem, evidence, community context, and institutional expertise..."
+                        rows={3}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">1.5 Objectives</label>
+                      <textarea
+                        value={objectives}
+                        onChange={(e) => setObjectives(e.target.value)}
+                        placeholder="General and specific objectives of the extension project..."
+                        rows={3}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* =====================================================
+                * 2. MATERIALS AND METHODS
+                * ===================================================== */}
+                <div className="border-t border-slate-200 pt-5">
+                  <h3 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">
+                    2. Materials and Methods / Extension Project Methodology
+                  </h3>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.1 Project Setting and Duration</label>
+                        <textarea
+                          value={settingDuration}
+                          onChange={(e) => setSettingDuration(e.target.value)}
+                          placeholder="Project site, community characteristics, implementation period, contextual conditions..."
+                          rows={4}
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.2 Participants, Intended Users, or Beneficiaries</label>
+                        <textarea
+                          value={participantsDesc}
+                          onChange={(e) => setParticipantsDesc(e.target.value)}
+                          placeholder="Target population, selection criteria, number reached, demographics..."
+                          rows={4}
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
+                        Distinguish reach vs. population for whom outcome data were obtained
+                      </label>
+                      <textarea
+                        value={reachPopulation}
+                        onChange={(e) => setReachPopulation(e.target.value)}
+                        placeholder="Explain the distinction between reach and the population that provided outcome data..."
+                        rows={2}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.3 Situational Analysis and Baseline</label>
+                      <textarea
+                        value={situationalAnalysis}
+                        onChange={(e) => setSituationalAnalysis(e.target.value)}
+                        placeholder="Information collected, data sources, methods/instruments, baseline indicators, major findings..."
+                        rows={4}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.4 Project / Intervention Design — Rationale</label>
+                      <textarea
+                        value={interventionRationale}
+                        onChange={(e) => setInterventionRationale(e.target.value)}
+                        placeholder="Explain why the selected intervention was expected to address the identified condition..."
+                        rows={3}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.5 Implementation Strategies</label>
+                      <textarea
+                        value={implementationStrategies}
+                        onChange={(e) => setImplementationStrategies(e.target.value)}
+                        placeholder="Capability-building, technical assistance, demonstrations, mentoring, community organizing, etc..."
+                        rows={3}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.6 Partnership and Stakeholder Participation</label>
+                      <textarea
+                        value={partnership}
+                        onChange={(e) => setPartnership(e.target.value)}
+                        placeholder="Partners and their actual roles; community participation in planning, implementation, monitoring..."
+                        rows={3}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.7 Monitoring and Evaluation Design</label>
+                        <textarea
+                          value={monitoringEval}
+                          onChange={(e) => setMonitoringEval(e.target.value)}
+                          placeholder="Indicators, data sources, instruments, timing, follow-up, triangulation..."
+                          rows={4}
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.8 Data Analysis</label>
+                        <textarea
+                          value={dataAnalysis}
+                          onChange={(e) => setDataAnalysis(e.target.value)}
+                          placeholder="Quantitative and/or qualitative analysis methods..."
+                          rows={4}
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.9 Ethical Considerations</label>
+                      <textarea
+                        value={ethicalConsiderations}
+                        onChange={(e) => setEthicalConsiderations(e.target.value)}
+                        placeholder="Informed consent, confidentiality, privacy, community data, ethics clearance..."
+                        rows={3}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* =====================================================
+                * 3. RESULTS
+                * ===================================================== */}
+                <div className="border-t border-slate-200 pt-5">
+                  <h3 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">3. Results</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">3.1 Project Reach and Implementation</label>
+                      <textarea
+                        value={reachImplementation}
+                        onChange={(e) => setReachImplementation(e.target.value)}
+                        placeholder="Actual participants, interventions delivered, completion levels, major outputs..."
+                        rows={3}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">3.2 Immediate Results</label>
+                      <textarea
+                        value={immediateResults}
+                        onChange={(e) => setImmediateResults(e.target.value)}
+                        placeholder="Documented changes in knowledge, skills, practices, confidence, capacity..."
+                        rows={3}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">3.3 Outcomes</label>
+                      <textarea
+                        value={outcomes}
+                        onChange={(e) => setOutcomes(e.target.value)}
+                        placeholder="Meaningful change in practice, behavior, condition, performance, or institutional capacity..."
+                        rows={3}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">3.4 Adoption, Utilization, Adaptation, or Continuation</label>
+                      <textarea
+                        value={adoption}
+                        onChange={(e) => setAdoption(e.target.value)}
+                        placeholder="Who adopted what, how many, to what extent, on what evidence..."
+                        rows={3}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">3.5 Institutionalization and Sustainability</label>
+                      <textarea
+                        value={institutionalization}
+                        onChange={(e) => setInstitutionalization(e.target.value)}
+                        placeholder="Partner policies, ordinances, budget allocations, integration into programs..."
+                        rows={3}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">3.6 Public Value and Broader Benefits</label>
+                      <textarea
+                        value={publicValue}
+                        onChange={(e) => setPublicValue(e.target.value)}
+                        placeholder="Improved livelihood, health, education, resilience, environment, empowerment..."
+                        rows={3}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* =====================================================
+                * 4. DISCUSSION
+                * ===================================================== */}
+                <div className="border-t border-slate-200 pt-5">
+                  <h3 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">4. Discussion</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">4.1 Interpretation of Major Findings</label>
+                      <textarea
+                        value={interpretation}
+                        onChange={(e) => setInterpretation(e.target.value)}
+                        placeholder="Most important findings, why the intervention worked (or not), conditions explaining results..."
+                        rows={3}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">4.2 Relationship to Previous Research and Extension Literature</label>
+                      <textarea
+                        value={relationshipLiterature}
+                        onChange={(e) => setRelationshipLiterature(e.target.value)}
+                        placeholder="Supporting, extending, differing from, or qualifying what is already known..."
+                        rows={3}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">4.3 Factors Affecting Implementation and Outcomes</label>
+                      <textarea
+                        value={factorsAffecting}
+                        onChange={(e) => setFactorsAffecting(e.target.value)}
+                        placeholder="Enabling or constraining factors: participation, leadership, resources, culture, policy..."
+                        rows={3}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">4.4 Inclusion, Sustainability, and Resilience</label>
+                      <textarea
+                        value={inclusionResilience}
+                        onChange={(e) => setInclusionResilience(e.target.value)}
+                        placeholder="Gender and social inclusion, vulnerable groups, sustainability, resilience, ownership, local capacity..."
+                        rows={3}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">4.5 Transferability, Replication, or Scaling</label>
+                      <textarea
+                        value={transferability}
+                        onChange={(e) => setTransferability(e.target.value)}
+                        placeholder="Replicated, adapted, scaled, institutionalized, or transferred to another context..."
+                        rows={3}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">4.6 Limitations</label>
+                      <textarea
+                        value={limitations}
+                        onChange={(e) => setLimitations(e.target.value)}
+                        placeholder="Baseline, sample size, comparison group, follow-up, self-report, missing data, measurement..."
+                        rows={3}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* =====================================================
+                * 5. IMPLICATIONS
+                * ===================================================== */}
+                <div className="border-t border-slate-200 pt-5">
+                  <h3 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">
+                    5. Implications for Extension Practice and Policy
+                  </h3>
+                  <textarea
+                    value={implications}
+                    onChange={(e) => setImplications(e.target.value)}
+                    placeholder="What extension managers, HEIs, LGUs, policymakers, and partners can learn from the project..."
+                    rows={4}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                  />
+                </div>
+
+                {/* =====================================================
+                * 6. CONCLUSION + BACK MATTER
+                * ===================================================== */}
+                <div className="border-t border-slate-200 pt-5">
+                  <h3 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">
+                    6. Conclusion and Back Matter
+                  </h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">6. Conclusion</label>
+                      <textarea
+                        value={conclusion}
+                        onChange={(e) => setConclusion(e.target.value)}
+                        placeholder="Synthesis of issue, intervention, strongest results, significance, and central implication..."
+                        rows={4}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Acknowledgments</label>
+                      <textarea
+                        value={acknowledgments}
+                        onChange={(e) => setAcknowledgments(e.target.value)}
+                        placeholder="Institutions, communities, partners, funders, technical personnel who contributed..."
+                        rows={3}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Funding Statement</label>
+                      <textarea
+                        value={funding}
+                        onChange={(e) => setFunding(e.target.value)}
+                        placeholder="e.g., This extension project was funded by [Institution/Agency]..."
+                        rows={2}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Conflict of Interest</label>
+                      <textarea
+                        value={conflictOfInterest}
+                        onChange={(e) => setConflictOfInterest(e.target.value)}
+                        placeholder="e.g., The authors declare no conflict of interest."
+                        rows={2}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Ethics and Informed Consent Statement</label>
+                      <textarea
+                        value={ethicsStatement}
+                        onChange={(e) => setEthicsStatement(e.target.value)}
+                        placeholder="e.g., The project was reviewed/approved by [appropriate body]. Informed consent was obtained..."
+                        rows={3}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Data Availability Statement</label>
+                      <textarea
+                        value={dataAvailability}
+                        onChange={(e) => setDataAvailability(e.target.value)}
+                        placeholder="e.g., Data are available from the corresponding author upon reasonable request..."
+                        rows={2}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Author Contributions (CRediT-style)</label>
+                      <textarea
+                        value={authorContributions}
+                        onChange={(e) => setAuthorContributions(e.target.value)}
+                        placeholder={`e.g.,\nConceptualization: A.A., B.B.\nMethodology: A.A., C.C.\nWriting – Original Draft: A.A.`}
+                        rows={4}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">References (APA 7th Edition)</label>
+                      <textarea
+                        value={references}
+                        onChange={(e) => setReferences(e.target.value)}
+                        placeholder="Enter the complete APA 7th Edition reference list, one entry per line..."
+                        rows={6}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Appendices</label>
+                      <textarea
+                        value={appendices}
+                        onChange={(e) => setAppendices(e.target.value)}
+                        placeholder="List or describe appendices that support the manuscript..."
+                        rows={3}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* ============ Actions ============ */}
+                <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowPreview(true)}
+                    className="sm:flex-1 py-3 rounded-xl font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition inline-flex items-center justify-center gap-2"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    Preview Full Paper
+                  </button>
+                  <button
+                    type="button"
+                    disabled={
+                      submitting ||
+                      generatingPdf ||
+                      acceptedSubmissions.length === 0 ||
+                      !submissionId ||
+                      !file ||
+                      !title.trim() ||
+                      !authors.trim() ||
+                      !affiliations.trim() ||
+                      !keywords.trim() ||
+                      !correspondingName.trim() ||
+                      !correspondingEmail.trim() ||
+                      !thematicArea
+                    }
+                    onClick={handleSubmit}
+                    className="sm:flex-2 py-3 rounded-xl font-bold text-white bg-linear-to-r from-purple-700 to-purple-800 hover:from-purple-800 hover:to-purple-900 transition shadow-lg shadow-purple-700/20 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
+                  >
+                    {generatingPdf ? (
+                      <>
+                        <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                        </svg>
+                        Generating PDF…
+                      </>
+                    ) : submitting ? (
+                      <>
+                        <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                        </svg>
+                        Submitting…
+                      </>
+                    ) : (
+                      <>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                        </svg>
+                        Submit Full Paper
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

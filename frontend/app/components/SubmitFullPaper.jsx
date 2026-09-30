@@ -503,10 +503,10 @@ function A4Sheet({
           lineHeight: 1.3,
         }}
       >
-        <span style={{ display: 'block', margin: 0, padding: 0 }}>
+        <span style={{ display: 'block', margin: 0, padding: 0, color: 'gray'}}>
           © 2026 Ricky P. Becodo, All Rights Reserved.
         </span>
-        <span style={{ display: 'block', margin: 0, padding: 0 }}>
+        <span style={{ display: 'block', margin: 0, padding: 0, color: 'gray' }}>
           Prepared for the Philippine Extension Managers Network (PEMNet), Inc.
         </span>
       </div>
@@ -516,40 +516,40 @@ function A4Sheet({
 
 function firstPageTitleHTML(BLUE, LIGHT, BORDER) {
   return `
-    <div style="border:1px dashed #999;padding:10px 14px;margin-bottom:24px;display:flex;align-items:center;gap:16px;">
+    <div style="display:flex;align-items:center;gap:0px;margin-bottom:24px;">
       <img
         src="/images/pemnet_logo.png"
         alt="PEMNet Logo"
-        style="width:70px;height:70px;object-fit:contain;flex-shrink:0;"
+        style="width:70px;height:70px;object-fit:contain;flex-shrink:0;margin-left:20px;"
       />
       <div style="flex:1;text-align:center;">
-        <p style="margin:0 0 8px 0;font-family:Arial;font-size:12pt;font-weight:700;color:#000;letter-spacing:0.3px;">
+        <p style="margin:0 0 8px 0;font-family:Arial,Helvetica,sans-serif;font-size:12pt;font-weight:700;color:#000;letter-spacing:0.3px;">
           PHILIPPINE EXTENSION MANAGERS NETWORK (PEMNet), INC.
         </p>
-        <p style="margin:0;font-family:Arial;font-size:12pt;font-weight:700;color:#000;">
+        <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12pt;font-weight:700;color:#000;">
           1st NATIONAL EXTENSION CONFERENCE 2026
         </p>
       </div>
     </div>
 
     <div style="margin-bottom:20px;">
-      <p style="margin:0 0 4px 0;font-family:Arial;font-size:11pt;font-weight:700;color:#000;">
+      <p style="margin:0 0 4px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;">
         Theme:
       </p>
-      <p style="margin:0;font-family:Arial;font-size:11pt;font-style:italic;color:#000;line-height:1.4;">
+      <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-style:italic;color:#000;line-height:1.4;">
         HEIs at the Forefront of Transformative Extension: Advancing Evidence-Based, Inclusive, Sustainable, and Resilient Community Development
       </p>
     </div>
 
-    <p style="margin:0 0 16px 0;font-family:Arial;font-size:11pt;font-weight:700;color:#000;text-transform:uppercase;">
+    <p style="margin:0 0 16px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;text-transform:uppercase;">
       COMPLETED EXTENSION PROJECT FULL PAPER TEMPLATE
     </p>
 
-    <p style="margin:0 0 6px 0;font-family:Arial;font-size:11pt;font-weight:700;color:#000;">
+    <p style="margin:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;">
       General Manuscript Format
     </p>
 
-    <div style="font-family:Arial;font-size:11pt;color:#000;line-height:1.5;margin-bottom:14px;">
+    <div style="font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.5;margin-bottom:14px;">
       <p style="margin:0;"><span style="font-weight:700;">Length:</span> Approximately 3,000–7,000 words, excluding references and appendices</p>
       <p style="margin:0;"><span style="font-weight:700;">Font:</span> Arial, 11 points</p>
       <p style="margin:0;"><span style="font-weight:700;">Spacing:</span> Single</p>
@@ -558,7 +558,7 @@ function firstPageTitleHTML(BLUE, LIGHT, BORDER) {
       <p style="margin:0;"><span style="font-weight:700;">File Format:</span> Microsoft Word (.docx)</p>
     </div>
 
-    <p style="margin:0 0 20px 0;font-family:Arial;font-size:11pt;color:#000;line-height:1.5;text-align:justify;">
+    <p style="margin:0 0 20px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.5;text-align:justify;">
       The manuscript should be written as a <span style="font-weight:700;">scholarly extension paper</span>, not merely as a chronological accomplishment report. It should demonstrate the relationship among the <span style="font-weight:700;">identified need, intervention, evidence, results, interpretation, and implications for extension practice.</span>
     </p>
   `;
@@ -566,14 +566,14 @@ function firstPageTitleHTML(BLUE, LIGHT, BORDER) {
 
 function consentPageHTML(BLUE, LIGHT, BORDER) {
   const para = (html) =>
-    `<p style="margin:0 0 12px 0;font-family:Arial;font-size:11pt;color:#000;line-height:1.5;text-align:justify;">${html}</p>`;
+    `<p style="margin:0 0 12px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.5;text-align:justify;">${html}</p>`;
   const li = (html) =>
-    `<li style="margin:0 0 6px 0;font-family:Arial;font-size:11pt;color:#000;line-height:1.5;text-align:justify;">${html}</li>`;
+    `<li style="margin:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.5;text-align:justify;">${html}</li>`;
 
   return `
-    <p style="margin:0 0 16px 0;font-family:Arial;font-size:11pt;color:#000;">Please read</p>
+    <p style="margin:0 0 16px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;">Please read</p>
 
-    <h2 style="margin:0 0 16px 0;font-family:Arial;font-size:13pt;font-weight:700;color:#000;text-align:center;text-transform:uppercase;letter-spacing:0.3px;">
+    <h2 style="margin:0 0 16px 0;font-family:Arial,Helvetica,sans-serif;font-size:13pt;font-weight:700;color:#000;text-align:center;text-transform:uppercase;letter-spacing:0.3px;">
       AUTHOR CONSENT AND LIMITED PUBLICATION LICENSE
     </h2>
 
@@ -581,7 +581,7 @@ function consentPageHTML(BLUE, LIGHT, BORDER) {
 
     ${para(`The author/s grant PEMNet a <b>non-exclusive, royalty-free permission</b> to use the submitted manuscript, in whole or in part, for the following purposes:`)}
 
-    <ol style="margin:0 0 14px 0;padding-left:26px;">
+    <ol style="margin:0 0 14px 0;padding-left:26px;list-style-type:decimal;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.5;">
       ${li(`peer, technical, editorial, and quality review of the manuscript;`)}
       ${li(`analysis and synthesis of information, evidence, findings, practices, outcomes, and lessons contained in the submitted paper;`)}
       ${li(`preparation of conference proceedings, reports, scholarly publications, policy or practice briefs, research syntheses, databases, and other knowledge products arising from or related to the conference;`)}

@@ -119,14 +119,11 @@ const FileViewerModal = ({ isOpen, onClose, fileUrl, fileType, title }) => {
                 </svg>
               )}
             </div>
-            <h3 className="font-bold text-slate-900 truncate">
-              {fileType === 'abstract' ? 'Abstract Document' : 
-              fileType === 'supporting' ? 'Supporting Document' : 
-              'Endorsement Document'}
-            </h3>
             <div className="min-w-0">
               <h3 className="font-bold text-slate-900 truncate">
-                {fileType === 'abstract' ? 'Abstract Document' : 'Endorsement Document'}
+                {fileType === 'abstract' ? 'Abstract Document' : 
+                fileType === 'supporting' ? 'Supporting Document' : 
+                'Endorsement Document'}
               </h3>
               <p className="text-xs text-slate-500 truncate">{title}</p>
             </div>
@@ -668,176 +665,520 @@ export default function SubmitPage() {
       );
     }
 
+    // Helper: status pill styling
+    const getStatusStyle = (status) => {
+      switch (status) {
+        case 'endorse':
+          return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+        case 'downgraded-non_competitive':
+          return 'bg-amber-50 text-amber-700 border-amber-200';
+        case 'downgraded-poster_only':
+          return 'bg-amber-50 text-amber-700 border-amber-200';
+        case 'accepted':
+          return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+        case 'rejected':
+          return 'bg-red-50 text-red-700 border-red-200';
+        default:
+          return 'bg-yellow-50 text-yellow-700 border-yellow-200';
+      }
+    };
+
+    const formatStatus = (status) => {
+      if (!status) return 'Pending';
+      return status
+        .split('-')
+        .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+        .join(' ');
+    };
+
+    const formatFileSize = (bytes) => {
+      if (!bytes) return '';
+      if (bytes < 1024) return `${bytes} B`;
+      if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+      return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    };
+
+    const getFileIcon = (name = '') => {
+      const ext = name.split('.').pop()?.toLowerCase() || '';
+      if (['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'svg'].includes(ext))
+        return { bg: '#E0F2FE', color: '#0284C7' };
+      if (ext === 'pdf') return { bg: '#FEE2E2', color: '#DC2626' };
+      if (['xls', 'xlsx', 'csv'].includes(ext))
+        return { bg: '#DCFCE7', color: '#16A34A' };
+      if (['doc', 'docx'].includes(ext))
+        return { bg: '#DBEAFE', color: '#2563EB' };
+      return { bg: '#F1F5F9', color: '#475569' };
+    };
+
     return (
-      <div className="space-y-4">
+      <div className="space-y-5">
         {userSubmissions.map((submission) => {
           const isAccepted = submission.status === 'endorse';
-          const existingPayment = userPayments.find(p => p.submission_id === submission.id);
+          const existingPayment = userPayments.find(
+            (p) => p.submission_id === submission.id
+          );
 
           return (
-            <div key={submission.id} className="bg-white border border-slate-200 rounded-xl p-5 hover:shadow-md transition">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-slate-900 truncate">
-                    {submission.extension_project_title}
-                  </h3>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    <span className="text-xs px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full">
-                      {submission.thematic_area}
-                    </span>
-                    <span className="text-xs px-2.5 py-1 bg-purple-50 text-purple-700 rounded-full">
+            <div
+              key={submission.id}
+              className="bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-md transition overflow-hidden"
+            >
+              {/* ===== HEADER: Title + Status ===== */}
+              <div className="px-6 py-5 border-b border-slate-100">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base font-bold text-slate-900 leading-snug line-clamp-2">
+                      {submission.extension_project_title}
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-1.5">
+                      Submitted{' '}
+                      {new Date(submission.created_at).toLocaleDateString(
+                        undefined,
+                        {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        }
+                      )}
+                    </p>
+                  </div>
+                  <span
+                    className={`shrink-0 px-3 py-1 rounded-full text-xs font-semibold border ${getStatusStyle(
+                      submission.status
+                    )}`}
+                  >
+                    {formatStatus(submission.status)}
+                  </span>
+                </div>
+
+                {/* Badges row — wraps gracefully */}
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {submission.paper_category && (
+                    <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 bg-purple-50 text-purple-700 rounded-full font-medium">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={2}
+                        stroke="currentColor"
+                        className="w-3 h-3"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                        />
+                      </svg>
                       {submission.paper_category}
                     </span>
-                    <span className={`text-xs px-2.5 py-1 rounded-full ${
-                      submission.status === 'accepted' ? 'bg-emerald-50 text-emerald-700' :
-                      submission.status === 'rejected' ? 'bg-red-50 text-red-700' :
-                      'bg-yellow-50 text-yellow-700'
-                    }`}>
-                      {submission.status.charAt(0).toUpperCase() + submission.status.slice(1)}
+                  )}
+                  {submission.thematic_area && (
+                    <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full font-medium">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={2}
+                        stroke="currentColor"
+                        className="w-3 h-3"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M6 6h.008v.008H6V6z"
+                        />
+                      </svg>
+                      {submission.thematic_area}
                     </span>
-                  </div>
-                  <div className="flex flex-wrap gap-4 mt-3 text-sm text-slate-600">
-                    <span><span className="font-medium">Project Leader:</span> {submission.project_leader}</span>
-                    <span><span className="font-medium">Presenter:</span> {submission.presenter}</span>
-                    {submission.corresponding_author_name && (
-                      <span><span className="font-medium">Corresponding Author:</span> {submission.corresponding_author_name}</span>
-                    )}
-                    {submission.corresponding_author_position && (
-                      <span><span className="font-medium">Position:</span> {submission.corresponding_author_position}</span>
-                    )}
-                    {submission.suc_agencies && (
-                      <span><span className="font-medium">SUC:</span> {submission.suc_agencies}</span>
-                    )}
-                  </div>
-                  <div className="mt-3 text-xs text-slate-400">
-                    Submitted: {new Date(submission.created_at).toLocaleString()}
-                  </div>
-                </div>
-                <div className="flex flex-col items-end gap-2 shrink-0">
-                  {submission.abstract_view_url && (
-                    <button
-                      type="button"
-                      onClick={() => openFileViewer(
-                        submission.abstract_view_url,
-                        'abstract',
-                        submission.extension_project_title
-                      )}
-                      className="text-blue-600 hover:text-blue-700 text-sm font-medium inline-flex items-center gap-1 hover:bg-blue-50 px-2 py-1 rounded-lg transition"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                      View Abstract
-                    </button>
-                  )}
-                  {submission.endorsement_view_url && (
-                    <button
-                      type="button"
-                      onClick={() => openFileViewer(
-                        submission.endorsement_view_url,
-                        'endorsement',
-                        submission.extension_project_title
-                      )}
-                      className="text-emerald-600 hover:text-emerald-700 text-sm font-medium inline-flex items-center gap-1 hover:bg-emerald-50 px-2 py-1 rounded-lg transition"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                      View Endorsement
-                    </button>
-                  )}
-                  {submission.supporting_documents && submission.supporting_documents.length > 0 && (
-                    <div className="mt-3 pt-3 border-t border-slate-100">
-                      <div className="flex items-center gap-2 mb-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-slate-500">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13" />
-                        </svg>
-                        <span className="font-semibold text-sm text-slate-700">
-                          Supporting Documents ({submission.supporting_documents.length})
-                        </span>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {submission.supporting_documents.map((doc, idx) => (
-                          <button
-                            key={doc.id || idx}
-                            type="button"
-                            onClick={() => openFileViewer(doc.view_url, 'supporting', doc.file_name)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition"
-                            title={doc.file_name}
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-                            </svg>
-                            <span className="truncate max-w-37.5">{doc.file_name}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
                   )}
                 </div>
               </div>
 
-              <div className="mt-4 pt-4 border-t border-slate-100">
-                <div className="flex items-center gap-2 mb-2">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-slate-500">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
+              {/* ===== BODY: Metadata Grid ===== */}
+              <div className="px-6 py-4 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-0.5">
+                    Project Leader
+                  </p>
+                  <p className="text-slate-800 truncate">
+                    {submission.project_leader || '—'}
+                  </p>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-0.5">
+                    Presenter
+                  </p>
+                  <p className="text-slate-800 truncate">
+                    {submission.presenter || '—'}
+                  </p>
+                </div>
+                {submission.corresponding_author_name && (
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-0.5">
+                      Corresponding Author
+                    </p>
+                    <p className="text-slate-800 truncate">
+                      {submission.corresponding_author_name}
+                      {submission.corresponding_author_position && (
+                        <span className="text-slate-500 font-normal">
+                          {' '}
+                          · {submission.corresponding_author_position}
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                )}
+                {submission.suc_agencies && (
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-0.5">
+                      SUC / Agency
+                    </p>
+                    <p className="text-slate-800 truncate">
+                      {submission.suc_agencies}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* ===== FILES SECTION ===== */}
+              <div className="px-6 py-5 bg-slate-50 border-t border-slate-100 space-y-5">
+
+                {/* ---------- Group 1: Primary Documents ---------- */}
+                <div>
+                  <div className="flex items-center gap-2 mb-2.5">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={1.5}
+                      stroke="currentColor"
+                      className="w-4 h-4 text-slate-500"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25z"
+                      />
+                    </svg>
+                    <span className="font-semibold text-xs uppercase tracking-wide text-slate-500">
+                      Primary Documents
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Abstract card */}
+                    {submission.abstract_view_url && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          openFileViewer(
+                            submission.abstract_view_url,
+                            'abstract',
+                            submission.extension_project_title
+                          )
+                        }
+                        className="group flex items-center gap-3 p-3 bg-white hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-xl transition text-left"
+                      >
+                        <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth={1.8}
+                            stroke="currentColor"
+                            className="w-4.5 h-4.5 text-blue-600"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
+                            />
+                          </svg>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold text-slate-800 group-hover:text-blue-700">
+                            Abstract
+                          </p>
+                          <p className="text-xs text-slate-500 truncate">
+                            Primary submission document
+                          </p>
+                        </div>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          strokeWidth={2}
+                          stroke="currentColor"
+                          className="w-4 h-4 text-slate-400 group-hover:text-blue-600 shrink-0"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
+                          />
+                        </svg>
+                      </button>
+                    )}
+
+                    {/* Endorsement card */}
+                    {submission.endorsement_view_url && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          openFileViewer(
+                            submission.endorsement_view_url,
+                            'endorsement',
+                            submission.extension_project_title
+                          )
+                        }
+                        className="group flex items-center gap-3 p-3 bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 rounded-xl transition text-left"
+                      >
+                        <div className="w-9 h-9 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth={1.8}
+                            stroke="currentColor"
+                            className="w-4.5 h-4.5 text-emerald-600"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z"
+                            />
+                          </svg>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold text-slate-800 group-hover:text-emerald-700">
+                            Endorsement
+                          </p>
+                          <p className="text-xs text-slate-500 truncate">
+                            Signed endorsement letter
+                          </p>
+                        </div>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          strokeWidth={2}
+                          stroke="currentColor"
+                          className="w-4 h-4 text-slate-400 group-hover:text-emerald-600 shrink-0"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
+                          />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* ---------- Group 2: Supporting Documents ---------- */}
+                {submission.supporting_documents &&
+                  submission.supporting_documents.length > 0 && (
+                    <div className="pt-4 border-t border-slate-200">
+                      <div className="flex items-center justify-between mb-2.5">
+                        <div className="flex items-center gap-2">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth={1.5}
+                            stroke="currentColor"
+                            className="w-4 h-4 text-slate-500"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13"
+                            />
+                          </svg>
+                          <span className="font-semibold text-xs uppercase tracking-wide text-slate-500">
+                            Supporting Documents
+                          </span>
+                        </div>
+                        <span className="inline-flex items-center justify-center min-w-6 h-6 px-2 text-xs font-bold rounded-full bg-purple-100 text-purple-700">
+                          {submission.supporting_documents.length}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                        {submission.supporting_documents.map((doc, idx) => {
+                          const icon = getFileIcon(doc.file_name);
+                          const ext = (doc.file_name?.split('.').pop() || '').toLowerCase();
+
+                          return (
+                            <button
+                              key={doc.id || idx}
+                              type="button"
+                              onClick={() =>
+                                openFileViewer(doc.view_url, 'supporting', doc.file_name)
+                              }
+                              className="group flex items-center gap-2.5 p-2.5 bg-white hover:bg-purple-50 border border-slate-200 hover:border-purple-300 rounded-lg transition text-left min-w-0"
+                              title={doc.file_name}
+                            >
+                              <span
+                                className="inline-flex items-center justify-center w-8 h-8 rounded-lg shrink-0"
+                                style={{ backgroundColor: icon.bg, color: icon.color }}
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  strokeWidth={1.8}
+                                  stroke="currentColor"
+                                  className="w-4 h-4"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
+                                  />
+                                </svg>
+                              </span>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-xs font-semibold text-slate-800 group-hover:text-purple-700 truncate">
+                                  {doc.file_name}
+                                </p>
+                                <p className="text-[10px] text-slate-500 uppercase tracking-wide">
+                                  {ext}
+                                  {doc.file_size
+                                    ? ` · ${formatFileSize(doc.file_size)}`
+                                    : ''}
+                                </p>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+              </div>
+
+              {/* ===== PAYMENT SECTION ===== */}
+              <div className="px-6 py-5 border-t border-slate-100">
+                <div className="flex items-center gap-2 mb-3">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="w-4 h-4 text-slate-500"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"
+                    />
                   </svg>
-                  <span className="font-semibold text-sm text-slate-700">Payment</span>
+                  <span className="font-semibold text-sm text-slate-700">
+                    Payment
+                  </span>
                 </div>
 
                 {!isAccepted ? (
-                  <div className="flex items-center gap-2 text-slate-400 text-sm bg-slate-50 p-3 rounded-lg border border-slate-100">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                  <div className="flex items-center gap-2 text-slate-500 text-sm bg-slate-50 p-3 rounded-xl border border-slate-100">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={1.5}
+                      stroke="currentColor"
+                      className="w-4 h-4 shrink-0"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"
+                      />
                     </svg>
-                    Payment available once your submission is accepted.
+                    Payment will be available once your submission is accepted.
                   </div>
                 ) : existingPayment ? (
-                  <div className={`p-3 rounded-lg border text-sm ${
-                    existingPayment.payment_status === 'verified' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' :
-                    existingPayment.payment_status === 'rejected' ? 'bg-red-50 border-red-200 text-red-700' :
-                    'bg-yellow-50 border-yellow-200 text-yellow-700'
-                  }`}>
-                    <div className="flex items-center justify-between">
-                      <span>Status: <strong>{existingPayment.payment_status.toUpperCase()}</strong></span>
+                  <div
+                    className={`p-3 rounded-xl border text-sm ${
+                      existingPayment.payment_status === 'verified'
+                        ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                        : existingPayment.payment_status === 'rejected'
+                        ? 'bg-red-50 border-red-200 text-red-700'
+                        : 'bg-yellow-50 border-yellow-200 text-yellow-700'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <span>
+                        Status:{' '}
+                        <strong>
+                          {existingPayment.payment_status.toUpperCase()}
+                        </strong>
+                      </span>
                       {existingPayment.payment_proof_view_url && (
-                        <a href={existingPayment.payment_proof_view_url} target="_blank" rel="noopener noreferrer" className="underline font-medium">View Proof</a>
+                        <a
+                          href={existingPayment.payment_proof_view_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="underline font-medium"
+                        >
+                          View Proof
+                        </a>
                       )}
                     </div>
-                    {existingPayment.payment_status === 'rejected' && existingPayment.rejection_reason && (
-                      <p className="text-xs mt-1">Reason: {existingPayment.rejection_reason}</p>
-                    )}
+                    {existingPayment.payment_status === 'rejected' &&
+                      existingPayment.rejection_reason && (
+                        <p className="text-xs mt-1">
+                          Reason: {existingPayment.rejection_reason}
+                        </p>
+                      )}
                   </div>
                 ) : (
-                  <form onSubmit={handlePaymentUpload} className="bg-slate-50 p-4 rounded-lg border border-slate-200 space-y-3">
-                    <p className="text-xs text-slate-500 mb-2">Please provide your payment details or upload proof of payment.</p>
+                  <form
+                    onSubmit={handlePaymentUpload}
+                    className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3"
+                  >
+                    <p className="text-xs text-slate-500">
+                      Provide your payment details and upload proof of payment.
+                    </p>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                       <div>
-                        <label className="block text-xs font-medium text-slate-600 mb-1">Reference Number *</label>
+                        <label className="block text-xs font-medium text-slate-600 mb-1">
+                          Reference Number *
+                        </label>
                         <input
                           type="text"
                           value={referenceNumber}
                           onChange={(e) => setReferenceNumber(e.target.value)}
                           placeholder="e.g. 1234567890"
-                          className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm placeholder:text-gray-500 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                           required
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-slate-600 mb-1">Amount (PHP) *</label>
+                        <label className="block text-xs font-medium text-slate-600 mb-1">
+                          Amount (PHP) *
+                        </label>
                         <input
                           type="number"
                           value={paymentAmount}
                           onChange={(e) => setPaymentAmount(e.target.value)}
                           placeholder="e.g. 6500.00"
-                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm placeholder:text-gray-500 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                           required
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-slate-600 mb-1">Date of Payment *</label>
+                        <label className="block text-xs font-medium text-slate-600 mb-1">
+                          Date of Payment *
+                        </label>
                         <input
                           type="date"
                           value={paymentDate}
@@ -848,7 +1189,9 @@ export default function SubmitPage() {
                       </div>
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">Proof of Payment *</label>
+                      <label className="block text-xs font-medium text-slate-600 mb-1">
+                        Proof of Payment *
+                      </label>
                       <div className="border-2 border-dashed border-slate-300 rounded-lg p-3 text-center hover:border-blue-400 transition bg-white">
                         <input
                           type="file"
@@ -857,8 +1200,14 @@ export default function SubmitPage() {
                           className="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-blue-600 file:text-white file:font-medium hover:file:bg-blue-700 cursor-pointer"
                           required
                         />
-                        <p className="text-[10px] text-slate-400 mt-1">PDF, JPG, PNG (Max 5MB)</p>
-                        {paymentFile && <p className="text-xs text-emerald-600 mt-1">{paymentFile.name}</p>}
+                        <p className="text-[10px] text-slate-400 mt-1">
+                          PDF, JPG, PNG (Max 5MB)
+                        </p>
+                        {paymentFile && (
+                          <p className="text-xs text-emerald-600 mt-1">
+                            {paymentFile.name}
+                          </p>
+                        )}
                       </div>
                     </div>
                     <div className="flex justify-end">
@@ -867,10 +1216,21 @@ export default function SubmitPage() {
                         disabled={isUploadingPayment || !paymentFile}
                         className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          strokeWidth={2}
+                          stroke="currentColor"
+                          className="w-4 h-4"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"
+                          />
                         </svg>
-                        {isUploadingPayment ? 'Uploading...' : 'Submit Payment Details'}
+                        {isUploadingPayment ? 'Uploading...' : 'Submit Payment'}
                       </button>
                     </div>
                   </form>

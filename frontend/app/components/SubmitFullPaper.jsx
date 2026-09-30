@@ -183,7 +183,17 @@ function packBlocks(blocks, { measure, boxHTML, titleHeight }) {
   flush();
   return result;
 }
+// Small atomic blocks for non-splittable content
+const A = (html) => ({ kind: 'atomic', html });
+const A_HEAD = (html) => ({ kind: 'atomic', html, forceNewPage: true });
 
+// A user-answer box: the body is splittable across pages,
+// and the heading (if any) is repeated if the block breaks.
+const N = (headingHtml, bodyText) => ({
+  kind: 'narrative',
+  heading: headingHtml,
+  bodyText: bodyText ?? '',
+});
 
 export function FullPaperPreview({ data }) {
   const BLUE = '#4C1D95';
@@ -354,41 +364,15 @@ function A4Paginator({ data, BLUE, LIGHT, BORDER }) {
           </div>
         ) : (
           <>
-            {/* ---- Always-rendered cover page ---- */}
-            <A4Sheet
-              key="cover"
-              pageNumber={1}
-              totalPages={totalPages}
-              isFirstPage={true}
-              allowOverflow={extraPages === 0}
-              BLUE={BLUE}
-              LIGHT={LIGHT}
-              BORDER={BORDER}
-            >
+            <A4Sheet key="cover" pageNumber={1} totalPages={totalPages} isFirstPage={true} BLUE={BLUE} LIGHT={LIGHT} BORDER={BORDER}>
               {null}
             </A4Sheet>
 
-            {/* ---- Continuation pages ---- */}
-            {pages
-              .map((page, idx) => (
-                <A4Sheet
-                  key={`page-${idx + 2}`}
-                  pageNumber={idx + 2}
-                  totalPages={totalPages}
-                  isFirstPage={false}
-                  allowOverflow={idx === extraPages - 1}
-                  BLUE={BLUE}
-                  LIGHT={LIGHT}
-                  BORDER={BORDER}
-                >
-                  {page.blocks.map((b, i) => (
-                    <div
-                      key={i}
-                      dangerouslySetInnerHTML={{ __html: b.html }}
-                    />
-                  ))}
-                </A4Sheet>
-              ))}
+            {pages.map((page, idx) => (
+              <A4Sheet key={`page-${idx + 2}`} pageNumber={idx + 2} totalPages={totalPages} isFirstPage={false} BLUE={BLUE} LIGHT={LIGHT} BORDER={BORDER}>
+                {page.blocks.map((b, i) => <div key={i} dangerouslySetInnerHTML={{ __html: b.html }} />)}
+              </A4Sheet>
+            ))}
           </>
         )}
       </div>
@@ -396,16 +380,7 @@ function A4Paginator({ data, BLUE, LIGHT, BORDER }) {
   );
 }
 
-function A4Sheet({
-  pageNumber,
-  totalPages,
-  isFirstPage,
-  allowOverflow = false,
-  children,
-  BLUE,
-  LIGHT,
-  BORDER,
-}) {
+function A4Sheet({ pageNumber, totalPages, isFirstPage, children, BLUE, LIGHT, BORDER }) {
   const HEADER_ZONE_H = `calc(0.1in + 18mm)`;
   const FOOTER_ZONE_H = `calc(0.2in + 18mm)`;
 
@@ -414,7 +389,7 @@ function A4Sheet({
       className="a4-sheet bg-white shadow-2xl"
       style={{
         width: '210mm',
-        ...(allowOverflow ? { minHeight: '297mm' } : { height: '297mm' }),
+        height: '297mm',         // fixed, not minHeight
         padding: '0 16mm',
         fontFamily: 'Times New Roman, Georgia, serif',
         fontSize: '11pt',
@@ -422,93 +397,27 @@ function A4Sheet({
         color: '#111',
         display: 'flex',
         flexDirection: 'column',
-        overflow: 'visible',
+        overflow: 'hidden',      // clip
         position: 'relative',
       }}
     >
-      {/* ---------- Header zone ---------- */}
-      <div
-        style={{
-          height: HEADER_ZONE_H,
-          minHeight: HEADER_ZONE_H,
-          maxHeight: HEADER_ZONE_H,
-          flexShrink: 0,
-          flexGrow: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          overflow: 'hidden',
-          position: 'relative',
-          zIndex: 10,
-          background: '#fff',
-        }}
-      >
-      </div>
+      {/* header */}
+      <div style={{ height: HEADER_ZONE_H, minHeight: HEADER_ZONE_H, maxHeight: HEADER_ZONE_H, flexShrink: 0, flexGrow: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative', zIndex: 10, background: '#fff' }} />
 
-      {/* ---------- First-page title block ---------- */}
+      {/* first-page title block */}
       {isFirstPage && (
-        <div
-          style={{ flexShrink: 0 }}
-          dangerouslySetInnerHTML={{
-            __html: firstPageTitleHTML(BLUE, LIGHT, BORDER),
-          }}
-        />
+        <div style={{ flexShrink: 0 }} dangerouslySetInnerHTML={{ __html: firstPageTitleHTML(BLUE, LIGHT, BORDER) }} />
       )}
 
-      {/* ---------- Dynamic content ---------- */}
-      <div
-        style={{
-          flex: '1 1 auto',
-          minHeight: 0,
-          overflow: 'visible',
-          position: 'relative',
-          zIndex: 1,
-        }}
-      >
+      {/* dynamic content */}
+      <div style={{ flex: '1 1 auto', minHeight: 0, overflow: 'hidden', position: 'relative', zIndex: 1 }}>
         {children}
       </div>
 
-      {/* ---------- Footer ---------- */}
-      <div
-        style={{
-          height: FOOTER_ZONE_H,
-          minHeight: FOOTER_ZONE_H,
-          maxHeight: FOOTER_ZONE_H,
-          flexShrink: 0,
-          flexGrow: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'flex-start',
-          justifyContent: 'flex-end',
-          paddingBottom: '10mm',
-          fontFamily: 'Cambria, Georgia, serif',
-          fontSize: '9pt',
-          color: '#A78BFA',
-          overflow: 'visible',
-          ...(allowOverflow
-            ? {
-                position: 'absolute',
-                top: `calc(297mm - ${FOOTER_ZONE_H})`,
-                left: '16mm',
-                right: '16mm',
-                zIndex: 0,
-                background: 'transparent',
-                pointerEvents: 'none',
-              }
-            : {
-                position: 'relative',
-                zIndex: 10,
-                background: '#fff',
-              }),
-          lineHeight: 1.3,
-        }}
-      >
-        <span style={{ display: 'block', margin: 0, padding: 0, color: 'gray'}}>
-          © 2026 Ricky P. Becodo, All Rights Reserved.
-        </span>
-        <span style={{ display: 'block', margin: 0, padding: 0, color: 'gray' }}>
-          Prepared for the Philippine Extension Managers Network (PEMNet), Inc.
-        </span>
+      {/* footer — always relative, always at the bottom */}
+      <div style={{ height: FOOTER_ZONE_H, minHeight: FOOTER_ZONE_H, maxHeight: FOOTER_ZONE_H, flexShrink: 0, flexGrow: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'flex-end', paddingBottom: '10mm', fontFamily: 'Cambria, Georgia, serif', fontSize: '9pt', color: '#A78BFA', overflow: 'hidden', position: 'relative', zIndex: 10, background: '#fff', lineHeight: 1.3 }}>
+        <span style={{ display: 'block', margin: 0, padding: 0, color: 'gray' }}>© 2026 Ricky P. Becodo, All Rights Reserved.</span>
+        <span style={{ display: 'block', margin: 0, padding: 0, color: 'gray' }}>Prepared for the Philippine Extension Managers Network (PEMNet), Inc.</span>
       </div>
     </div>
   );
@@ -740,1166 +649,443 @@ function titleAuthorPageHTML(data, BLUE, LIGHT, BORDER) {
   `;
 }
 
-function bodyPageHTML(data, BLUE, LIGHT, BORDER) {
+function buildBodyBlocks(data, BLUE, LIGHT, BORDER) {
   const safe = (v) => (v == null ? '' : String(v));
   const ACCENT = '#4472C4';
   const RED = '#FF0000';
-  const placeholder = (text) =>
-    `<span style="color:#94A3B8;font-style:italic;">${text}</span>`;
-  const filled = (text) => `<span style="color:${ACCENT};">${text}</span>`;
-  const orPlaceholder = (value, ph) =>
-    String(value || '').trim() ? filled(value) : placeholder(ph);
-
-  // Typography
-  const H_SECTION = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 6px 0;`;
-  const H_SUB = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 4px 0;`;
-  const P = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
-  const P_TIGHT = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 4px 0;`;
-  const LI = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 2px 0;`;
-  const NOTE = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:${ACCENT};line-height:1.0;margin:0 0 6px 0;`;
-  const NOTE_RED = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:${RED};line-height:1.0;`;
-
-  const fieldBox = (inner) =>
-    `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;min-height:80px;">${inner}</div>`;
-
-  const abstractHTML = safe(data.abstract).trim()
-    ? filled(safe(data.abstract))
-    : placeholder(
-        'Click or tap here and write the 250–300-word abstract as one coherent paragraph.'
-      );
-
-  const keywordsHTML = safe(data.keywords).trim()
-    ? filled(safe(data.keywords))
-    : placeholder(
-        'Click or tap here and enter 4–6 keywords separated by semicolons.'
-      );
-
-  return `
-    <style>
-      ul > li::marker { color: #000; }
-      ol > li::marker { color: #000; }
-    </style>
-
-    <!-- ===================== ABSTRACT ===================== -->
-    <p style="${H_SECTION}text-transform:uppercase;">ABSTRACT</p>
-    <p style="${NOTE}">Recommended length: <span style="${NOTE_RED}">250–300 words</span></p>
-    <p style="${P}">
-      Provide a concise, self-contained summary of the entire paper. The abstract should contain the following elements, preferably as one coherent paragraph:
-    </p>
-    <p style="${P_TIGHT}">
-      <b>Background/Need:</b> Briefly identify the community, institutional, or sectoral condition that justified the extension project.
-    </p>
-    <p style="${P_TIGHT}">
-      <b>Objective:</b> State the principal objective or purpose of the project.
-    </p>
-    <p style="${P_TIGHT}">
-      <b>Methods/Approach:</b> Briefly describe the setting, intended users or beneficiaries, extension intervention, implementation approach, and methods used to assess results.
-    </p>
-    <p style="${P_TIGHT}">
-      <b>Results:</b> Present the most important quantitative and/or qualitative findings. Give actual evidence rather than merely stating that the project was "successful."
-    </p>
-    <p style="${P_TIGHT}">
-      <b>Conclusion:</b> State what the evidence indicates and its principal implication for extension practice, sustainability, policy, or public value.
-    </p>
-    <p style="${P}">
-      Do not introduce claims in the abstract that are not supported in the main paper.
-    </p>
-    ${fieldBox(abstractHTML)}
-
-    <p style="${P_TIGHT}"><b>Keywords:</b> [4–6 keywords, separated by semicolons]</p>
-    ${fieldBox(keywordsHTML)}
-
-    <!-- ===================== 1. INTRODUCTION ===================== -->
-    <p style="${H_SECTION}margin-top:16px;">1. INTRODUCTION</p>
-    <p style="${NOTE}">Recommended maximum: <span style="${NOTE_RED}">900–1,100 words</span></p>
-    <p style="${P}">
-      The Introduction should establish the scholarly and development basis of the extension project.
-    </p>
-
-    <p style="${H_SUB}">1.1 Background and Context</p>
-    <p style="${P}">
-      Describe the community, institutional, sectoral, environmental, economic, educational, health, or development context within which the project was implemented.
-    </p>
-    <p style="${P}">
-      Explain the significance of the issue being addressed.
-    </p>
-    <p style="${P}">
-      Where appropriate, provide relevant statistics, policies, research findings, or documented community evidence.
-    </p>
-    ${fieldBox(
-      orPlaceholder(
-        data.backgroundContext,
-        'Click or tap here and replace this text with your response.'
-      )
-    )}
-
-    <p style="${H_SUB}">1.2 Evidence of the Problem or Development Need</p>
-    <p style="${P}">
-      Explain how the need, condition, gap, or opportunity was established.
-    </p>
-    <p style="${P}">Evidence may come from:</p>
-    <ul style="margin:0 0 10px 0;padding-left:22px;list-style-type:disc;">
-      <li style="${LI}">situational or needs assessment;</li>
-      <li style="${LI}">baseline data;</li>
-      <li style="${LI}">community consultations;</li>
-      <li style="${LI}">surveys;</li>
-      <li style="${LI}">focus group discussions;</li>
-      <li style="${LI}">key informant interviews;</li>
-      <li style="${LI}">institutional records;</li>
-      <li style="${LI}">government statistics;</li>
-      <li style="${LI}">previous research;</li>
-      <li style="${LI}">technical assessments; or</li>
-    </ul>
-    ${fieldBox(
-      orPlaceholder(
-        data.evidenceNeed,
-        'Click or tap here and replace this text with your response.'
-      )
-    )}
-  `;
-}
-
-function bodyPage2HTML(data, BLUE, LIGHT, BORDER) {
-  const safe = (v) => (v == null ? '' : String(v));
-  const ACCENT = '#4472C4';
-  const RED = '#FF0000';
-  const placeholder = (text) =>
-    `<span style="color:#94A3B8;font-style:italic;">${text}</span>`;
-  const filled = (text) => `<span style="color:${ACCENT};">${text}</span>`;
-  const orPlaceholder = (value, ph) =>
-    String(value || '').trim() ? filled(value) : placeholder(ph);
-
-  const ANSWER_PH = 'Click or tap here and replace this text with your response.';
-
-  // Typography — 11pt, line-height 1.0
-  const H_SECTION = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 6px 0;`;
-  const H_SUB = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 4px 0;`;
-  const P = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
-  const P_TIGHT = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 4px 0;`;
-  const LI = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 2px 0;`;
-  const NOTE = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:${ACCENT};line-height:1.0;margin:0 0 6px 0;`;
-  const NOTE_RED = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:${RED};line-height:1.0;`;
-
-  const fieldBox = (inner) =>
-    `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;min-height:44px;">${inner}</div>`;
-
-  return `
-    <style>
-      ul > li::marker { color: #000; }
-      ol > li::marker { color: #000; }
-    </style>
-
-    <!-- ========== continuation of 1.2 bullet list ========== -->
-    <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
-      <li style="${LI}">other credible sources.</li>
-    </ul>
-    <p style="${P}">
-      Avoid relying solely on statements such as "the community requested training."
-    </p>
-    ${fieldBox(orPlaceholder(data.evidenceNeed, ANSWER_PH))}
-
-    <!-- ===================== 1.3 ===================== -->
-    <p style="${H_SUB}">1.3 Related Literature and Extension Evidence</p>
-    <p style="${P}">
-      Provide a focused synthesis of relevant scholarly and technical literature concerning:
-    </p>
-    <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
-      <li style="${LI}">the issue being addressed;</li>
-      <li style="${LI}">comparable interventions;</li>
-      <li style="${LI}">relevant extension approaches;</li>
-      <li style="${LI}">documented factors influencing adoption or outcomes; and</li>
-      <li style="${LI}">the knowledge or practice gap the project sought to address.</li>
-    </ul>
-    <p style="${P}">
-      This section should not become an exhaustive review of literature. Its purpose is to demonstrate that the extension intervention was informed by existing knowledge and to establish how the project contributes to extension knowledge or practice.
-    </p>
-    ${fieldBox(orPlaceholder(data.relatedLiterature, ANSWER_PH))}
-
-    <!-- ===================== 1.4 ===================== -->
-    <p style="${H_SUB}">1.4 Rationale and Contribution of the Project</p>
-    <p style="${P}">
-      Explain why the intervention was appropriate given the identified problem, available evidence, community context, and institutional expertise.
-    </p>
-    <p style="${P}">
-      Clearly identify what is potentially distinctive or useful about the project.
-    </p>
-    ${fieldBox(orPlaceholder(data.rationale, ANSWER_PH))}
-
-    <!-- ===================== 1.5 ===================== -->
-    <p style="${H_SUB}">1.5 Objectives</p>
-    <p style="${P}">
-      State the general and specific objectives.
-    </p>
-    <p style="${P}">
-      The objectives reported here should correspond with the results presented later in the paper.
-    </p>
-    ${fieldBox(orPlaceholder(data.objectives, ANSWER_PH))}
-
-    <!-- ===================== 2. MATERIALS AND METHODS ===================== -->
-    <p style="${H_SECTION}margin-top:16px;">2. MATERIALS AND METHODS / EXTENSION PROJECT METHODOLOGY</p>
-    <p style="${NOTE}">Recommended maximum: <span style="${NOTE_RED}">1,100–1,400 words</span></p>
-    <p style="${P}">
-      This section must be sufficiently detailed to allow readers to understand what was done, with whom, how, why, and how results were determined.
-    </p>
-
-    <!-- ===================== 2.1 ===================== -->
-    <p style="${H_SUB}">2.1 Project Setting and Duration</p>
-    <p style="${P}">Describe:</p>
-    <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
-      <li style="${LI}">project site;</li>
-      <li style="${LI}">relevant characteristics of the community or institution;</li>
-      <li style="${LI}">implementation period; and</li>
-      <li style="${LI}">contextual conditions important to understanding the intervention.</li>
-    </ul>
-    <p style="${P}">
-      A map may be included when genuinely useful.
-    </p>
-    ${fieldBox(orPlaceholder(data.settingDuration, ANSWER_PH))}
-
-    <!-- ===================== 2.2 ===================== -->
-    <p style="${H_SUB}">2.2 Participants, Intended Users, or Beneficiaries</p>
-    <p style="${P}">Describe:</p>
-    <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
-      <li style="${LI}">target population;</li>
-      <li style="${LI}">participant selection or inclusion criteria;</li>
-      <li style="${LI}">number of participants or households/institutions reached;</li>
-      <li style="${LI}">relevant demographic or sectoral characteristics; and</li>
-      <li style="${LI}">involvement of women, youth, vulnerable groups, or other relevant sectors where applicable.</li>
-    </ul>
-    ${fieldBox(orPlaceholder(data.participantsDesc, ANSWER_PH))}
-  `;
-}
-
-function bodyPage3HTML(data, BLUE, LIGHT, BORDER) {
-  const safe = (v) => (v == null ? '' : String(v));
-  const ACCENT = '#4472C4';
-  const placeholder = (text) =>
-    `<span style="color:#94A3B8;font-style:italic;">${text}</span>`;
-  const filled = (text) => `<span style="color:${ACCENT};">${text}</span>`;
-  const orPlaceholder = (value, ph) =>
-    String(value || '').trim() ? filled(value) : placeholder(ph);
-
-  const ANSWER_PH = 'Click or tap here and replace this text with your response.';
 
   const H_SECTION = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 6px 0;`;
-  const H_SUB = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 4px 0;`;
-  const P = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
-  const P_TIGHT = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 4px 0;`;
-  const LI = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 2px 0;`;
-
-  const fieldBox = (inner) =>
-    `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;min-height:44px;">${inner}</div>`;
-
-  return `
-    <style>
-      ul > li::marker { color: #000; }
-      ol > li::marker { color: #000; }
-    </style>
-
-    <!-- ========== continuation of 2.2 ========== -->
-    <p style="${P}">
-      Distinguish between persons reached by project activities and the population for whom outcome data were actually obtained.
-    </p>
-    ${fieldBox(orPlaceholder(data.reachPopulation, ANSWER_PH))}
-
-    <!-- ===================== 2.3 ===================== -->
-    <p style="${H_SUB}">2.3 Situational Analysis and Baseline</p>
-    <p style="${P}">
-      Describe how the initial situation was established.
-    </p>
-    <p style="${P}">Identify:</p>
-    <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
-      <li style="${LI}">information collected;</li>
-      <li style="${LI}">data sources;</li>
-      <li style="${LI}">methods or instruments used;</li>
-      <li style="${LI}">baseline indicators, where available; and</li>
-      <li style="${LI}">major findings that informed project design.</li>
-    </ul>
-    ${fieldBox(orPlaceholder(data.situationalAnalysis, ANSWER_PH))}
-
-    <!-- ===================== 2.4 ===================== -->
-    <p style="${H_SUB}">2.4 Project or Intervention Design</p>
-    <p style="${P}">
-      Describe the extension intervention and its underlying logic.
-    </p>
-    <p style="${P}">
-      Authors are encouraged to present a project logic or results pathway such as:
-    </p>
-
-    <!-- Project Design / Results Pathway diagram -->
-    <div style="margin:6px 0 14px 0;text-align:center;">
-      <img
-        src="/images/project%20design.png"
-        alt="Project Design and Results Pathway"
-        style="width:100%;max-width:100%;height:auto;display:block;margin:0 auto;"
-      />
-    </div>
-
-    <p style="${P}">
-      Explain why the selected intervention was expected to address the identified condition.
-    </p>
-    ${fieldBox(orPlaceholder(data.interventionRationale, ANSWER_PH))}
-
-    <!-- ===================== 2.5 ===================== -->
-    <p style="${H_SUB}">2.5 Implementation Strategies</p>
-    <p style="${P}">
-      Describe the major strategies used, such as:
-    </p>
-    <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
-      <li style="${LI}">capability-building;</li>
-      <li style="${LI}">technical assistance;</li>
-      <li style="${LI}">demonstrations;</li>
-      <li style="${LI}">mentoring or coaching;</li>
-      <li style="${LI}">community organizing;</li>
-      <li style="${LI}">communication interventions;</li>
-      <li style="${LI}">technology transfer;</li>
-    </ul>
-    ${fieldBox(orPlaceholder(data.implementationStrategies, ANSWER_PH))}
-  `;
-}
-
-function bodyPage4HTML(data, BLUE, LIGHT, BORDER) {
-  const safe = (v) => (v == null ? '' : String(v));
-  const ACCENT = '#4472C4';
-  const placeholder = (text) =>
-    `<span style="color:#94A3B8;font-style:italic;">${text}</span>`;
-  const filled = (text) => `<span style="color:${ACCENT};">${text}</span>`;
-  const orPlaceholder = (value, ph) =>
-    String(value || '').trim() ? filled(value) : placeholder(ph);
+  const H_SUB     = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 4px 0;`;
+  const P         = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
+  const P_TIGHT   = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 4px 0;`;
+  const LI        = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 2px 0;`;
+  const NOTE      = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:${ACCENT};line-height:1.0;margin:0 0 6px 0;`;
+  const NOTE_RED  = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:${RED};line-height:1.0;`;
 
   const ANSWER_PH = 'Click or tap here and replace this text with your response.';
 
-  const H_SECTION = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 6px 0;`;
-  const H_SUB = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 4px 0;`;
-  const P = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
-  const P_TIGHT = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 4px 0;`;
-  const LI = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 2px 0;`;
-
-  const fieldBox = (inner) =>
-    `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;min-height:44px;">${inner}</div>`;
-
-  return `
-    <style>
-      ul > li::marker { color: #000; }
-      ol > li::marker { color: #000; }
-    </style>
-
-    <!-- ========== continuation of 2.5 bullet list ========== -->
-    <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
-      <li style="${LI}">enterprise development;</li>
-      <li style="${LI}">policy or institutional development;</li>
-      <li style="${LI}">partnership building;</li>
-      <li style="${LI}">participatory planning; or</li>
-      <li style="${LI}">other relevant approaches.</li>
-    </ul>
-    <p style="${P}">
-      Avoid presenting a simple chronological list of activities unless chronology is analytically important.
-    </p>
-    ${fieldBox(orPlaceholder(data.implementationStrategies, ANSWER_PH))}
-
-    <!-- ===================== 2.6 ===================== -->
-    <p style="${H_SUB}">2.6 Partnership and Stakeholder Participation</p>
-    <p style="${P}">
-      Identify important partners and explain their actual roles, rather than merely listing organizations.
-    </p>
-    <p style="${P}">
-      Describe relevant community participation in:
-    </p>
-    <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
-      <li style="${LI}">project planning;</li>
-      <li style="${LI}">implementation;</li>
-      <li style="${LI}">monitoring;</li>
-      <li style="${LI}">decision-making;</li>
-      <li style="${LI}">resource mobilization; or</li>
-      <li style="${LI}">sustainability mechanisms.</li>
-    </ul>
-    ${fieldBox(orPlaceholder(data.partnership, ANSWER_PH))}
-
-    <!-- ===================== 2.7 ===================== -->
-    <p style="${H_SUB}">2.7 Monitoring and Evaluation Design</p>
-    <p style="${P}">
-      Explain how the project's results were measured or verified.
-    </p>
-    <p style="${P}">Identify:</p>
-    <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
-      <li style="${LI}">indicators;</li>
-      <li style="${LI}">data sources;</li>
-      <li style="${LI}">instruments;</li>
-      <li style="${LI}">timing of measurements;</li>
-      <li style="${LI}">persons or groups from whom data were obtained;</li>
-      <li style="${LI}">follow-up procedures; and</li>
-      <li style="${LI}">methods used to verify or triangulate evidence.</li>
-    </ul>
-    <p style="${P}">
-      Where baseline and endline measurements were conducted, describe them clearly.
-    </p>
-    ${fieldBox(orPlaceholder(data.monitoringEval, ANSWER_PH))}
-
-    <!-- ===================== 2.8 ===================== -->
-    <p style="${H_SUB}">2.8 Data Analysis</p>
-    <p style="${P}">
-      Describe how quantitative and/or qualitative data were analyzed.
-    </p>
-    <p style="${P}">Examples include:</p>
-    <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
-      <li style="${LI}">frequencies and percentages;</li>
-      <li style="${LI}">means or other descriptive statistics;</li>
-      <li style="${LI}">pre-post comparison;</li>
-      <li style="${LI}">appropriate statistical tests;</li>
-      <li style="${LI}">thematic analysis;</li>
-      <li style="${LI}">content analysis; or</li>
-      <li style="${LI}">triangulation of multiple evidence sources.</li>
-    </ul>
-    <p style="${P}">
-      Do not employ statistical tests merely to make the manuscript appear more scholarly. The analysis must be appropriate to the data and evaluation design.
-    </p>
-    ${fieldBox(orPlaceholder(data.dataAnalysis, ANSWER_PH))}
-  `;
-}
-
-function bodyPage5HTML(data, BLUE, LIGHT, BORDER) {
-  const safe = (v) => (v == null ? '' : String(v));
-  const ACCENT = '#4472C4';
-  const RED = '#FF0000';
-  const placeholder = (text) =>
-    `<span style="color:#94A3B8;font-style:italic;">${text}</span>`;
-  const filled = (text) => `<span style="color:${ACCENT};">${text}</span>`;
-  const orPlaceholder = (value, ph) =>
-    String(value || '').trim() ? filled(value) : placeholder(ph);
-
-  const ANSWER_PH = 'Click or tap here and replace this text with your response.';
-
-  const H_SECTION = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 6px 0;`;
-  const H_SUB = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 4px 0;`;
-  const P = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
-  const P_TIGHT = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 4px 0;`;
-  const LI = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 2px 0;`;
-  const NOTE = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:${ACCENT};line-height:1.0;margin:0 0 6px 0;`;
-  const NOTE_RED = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:${RED};line-height:1.0;`;
-
-  const fieldBox = (inner) =>
-    `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;min-height:44px;">${inner}</div>`;
-
-  return `
-    <style>
-      ul > li::marker { color: #000; }
-      ol > li::marker { color: #000; }
-    </style>
-
-    <!-- ===================== 2.9 ===================== -->
-    <p style="${H_SUB}">2.9 Ethical Considerations</p>
-    <p style="${P}">
-      Explain relevant safeguards concerning:
-    </p>
-    <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
-      <li style="${LI}">informed participation or consent;</li>
-      <li style="${LI}">confidentiality;</li>
-      <li style="${LI}">privacy;</li>
-      <li style="${LI}">community data;</li>
-      <li style="${LI}">photographs;</li>
-      <li style="${LI}">interviews and testimonies;</li>
-      <li style="${LI}">vulnerable participants; and</li>
-      <li style="${LI}">institutional records.</li>
-    </ul>
-    <p style="${P}">
-      Where formal ethics clearance was required and obtained, state the approving body and approval/reference number.
-    </p>
-    ${fieldBox(orPlaceholder(data.ethicalConsiderations, ANSWER_PH))}
-
-    <!-- ===================== 3. RESULTS ===================== -->
-    <p style="${H_SECTION}margin-top:16px;">3. RESULTS</p>
-    <p style="${NOTE}">Recommended maximum: <span style="${NOTE_RED}">1,200–1,600 words</span></p>
-    <p style="${P}">
-      Present the evidence objectively and systematically.
-    </p>
-    <p style="${P}">
-      Results should correspond directly with the project objectives and indicators.
-    </p>
-
-    <!-- ===================== 3.1 ===================== -->
-    <p style="${H_SUB}">3.1 Project Reach and Implementation</p>
-    <p style="${P}">
-      Briefly report important implementation evidence, including:
-    </p>
-    <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
-      <li style="${LI}">actual participants reached;</li>
-      <li style="${LI}">interventions delivered;</li>
-      <li style="${LI}">completion levels;</li>
-      <li style="${LI}">major products or outputs; and</li>
-      <li style="${LI}">significant deviations from the original project design.</li>
-    </ul>
-    <p style="${P}">
-      Do not allow activity counts to dominate the Results section.
-    </p>
-    ${fieldBox(orPlaceholder(data.reachImplementation, ANSWER_PH))}
-
-    <!-- ===================== 3.2 ===================== -->
-    <p style="${H_SUB}">3.2 Immediate Results</p>
-    <p style="${P}">
-      Present documented immediate changes following the intervention, where applicable.
-    </p>
-    <p style="${P}">Examples include changes in:</p>
-    <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
-      <li style="${LI}">knowledge;</li>
-      <li style="${LI}">skills;</li>
-      <li style="${LI}">practices;</li>
-      <li style="${LI}">confidence;</li>
-      <li style="${LI}">organizational capacity;</li>
-      <li style="${LI}">access;</li>
-      <li style="${LI}">productivity;</li>
-      <li style="${LI}">service delivery; or</li>
-      <li style="${LI}">institutional processes.</li>
-    </ul>
-    ${fieldBox(orPlaceholder(data.immediateResults, ANSWER_PH))}
-
-    <!-- ===================== 3.3 ===================== -->
-    <p style="${H_SUB}">3.3 Outcomes</p>
-    <p style="${P}">
-      Present evidence of changes that occurred beyond immediate project outputs.
-    </p>
-    <p style="${P}">
-      Where possible, distinguish clearly among:
-    </p>
-    <p style="${P_TIGHT}">
-      <b>Output</b> – what the project produced
-    </p>
-    <p style="${P_TIGHT}">
-      <b>Immediate result</b> – what changed shortly after the intervention
-    </p>
-  `;
-}
-
-function bodyPage6HTML(data, BLUE, LIGHT, BORDER) {
-  const safe = (v) => (v == null ? '' : String(v));
-  const ACCENT = '#4472C4';
-  const placeholder = (text) =>
-    `<span style="color:#94A3B8;font-style:italic;">${text}</span>`;
-  const filled = (text) => `<span style="color:${ACCENT};">${text}</span>`;
-  const orPlaceholder = (value, ph) =>
-    String(value || '').trim() ? filled(value) : placeholder(ph);
-
-  const ANSWER_PH = 'Click or tap here and replace this text with your response.';
-
-  const H_SUB = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 4px 0;`;
-  const P = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
-  const P_TIGHT = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 4px 0;`;
-  const LI = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 2px 0;`;
-
-  const fieldBox = (inner) =>
-    `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;min-height:44px;">${inner}</div>`;
-
-  return `
-    <style>
-      ul > li::marker { color: #000; }
-      ol > li::marker { color: #000; }
-    </style>
-
-    <!-- ========== continuation of 3.3 ========== -->
-    <p style="${P_TIGHT}">
-      <b>Outcome</b> – meaningful change in practice, behavior, condition, performance, or institutional capacity
-    </p>
-    ${fieldBox(orPlaceholder(data.outcomes, ANSWER_PH))}
-
-    <!-- ===================== 3.4 ===================== -->
-    <p style="${H_SUB}">3.4 Adoption, Utilization, Adaptation, or Continuation</p>
-    <p style="${P}">
-      Where applicable, report evidence that project participants or partners:
-    </p>
-    <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
-      <li style="${LI}">used acquired knowledge or technologies;</li>
-      <li style="${LI}">adopted recommended practices;</li>
-      <li style="${LI}">adapted an intervention to local circumstances;</li>
-      <li style="${LI}">continued activities beyond project-supported delivery; or</li>
-      <li style="${LI}">replicated project practices.</li>
-    </ul>
-    <p style="${P}">
-      Specify who adopted what, how many, to what extent, and based on what evidence whenever the data permit.
-    </p>
-    ${fieldBox(orPlaceholder(data.adoption, ANSWER_PH))}
-
-    <!-- ===================== 3.5 ===================== -->
-    <p style="${H_SUB}">3.5 Institutionalization and Sustainability</p>
-    <p style="${P}">
-      Present documented evidence of mechanisms such as:
-    </p>
-    <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
-      <li style="${LI}">partner policies;</li>
-      <li style="${LI}">local ordinances or resolutions;</li>
-      <li style="${LI}">budget allocations;</li>
-      <li style="${LI}">integration into regular programs;</li>
-      <li style="${LI}">institutional structures;</li>
-      <li style="${LI}">trained local implementers;</li>
-      <li style="${LI}">community management mechanisms;</li>
-      <li style="${LI}">continuing partnerships;</li>
-      <li style="${LI}">locally generated resources; or</li>
-      <li style="${LI}">other arrangements supporting continuation.</li>
-    </ul>
-    ${fieldBox(orPlaceholder(data.institutionalization, ANSWER_PH))}
-
-    <!-- ===================== 3.6 ===================== -->
-    <p style="${H_SUB}">3.6 Public Value and Broader Benefits</p>
-    <p style="${P}">
-      Where supported by evidence, describe the project's contribution to community or institutional benefit.
-    </p>
-    <p style="${P}">Possible areas include:</p>
-    <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
-      <li style="${LI}">improved livelihood;</li>
-      <li style="${LI}">health or wellbeing;</li>
-      <li style="${LI}">educational improvement;</li>
-      <li style="${LI}">strengthened institutional capacity;</li>
-      <li style="${LI}">increased resilience;</li>
-      <li style="${LI}">improved environmental practices;</li>
-      <li style="${LI}">empowerment;</li>
-      <li style="${LI}">improved service delivery; or</li>
-      <li style="${LI}">other documented public benefits.</li>
-    </ul>
-    ${fieldBox(orPlaceholder(data.publicValue, ANSWER_PH))}
-
-    <!-- ===================== Important Evidence Rule ===================== -->
-    <p style="${H_SUB}">Important Evidence Rule</p>
-    <p style="${P}color:#000;">
-      Attendance sheets, photographs, certificates, and activity reports can verify that an activity occurred, but they should not by themselves be used as proof that an outcome, adoption, utilization, or impact occurred. This distinction is expressly reflected in PEMNet's conference requirements.
-    </p>
-  `;
-}
-
-function bodyPage7HTML(data, BLUE, LIGHT, BORDER) {
-  const safe = (v) => (v == null ? '' : String(v));
-  const ACCENT = '#4472C4';
-  const RED = '#FF0000';
-  const placeholder = (text) =>
-    `<span style="color:#94A3B8;font-style:italic;">${text}</span>`;
-  const filled = (text) => `<span style="color:${ACCENT};">${text}</span>`;
-  const orPlaceholder = (value, ph) =>
-    String(value || '').trim() ? filled(value) : placeholder(ph);
-
-  const ANSWER_PH = 'Click or tap here and replace this text with your response.';
-
-  const H_SECTION = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 6px 0;`;
-  const H_SUB = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 4px 0;`;
-  const P = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
-  const P_TIGHT = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 4px 0;`;
-  const LI = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 2px 0;`;
-  const NOTE = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:${ACCENT};line-height:1.0;margin:0 0 6px 0;`;
-  const NOTE_RED = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:${RED};line-height:1.0;`;
-
-  const fieldBox = (inner) =>
-    `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;min-height:44px;">${inner}</div>`;
-
-  return `
-    <style>
-      ul > li::marker { color: #000; }
-      ol > li::marker { color: #000; }
-    </style>
-
-    <!-- ========== closing note from section 3 ========== -->
-    <p style="${P}color:#000">
-      Authors should not feel compelled to claim "impact." The conference guidelines specifically recognize that completed projects need not claim long-term impact when such evidence is unavailable.
-    </p>
-
-    <!-- ===================== 4. DISCUSSION ===================== -->
-    <p style="${H_SECTION}margin-top:16px;">4. DISCUSSION</p>
-    <p style="${NOTE}">Recommended maximum: <span style="${NOTE_RED}">1,000–1,400 words</span></p>
-    <p style="${P}">
-      This is essential if PEMNet wants these papers eventually to become publishable scholarly manuscripts.
-    </p>
-    <p style="${P}">
-      The Discussion should explain what the results mean, rather than repeat the Results section.
-    </p>
-    <p style="${P}">
-      Address the following as applicable.
-    </p>
-
-    <!-- ===================== 4.1 ===================== -->
-    <p style="${H_SUB}">4.1 Interpretation of Major Findings</p>
-    <p style="${P}">
-      Explain the most important findings.
-    </p>
-    <p style="${P}">
-      Why did the intervention appear to work—or not work?
-    </p>
-    <p style="${P}">
-      What conditions may explain the observed results?
-    </p>
-    ${fieldBox(orPlaceholder(data.interpretation, ANSWER_PH))}
-
-    <!-- ===================== 4.2 ===================== -->
-    <p style="${H_SUB}">4.2 Relationship to Previous Research and Extension Literature</p>
-    <p style="${P}">
-      Compare the results with relevant published studies, extension literature, policies, frameworks, or previous interventions.
-    </p>
-    <p style="${P}">Explain whether the results:</p>
-    <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
-      <li style="${LI}">support;</li>
-      <li style="${LI}">extend;</li>
-      <li style="${LI}">differ from; or</li>
-      <li style="${LI}">qualify</li>
-    </ul>
-    <p style="${P}">
-      what is already known.
-    </p>
-    ${fieldBox(orPlaceholder(data.relationshipLiterature, ANSWER_PH))}
-
-    <!-- ===================== 4.3 ===================== -->
-    <p style="${H_SUB}">4.3 Factors Affecting Implementation and Outcomes</p>
-    <p style="${P}">
-      Discuss important enabling or constraining factors, such as:
-    </p>
-    <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
-      <li style="${LI}">community participation;</li>
-      <li style="${LI}">leadership;</li>
-      <li style="${LI}">institutional support;</li>
-      <li style="${LI}">local culture;</li>
-      <li style="${LI}">resources;</li>
-      <li style="${LI}">partnerships;</li>
-      <li style="${LI}">market conditions;</li>
-      <li style="${LI}">environmental conditions;</li>
-      <li style="${LI}">policy context;</li>
-      <li style="${LI}">implementation fidelity; or</li>
-      <li style="${LI}">other contextual factors.</li>
-    </ul>
-    ${fieldBox(orPlaceholder(data.factorsAffecting, ANSWER_PH))}
-
-    <!-- ===================== 4.4 ===================== -->
-    <p style="${H_SUB}">4.4 Inclusion, Sustainability, and Resilience</p>
-    <p style="${P}">
-      Where applicable, interpret how the project addressed:
-    </p>
-    <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
-      <li style="${LI}">gender and social inclusion;</li>
-      <li style="${LI}">participation of vulnerable or underserved groups;</li>
-      <li style="${LI}">sustainability;</li>
-      <li style="${LI}">resilience;</li>
-    </ul>
-  `;
-}
-
-function bodyPage8HTML(data, BLUE, LIGHT, BORDER) {
-  const safe = (v) => (v == null ? '' : String(v));
-  const ACCENT = '#4472C4';
-  const RED = '#FF0000';
-  const placeholder = (text) =>
-    `<span style="color:#94A3B8;font-style:italic;">${text}</span>`;
-  const filled = (text) => `<span style="color:${ACCENT};">${text}</span>`;
-  const orPlaceholder = (value, ph) =>
-    String(value || '').trim() ? filled(value) : placeholder(ph);
-
-  const ANSWER_PH = 'Click or tap here and replace this text with your response.';
-
-  const H_SECTION = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 6px 0;`;
-  const H_SUB = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 4px 0;`;
-  const P = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
-  const P_TIGHT = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 4px 0;`;
-  const LI = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 2px 0;`;
-  const NOTE = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:${ACCENT};line-height:1.0;margin:0 0 6px 0;`;
-  const NOTE_RED = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:${RED};line-height:1.0;`;
-
-  const fieldBox = (inner) =>
-    `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;min-height:44px;">${inner}</div>`;
-
-  return `
-    <style>
-      ul > li::marker { color: #000; }
-      ol > li::marker { color: #000; }
-    </style>
-
-    <!-- ========== continuation of 4.4 bullet list ========== -->
-    <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
-      <li style="${LI}">institutional ownership; and</li>
-      <li style="${LI}">local capacity.</li>
-    </ul>
-    ${fieldBox(orPlaceholder(data.inclusionResilience, ANSWER_PH))}
-
-    <!-- ===================== 4.5 ===================== -->
-    <p style="${H_SUB}">4.5 Transferability, Replication, or Scaling</p>
-    <p style="${P}">
-      Discuss whether the intervention may reasonably be:
-    </p>
-    <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
-      <li style="${LI}">replicated;</li>
-      <li style="${LI}">adapted;</li>
-      <li style="${LI}">scaled;</li>
-      <li style="${LI}">institutionalized; or</li>
-      <li style="${LI}">transferred to another context.</li>
-    </ul>
-    <p style="${P}">
-      Do not automatically recommend scaling solely because participants were satisfied with the project.
-    </p>
-    ${fieldBox(orPlaceholder(data.transferability, ANSWER_PH))}
-
-    <!-- ===================== 4.6 ===================== -->
-    <p style="${H_SUB}">4.6 Limitations</p>
-    <p style="${P}">
-      Clearly acknowledge relevant limitations, including possible weaknesses in:
-    </p>
-    <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
-      <li style="${LI}">baseline information;</li>
-      <li style="${LI}">participant selection;</li>
-      <li style="${LI}">sample size;</li>
-      <li style="${LI}">absence of a comparison group;</li>
-      <li style="${LI}">duration of follow-up;</li>
-      <li style="${LI}">reliance on self-reported information;</li>
-      <li style="${LI}">missing data;</li>
-      <li style="${LI}">measurement instruments;</li>
-      <li style="${LI}">attribution of outcomes; or</li>
-      <li style="${LI}">other methodological constraints.</li>
-    </ul>
-    <p style="${P}">
-      A credible limitations section strengthens, rather than weakens, a scholarly paper.
-    </p>
-    ${fieldBox(orPlaceholder(data.limitations, ANSWER_PH))}
-
-    <!-- ===================== 5. IMPLICATIONS ===================== -->
-    <p style="${H_SECTION}margin-top:16px;">5. IMPLICATIONS FOR EXTENSION PRACTICE AND POLICY</p>
-    <p style="${NOTE}">Recommended maximum: <span style="${NOTE_RED}">400–500 words</span></p>
-    <p style="${P}">
-      Explain what extension managers, HEIs, practitioners, LGUs, partner institutions, policymakers, or other stakeholders can reasonably learn from the project.
-    </p>
-    <p style="${P}">Possible implications may concern:</p>
-    <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
-      <li style="${LI}">extension project design;</li>
-      <li style="${LI}">community engagement;</li>
-      <li style="${LI}">monitoring and evaluation;</li>
-      <li style="${LI}">evidence generation;</li>
-      <li style="${LI}">institutional partnerships;</li>
-      <li style="${LI}">technology adoption;</li>
-      <li style="${LI}">capability-building;</li>
-      <li style="${LI}">sustainability mechanisms;</li>
-      <li style="${LI}">quality assurance;</li>
-      <li style="${LI}">policy development; or</li>
-      <li style="${LI}">scaling and replication.</li>
-    </ul>
-    <p style="${P}">
-      Recommendations must arise from the evidence presented in the paper.
-    </p>
-    ${fieldBox(orPlaceholder(data.implications, ANSWER_PH))}
-  `;
-}
-
-function bodyPage9HTML(data, BLUE, LIGHT, BORDER) {
-  const safe = (v) => (v == null ? '' : String(v));
-  const ACCENT = '#4472C4';
-  const RED = '#FF0000';
-  const placeholder = (text) =>
-    `<span style="color:#94A3B8;font-style:italic;">${text}</span>`;
-  const filled = (text) => `<span style="color:${ACCENT};">${text}</span>`;
-  const orPlaceholder = (value, ph) =>
-    String(value || '').trim() ? filled(value) : placeholder(ph);
-
-  const ANSWER_PH = 'Click or tap here and replace this text with your response.';
-
-  const H_SECTION = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 6px 0;text-transform:uppercase;`;
-  const P = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
-  const P_TIGHT = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 4px 0;`;
-  const LI = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 2px 0;`;
-  const NOTE = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:${ACCENT};line-height:1.0;margin:0 0 6px 0;`;
-  const NOTE_RED = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:${RED};line-height:1.0;`;
-
-  const fieldBox = (inner) =>
-    `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;min-height:44px;">${inner}</div>`;
-
-  return `
-    <style>
-      ul > li::marker { color: #000; }
-      ol > li::marker { color: #000; }
-    </style>
-
-    <!-- ===================== 6. CONCLUSION ===================== -->
-    <p style="${H_SECTION}">6. CONCLUSION</p>
-    <p style="${NOTE}">Recommended maximum: <span style="${NOTE_RED}">300–500 words</span></p>
-    <p style="${P}">
-      Provide a concise synthesis of:
-    </p>
-    <ol style="margin:0 0 6px 0;padding-left:24px;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;">
-      <li style="margin:0 0 2px 0;">the development issue addressed;</li>
-      <li style="margin:0 0 2px 0;">the principal intervention;</li>
-      <li style="margin:0 0 2px 0;">the strongest documented results;</li>
-      <li style="margin:0 0 2px 0;">the significance of those results; and</li>
-      <li style="margin:0 0 2px 0;">the central implication for transformative extension.</li>
-    </ol>
-    <p style="${P}">
-      Do not introduce new data or literature in the Conclusion.
-    </p>
-    <p style="${P}">
-      Avoid exaggerated claims such as "the project completely transformed the community" unless such a conclusion is genuinely supported by the evidence.
-    </p>
-    ${fieldBox(orPlaceholder(data.conclusion, ANSWER_PH))}
-
-    <!-- ===================== ACKNOWLEDGMENTS ===================== -->
-    <p style="${H_SECTION}margin-top:16px;">ACKNOWLEDGMENTS</p>
-    <p style="${P}">
-      Acknowledge institutions, communities, partners, funders, technical personnel, or individuals who contributed materially to the project but do not qualify for authorship.
-    </p>
-    <p style="${P}">
-      Do not use this section merely to list officials.
-    </p>
-    ${fieldBox(orPlaceholder(data.acknowledgments, ANSWER_PH))}
-
-    <!-- ===================== FUNDING STATEMENT ===================== -->
-    <p style="${H_SECTION}margin-top:16px;">FUNDING STATEMENT</p>
-    <p style="${P}">Example:</p>
-    <p style="${P}">
-      This extension project was funded by [Institution/Agency] under [program/grant, if applicable].
-    </p>
-    <p style="${P}">or</p>
-    <p style="${P}">
-      The authors received no external funding for the implementation of this project.
-    </p>
-    ${fieldBox(orPlaceholder(data.funding, ANSWER_PH))}
-
-    <!-- ===================== CONFLICT OF INTEREST ===================== -->
-    <p style="${H_SECTION}margin-top:16px;">CONFLICT OF INTEREST</p>
-    <p style="${P}">Example:</p>
-    <p style="${P}">
-      The authors declare no conflict of interest.
-    </p>
-    <p style="${P}">
-      Where a relevant conflict exists, it should be disclosed.
-    </p>
-    ${fieldBox(orPlaceholder(data.conflictOfInterest, ANSWER_PH))}
-
-    <!-- ===================== ETHICS AND INFORMED CONSENT ===================== -->
-    <p style="${H_SECTION}margin-top:16px;">ETHICS AND INFORMED CONSENT STATEMENT</p>
-    <p style="${P}">Where applicable:</p>
-    <p style="${P}">
-      The project and associated data-gathering procedures were reviewed/approved by [appropriate body]. Informed consent was obtained from participants prior to data collection and/or use of identifiable photographs and testimonies.
-    </p>
-    <p style="${P}">
-      Adapt the statement according to what actually occurred. Authors should not claim ethical clearance that was not obtained.
-    </p>
-    ${fieldBox(orPlaceholder(data.ethicsStatement, ANSWER_PH))}
-
-    <!-- ===================== DATA AVAILABILITY ===================== -->
-    <p style="${H_SECTION}margin-top:16px;">DATA AVAILABILITY STATEMENT</p>
-    <p style="${P}">
-      Where appropriate:
-    </p>
-  `;
-}
-
-function bodyPage10HTML(data, BLUE, LIGHT, BORDER) {
-  const safe = (v) => (v == null ? '' : String(v));
-  const ACCENT = '#4472C4';
-  const placeholder = (text) =>
-    `<span style="color:#94A3B8;font-style:italic;">${text}</span>`;
-  const filled = (text) => `<span style="color:${ACCENT};">${text}</span>`;
-  const orPlaceholder = (value, ph) =>
-    String(value || '').trim() ? filled(value) : placeholder(ph);
-
-  const ANSWER_PH = 'Click or tap here and replace this text with your response.';
-  const REF_PH = 'Click or tap here and enter the complete APA 7th Edition reference list.';
-
-  const H_SECTION = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 6px 0;text-transform:uppercase;`;
-  const P = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
-  const P_TIGHT = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 4px 0;`;
-  const LI = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 2px 0;`;
-  const REF_LINE = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 2px 0;`;
-
-  const fieldBox = (inner, minH = 44) =>
-    `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;min-height:${minH}px;">${inner}</div>`;
-
-  return `
-    <style>
-      ul > li::marker { color: #000; }
-      ol > li::marker { color: #000; }
-    </style>
-
-    <!-- ========== Data Availability (continuation) ========== -->
-    <p style="${P}">
-      The data supporting the findings of this paper are available from the corresponding author upon reasonable request, subject to applicable privacy, consent, institutional, and data-protection requirements.
-    </p>
-    ${fieldBox(orPlaceholder(data.dataAvailability, ANSWER_PH))}
-
-    <!-- ===================== AUTHOR CONTRIBUTIONS ===================== -->
-    <p style="${H_SECTION}margin-top:16px;">AUTHOR CONTRIBUTIONS</p>
-    <p style="${P}">
-      For stronger publication readiness, PEMNet can encourage the CRediT-style contributor approach.
-    </p>
-    <p style="${P}">Example:</p>
-    <div style="margin:0 0 10px 0;">
-      <p style="${REF_LINE}">Conceptualization: A.A., B.B.</p>
-      <p style="${REF_LINE}">Project Implementation: A.A., B.B., C.C.</p>
-      <p style="${REF_LINE}">Methodology: A.A., C.C.</p>
-      <p style="${REF_LINE}">Data Collection: B.B., C.C.</p>
-      <p style="${REF_LINE}">Data Analysis: A.A.</p>
-      <p style="${REF_LINE}">Writing – Original Draft: A.A.</p>
-      <p style="${REF_LINE}">Writing – Review and Editing: A.A., B.B., C.C.</p>
-      <p style="${REF_LINE}">Project Administration: B.B.</p>
-    </div>
-    <p style="${P}">
-      This can be optional for the conference version but is valuable for eventual journal submission.
-    </p>
-    ${fieldBox(orPlaceholder(data.authorContributions, ANSWER_PH))}
-
-    <!-- ===================== REFERENCES ===================== -->
-    <p style="${H_SECTION}margin-top:16px;">REFERENCES</p>
-    <p style="${P}">
-      Use APA 7th Edition consistently.
-    </p>
-    <p style="${P}">Authors should prioritize:</p>
-    <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
-      <li style="${LI}">peer-reviewed journal articles;</li>
-      <li style="${LI}">scholarly books;</li>
-      <li style="${LI}">government publications;</li>
-      <li style="${LI}">official institutional reports;</li>
-      <li style="${LI}">authoritative technical publications; and</li>
-      <li style="${LI}">other credible primary sources.</li>
-    </ul>
-    <p style="${P}">
-      References appearing in the list must be cited in the manuscript, and all cited works must appear in the reference list.
-    </p>
-
-    <p style="${P_TIGHT}"><b>Journal Article</b></p>
-    <p style="${P_TIGHT}">
-      Author, A. A., &amp; Author, B. B. (Year). Title of article. <i>Journal Title</i>, <u>Volume</u>(Issue), xx–xx. DOI
-    </p>
-
-    <p style="${P_TIGHT}margin-top:8px;"><b>Government/Institutional Report</b></p>
-    <p style="${P_TIGHT}">
-      Institution. (Year). <i>Title of report</i>. Publisher/Institution. URL
-    </p>
-
-    <p style="${P_TIGHT}margin-top:8px;"><b>Book</b></p>
-    <p style="${P_TIGHT}">
-      Author, A. A. (Year). <i>Title of book</i>. Publisher.
-    </p>
-
-    ${fieldBox(orPlaceholder(data.references, REF_PH), 120)}
-
-    <!-- ===================== APPENDICES ===================== -->
-    <p style="${H_SECTION}margin-top:16px;">APPENDICES</p>
-    <p style="${P}">
-      Appendices are optional and should contain only evidence necessary for understanding or verifying the manuscript.
-    </p>
-    <p style="${P}">Possible appendices include:</p>
-    <p style="${P_TIGHT}">Appendix A: Project Results Framework</p>
-    <p style="${P_TIGHT}">Appendix B: Major Monitoring Indicators</p>
-  `;
-}
-
-function bodyPage11HTML(data, BLUE, LIGHT, BORDER) {
-  const safe = (v) => (v == null ? '' : String(v));
-  const ACCENT = '#4472C4';
-  const placeholder = (text) =>
-    `<span style="color:#94A3B8;font-style:italic;">${text}</span>`;
-  const filled = (text) => `<span style="color:${ACCENT};">${text}</span>`;
-  const orPlaceholder = (value, ph) =>
-    String(value || '').trim() ? filled(value) : placeholder(ph);
-
-  const APPENDICES_PH =
-    'Click or tap here to insert or list only the appendices necessary for understanding or verifying the manuscript.';
-  const ANSWER_PH =
-    'Click or tap here to enter the source or explanatory note, where necessary.';
-
-  const H_SUB = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 4px 0;`;
-  const P = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
-  const P_TIGHT = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 4px 0;`;
-  const NOTE_ITALIC = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-style:italic;color:${ACCENT};line-height:1.0;margin:0 0 6px 0;`;
-  const RED_NOTE = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#DC2626;line-height:1.0;margin:0 0 6px 0;`;
-
-  const fieldBox = (inner, minH = 44) =>
-    `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;min-height:${minH}px;">${inner}</div>`;
-
-  // -------- Sample table cells --------
-  const thStyle = `border:1px solid #94A3B8;background:#F1F5F9;font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;padding:6px 8px;text-align:left;`;
-  const tdStyle = `border:1px solid #94A3B8;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;padding:6px 8px;`;
-  const tdPlaceholder = `border:1px solid #94A3B8;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#94A3B8;font-style:italic;line-height:1.0;padding:6px 8px;`;
-
-  return `
-    <style>
-      ul > li::marker { color: #000; }
-      ol > li::marker { color: #000; }
-    </style>
-
-    <!-- ========== continuation of Appendices ========== -->
-    <p style="${P_TIGHT}">Appendix C: Relevant Data Collection Instrument</p>
-    <p style="${P_TIGHT}">Appendix D: Additional Results Table</p>
-    <p style="${P_TIGHT}">Appendix E: Evidence of Institutionalization</p>
-    <p style="${P}">
-      Do not turn the manuscript into a portfolio of certificates, attendance sheets, photographs, and administrative documents.
-    </p>
-    ${fieldBox(orPlaceholder(data.appendices, APPENDICES_PH))}
-
-    <!-- ===================== TABLE AND FIGURE FORMAT ===================== -->
-    <p style="${H_SUB}margin-top:16px;text-transform:uppercase;">TABLE AND FIGURE FORMAT</p>
-    <p style="${P_TIGHT}">Table 1</p>
-
-    <table style="width:100%;border-collapse:collapse;margin:0 0 8px 0;">
-      <thead>
-        <tr>
-          <th style="${thStyle}">Indicator</th>
-          <th style="${thStyle}">Baseline</th>
-          <th style="${thStyle}">Endline/Follow-up</th>
-          <th style="${thStyle}">Change</th>
-          <th style="${thStyle}">Source of Evidence</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td style="${tdStyle}">Indicator 1</td>
-          <td style="${tdPlaceholder}">[Type here]</td>
-          <td style="${tdPlaceholder}">[Type here]</td>
-          <td style="${tdPlaceholder}">[Type here]</td>
-          <td style="${tdPlaceholder}">[Type here]</td>
-        </tr>
-        <tr>
-          <td style="${tdStyle}">Indicator 2</td>
-          <td style="${tdPlaceholder}">[Type here]</td>
-          <td style="${tdPlaceholder}">[Type here]</td>
-          <td style="${tdPlaceholder}">[Type here]</td>
-          <td style="${tdPlaceholder}">[Type here]</td>
-        </tr>
-      </tbody>
-    </table>
-
-    <p style="${NOTE_ITALIC}">
-      Baseline and Post-Intervention Status of Selected Indicators. Note. Explain abbreviations or important qualifications.
-    </p>
-    <p style="${P}">
-      Every table must be discussed in the text.
-    </p>
-
-    <!-- ===================== FIGURE FORMAT ===================== -->
-    <p style="${P_TIGHT}margin-top:10px;">Figure 1</p>
-    <p style="${NOTE_ITALIC}">Extension Project Results Pathway</p>
-
-    <div style="border:1px solid #94A3B8;background:#F8FAFC;padding:24px 12px;margin:0 0 6px 0;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-style:italic;color:#94A3B8;line-height:1.0;">
-      [Insert figure]
-    </div>
-
-    <p style="${NOTE_ITALIC}">
-      Note. Source or explanatory note, where necessary.
-    </p>
-
-    <p style="${P}">
-      Tables and figures should communicate evidence, not simply decorate the manuscript.
-    </p>
-    <p style="${P}">
-      PEMNet's existing requirements similarly provide that tables and figures be properly numbered, labeled, explained in the text, and directly relevant to the claims being presented.
-    </p>
-    ${fieldBox(orPlaceholder(data.appendices, ANSWER_PH))}
-
-    <p style="${P}margin-top:150px;">
-      NOTE: By submitting this manuscript, the author/s confirm their acceptance of the Author Consent and Limited Publication License stated earlier in this template.
-    </p>
-  `;
+  // ---- Bulleted list as one atomic block (it's fine if a whole list moves)
+  const UL = (items, styleLI = LI) =>
+    `<ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">${items
+      .map((t) => `<li style="${styleLI}">${t}</li>`)
+      .join('')}</ul>`;
+
+  const blocks = [];
+  const push = (...b) => blocks.push(...b);
+
+  // ============================================================
+  // ABSTRACT
+  // ============================================================
+  push(
+    A(`<style>ul>li::marker{color:#000;}ol>li::marker{color:#000;}</style>`),
+    A(`<p style="${H_SECTION}text-transform:uppercase;">ABSTRACT</p>`),
+    A(`<p style="${NOTE}">Recommended length: <span style="${NOTE_RED}">250–300 words</span></p>`),
+    A(`<p style="${P}">Provide a concise, self-contained summary of the entire paper. The abstract should contain the following elements, preferably as one coherent paragraph:</p>`),
+    A(`<p style="${P_TIGHT}"><b>Background/Need:</b> Briefly identify the community, institutional, or sectoral condition that justified the extension project.</p>`),
+    A(`<p style="${P_TIGHT}"><b>Objective:</b> State the principal objective or purpose of the project.</p>`),
+    A(`<p style="${P_TIGHT}"><b>Methods/Approach:</b> Briefly describe the setting, intended users or beneficiaries, extension intervention, implementation approach, and methods used to assess results.</p>`),
+    A(`<p style="${P_TIGHT}"><b>Results:</b> Present the most important quantitative and/or qualitative findings. Give actual evidence rather than merely stating that the project was "successful."</p>`),
+    A(`<p style="${P_TIGHT}"><b>Conclusion:</b> State what the evidence indicates and its principal implication for extension practice, sustainability, policy, or public value.</p>`),
+    A(`<p style="${P}">Do not introduce claims in the abstract that are not supported in the main paper.</p>`),
+    N('', safe(data.abstract).trim() || ANSWER_PH),
+    A(`<p style="${P_TIGHT}"><b>Keywords:</b> [4–6 keywords, separated by semicolons]</p>`),
+    N('', safe(data.keywords).trim() || ANSWER_PH),
+  );
+
+  // ============================================================
+  // 1. INTRODUCTION
+  // ============================================================
+  push(
+    A(`<p style="${H_SECTION}margin-top:16px;">1. INTRODUCTION</p>`),
+    A(`<p style="${NOTE}">Recommended maximum: <span style="${NOTE_RED}">900–1,100 words</span></p>`),
+    A(`<p style="${P}">The Introduction should establish the scholarly and development basis of the extension project.</p>`),
+
+    A(`<p style="${H_SUB}">1.1 Background and Context</p>`),
+    A(`<p style="${P}">Describe the community, institutional, sectoral, environmental, economic, educational, health, or development context within which the project was implemented.</p>`),
+    A(`<p style="${P}">Explain the significance of the issue being addressed.</p>`),
+    A(`<p style="${P}">Where appropriate, provide relevant statistics, policies, research findings, or documented community evidence.</p>`),
+    N('', safe(data.backgroundContext).trim() || ANSWER_PH),
+
+    A(`<p style="${H_SUB}">1.2 Evidence of the Problem or Development Need</p>`),
+    A(`<p style="${P}">Explain how the need, condition, gap, or opportunity was established.</p>`),
+    A(`<p style="${P}">Evidence may come from:</p>`),
+    A(UL([
+      'situational or needs assessment;','baseline data;','community consultations;',
+      'surveys;','focus group discussions;','key informant interviews;',
+      'institutional records;','government statistics;','previous research;',
+      'technical assessments; or','other credible sources.'
+    ])),
+    A(`<p style="${P}">Avoid relying solely on statements such as "the community requested training."</p>`),
+    N('', safe(data.evidenceNeed).trim() || ANSWER_PH),
+
+    A(`<p style="${H_SUB}">1.3 Related Literature and Extension Evidence</p>`),
+    A(`<p style="${P}">Provide a focused synthesis of relevant scholarly and technical literature concerning:</p>`),
+    A(UL([
+      'the issue being addressed;','comparable interventions;',
+      'relevant extension approaches;','documented factors influencing adoption or outcomes; and',
+      'the knowledge or practice gap the project sought to address.'
+    ])),
+    A(`<p style="${P}">This section should not become an exhaustive review of literature. Its purpose is to demonstrate that the extension intervention was informed by existing knowledge and to establish how the project contributes to extension knowledge or practice.</p>`),
+    N('', safe(data.relatedLiterature).trim() || ANSWER_PH),
+
+    A(`<p style="${H_SUB}">1.4 Rationale and Contribution of the Project</p>`),
+    A(`<p style="${P}">Explain why the intervention was appropriate given the identified problem, available evidence, community context, and institutional expertise.</p>`),
+    A(`<p style="${P}">Clearly identify what is potentially distinctive or useful about the project.</p>`),
+    N('', safe(data.rationale).trim() || ANSWER_PH),
+
+    A(`<p style="${H_SUB}">1.5 Objectives</p>`),
+    A(`<p style="${P}">State the general and specific objectives.</p>`),
+    A(`<p style="${P}">The objectives reported here should correspond with the results presented later in the paper.</p>`),
+    N('', safe(data.objectives).trim() || ANSWER_PH),
+  );
+
+  // ============================================================
+  // 2. MATERIALS AND METHODS
+  // ============================================================
+  push(
+    A(`<p style="${H_SECTION}margin-top:16px;">2. MATERIALS AND METHODS / EXTENSION PROJECT METHODOLOGY</p>`),
+    A(`<p style="${NOTE}">Recommended maximum: <span style="${NOTE_RED}">1,100–1,400 words</span></p>`),
+    A(`<p style="${P}">This section must be sufficiently detailed to allow readers to understand what was done, with whom, how, why, and how results were determined.</p>`),
+
+    A(`<p style="${H_SUB}">2.1 Project Setting and Duration</p>`),
+    A(`<p style="${P}">Describe:</p>`),
+    A(UL([
+      'project site;','relevant characteristics of the community or institution;',
+      'implementation period; and','contextual conditions important to understanding the intervention.'
+    ])),
+    A(`<p style="${P}">A map may be included when genuinely useful.</p>`),
+    N('', safe(data.settingDuration).trim() || ANSWER_PH),
+
+    A(`<p style="${H_SUB}">2.2 Participants, Intended Users, or Beneficiaries</p>`),
+    A(`<p style="${P}">Describe:</p>`),
+    A(UL([
+      'target population;','participant selection or inclusion criteria;',
+      'number of participants or households/institutions reached;',
+      'relevant demographic or sectoral characteristics; and',
+      'involvement of women, youth, vulnerable groups, or other relevant sectors where applicable.'
+    ])),
+    N('', safe(data.participantsDesc).trim() || ANSWER_PH),
+
+    A(`<p style="${P}">Distinguish between persons reached by project activities and the population for whom outcome data were actually obtained.</p>`),
+    N('', safe(data.reachPopulation).trim() || ANSWER_PH),
+
+    A(`<p style="${H_SUB}">2.3 Situational Analysis and Baseline</p>`),
+    A(`<p style="${P}">Describe how the initial situation was established.</p>`),
+    A(`<p style="${P}">Identify:</p>`),
+    A(UL([
+      'information collected;','data sources;','methods or instruments used;',
+      'baseline indicators, where available; and','major findings that informed project design.'
+    ])),
+    N('', safe(data.situationalAnalysis).trim() || ANSWER_PH),
+
+    A(`<p style="${H_SUB}">2.4 Project or Intervention Design</p>`),
+    A(`<p style="${P}">Describe the extension intervention and its underlying logic.</p>`),
+    A(`<p style="${P}">Authors are encouraged to present a project logic or results pathway such as:</p>`),
+    A(`<div style="margin:6px 0 14px 0;text-align:center;"><img src="/images/project%20design.png" alt="Project Design and Results Pathway" style="width:100%;max-width:100%;height:auto;display:block;margin:0 auto;" /></div>`),
+    A(`<p style="${P}">Explain why the selected intervention was expected to address the identified condition.</p>`),
+    N('', safe(data.interventionRationale).trim() || ANSWER_PH),
+
+    A(`<p style="${H_SUB}">2.5 Implementation Strategies</p>`),
+    A(`<p style="${P}">Describe the major strategies used, such as:</p>`),
+    A(UL([
+      'capability-building;','technical assistance;','demonstrations;',
+      'mentoring or coaching;','community organizing;','communication interventions;',
+      'technology transfer;','enterprise development;','policy or institutional development;',
+      'partnership building;','participatory planning; or','other relevant approaches.'
+    ])),
+    A(`<p style="${P}">Avoid presenting a simple chronological list of activities unless chronology is analytically important.</p>`),
+    N('', safe(data.implementationStrategies).trim() || ANSWER_PH),
+
+    A(`<p style="${H_SUB}">2.6 Partnership and Stakeholder Participation</p>`),
+    A(`<p style="${P}">Identify important partners and explain their actual roles, rather than merely listing organizations.</p>`),
+    A(`<p style="${P}">Describe relevant community participation in:</p>`),
+    A(UL([
+      'project planning;','implementation;','monitoring;','decision-making;',
+      'resource mobilization; or','sustainability mechanisms.'
+    ])),
+    N('', safe(data.partnership).trim() || ANSWER_PH),
+
+    A(`<p style="${H_SUB}">2.7 Monitoring and Evaluation Design</p>`),
+    A(`<p style="${P}">Explain how the project\'s results were measured or verified.</p>`),
+    A(`<p style="${P}">Identify:</p>`),
+    A(UL([
+      'indicators;','data sources;','instruments;','timing of measurements;',
+      'persons or groups from whom data were obtained;',
+      'follow-up procedures; and','methods used to verify or triangulate evidence.'
+    ])),
+    A(`<p style="${P}">Where baseline and endline measurements were conducted, describe them clearly.</p>`),
+    N('', safe(data.monitoringEval).trim() || ANSWER_PH),
+
+    A(`<p style="${H_SUB}">2.8 Data Analysis</p>`),
+    A(`<p style="${P}">Describe how quantitative and/or qualitative data were analyzed.</p>`),
+    A(`<p style="${P}">Examples include:</p>`),
+    A(UL([
+      'frequencies and percentages;','means or other descriptive statistics;',
+      'pre-post comparison;','appropriate statistical tests;','thematic analysis;',
+      'content analysis; or','triangulation of multiple evidence sources.'
+    ])),
+    A(`<p style="${P}">Do not employ statistical tests merely to make the manuscript appear more scholarly. The analysis must be appropriate to the data and evaluation design.</p>`),
+    N('', safe(data.dataAnalysis).trim() || ANSWER_PH),
+
+    A(`<p style="${H_SUB}">2.9 Ethical Considerations</p>`),
+    A(`<p style="${P}">Explain relevant safeguards concerning:</p>`),
+    A(UL([
+      'informed participation or consent;','confidentiality;','privacy;',
+      'community data;','photographs;','interviews and testimonies;',
+      'vulnerable participants; and','institutional records.'
+    ])),
+    A(`<p style="${P}">Where formal ethics clearance was required and obtained, state the approving body and approval/reference number.</p>`),
+    N('', safe(data.ethicalConsiderations).trim() || ANSWER_PH),
+  );
+
+  // ============================================================
+  // 3. RESULTS
+  // ============================================================
+  push(
+    A(`<p style="${H_SECTION}margin-top:16px;">3. RESULTS</p>`),
+    A(`<p style="${NOTE}">Recommended maximum: <span style="${NOTE_RED}">1,200–1,600 words</span></p>`),
+    A(`<p style="${P}">Present the evidence objectively and systematically.</p>`),
+    A(`<p style="${P}">Results should correspond directly with the project objectives and indicators.</p>`),
+
+    A(`<p style="${H_SUB}">3.1 Project Reach and Implementation</p>`),
+    A(`<p style="${P}">Briefly report important implementation evidence, including:</p>`),
+    A(UL([
+      'actual participants reached;','interventions delivered;','completion levels;',
+      'major products or outputs; and','significant deviations from the original project design.'
+    ])),
+    A(`<p style="${P}">Do not allow activity counts to dominate the Results section.</p>`),
+    N('', safe(data.reachImplementation).trim() || ANSWER_PH),
+
+    A(`<p style="${H_SUB}">3.2 Immediate Results</p>`),
+    A(`<p style="${P}">Present documented immediate changes following the intervention, where applicable.</p>`),
+    A(`<p style="${P}">Examples include changes in:</p>`),
+    A(UL([
+      'knowledge;','skills;','practices;','confidence;','organizational capacity;',
+      'access;','productivity;','service delivery; or','institutional processes.'
+    ])),
+    N('', safe(data.immediateResults).trim() || ANSWER_PH),
+
+    A(`<p style="${H_SUB}">3.3 Outcomes</p>`),
+    A(`<p style="${P}">Present evidence of changes that occurred beyond immediate project outputs.</p>`),
+    A(`<p style="${P}">Where possible, distinguish clearly among:</p>`),
+    A(`<p style="${P_TIGHT}"><b>Output</b> – what the project produced</p>`),
+    A(`<p style="${P_TIGHT}"><b>Immediate result</b> – what changed shortly after the intervention</p>`),
+    A(`<p style="${P_TIGHT}"><b>Outcome</b> – meaningful change in practice, behavior, condition, performance, or institutional capacity</p>`),
+    N('', safe(data.outcomes).trim() || ANSWER_PH),
+
+    A(`<p style="${H_SUB}">3.4 Adoption, Utilization, Adaptation, or Continuation</p>`),
+    A(`<p style="${P}">Where applicable, report evidence that project participants or partners:</p>`),
+    A(UL([
+      'used acquired knowledge or technologies;','adopted recommended practices;',
+      'adapted an intervention to local circumstances;',
+      'continued activities beyond project-supported delivery; or','replicated project practices.'
+    ])),
+    A(`<p style="${P}">Specify who adopted what, how many, to what extent, and based on what evidence whenever the data permit.</p>`),
+    N('', safe(data.adoption).trim() || ANSWER_PH),
+
+    A(`<p style="${H_SUB}">3.5 Institutionalization and Sustainability</p>`),
+    A(`<p style="${P}">Present documented evidence of mechanisms such as:</p>`),
+    A(UL([
+      'partner policies;','local ordinances or resolutions;','budget allocations;',
+      'integration into regular programs;','institutional structures;',
+      'trained local implementers;','community management mechanisms;',
+      'continuing partnerships;','locally generated resources; or',
+      'other arrangements supporting continuation.'
+    ])),
+    N('', safe(data.institutionalization).trim() || ANSWER_PH),
+
+    A(`<p style="${H_SUB}">3.6 Public Value and Broader Benefits</p>`),
+    A(`<p style="${P}">Where supported by evidence, describe the project\'s contribution to community or institutional benefit.</p>`),
+    A(`<p style="${P}">Possible areas include:</p>`),
+    A(UL([
+      'improved livelihood;','health or wellbeing;','educational improvement;',
+      'strengthened institutional capacity;','increased resilience;',
+      'improved environmental practices;','empowerment;',
+      'improved service delivery; or','other documented public benefits.'
+    ])),
+    N('', safe(data.publicValue).trim() || ANSWER_PH),
+
+    A(`<p style="${H_SUB}">Important Evidence Rule</p>`),
+    A(`<p style="${P}color:#000;">Attendance sheets, photographs, certificates, and activity reports can verify that an activity occurred, but they should not by themselves be used as proof that an outcome, adoption, utilization, or impact occurred. This distinction is expressly reflected in PEMNet\'s conference requirements.</p>`),
+    A(`<p style="${P}color:#000">Authors should not feel compelled to claim "impact." The conference guidelines specifically recognize that completed projects need not claim long-term impact when such evidence is unavailable.</p>`),
+  );
+
+  // ============================================================
+  // 4. DISCUSSION
+  // ============================================================
+  push(
+    A(`<p style="${H_SECTION}margin-top:16px;">4. DISCUSSION</p>`),
+    A(`<p style="${NOTE}">Recommended maximum: <span style="${NOTE_RED}">1,000–1,400 words</span></p>`),
+    A(`<p style="${P}">This is essential if PEMNet wants these papers eventually to become publishable scholarly manuscripts.</p>`),
+    A(`<p style="${P}">The Discussion should explain what the results mean, rather than repeat the Results section.</p>`),
+    A(`<p style="${P}">Address the following as applicable.</p>`),
+
+    A(`<p style="${H_SUB}">4.1 Interpretation of Major Findings</p>`),
+    A(`<p style="${P}">Explain the most important findings.</p>`),
+    A(`<p style="${P}">Why did the intervention appear to work—or not work?</p>`),
+    A(`<p style="${P}">What conditions may explain the observed results?</p>`),
+    N('', safe(data.interpretation).trim() || ANSWER_PH),
+
+    A(`<p style="${H_SUB}">4.2 Relationship to Previous Research and Extension Literature</p>`),
+    A(`<p style="${P}">Compare the results with relevant published studies, extension literature, policies, frameworks, or previous interventions.</p>`),
+    A(`<p style="${P}">Explain whether the results support, extend, differ from, or qualify what is already known.</p>`),
+    N('', safe(data.relationshipLiterature).trim() || ANSWER_PH),
+
+    A(`<p style="${H_SUB}">4.3 Factors Affecting Implementation and Outcomes</p>`),
+    A(`<p style="${P}">Discuss important enabling or constraining factors, such as:</p>`),
+    A(UL([
+      'community participation;','leadership;','institutional support;',
+      'local culture;','resources;','partnerships;','market conditions;',
+      'environmental conditions;','policy context;','implementation fidelity; or',
+      'other contextual factors.'
+    ])),
+    N('', safe(data.factorsAffecting).trim() || ANSWER_PH),
+
+    A(`<p style="${H_SUB}">4.4 Inclusion, Sustainability, and Resilience</p>`),
+    A(`<p style="${P}">Where applicable, interpret how the project addressed:</p>`),
+    A(UL([
+      'gender and social inclusion;','participation of vulnerable or underserved groups;',
+      'sustainability;','resilience;','institutional ownership; and','local capacity.'
+    ])),
+    N('', safe(data.inclusionResilience).trim() || ANSWER_PH),
+
+    A(`<p style="${H_SUB}">4.5 Transferability, Replication, or Scaling</p>`),
+    A(`<p style="${P}">Discuss whether the intervention may reasonably be:</p>`),
+    A(UL([
+      'replicated;','adapted;','scaled;','institutionalized; or',
+      'transferred to another context.'
+    ])),
+    A(`<p style="${P}">Do not automatically recommend scaling solely because participants were satisfied with the project.</p>`),
+    N('', safe(data.transferability).trim() || ANSWER_PH),
+
+    A(`<p style="${H_SUB}">4.6 Limitations</p>`),
+    A(`<p style="${P}">Clearly acknowledge relevant limitations, including possible weaknesses in:</p>`),
+    A(UL([
+      'baseline information;','participant selection;','sample size;',
+      'absence of a comparison group;','duration of follow-up;',
+      'reliance on self-reported information;','missing data;',
+      'measurement instruments;','attribution of outcomes; or',
+      'other methodological constraints.'
+    ])),
+    A(`<p style="${P}">A credible limitations section strengthens, rather than weakens, a scholarly paper.</p>`),
+    N('', safe(data.limitations).trim() || ANSWER_PH),
+  );
+
+  // ============================================================
+  // 5. IMPLICATIONS
+  // ============================================================
+  push(
+    A(`<p style="${H_SECTION}margin-top:16px;">5. IMPLICATIONS FOR EXTENSION PRACTICE AND POLICY</p>`),
+    A(`<p style="${NOTE}">Recommended maximum: <span style="${NOTE_RED}">400–500 words</span></p>`),
+    A(`<p style="${P}">Explain what extension managers, HEIs, practitioners, LGUs, partner institutions, policymakers, or other stakeholders can reasonably learn from the project.</p>`),
+    A(`<p style="${P}">Possible implications may concern:</p>`),
+    A(UL([
+      'extension project design;','community engagement;','monitoring and evaluation;',
+      'evidence generation;','institutional partnerships;','technology adoption;',
+      'capability-building;','sustainability mechanisms;','quality assurance;',
+      'policy development; or','scaling and replication.'
+    ])),
+    A(`<p style="${P}">Recommendations must arise from the evidence presented in the paper.</p>`),
+    N('', safe(data.implications).trim() || ANSWER_PH),
+  );
+
+  // ============================================================
+  // 6. CONCLUSION + BACK MATTER
+  // ============================================================
+  push(
+    A(`<p style="${H_SECTION}margin-top:16px;text-transform:uppercase;">6. CONCLUSION</p>`),
+    A(`<p style="${NOTE}">Recommended maximum: <span style="${NOTE_RED}">300–500 words</span></p>`),
+    A(`<p style="${P}">Provide a concise synthesis of:</p>`),
+    A(`<ol style="margin:0 0 6px 0;padding-left:24px;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;"><li>the development issue addressed;</li><li>the principal intervention;</li><li>the strongest documented results;</li><li>the significance of those results; and</li><li>the central implication for transformative extension.</li></ol>`),
+    A(`<p style="${P}">Do not introduce new data or literature in the Conclusion.</p>`),
+    A(`<p style="${P}">Avoid exaggerated claims such as "the project completely transformed the community" unless such a conclusion is genuinely supported by the evidence.</p>`),
+    N('', safe(data.conclusion).trim() || ANSWER_PH),
+
+    A(`<p style="${H_SECTION}margin-top:16px;">ACKNOWLEDGMENTS</p>`),
+    A(`<p style="${P}">Acknowledge institutions, communities, partners, funders, technical personnel, or individuals who contributed materially to the project but do not qualify for authorship.</p>`),
+    A(`<p style="${P}">Do not use this section merely to list officials.</p>`),
+    N('', safe(data.acknowledgments).trim() || ANSWER_PH),
+
+    A(`<p style="${H_SECTION}margin-top:16px;">FUNDING STATEMENT</p>`),
+    A(`<p style="${P}">Example:</p>`),
+    A(`<p style="${P}">This extension project was funded by [Institution/Agency] under [program/grant, if applicable].</p>`),
+    A(`<p style="${P}">or</p>`),
+    A(`<p style="${P}">The authors received no external funding for the implementation of this project.</p>`),
+    N('', safe(data.funding).trim() || ANSWER_PH),
+
+    A(`<p style="${H_SECTION}margin-top:16px;">CONFLICT OF INTEREST</p>`),
+    A(`<p style="${P}">Example: The authors declare no conflict of interest.</p>`),
+    A(`<p style="${P}">Where a relevant conflict exists, it should be disclosed.</p>`),
+    N('', safe(data.conflictOfInterest).trim() || ANSWER_PH),
+
+    A(`<p style="${H_SECTION}margin-top:16px;">ETHICS AND INFORMED CONSENT STATEMENT</p>`),
+    A(`<p style="${P}">Where applicable: The project and associated data-gathering procedures were reviewed/approved by [appropriate body]. Informed consent was obtained from participants prior to data collection and/or use of identifiable photographs and testimonies.</p>`),
+    A(`<p style="${P}">Adapt the statement according to what actually occurred. Authors should not claim ethical clearance that was not obtained.</p>`),
+    N('', safe(data.ethicsStatement).trim() || ANSWER_PH),
+
+    A(`<p style="${H_SECTION}margin-top:16px;">DATA AVAILABILITY STATEMENT</p>`),
+    A(`<p style="${P}">Where appropriate: The data supporting the findings of this paper are available from the corresponding author upon reasonable request, subject to applicable privacy, consent, institutional, and data-protection requirements.</p>`),
+    N('', safe(data.dataAvailability).trim() || ANSWER_PH),
+
+    A(`<p style="${H_SECTION}margin-top:16px;">AUTHOR CONTRIBUTIONS</p>`),
+    A(`<p style="${P}">For stronger publication readiness, PEMNet can encourage the CRediT-style contributor approach. Example:</p>`),
+    A(`<div style="margin:0 0 10px 0;"><p style="${P_TIGHT}">Conceptualization: A.A., B.B.</p><p style="${P_TIGHT}">Project Implementation: A.A., B.B., C.C.</p><p style="${P_TIGHT}">Methodology: A.A., C.C.</p><p style="${P_TIGHT}">Data Collection: B.B., C.C.</p><p style="${P_TIGHT}">Data Analysis: A.A.</p><p style="${P_TIGHT}">Writing – Original Draft: A.A.</p><p style="${P_TIGHT}">Writing – Review and Editing: A.A., B.B., C.C.</p><p style="${P_TIGHT}">Project Administration: B.B.</p></div>`),
+    A(`<p style="${P}">This can be optional for the conference version but is valuable for eventual journal submission.</p>`),
+    N('', safe(data.authorContributions).trim() || ANSWER_PH),
+
+    A(`<p style="${H_SECTION}margin-top:16px;">REFERENCES</p>`),
+    A(`<p style="${P}">Use APA 7th Edition consistently.</p>`),
+    A(`<p style="${P}">Authors should prioritize:</p>`),
+    A(UL([
+      'peer-reviewed journal articles;','scholarly books;','government publications;',
+      'official institutional reports;','authoritative technical publications; and',
+      'other credible primary sources.'
+    ])),
+    A(`<p style="${P}">References appearing in the list must be cited in the manuscript, and all cited works must appear in the reference list.</p>`),
+    A(`<p style="${P_TIGHT}"><b>Journal Article</b></p>`),
+    A(`<p style="${P_TIGHT}">Author, A. A., &amp; Author, B. B. (Year). Title of article. <i>Journal Title</i>, <u>Volume</u>(Issue), xx–xx. DOI</p>`),
+    A(`<p style="${P_TIGHT}margin-top:8px;"><b>Government/Institutional Report</b></p>`),
+    A(`<p style="${P_TIGHT}">Institution. (Year). <i>Title of report</i>. Publisher/Institution. URL</p>`),
+    A(`<p style="${P_TIGHT}margin-top:8px;"><b>Book</b></p>`),
+    A(`<p style="${P_TIGHT}">Author, A. A. (Year). <i>Title of book</i>. Publisher.</p>`),
+    N('', safe(data.references).trim() || 'Click or tap here and enter the complete APA 7th Edition reference list.'),
+
+    A(`<p style="${H_SECTION}margin-top:16px;">APPENDICES</p>`),
+    A(`<p style="${P}">Appendices are optional and should contain only evidence necessary for understanding or verifying the manuscript.</p>`),
+    A(`<p style="${P}">Possible appendices include:</p>`),
+    A(`<p style="${P_TIGHT}">Appendix A: Project Results Framework</p>`),
+    A(`<p style="${P_TIGHT}">Appendix B: Major Monitoring Indicators</p>`),
+    A(`<p style="${P_TIGHT}">Appendix C: Relevant Data Collection Instrument</p>`),
+    A(`<p style="${P_TIGHT}">Appendix D: Additional Results Table</p>`),
+    A(`<p style="${P_TIGHT}">Appendix E: Evidence of Institutionalization</p>`),
+    A(`<p style="${P}">Do not turn the manuscript into a portfolio of certificates, attendance sheets, photographs, and administrative documents.</p>`),
+    N('', safe(data.appendices).trim() || 'Click or tap here to insert or list only the appendices necessary for understanding or verifying the manuscript.'),
+
+    A(`<p style="${H_SUB}margin-top:16px;text-transform:uppercase;">TABLE AND FIGURE FORMAT</p>`),
+    A(`<p style="${P_TIGHT}">Table 1</p>`),
+    A(`<table style="width:100%;border-collapse:collapse;margin:0 0 8px 0;"><thead><tr><th style="border:1px solid #94A3B8;background:#F1F5F9;font-family:Arial;font-size:11pt;font-weight:700;color:#000;line-height:1.0;padding:6px 8px;text-align:left;">Indicator</th><th style="border:1px solid #94A3B8;background:#F1F5F9;font-family:Arial;font-size:11pt;font-weight:700;color:#000;line-height:1.0;padding:6px 8px;text-align:left;">Baseline</th><th style="border:1px solid #94A3B8;background:#F1F5F9;font-family:Arial;font-size:11pt;font-weight:700;color:#000;line-height:1.0;padding:6px 8px;text-align:left;">Endline/Follow-up</th><th style="border:1px solid #94A3B8;background:#F1F5F9;font-family:Arial;font-size:11pt;font-weight:700;color:#000;line-height:1.0;padding:6px 8px;text-align:left;">Change</th><th style="border:1px solid #94A3B8;background:#F1F5F9;font-family:Arial;font-size:11pt;font-weight:700;color:#000;line-height:1.0;padding:6px 8px;text-align:left;">Source of Evidence</th></tr></thead><tbody><tr><td style="border:1px solid #94A3B8;font-family:Arial;font-size:11pt;color:${ACCENT};line-height:1.0;padding:6px 8px;">Indicator 1</td><td style="border:1px solid #94A3B8;font-family:Arial;font-size:11pt;color:#94A3B8;font-style:italic;line-height:1.0;padding:6px 8px;">[Type here]</td><td style="border:1px solid #94A3B8;font-family:Arial;font-size:11pt;color:#94A3B8;font-style:italic;line-height:1.0;padding:6px 8px;">[Type here]</td><td style="border:1px solid #94A3B8;font-family:Arial;font-size:11pt;color:#94A3B8;font-style:italic;line-height:1.0;padding:6px 8px;">[Type here]</td><td style="border:1px solid #94A3B8;font-family:Arial;font-size:11pt;color:#94A3B8;font-style:italic;line-height:1.0;padding:6px 8px;">[Type here]</td></tr><tr><td style="border:1px solid #94A3B8;font-family:Arial;font-size:11pt;color:${ACCENT};line-height:1.0;padding:6px 8px;">Indicator 2</td><td style="border:1px solid #94A3B8;font-family:Arial;font-size:11pt;color:#94A3B8;font-style:italic;line-height:1.0;padding:6px 8px;">[Type here]</td><td style="border:1px solid #94A3B8;font-family:Arial;font-size:11pt;color:#94A3B8;font-style:italic;line-height:1.0;padding:6px 8px;">[Type here]</td><td style="border:1px solid #94A3B8;font-family:Arial;font-size:11pt;color:#94A3B8;font-style:italic;line-height:1.0;padding:6px 8px;">[Type here]</td><td style="border:1px solid #94A3B8;font-family:Arial;font-size:11pt;color:#94A3B8;font-style:italic;line-height:1.0;padding:6px 8px;">[Type here]</td></tr></tbody></table>`),
+    A(`<p style="${P_TIGHT}font-style:italic;">Baseline and Post-Intervention Status of Selected Indicators. Note. Explain abbreviations or important qualifications.</p>`),
+    A(`<p style="${P}">Every table must be discussed in the text.</p>`),
+
+    A(`<p style="${P_TIGHT}margin-top:10px;">Figure 1</p>`),
+    A(`<p style="${P_TIGHT}font-style:italic;">Extension Project Results Pathway</p>`),
+    A(`<div style="border:1px solid #94A3B8;background:#F8FAFC;padding:24px 12px;margin:0 0 6px 0;text-align:center;font-family:Arial;font-size:11pt;font-style:italic;color:#94A3B8;line-height:1.0;">[Insert figure]</div>`),
+    A(`<p style="${P_TIGHT}font-style:italic;">Note. Source or explanatory note, where necessary.</p>`),
+    A(`<p style="${P}">Tables and figures should communicate evidence, not simply decorate the manuscript.</p>`),
+    A(`<p style="${P}">PEMNet\'s existing requirements similarly provide that tables and figures be properly numbered, labeled, explained in the text, and directly relevant to the claims being presented.</p>`),
+
+    A(`<p style="${P}margin-top:24px;">NOTE: By submitting this manuscript, the author/s confirm their acceptance of the Author Consent and Limited Publication License stated earlier in this template.</p>`),
+  );
+
+  return blocks;
 }
 
 function buildBlocks({ data, BLUE, LIGHT, BORDER }) {
+  const head = { kind: 'atomic', html: firstPageTitleHTML(BLUE, LIGHT, BORDER), forceNewPage: true };
   return [
     { kind: 'atomic', html: consentPageHTML(BLUE, LIGHT, BORDER), forceNewPage: true },
     { kind: 'atomic', html: titleAuthorPageHTML(data, BLUE, LIGHT, BORDER), forceNewPage: true },
-    { kind: 'atomic', html: bodyPageHTML(data, BLUE, LIGHT, BORDER), forceNewPage: true },
-    { kind: 'atomic', html: bodyPage2HTML(data, BLUE, LIGHT, BORDER), forceNewPage: true },
-    { kind: 'atomic', html: bodyPage3HTML(data, BLUE, LIGHT, BORDER), forceNewPage: true },
-    { kind: 'atomic', html: bodyPage4HTML(data, BLUE, LIGHT, BORDER), forceNewPage: true },
-    { kind: 'atomic', html: bodyPage5HTML(data, BLUE, LIGHT, BORDER), forceNewPage: true },
-    { kind: 'atomic', html: bodyPage6HTML(data, BLUE, LIGHT, BORDER), forceNewPage: true },
-    { kind: 'atomic', html: bodyPage7HTML(data, BLUE, LIGHT, BORDER), forceNewPage: true },
-    { kind: 'atomic', html: bodyPage8HTML(data, BLUE, LIGHT, BORDER), forceNewPage: true },
-    { kind: 'atomic', html: bodyPage9HTML(data, BLUE, LIGHT, BORDER), forceNewPage: true },
-    { kind: 'atomic', html: bodyPage10HTML(data, BLUE, LIGHT, BORDER), forceNewPage: true },
-    { kind: 'atomic', html: bodyPage11HTML(data, BLUE, LIGHT, BORDER), forceNewPage: true },
+    ...buildBodyBlocks(data, BLUE, LIGHT, BORDER),
   ];
 }
 
@@ -2192,11 +1378,15 @@ export default function SubmitFullPaper({
         correspondingOrcid,
         thematicArea,
         thematicAreaTitle,
+
+        // Section 1 — Introduction
         backgroundContext,
         evidenceNeed,
         relatedLiterature,
         rationale,
         objectives,
+
+        // Section 2 — Materials and Methods
         reachPopulation,
         settingDuration,
         participantsDesc,
@@ -2207,19 +1397,27 @@ export default function SubmitFullPaper({
         monitoringEval,
         dataAnalysis,
         ethicalConsiderations,
+
+        // Section 3 — Results
         reachImplementation,
         immediateResults,
         outcomes,
         adoption,
         institutionalization,
         publicValue,
+
+        // Section 4 — Discussion
         interpretation,
         relationshipLiterature,
         factorsAffecting,
         inclusionResilience,
         transferability,
         limitations,
+
+        // Section 5 — Implications
         implications,
+
+        // Section 6 + Back Matter
         conclusion,
         acknowledgments,
         funding,
@@ -2359,22 +1557,70 @@ export default function SubmitFullPaper({
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  const previewData = {
-    linked_abstract_title:
-      acceptedSubmissions.find((s) => String(s.id) === String(submissionId))
-        ?.extension_project_title || '',
-    title,
-    authors,
-    affiliations,
-    keywords,
-    abstract,
-    correspondingName,
-    correspondingEmail,
-    correspondingOrcid,
-    thematicArea,
-    thematicAreaTitle,
-  };
+      const previewData = {
+        linked_abstract_title:
+          acceptedSubmissions.find((s) => String(s.id) === String(submissionId))
+            ?.extension_project_title || '',
+        title,
+        authors,
+        affiliations,
+        keywords,
+        abstract,
+        correspondingName,
+        correspondingEmail,
+        correspondingOrcid,
+        thematicArea,
+        thematicAreaTitle,
 
+        // Section 1 — Introduction
+        backgroundContext,
+        evidenceNeed,
+        relatedLiterature,
+        rationale,
+        objectives,
+
+        // Section 2 — Materials and Methods
+        reachPopulation,
+        settingDuration,
+        participantsDesc,
+        situationalAnalysis,
+        interventionRationale,
+        implementationStrategies,
+        partnership,
+        monitoringEval,
+        dataAnalysis,
+        ethicalConsiderations,
+
+        // Section 3 — Results
+        reachImplementation,
+        immediateResults,
+        outcomes,
+        adoption,
+        institutionalization,
+        publicValue,
+
+        // Section 4 — Discussion
+        interpretation,
+        relationshipLiterature,
+        factorsAffecting,
+        inclusionResilience,
+        transferability,
+        limitations,
+
+        // Section 5 — Implications
+        implications,
+
+        // Section 6 + Back Matter
+        conclusion,
+        acknowledgments,
+        funding,
+        conflictOfInterest,
+        ethicsStatement,
+        dataAvailability,
+        authorContributions,
+        references,
+        appendices,
+      };
   /* ---------------- Preview mode ---------------- */
   if (showPreview) {
     return (

@@ -1,4 +1,3 @@
-# about_routes.py
 from flask import jsonify, request
 from models import db, AboutContent, AboutStat, AboutCard, AboutFeature, User
 from functools import wraps

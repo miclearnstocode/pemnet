@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
 import AbstractForm from '@/app/components/AbstractForm';
+import SubmitFullPaper from '@/app/components/SubmitFullPaper';
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL).replace(/\/+$/, '');
 
@@ -1244,11 +1245,11 @@ export default function SubmitPage() {
   };
 
   if (!user) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return <div className="flex items-center justify-center">Loading...</div>;
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="bg-slate-50 flex-1 flex flex-col">
       {toast && (
         <Toast
           message={toast.message}
@@ -1331,6 +1332,20 @@ export default function SubmitPage() {
                   </div>
                   <h3 className="text-lg font-bold text-slate-900 mb-1">My Submissions</h3>
                   <p className="text-sm text-slate-500">View and track your submitted abstracts and their status.</p>
+                </button>
+                <button
+                  onClick={() => { setActiveTab('full-paper'); fetchUserSubmissions(user.id); }}
+                  className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition text-left group"
+                >
+                  <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-4 group-hover:bg-purple-200 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-purple-600">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900 mb-1">Submit Full Paper</h3>
+                  <p className="text-sm text-slate-500">
+                    Upload your full paper after your abstract is accepted.
+                  </p>
                 </button>
               </div>
             </div>
@@ -1446,6 +1461,19 @@ export default function SubmitPage() {
                 {renderSubmissions()}
               </div>
             </div>
+          )}
+
+          {activeTab === 'full-paper' && (
+            <SubmitFullPaper
+              user={user}
+              submissions={userSubmissions}
+              onBack={() => setActiveTab('home')}
+              onToast={showToast}
+              onSubmitted={() => {
+                fetchUserSubmissions(user.id);
+                setTimeout(() => setActiveTab('my-submissions'), 1000);
+              }}
+            />
           )}
         </div>
       </main>

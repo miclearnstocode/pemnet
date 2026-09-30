@@ -16,7 +16,6 @@
     "Ongoing Extension Project Paper"
     ];
 
-
     export function AbstractPreview({ data }) {
     const BLUE = '#1F3864';
     const LIGHT = '#E8EEF7';
@@ -97,29 +96,24 @@
     }
 
 
-    /* ===================================================================== */
-    /*  A4 GEOMETRY — mirrors <A4Sheet> exactly (96 DPI CSS px)               */
-    /* ===================================================================== */
     const MM_TO_PX = 3.7795275591;
     const IN_TO_PX = 96;
-    const A4_HEIGHT_PX = 297 * MM_TO_PX;                                   // ≈ 1122.5
-    const HEADER_ZONE_PX = 0.1 * IN_TO_PX + 18 * MM_TO_PX;                 // ≈ 77.6  (0.1in + 18mm)
-    const FOOTER_ZONE_PX = 0.2 * IN_TO_PX + 18 * MM_TO_PX;                 // ≈ 87.2  (0.2in + 18mm)
-    const CONTENT_HEIGHT_PX = A4_HEIGHT_PX - HEADER_ZONE_PX - FOOTER_ZONE_PX; // ≈ 957.7 (pages 2+)
+    const A4_HEIGHT_PX = 297 * MM_TO_PX;                                 
+    const HEADER_ZONE_PX = 0.1 * IN_TO_PX + 18 * MM_TO_PX;              
+    const FOOTER_ZONE_PX = 0.2 * IN_TO_PX + 18 * MM_TO_PX;           
+    const CONTENT_HEIGHT_PX = A4_HEIGHT_PX - HEADER_ZONE_PX - FOOTER_ZONE_PX; 
 
-    const SAFETY_PX = 3;                       // absorbs offsetHeight rounding across many blocks
-    const LAST_PAGE_OVERFLOW_ALLOWANCE_PX = 120; // last page may run this far past the content area
-    const MAX_LOOP_GUARD = 10000;              // hard stop for pathological input
-    const DEBUG_PAGINATION = false;            // true → logs every narrative placement decision
+    const SAFETY_PX = 3;                  
+    const LAST_PAGE_OVERFLOW_ALLOWANCE_PX = 120; 
+    const MAX_LOOP_GUARD = 10000;             
+    const DEBUG_PAGINATION = false;           
 
     const escapeHtml = (s) =>
     String(s ?? '').replace(/[&<>"']/g, (c) => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
     }[c]));
 
-    /* ===================================================================== */
-    /*  PACKING (pure — no DOM access except through `measure`)               */
-    /* ===================================================================== */
+
     function packBlocks(blocks, { measure, boxHTML, titleHeight }) {
     const boxedBody = (text) => boxHTML(escapeHtml(text));
 
@@ -139,34 +133,29 @@
         };
     });
 
-    // tailH[i] = height of blocks i..end (used for the last-page overflow rule)
     const tailH = new Array(prepared.length + 1).fill(0);
     for (let i = prepared.length - 1; i >= 0; i--) {
         tailH[i] = tailH[i + 1] + prepared[i].totalH;
     }
 
-    // Smallest body we accept at the bottom of a page: the empty-box minimum
-    // (46px ≈ one or two lines). Heading + hint + this must fit to START a block here.
     const minStartBoxH = measure(boxHTML('A'));
 
-    // ---- tokenised word-splitting that preserves newlines/spacing ----
     const tokenize = (t) => String(t ?? '').match(/\S+\s*/g) || [];
     const fitTokens = (text, maxH, force) => {
         const toks = tokenize(text);
         if (!toks.length) return { fitText: '', restText: '' };
         const join = (n) => toks.slice(0, n).join('').trimEnd();
-        let lo = 0, hi = toks.length - 1, best = 0; // full text is known NOT to fit
+        let lo = 0, hi = toks.length - 1, best = 0;
         while (lo <= hi) {
         const mid = (lo + hi) >> 1;
         if (measure(boxedBody(join(mid))) <= maxH) { best = mid; lo = mid + 1; }
         else hi = mid - 1;
         }
-        if (force) best = Math.max(best, 1);                 // guarantee progress
-        else if (best < 2 && toks.length > 2) best = 0;      // widow/orphan guard
+        if (force) best = Math.max(best, 1);               
+        else if (best < 2 && toks.length > 2) best = 0;   
         return { fitText: join(best), restText: toks.slice(best).join('') };
     };
 
-    // ---- page state ----
     const result = [];
     let cur = [];
     let curH = 0;
@@ -186,26 +175,22 @@
         }
     };
 
-    // ---- main loop ----
     let done = false;
     for (let bi = 0; bi < prepared.length && !done; bi++) {
         const block = prepared[bi];
 
-        // ---------- atomic ----------
         if (block.kind === 'atomic') {
-        // Everything left fits (or overflows only slightly) → last page.
         if (curH + tailH[bi] <= avail() + LAST_PAGE_OVERFLOW_ALLOWANCE_PX) {
             dumpFrom(bi);
             done = true;
             break;
         }
-        // keepWithNext: a heading-like block must be followed by ≥ heading + 2 lines.
         let need = block.totalH;
         const next = prepared[bi + 1];
         if (block.keepWithNext && next) {
             need += next.kind === 'narrative' ? next.headingH + minStartBoxH : next.totalH;
         }
-        if (curH + need > avail()) flush(); // no-op on an empty page → oversized block just overflows
+        if (curH + need > avail()) flush();
         place(block.html, block.totalH);
         continue;
         }
@@ -219,7 +204,7 @@
         };
 
         for (let guard = 0; ; guard++) {
-        if (guard > MAX_LOOP_GUARD) {                 // safety valve
+        if (guard > MAX_LOOP_GUARD) {         
             placeChunk(text, 0);
             break;
         }
@@ -273,9 +258,6 @@
     return result;
     }
 
-    /* ===================================================================== */
-    /*  A4 PAGINATOR                                                          */
-    /* ===================================================================== */
     function A4Paginator({ data, BLUE, LIGHT, BORDER }) {
     const [pages, setPages] = useState(null);
     const [containerWidth, setContainerWidth] = useState(0);
@@ -516,8 +498,6 @@
     }
 
 
-    /* Single source of truth for the page-1 title + instructions block.
-    Used BOTH by A4Sheet (rendered) and A4Paginator (measured). */
     function firstPageTitleHTML(BLUE, LIGHT, BORDER) {
     return `<div style="text-align:center;margin-bottom:20px;">
     <h2 style="color:${BLUE};font-weight:700;font-family:Arial,Helvetica,sans-serif;font-size:13pt;margin:0 0 12px 0;">ABSTRACT TEMPLATE</h2>
@@ -526,9 +506,6 @@
     <div style="background-color:${LIGHT};border:1px solid ${BORDER};color:${BLUE};font-family:Arial,Helvetica,sans-serif;font-size:9pt;line-height:1.3;padding:6px 12px;margin-bottom:20px;border-radius:2px;"><span style="font-weight:700;">Instructions:</span> Complete all sections. Select only one paper category and one thematic area. Use clear, evidence-based statements and avoid unsupported outcome or impact claims.</div>`;
     }
 
-    /* ===================================================================== */
-    /*  BLOCK BUILDER                                                        */
-    /* ===================================================================== */
     function buildBlocks({ data, BLUE, LIGHT, BORDER }) {
     const safe = (v) => (v == null ? '' : String(v));
 
@@ -786,6 +763,66 @@
     ));
     }
 
+    async function generateAbstractPdfBlob(previewData) {
+        const { createRoot } = await import('react-dom/client');
+        const { flushSync } = await import('react-dom');
+        const { captureA4SheetsAsPDF } = await import('@/app/components/PrintA4Sheets');
+
+        // Create an off-screen host — position: absolute (NOT fixed) so html2canvas
+        // can render it, but hidden behind the viewport using clip + overflow.
+        const host = document.createElement('div');
+        host.setAttribute('aria-hidden', 'true');
+        host.style.position = 'absolute';
+        host.style.top = '0';
+        host.style.left = '0';
+        host.style.width = '210mm';
+        host.style.background = '#ffffff';
+        // Push it behind the page so the user never sees it, but keep it in-flow
+        // (html2canvas renders hidden/offscreen nodes poorly with position:fixed).
+        host.style.zIndex = '-9999';
+        host.style.opacity = '0';
+        host.style.pointerEvents = 'none';
+        host.style.overflow = 'hidden';
+        document.body.appendChild(host);
+
+        const root = createRoot(host);
+
+        try {
+            flushSync(() => {
+                root.render(<AbstractPreview data={previewData} />);
+            });
+
+            // Wait for paginator to render at least one .a4-sheet
+            const deadline = Date.now() + 5000;
+            let sheets = [];
+            while (Date.now() < deadline) {
+                sheets = host.querySelectorAll('.a4-sheet');
+                if (sheets.length > 0) break;
+                await new Promise((r) => setTimeout(r, 60));
+            }
+            if (sheets.length === 0) {
+                throw new Error('Preview did not render any A4 sheets.');
+            }
+
+            // Let fonts finish loading
+            if (document.fonts && document.fonts.ready) {
+                try { await document.fonts.ready; } catch { /* ignore */ }
+            }
+            await new Promise((r) => setTimeout(r, 150));
+
+            // ← Pass `root: host` so we only capture the sheets inside our host
+            return await captureA4SheetsAsPDF({
+                selector: '.a4-sheet',
+                root: host,
+                scale: 2,
+                onStatus: () => {},
+            });
+        } finally {
+            try { root.unmount(); } catch { /* ignore */ }
+            if (host.parentNode) host.parentNode.removeChild(host);
+        }
+    }
+
     export default function AbstractForm({
     user,
     onSubmit,
@@ -824,6 +861,7 @@
     const [endorsementFile, setEndorsementFile] = useState(null);
     const [supportingFiles, setSupportingFiles] = useState([]);
     const [showPreview, setShowPreview] = useState(false);
+    const [generatingPdf, setGeneratingPdf] = useState(false);
     const dropdownRef = useRef(null);
 
     useEffect(() => {
@@ -883,47 +921,70 @@
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        // ---- Validate SUC ----
         let finalSuc = chosenSuc;
         if (showOtherSuc) {
-        finalSuc = otherSucName.trim();
+            finalSuc = otherSucName.trim();
+            if (!finalSuc) {
+                onSubmit({ error: 'Please enter your SUC/Agency name.' });
+                return;
+            }
+        }
         if (!finalSuc) {
-            onSubmit({ error: 'Please enter your SUC/Agency name.' });
+            onSubmit({ error: 'Please select or enter your SUC/Agency.' });
             return;
         }
-        }
-        if (!finalSuc) {
-        onSubmit({ error: 'Please select or enter your SUC/Agency.' });
-        return;
-        }
         if (!endorsementFile) {
-        onSubmit({ error: 'Endorsement PDF file is required.' });
-        return;
+            onSubmit({ error: 'Endorsement PDF file is required.' });
+            return;
         }
 
+        // ---- Persist new SUC if needed ----
         const existing = (sucList || []).find(
-        (s) => s.name.toLowerCase() === finalSuc.toLowerCase()
+            (s) => s.name.toLowerCase() === finalSuc.toLowerCase()
         );
         if (!existing && showOtherSuc) {
-        try {
-            const res = await fetch(
-            `${(process.env.NEXT_PUBLIC_API_URL || '').replace(/\/+$/, '')}/api/sucs`,
-            {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: finalSuc, region: 'Other' }),
+            try {
+                const res = await fetch(
+                    `${(process.env.NEXT_PUBLIC_API_URL || '').replace(/\/+$/, '')}/api/sucs`,
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: finalSuc, region: 'Other' }),
+                    }
+                );
+                if (res.ok) {
+                    const newSuc = await res.json();
+                    onSucAdded?.(newSuc);
+                }
+            } catch (err) {
+                console.error('Error adding SUC:', err);
             }
-            );
-            if (res.ok) {
-            const newSuc = await res.json();
-            onSucAdded?.(newSuc);
-            }
-        } catch (err) {
-            console.error('Error adding SUC:', err);
-        }
         }
 
-        const submitData = new FormData();
         const filteredCoAuthors = coAuthors.filter((c) => c.trim() !== '');
+        const finalPreviewData = {
+            ...formData,
+            co_authors: filteredCoAuthors,
+            suc_agencies: finalSuc,
+        };
+
+        // ---- Generate abstract PDF from the A4 preview DOM ----
+        let abstractPdfBlob = null;
+        try {
+            setGeneratingPdf(true);
+            abstractPdfBlob = await generateAbstractPdfBlob(finalPreviewData);
+        } catch (pdfErr) {
+            console.error('Error generating abstract PDF:', pdfErr);
+            onSubmit({ error: 'Failed to generate abstract PDF. Please try again.' });
+            setGeneratingPdf(false);
+            return;
+        } finally {
+            setGeneratingPdf(false);
+        }
+
+        // ---- Build the form data ----
+        const submitData = new FormData();
 
         submitData.append('user_id', user.id);
         submitData.append('extension_project_title', formData.title);
@@ -945,29 +1006,36 @@
         submitData.append('sustainability', formData.sustainability);
         submitData.append('keywords', formData.keywords);
 
+        // Attach generated abstract PDF
+        const safeAbstractName = `abstract_${(formData.title || 'untitled')
+            .replace(/[^a-zA-Z0-9]/g, '_')
+            .substring(0, 60)}.pdf`;
+        submitData.append('abstract_file', abstractPdfBlob, safeAbstractName);
+
+        // Attach endorsement PDF
         const safeName = endorsementFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
         submitData.append(
-        'endorsement_file',
-        new File([endorsementFile], safeName, { type: 'application/pdf' })
+            'endorsement_file',
+            new File([endorsementFile], safeName, { type: 'application/pdf' })
         );
 
-        // Supporting documents (multiple, optional)
+        // Supporting documents
         supportingFiles.forEach((file) => {
-        const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-        submitData.append(
-            'supporting_documents',
-            new File([file], safe, { type: file.type || 'application/octet-stream' })
-        );
+            const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+            submitData.append(
+                'supporting_documents',
+                new File([file], safe, { type: file.type || 'application/octet-stream' })
+            );
         });
 
         onSubmit({
-        formData: submitData,
-        rawData: {
-            ...formData,
-            co_authors: filteredCoAuthors,
-            suc_agencies: finalSuc,
-            supporting_documents: supportingFiles.map((f) => f.name),
-        },
+            formData: submitData,
+            rawData: {
+                ...formData,
+                co_authors: filteredCoAuthors,
+                suc_agencies: finalSuc,
+                supporting_documents: supportingFiles.map((f) => f.name),
+            },
         });
     };
 
@@ -1513,11 +1581,15 @@
                 Preview Abstract
                 </button>
                 <button
-                type="submit"
-                disabled={submitting}
-                className="sm:flex-2 py-3 rounded-xl font-bold text-white bg-linear-to-r from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 transition shadow-lg shadow-blue-700/20 disabled:opacity-50 inline-flex items-center justify-center gap-2"
+                    type="submit"
+                    disabled={submitting || generatingPdf}
+                    className="sm:flex-2 py-3 rounded-xl font-bold text-white bg-linear-to-r from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 transition shadow-lg shadow-blue-700/20 disabled:opacity-50 inline-flex items-center justify-center gap-2"
                 >
-                {submitting ? 'Submitting...' : 'Submit Abstract'}
+                    {generatingPdf
+                        ? 'Generating PDF…'
+                        : submitting
+                        ? 'Submitting…'
+                        : 'Submit Abstract'}
                 </button>
             </div>
             </div>
@@ -1526,7 +1598,6 @@
     );
     }
 
-    /* ---------- Reusable sub-components ---------- */
     function SectionBlock({ letter, title, children }) {
     return (
         <div className="border border-slate-200 rounded-xl overflow-hidden">

@@ -200,19 +200,92 @@ def upload_file_to_drive(file_path, filename, project_title=None, sender_name=No
         ).execute()
 
         file_id = file.get('id')
-
         if not file_id:
             raise Exception("No file ID returned")
 
         view_url = f"https://drive.google.com/file/d/{file_id}/view"
-        download_url = f"https://drive.google.com/uc?export=download&id={file_id}"
-
-        return view_url, download_url
+        return file_id, view_url
 
     except HttpError as e:
         print(f"❌ Upload error: {e}")
         raise
 
+def upload_supporting_document_to_drive(file_path, filename, parent_folder_id):
+    """
+    Upload a supporting document to a specific folder in Google Drive.
+    
+    Args:
+        file_path: Local path to the file
+        filename: Name to use in Drive
+        parent_folder_id: ID of the parent folder (the sender's folder)
+    
+    Returns:
+        tuple: (file_id, view_url)
+    """
+    if not file_path or not os.path.exists(file_path):
+        raise Exception(f"File not found: {file_path}")
+
+    if not filename or not isinstance(filename, str):
+        filename = "supporting_document.pdf"
+
+    filename = sanitize_folder_name(filename)
+
+    service = get_drive_service()
+
+    # Create or get the "Attachments" subfolder inside the parent folder
+    attachments_folder_id = get_or_create_folder(
+        service,
+        "Attachments",
+        parent_folder_id
+    )
+
+    # Determine mimetype based on extension
+    ext = os.path.splitext(filename)[1].lower()
+    mimetype_map = {
+        '.pdf': 'application/pdf',
+        '.png': 'image/png',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.gif': 'image/gif',
+        '.bmp': 'image/bmp',
+        '.webp': 'image/webp',
+        '.xls': 'application/vnd.ms-excel',
+        '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        '.csv': 'text/csv',
+        '.doc': 'application/msword',
+        '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    }
+    mimetype = mimetype_map.get(ext, 'application/octet-stream')
+
+    file_metadata = {
+        'name': filename,
+        'parents': [attachments_folder_id]
+    }
+
+    media = MediaFileUpload(
+        file_path,
+        mimetype=mimetype,
+        resumable=True
+    )
+
+    try:
+        file = service.files().create(
+            body=file_metadata,
+            media_body=media,
+            fields='id, name',
+            supportsAllDrives=True
+        ).execute()
+
+        file_id = file.get('id')
+        if not file_id:
+            raise Exception("No file ID returned")
+
+        view_url = f"https://drive.google.com/file/d/{file_id}/view"
+        return file_id, view_url
+
+    except HttpError as e:
+        print(f"❌ Supporting document upload error: {e}")
+        raise
 
 def test_drive_connection():
     try:

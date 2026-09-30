@@ -27,32 +27,44 @@ class User(db.Model):
 class Submission(db.Model):
     __tablename__ = 'submissions'
     id = db.Column(db.Integer, primary_key=True)
-    submission_id = db.Column(db.String(50), unique=True, nullable=True, index=True) 
+    submission_id = db.Column(db.String(50), unique=True, nullable=True, index=True)
     user_id = db.Column(db.Integer, nullable=False, default=0)
-    submission_type = db.Column(db.String(50), nullable=True, default='abstract')  
+    submission_type = db.Column(db.String(50), nullable=True, default='abstract')
+
     extension_project_title = db.Column(db.String(191), nullable=False)
     thematic_area = db.Column(db.String(191), nullable=False)
     paper_category = db.Column(db.String(191), nullable=False)
     suc_agencies = db.Column(db.String(191), nullable=True)
     project_leader = db.Column(db.String(191), nullable=False)
     presenter = db.Column(db.String(191), nullable=False)
-    corresponding_author_name = db.Column(db.String(191), nullable=True)  
+    corresponding_author_name = db.Column(db.String(191), nullable=True)
     corresponding_author_position = db.Column(db.String(191), nullable=True)
-    corresponding_author_email = db.Column(db.String(191), nullable=True) 
+    corresponding_author_email = db.Column(db.String(191), nullable=True)
+    co_authors = db.Column(db.Text, nullable=True)
+
+    # ----- Abstract narrative (so the user can edit later) -----
+    community_need        = db.Column(db.Text, nullable=True)
+    project_objectives    = db.Column(db.Text, nullable=True)
+    extension_methods     = db.Column(db.Text, nullable=True)
+    major_outputs         = db.Column(db.Text, nullable=True)
+    evidence_outcomes     = db.Column(db.Text, nullable=True)
+    supporting_docs       = db.Column(db.Text, nullable=True)
+    sustainability        = db.Column(db.Text, nullable=True)
+    keywords              = db.Column(db.Text, nullable=True)
+
+    # ----- Drive references (id + view url only) -----
+    abstract_file_id        = db.Column(db.String(191), nullable=True)
+    abstract_view_url       = db.Column(db.String(500), nullable=True)
+
+    endorsement_file_id     = db.Column(db.String(191), nullable=True)
+    endorsement_view_url    = db.Column(db.String(500), nullable=True)
+
+    compextproj_file_id     = db.Column(db.String(191), nullable=True)
+    compextproj_drive_view_url = db.Column(db.String(500), nullable=True)
     status = db.Column(db.Enum('pending', 'endorse', 'downgraded-non_competitive', 'downgraded-poster_only'), nullable=False, default='pending')
     evaluation_status = db.Column(db.Enum('pending', 'endorse', 'downgraded-non_competitive', 'downgraded-poster_only'), nullable=False, default='pending')
-    co_authors = db.Column(db.Text, nullable=True)
-    abstract_view_url = db.Column(db.String(500), nullable=True)
-    abstract_download_url = db.Column(db.String(500), nullable=True)
-    endorsement_view_url = db.Column(db.String(500), nullable=True)
-    endorsement_download_url = db.Column(db.String(500), nullable=True)
-    compextproj_drive_view_url = db.Column(db.String(500), nullable=True)
-    compextproj_drive_download_url = db.Column(db.String(500), nullable=True)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
-
-    revisions = db.relationship('SubmissionRevision', foreign_keys='SubmissionRevision.submission_id',
-                                    primaryjoin='Submission.submission_id == SubmissionRevision.submission_id',
-                                    backref='submission_ref')
+    revisions = db.relationship( 'SubmissionRevision', foreign_keys='SubmissionRevision.submission_id', primaryjoin='Submission.submission_id == SubmissionRevision.submission_id', backref='submission_ref',)
 
     def to_dict(self):
         return {
@@ -65,18 +77,61 @@ class Submission(db.Model):
             'suc_agencies': self.suc_agencies,
             'project_leader': self.project_leader,
             'presenter': self.presenter,
-            'corresponding_author_name': self.corresponding_author_name,  
+            'corresponding_author_name': self.corresponding_author_name,
             'corresponding_author_position': self.corresponding_author_position,
-            'corresponding_author_email': self.corresponding_author_email, 
+            'corresponding_author_email': self.corresponding_author_email,
+            'co_authors': self.co_authors,
+
+            # Abstract content
+            'community_need': self.community_need,
+            'project_objectives': self.project_objectives,
+            'extension_methods': self.extension_methods,
+            'major_outputs': self.major_outputs,
+            'evidence_outcomes': self.evidence_outcomes,
+            'supporting_docs': self.supporting_docs,
+            'sustainability': self.sustainability,
+            'keywords': self.keywords,
+
+            # Drive references
+            'abstract_file_id': self.abstract_file_id,
+            'abstract_view_url': self.abstract_view_url,
+            'endorsement_file_id': self.endorsement_file_id,
+            'endorsement_view_url': self.endorsement_view_url,
+            'compextproj_file_id': self.compextproj_file_id,
+            'compextproj_drive_view_url': self.compextproj_drive_view_url,
+
             'status': self.status,
             'evaluation_status': self.evaluation_status,
-            'co_authors': self.co_authors,
-            'abstract_view_url': self.abstract_view_url,
-            'abstract_download_url': self.abstract_download_url,
-            'endorsement_view_url': self.endorsement_view_url,
-            'endorsement_download_url': self.endorsement_download_url,
-            'compextproj_drive_view_url': self.compextproj_drive_view_url,
-            'compextproj_drive_download_url': self.compextproj_drive_download_url,
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None,
+        }
+        
+class SupportingDocument(db.Model):
+    __tablename__ = 'supporting_documents'
+    id = db.Column(db.Integer, primary_key=True)
+    submission_id = db.Column(db.String(50), nullable=False, index=True)
+    file_id = db.Column(db.String(191), nullable=True) 
+    file_name = db.Column(db.String(500), nullable=True)
+    view_url = db.Column(db.String(500), nullable=True)
+    download_url = db.Column(db.String(500), nullable=True)
+    file_size = db.Column(db.Integer, nullable=True) 
+    mime_type = db.Column(db.String(100), nullable=True)
+    
+    # Folder info in Drive
+    folder_id = db.Column(db.String(191), nullable=True) 
+    parent_folder_id = db.Column(db.String(191), nullable=True) 
+    
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'submission_id': self.submission_id,
+            'file_id': self.file_id,
+            'file_name': self.file_name,
+            'view_url': self.view_url,
+            'download_url': self.download_url,
+            'file_size': self.file_size,
+            'mime_type': self.mime_type,
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None
         }
         
@@ -484,15 +539,8 @@ class NewsEvent(db.Model):
 class AboutContent(db.Model):
     __tablename__ = 'about_content'
     id = db.Column(db.Integer, primary_key=True)
-    
-    # Section identification
     section_key = db.Column(db.String(100), unique=True, nullable=False, index=True)
-    # e.g., 'header', 'stats', 'what_is', 'mission_vision', 'what_we_do'
-    
-    # Content fields (flexible JSON storage)
-    content = db.Column(db.Text, nullable=True)  # JSON string
-    
-    # Metadata
+    content = db.Column(db.Text, nullable=True)
     updated_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
     updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())

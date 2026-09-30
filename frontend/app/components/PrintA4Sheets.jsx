@@ -1,30 +1,12 @@
 "use client";
 
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useEffect, useReducer } from "react";
 import html2canvas from "html2canvas";
-
-/**
- * PrintA4Sheets
- * ---------------
- * Captures every `.a4-sheet` currently rendered in the DOM and prints
- * them as full-page A4 images, so the printed output matches the canvas
- * preview pixel-for-pixel.
- *
- * Usage:
- *   const { printSheets, isPrinting } = usePrintA4Sheets();
- *   <button onClick={() => printSheets()}>Print</button>
- *
- * Or use the ready-made button:
- *   <PrintA4SheetsButton />
- */
 
 const MM_TO_PX = 3.7795275591;
 const A4_WIDTH_MM = 210;
 const A4_HEIGHT_MM = 297;
 
-/* ===================================================================== */
-/*  Core helper — capture + print                                         */
-/* ===================================================================== */
 export async function printA4Sheets({
   selector = ".a4-sheet",
   scale = 2,
@@ -169,9 +151,70 @@ function escapeHtml(s) {
   }[c]));
 }
 
-/* ===================================================================== */
-/*  Hook                                                                  */
-/* ===================================================================== */
+export async function captureA4SheetsAsPDF({
+  selector = ".a4-sheet",
+  root = document,      
+  scale = 2,
+  onStatus = () => {},
+} = {}) {
+  // Make sure web fonts are ready
+  if (document.fonts && document.fonts.ready) {
+    try {
+      await document.fonts.ready;
+    } catch {
+      /* ignore */
+    }
+  }
+
+  // ← CHANGE: query within root
+  const sheets = Array.from(root.querySelectorAll(selector));
+  if (sheets.length === 0) {
+    throw new Error(`No elements matched "${selector}". Make sure the preview is rendered.`);
+  }
+
+  onStatus("Capturing pages…");
+
+  const images = [];
+  for (let i = 0; i < sheets.length; i++) {
+    const sheet = sheets[i];
+    onStatus(`Capturing page ${i + 1} of ${sheets.length}…`);
+
+    const canvas = await html2canvas(sheet, {
+      scale,
+      useCORS: true,
+      allowTaint: false,
+      backgroundColor: "#ffffff",
+      logging: false,
+      width: sheet.offsetWidth,
+      height: sheet.offsetHeight,
+      windowWidth: sheet.scrollWidth,
+      windowHeight: sheet.scrollHeight,
+      onclone: (clonedDoc) => {
+        clonedDoc.querySelectorAll(".a4-sheet").forEach((el) => {
+          el.style.boxShadow = "none";
+          el.style.margin = "0";
+        });
+      },
+    });
+    images.push(canvas.toDataURL("image/png"));
+  }
+
+  onStatus("Building PDF…");
+
+  const { jsPDF } = await import("jspdf");
+  const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+
+  const pdfW = pdf.internal.pageSize.getWidth();
+  const pdfH = pdf.internal.pageSize.getHeight();
+
+  images.forEach((dataUrl, idx) => {
+    if (idx > 0) pdf.addPage();
+    pdf.addImage(dataUrl, "PNG", 0, 0, pdfW, pdfH, undefined, "FAST");
+  });
+
+  return pdf.output("blob");
+}
+
 export function usePrintA4Sheets(options = {}) {
   const printingRef = useRef(false);
   const statusRef = useRef("");
@@ -218,9 +261,6 @@ export function usePrintA4Sheets(options = {}) {
   };
 }
 
-/* ===================================================================== */
-/*  Drop-in button                                                        */
-/* ===================================================================== */
 export default function PrintA4SheetsButton({
   children = "Print",
   className = "",
@@ -263,6 +303,3 @@ export default function PrintA4SheetsButton({
     </button>
   );
 }
-
-/* Small import fix — useReducer + useEffect */
-import { useEffect, useReducer } from "react";

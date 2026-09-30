@@ -8,10 +8,10 @@ import traceback
 from werkzeug.utils import secure_filename
 from werkzeug.exceptions import UnprocessableEntity
 from dotenv import load_dotenv
-from google_drive import upload_file_to_drive
+from google_drive import upload_file_to_drive, get_drive_service
 from functools import wraps
 from gmail_service import GmailService
-from models import SubmissionRevision, db, User, Submission, EmailSubmission, ExtractedAbstractData, SUC, SubmissionVote, EvaluatorDiscussion, Payment, ExtractedDataRevision, EmailNotificationLog
+from models import SubmissionRevision, db, User, Submission, EmailSubmission, ExtractedAbstractData, SUC, SubmissionVote, EvaluatorDiscussion, Payment, ExtractedDataRevision, EmailNotificationLog, SupportingDocument
 from master_approver import MasterApproverService
 from email_service import gmail_service, send_confirmation_email
 from models import PasswordReset 
@@ -375,16 +375,12 @@ def generate_submission_id():
 def submit():
     if request.method == 'OPTIONS':
         return jsonify({})
-    
+
     temp_files = []
     temp_dir = None
-    
+
     try:
-        print(f"Received submission")
-        print(f"Content-Type: {request.content_type}")
-        print(f"Content-Length: {request.content_length}")
-        
-        # Get form data
+        # -------- Form fields --------
         user_id = request.form.get('user_id', 0)
         extension_project_title = request.form.get('extension_project_title', '')
         thematic_area = request.form.get('thematic_area', '')
@@ -392,117 +388,178 @@ def submit():
         suc_agencies = request.form.get('suc_agencies', '')
         project_leader = request.form.get('project_leader', '')
         presenter = request.form.get('presenter', '')
-        corresponding_author_name = request.form.get('corresponding_author_name', '')  
+        corresponding_author_name = request.form.get('corresponding_author_name', '')
         corresponding_author_position = request.form.get('corresponding_author_position', '')
         corresponding_author_email = request.form.get('corresponding_author_email', '')
         co_authors = request.form.get('co_authors', '')
-        
-        # Debug print all form fields
-        print("Form fields received:")
-        for key in request.form.keys():
-            print(f"  {key}: {request.form.get(key)}")
-        
-        # Validate required fields
-        missing_fields = []
-        if not extension_project_title:
-            missing_fields.append('extension_project_title')
-        if not thematic_area:
-            missing_fields.append('thematic_area')
-        if not paper_category:
-            missing_fields.append('paper_category')
-        if not project_leader:
-            missing_fields.append('project_leader')
-        if not presenter:
-            missing_fields.append('presenter')
-        
-        if missing_fields:
-            return jsonify({
-                "detail": f"Missing required fields: {', '.join(missing_fields)}"
-            }), 400
-        
-        # Convert user_id to int if provided
+
+        # Abstract narrative content (persisted so users can re-edit)
+        community_need      = request.form.get('community_need', '')
+        project_objectives  = request.form.get('project_objectives', '')
+        extension_methods   = request.form.get('extension_methods', '')
+        major_outputs       = request.form.get('major_outputs', '')
+        evidence_outcomes   = request.form.get('evidence_outcomes', '')
+        supporting_docs     = request.form.get('supporting_docs', '')
+        sustainability      = request.form.get('sustainability', '')
+        keywords            = request.form.get('keywords', '')
+
+        # -------- Validation --------
+        missing = []
+        for key, val in [
+            ('extension_project_title', extension_project_title),
+            ('thematic_area', thematic_area),
+            ('paper_category', paper_category),
+            ('project_leader', project_leader),
+            ('presenter', presenter),
+        ]:
+            if not val:
+                missing.append(key)
+        if missing:
+            return jsonify({"detail": f"Missing required fields: {', '.join(missing)}"}), 400
+
         try:
             user_id = int(user_id) if user_id else 0
         except ValueError:
             user_id = 0
-        
-        # Handle co_authors
-        if co_authors:
-            co_authors = str(co_authors)
-            if co_authors.strip() == '' or co_authors.strip() == '[]':
-                co_authors = None
-        else:
-            co_authors = None
-        
-        # Handle files
+
+        co_authors = (co_authors or '').strip() or None
+
+        # -------- Files --------
         abstract_file = request.files.get('abstract_file')
         endorsement_file = request.files.get('endorsement_file')
-        
-        if not abstract_file or not abstract_file.filename:
-            return jsonify({"detail": "Abstract file is required"}), 400
+        supporting_files = request.files.getlist('supporting_documents')
+
         if not endorsement_file or not endorsement_file.filename:
             return jsonify({"detail": "Endorsement file is required"}), 400
-        
-        # Check file types
-        if not abstract_file.filename.lower().endswith('.pdf'):
-            return jsonify({"detail": "Abstract file must be a PDF"}), 400
+
         if not endorsement_file.filename.lower().endswith('.pdf'):
             return jsonify({"detail": "Endorsement file must be a PDF"}), 400
-        
-        # Sanitize filenames - replace spaces with underscores
+
+        if not abstract_file or not abstract_file.filename:
+            return jsonify({"detail": "Abstract file is required"}), 400
+
+        if not abstract_file.filename.lower().endswith('.pdf'):
+            return jsonify({"detail": "Abstract file must be a PDF"}), 400
+
         safe_abstract_name = secure_filename(abstract_file.filename.replace(' ', '_'))
         safe_endorsement_name = secure_filename(endorsement_file.filename.replace(' ', '_'))
-        
-        print(f"Safe abstract filename: {safe_abstract_name}")
-        print(f"Safe endorsement filename: {safe_endorsement_name}")
-        
-        # Create temp directory
+
         temp_dir = tempfile.mkdtemp()
-        
+
         # Save abstract file
         abstract_path = os.path.join(temp_dir, safe_abstract_name)
         abstract_file.save(abstract_path)
         temp_files.append(abstract_path)
-        
+
         # Save endorsement file
         endorsement_path = os.path.join(temp_dir, safe_endorsement_name)
         endorsement_file.save(endorsement_path)
         temp_files.append(endorsement_path)
-        
-        # Upload to Google Drive
+
+        # Save supporting files and track their temp paths
+        supporting_file_paths = []
+        for idx, sf in enumerate(supporting_files):
+            if not sf or not sf.filename:
+                continue
+            safe_sf_name = secure_filename(sf.filename.replace(' ', '_'))
+            # Ensure unique filename in case of duplicates
+            unique_name = f"{idx}_{safe_sf_name}"
+            sf_path = os.path.join(temp_dir, unique_name)
+            sf.save(sf_path)
+            temp_files.append(sf_path)
+            supporting_file_paths.append({
+                'path': sf_path,
+                'original_name': sf.filename,
+                'size': os.path.getsize(sf_path),
+                'mime_type': sf.content_type or 'application/octet-stream'
+            })
+            print(f"📎 Prepared supporting document: {sf.filename} ({os.path.getsize(sf_path)} bytes)")
+
+        # -------- Drive uploads --------
         try:
-            print(f"Uploading abstract with project title: {extension_project_title}")
-            abstract_view_url, abstract_download_url = upload_file_to_drive(
-                abstract_path, 
+            abstract_file_id, abstract_view_url = upload_file_to_drive(
+                abstract_path,
                 f"abstract_{safe_abstract_name}",
-                project_title=extension_project_title
+                project_title=extension_project_title,
+                sender_name=project_leader,
+                paper_category=paper_category,
+                thematic_area=thematic_area,
             )
-            print(f"Abstract uploaded to Drive: {abstract_view_url}")
         except Exception as drive_error:
-            print(f"Google Drive upload error (abstract): {drive_error}")
+            print(f"Drive upload error (abstract): {drive_error}")
             traceback.print_exc()
-            return jsonify({"detail": f"Failed to upload abstract to Google Drive: {str(drive_error)}"}), 500
-        
-        # Upload endorsement to Google Drive
+            return jsonify({"detail": f"Failed to upload abstract to Google Drive: {drive_error}"}), 500
+
         try:
-            print(f"Uploading endorsement with project title: {extension_project_title}")
-            endorsement_view_url, endorsement_download_url = upload_file_to_drive(
+            endorsement_file_id, endorsement_view_url = upload_file_to_drive(
                 endorsement_path,
                 f"endorsement_{safe_endorsement_name}",
-                project_title=extension_project_title
+                project_title=extension_project_title,
+                sender_name=project_leader,
+                paper_category=paper_category,
+                thematic_area=thematic_area,
             )
-            print(f"Endorsement uploaded to Drive: {endorsement_view_url}")
         except Exception as drive_error:
-            print(f"Google Drive upload error (endorsement): {drive_error}")
+            print(f"Drive upload error (endorsement): {drive_error}")
             traceback.print_exc()
-            return jsonify({"detail": f"Failed to upload endorsement to Google Drive: {str(drive_error)}"}), 500
-        
+            return jsonify({"detail": f"Failed to upload endorsement to Google Drive: {drive_error}"}), 500
+
+        # -------- Get the sender's folder ID for supporting documents --------
+        # The abstract file was uploaded to the sender's folder, so we can get its parent
+        sender_folder_id = None
+        try:
+            service = get_drive_service()
+            file_info = service.files().get(
+                fileId=abstract_file_id,
+                fields='parents',
+                supportsAllDrives=True
+            ).execute()
+            parents = file_info.get('parents', [])
+            sender_folder_id = parents[0] if parents else None
+            print(f"📁 Sender folder ID resolved: {sender_folder_id}")
+        except Exception as folder_err:
+            print(f"⚠️ Could not resolve sender folder ID: {folder_err}")
+
         submission_id_value = generate_submission_id()
-        print(f"Generated submission ID: {submission_id_value}")
-        
-        # Create submission record with user_id and new fields
+
+        # -------- Upload supporting documents to the Attachments subfolder --------
+        supporting_docs_metadata = []
+        if supporting_file_paths and sender_folder_id:
+            try:
+                from google_drive import upload_supporting_document_to_drive
+
+                for sf in supporting_file_paths:
+                    try:
+                        sf_id, sf_view_url = upload_supporting_document_to_drive(
+                            sf['path'],
+                            sf['original_name'],
+                            sender_folder_id
+                        )
+                        sf_download_url = f"https://drive.google.com/uc?export=download&id={sf_id}"
+                        supporting_docs_metadata.append({
+                            'file_id': sf_id,
+                            'file_name': sf['original_name'],
+                            'view_url': sf_view_url,
+                            'download_url': sf_download_url,
+                            'file_size': sf['size'],
+                            'mime_type': sf['mime_type'],
+                            'folder_id': None,  # Will be resolved below if needed
+                            'parent_folder_id': sender_folder_id,
+                        })
+                        print(f"✅ Uploaded supporting document: {sf['original_name']} -> {sf_view_url}")
+                    except Exception as sf_err:
+                        print(f"❌ Failed to upload supporting document '{sf['original_name']}': {sf_err}")
+                        traceback.print_exc()
+                        # Continue with other files - don't fail the whole submission
+            except Exception as e:
+                print(f"⚠️ Error uploading supporting documents: {e}")
+                traceback.print_exc()
+        elif supporting_file_paths and not sender_folder_id:
+            print("⚠️ Skipping supporting document uploads: sender folder ID not resolved")
+
+        # -------- Persist submission --------
         new_submission = Submission(
-            user_id=user_id, 
+            user_id=user_id,
             submission_id=submission_id_value,
             extension_project_title=extension_project_title,
             thematic_area=thematic_area,
@@ -510,61 +567,93 @@ def submit():
             suc_agencies=suc_agencies,
             project_leader=project_leader,
             presenter=presenter,
-            corresponding_author_name=corresponding_author_name, 
+            corresponding_author_name=corresponding_author_name,
             corresponding_author_position=corresponding_author_position,
-            corresponding_author_email=corresponding_author_email,  
-            status='pending',
+            corresponding_author_email=corresponding_author_email,
             co_authors=co_authors,
+
+            community_need=community_need,
+            project_objectives=project_objectives,
+            extension_methods=extension_methods,
+            major_outputs=major_outputs,
+            evidence_outcomes=evidence_outcomes,
+            supporting_docs=supporting_docs,
+            sustainability=sustainability,
+            keywords=keywords,
+
+            abstract_file_id=abstract_file_id,
             abstract_view_url=abstract_view_url,
-            abstract_download_url=abstract_download_url,
+            endorsement_file_id=endorsement_file_id,
             endorsement_view_url=endorsement_view_url,
-            endorsement_download_url=endorsement_download_url,
-            compextproj_drive_view_url=None,
-            compextproj_drive_download_url=None
+
+            status='pending',
         )
-        
+
         db.session.add(new_submission)
+        db.session.flush()  # Get the numeric ID
+
+        # -------- Persist supporting documents metadata --------
+        for sfd in supporting_docs_metadata:
+            supporting_doc = SupportingDocument(
+                submission_id=submission_id_value,
+                file_id=sfd['file_id'],
+                file_name=sfd['file_name'],
+                view_url=sfd['view_url'],
+                download_url=sfd['download_url'],
+                file_size=sfd['file_size'],
+                mime_type=sfd['mime_type'],
+                folder_id=sfd.get('folder_id'),
+                parent_folder_id=sfd.get('parent_folder_id'),
+            )
+            db.session.add(supporting_doc)
+
         db.session.commit()
-        print(f"Submission saved to database with ID: {new_submission.id}, User ID: {user_id}")
-        
+
         return jsonify({
             "message": "Submission successful",
             "submission_id": new_submission.id,
             "submission_id_format": submission_id_value,
             "status": "pending",
+            "abstract_file_id": abstract_file_id,
             "abstract_view_url": abstract_view_url,
-            "abstract_download_url": abstract_download_url,
+            "endorsement_file_id": endorsement_file_id,
             "endorsement_view_url": endorsement_view_url,
-            "endorsement_download_url": endorsement_download_url
+            "supporting_documents_count": len(supporting_docs_metadata),
+            "supporting_documents": supporting_docs_metadata,
         }), 200
-        
+
     except Exception as e:
         db.session.rollback()
-        error_msg = str(e)
-        error_type = type(e).__name__
-        print(f"Submission error: {error_msg}")
-        print(f"Error type: {error_type}")
+        print(f"Submission error: {e}")
         traceback.print_exc()
-        
-        # Clean up temp files
-        for file_path in temp_files:
+        return jsonify({"detail": str(e), "error_type": type(e).__name__}), 500
+    finally:
+        # Clean up temp files/dir
+        for fp in temp_files:
             try:
-                if os.path.exists(file_path):
-                    os.remove(file_path)
+                if os.path.exists(fp):
+                    os.remove(fp)
             except Exception:
                 pass
-        
         if temp_dir and os.path.exists(temp_dir):
             try:
                 os.rmdir(temp_dir)
             except Exception:
                 pass
         
-        return jsonify({
-            "detail": f"{error_type}: {error_msg}",
-            "error_type": error_type
-        }), 500
-        
+@app.route('/api/submissions/<string:submission_id>/supporting-documents', methods=['GET', 'OPTIONS'])
+def get_supporting_documents(submission_id):
+    if request.method == 'OPTIONS':
+        return jsonify({})
+
+    try:
+        docs = SupportingDocument.query.filter_by(submission_id=submission_id).all()
+        return jsonify([doc.to_dict() for doc in docs]), 200
+    except Exception as e:
+        print(f"Error fetching supporting documents: {e}")
+        traceback.print_exc()
+        return jsonify({"detail": str(e)}), 500
+    
 @app.route('/api/submissions/user/<int:user_id>', methods=['GET', 'OPTIONS'])
 def get_user_submissions(user_id):
     if request.method == 'OPTIONS':
@@ -577,30 +666,53 @@ def get_user_submissions(user_id):
         
         submissions = Submission.query.filter_by(user_id=user_id).order_by(Submission.created_at.desc()).all()
         
-        result = [{
-            'id': s.id,
-            'submission_id': s.submission_id,
-            'user_id': s.user_id,
-            'extension_project_title': s.extension_project_title,
-            'thematic_area': s.thematic_area,
-            'paper_category': s.paper_category,
-            'suc_agencies': s.suc_agencies,
-            'project_leader': s.project_leader,
-            'presenter': s.presenter,
-            'corresponding_author_name': s.corresponding_author_name,
-            'corresponding_author_email': s.corresponding_author_email,
-            'corresponding_author_position': s.corresponding_author_position, 
-            'status': s.status,
-            'evaluation_status': s.evaluation_status,  # ADD THIS
-            'co_authors': s.co_authors,
-            'abstract_view_url': s.abstract_view_url,
-            'abstract_download_url': s.abstract_download_url,
-            'endorsement_view_url': s.endorsement_view_url,
-            'endorsement_download_url': s.endorsement_download_url,
-            'compextproj_drive_view_url': s.compextproj_drive_view_url,
-            'compextproj_drive_download_url': s.compextproj_drive_download_url,
-            'created_at': s.created_at.strftime('%Y-%m-%d %H:%M:%S') if s.created_at else None
-        } for s in submissions]
+        result = []
+        for s in submissions:
+            # Fetch supporting documents for this submission
+            supporting_docs = SupportingDocument.query.filter_by(
+                submission_id=s.submission_id
+            ).all()
+            
+            result.append({
+                'id': s.id,
+                'submission_id': s.submission_id,
+                'user_id': s.user_id,
+                'extension_project_title': s.extension_project_title,
+                'thematic_area': s.thematic_area,
+                'paper_category': s.paper_category,
+                'suc_agencies': s.suc_agencies,
+                'project_leader': s.project_leader,
+                'presenter': s.presenter,
+                'corresponding_author_name': s.corresponding_author_name,
+                'corresponding_author_email': s.corresponding_author_email,
+                'corresponding_author_position': s.corresponding_author_position,
+                'co_authors': s.co_authors,
+
+                # Abstract narrative (for re-edit)
+                'community_need': s.community_need,
+                'project_objectives': s.project_objectives,
+                'extension_methods': s.extension_methods,
+                'major_outputs': s.major_outputs,
+                'evidence_outcomes': s.evidence_outcomes,
+                'supporting_docs': s.supporting_docs,
+                'sustainability': s.sustainability,
+                'keywords': s.keywords,
+
+                # Drive references
+                'abstract_file_id': s.abstract_file_id,
+                'abstract_view_url': s.abstract_view_url,
+                'endorsement_file_id': s.endorsement_file_id,
+                'endorsement_view_url': s.endorsement_view_url,
+                'compextproj_file_id': s.compextproj_file_id,
+                'compextproj_drive_view_url': s.compextproj_drive_view_url,
+
+                # Supporting documents
+                'supporting_documents': [doc.to_dict() for doc in supporting_docs],
+
+                'status': s.status,
+                'evaluation_status': s.evaluation_status,
+                'created_at': s.created_at.strftime('%Y-%m-%d %H:%M:%S') if s.created_at else None,
+            })
         
         return jsonify(result), 200
         

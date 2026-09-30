@@ -639,6 +639,8 @@ function titleAuthorPageHTML(data, BLUE, LIGHT, BORDER) {
         'Click or tap here and enter the selected thematic area number and full title.'
       );
 
+  const selectedArea = safe(data.thematicArea).trim();
+
   return `
     <p style="margin:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;text-transform:uppercase;line-height:1.0;">
       TITLE OF THE PAPER
@@ -722,7 +724,14 @@ function titleAuthorPageHTML(data, BLUE, LIGHT, BORDER) {
       [Select only one]
     </p>
     <ol style="margin:0 0 10px 0;padding-left:24px;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;">
-      ${THEMATIC_AREAS.map((a) => `<li style="margin:0 0 2px 0;">${a}</li>`).join('')}
+      ${THEMATIC_AREAS.map((a, idx) => {
+        const num = String(idx + 1);
+        const isSelected = num === selectedArea;
+        const style = isSelected
+          ? 'margin:0 0 2px 0;font-weight:700;'
+          : 'margin:0 0 2px 0;';
+        return `<li style="${style}">${a}</li>`;
+      }).join('')}
     </ol>
     <p style="margin:0 0 10px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;text-align:justify;">
       These five areas are the official thematic classifications of the conference, and authors are expected to select the area representing the project's primary intended outcome and strongest evidence of public value.
@@ -738,6 +747,8 @@ function bodyPageHTML(data, BLUE, LIGHT, BORDER) {
   const placeholder = (text) =>
     `<span style="color:#94A3B8;font-style:italic;">${text}</span>`;
   const filled = (text) => `<span style="color:${ACCENT};">${text}</span>`;
+  const orPlaceholder = (value, ph) =>
+    String(value || '').trim() ? filled(value) : placeholder(ph);
 
   // Typography
   const H_SECTION = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 6px 0;`;
@@ -764,6 +775,11 @@ function bodyPageHTML(data, BLUE, LIGHT, BORDER) {
       );
 
   return `
+    <style>
+      ul > li::marker { color: #000; }
+      ol > li::marker { color: #000; }
+    </style>
+
     <!-- ===================== ABSTRACT ===================== -->
     <p style="${H_SECTION}text-transform:uppercase;">ABSTRACT</p>
     <p style="${NOTE}">Recommended length: <span style="${NOTE_RED}">250–300 words</span></p>
@@ -811,7 +827,10 @@ function bodyPageHTML(data, BLUE, LIGHT, BORDER) {
       Where appropriate, provide relevant statistics, policies, research findings, or documented community evidence.
     </p>
     ${fieldBox(
-      placeholder('Click or tap here and replace this text with your response.')
+      orPlaceholder(
+        data.backgroundContext,
+        'Click or tap here and replace this text with your response.'
+      )
     )}
 
     <p style="${H_SUB}">1.2 Evidence of the Problem or Development Need</p>
@@ -832,16 +851,25 @@ function bodyPageHTML(data, BLUE, LIGHT, BORDER) {
       <li style="${LI}">technical assessments; or</li>
     </ul>
     ${fieldBox(
-      placeholder('Click or tap here and replace this text with your response.')
+      orPlaceholder(
+        data.evidenceNeed,
+        'Click or tap here and replace this text with your response.'
+      )
     )}
   `;
 }
 
 function bodyPage2HTML(data, BLUE, LIGHT, BORDER) {
+  const safe = (v) => (v == null ? '' : String(v));
   const ACCENT = '#4472C4';
   const RED = '#FF0000';
   const placeholder = (text) =>
     `<span style="color:#94A3B8;font-style:italic;">${text}</span>`;
+  const filled = (text) => `<span style="color:${ACCENT};">${text}</span>`;
+  const orPlaceholder = (value, ph) =>
+    String(value || '').trim() ? filled(value) : placeholder(ph);
+
+  const ANSWER_PH = 'Click or tap here and replace this text with your response.';
 
   // Typography — 11pt, line-height 1.0
   const H_SECTION = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 6px 0;`;
@@ -854,10 +882,6 @@ function bodyPage2HTML(data, BLUE, LIGHT, BORDER) {
 
   const fieldBox = (inner) =>
     `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;min-height:44px;">${inner}</div>`;
-
-  const answer = placeholder(
-    'Click or tap here and replace this text with your response.'
-  );
 
   return `
     <style>
@@ -872,7 +896,7 @@ function bodyPage2HTML(data, BLUE, LIGHT, BORDER) {
     <p style="${P}">
       Avoid relying solely on statements such as "the community requested training."
     </p>
-    ${fieldBox(answer)}
+    ${fieldBox(orPlaceholder(data.evidenceNeed, ANSWER_PH))}
 
     <!-- ===================== 1.3 ===================== -->
     <p style="${H_SUB}">1.3 Related Literature and Extension Evidence</p>
@@ -889,7 +913,7 @@ function bodyPage2HTML(data, BLUE, LIGHT, BORDER) {
     <p style="${P}">
       This section should not become an exhaustive review of literature. Its purpose is to demonstrate that the extension intervention was informed by existing knowledge and to establish how the project contributes to extension knowledge or practice.
     </p>
-    ${fieldBox(answer)}
+    ${fieldBox(orPlaceholder(data.relatedLiterature, ANSWER_PH))}
 
     <!-- ===================== 1.4 ===================== -->
     <p style="${H_SUB}">1.4 Rationale and Contribution of the Project</p>
@@ -899,7 +923,7 @@ function bodyPage2HTML(data, BLUE, LIGHT, BORDER) {
     <p style="${P}">
       Clearly identify what is potentially distinctive or useful about the project.
     </p>
-    ${fieldBox(answer)}
+    ${fieldBox(orPlaceholder(data.rationale, ANSWER_PH))}
 
     <!-- ===================== 1.5 ===================== -->
     <p style="${H_SUB}">1.5 Objectives</p>
@@ -909,7 +933,7 @@ function bodyPage2HTML(data, BLUE, LIGHT, BORDER) {
     <p style="${P}">
       The objectives reported here should correspond with the results presented later in the paper.
     </p>
-    ${fieldBox(answer)}
+    ${fieldBox(orPlaceholder(data.objectives, ANSWER_PH))}
 
     <!-- ===================== 2. MATERIALS AND METHODS ===================== -->
     <p style="${H_SECTION}margin-top:16px;">2. MATERIALS AND METHODS / EXTENSION PROJECT METHODOLOGY</p>
@@ -930,7 +954,7 @@ function bodyPage2HTML(data, BLUE, LIGHT, BORDER) {
     <p style="${P}">
       A map may be included when genuinely useful.
     </p>
-    ${fieldBox(answer)}
+    ${fieldBox(orPlaceholder(data.settingDuration, ANSWER_PH))}
 
     <!-- ===================== 2.2 ===================== -->
     <p style="${H_SUB}">2.2 Participants, Intended Users, or Beneficiaries</p>
@@ -942,14 +966,20 @@ function bodyPage2HTML(data, BLUE, LIGHT, BORDER) {
       <li style="${LI}">relevant demographic or sectoral characteristics; and</li>
       <li style="${LI}">involvement of women, youth, vulnerable groups, or other relevant sectors where applicable.</li>
     </ul>
-    ${fieldBox(answer)}
+    ${fieldBox(orPlaceholder(data.participantsDesc, ANSWER_PH))}
   `;
 }
 
 function bodyPage3HTML(data, BLUE, LIGHT, BORDER) {
+  const safe = (v) => (v == null ? '' : String(v));
   const ACCENT = '#4472C4';
   const placeholder = (text) =>
     `<span style="color:#94A3B8;font-style:italic;">${text}</span>`;
+  const filled = (text) => `<span style="color:${ACCENT};">${text}</span>`;
+  const orPlaceholder = (value, ph) =>
+    String(value || '').trim() ? filled(value) : placeholder(ph);
+
+  const ANSWER_PH = 'Click or tap here and replace this text with your response.';
 
   const H_SECTION = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 6px 0;`;
   const H_SUB = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 4px 0;`;
@@ -959,10 +989,6 @@ function bodyPage3HTML(data, BLUE, LIGHT, BORDER) {
 
   const fieldBox = (inner) =>
     `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;min-height:44px;">${inner}</div>`;
-
-  const answer = placeholder(
-    'Click or tap here and replace this text with your response.'
-  );
 
   return `
     <style>
@@ -974,7 +1000,7 @@ function bodyPage3HTML(data, BLUE, LIGHT, BORDER) {
     <p style="${P}">
       Distinguish between persons reached by project activities and the population for whom outcome data were actually obtained.
     </p>
-    ${fieldBox(answer)}
+    ${fieldBox(orPlaceholder(data.reachPopulation, ANSWER_PH))}
 
     <!-- ===================== 2.3 ===================== -->
     <p style="${H_SUB}">2.3 Situational Analysis and Baseline</p>
@@ -989,7 +1015,7 @@ function bodyPage3HTML(data, BLUE, LIGHT, BORDER) {
       <li style="${LI}">baseline indicators, where available; and</li>
       <li style="${LI}">major findings that informed project design.</li>
     </ul>
-    ${fieldBox(answer)}
+    ${fieldBox(orPlaceholder(data.situationalAnalysis, ANSWER_PH))}
 
     <!-- ===================== 2.4 ===================== -->
     <p style="${H_SUB}">2.4 Project or Intervention Design</p>
@@ -1012,7 +1038,7 @@ function bodyPage3HTML(data, BLUE, LIGHT, BORDER) {
     <p style="${P}">
       Explain why the selected intervention was expected to address the identified condition.
     </p>
-    ${fieldBox(answer)}
+    ${fieldBox(orPlaceholder(data.interventionRationale, ANSWER_PH))}
 
     <!-- ===================== 2.5 ===================== -->
     <p style="${H_SUB}">2.5 Implementation Strategies</p>
@@ -1028,14 +1054,20 @@ function bodyPage3HTML(data, BLUE, LIGHT, BORDER) {
       <li style="${LI}">communication interventions;</li>
       <li style="${LI}">technology transfer;</li>
     </ul>
-    ${fieldBox(answer)}
+    ${fieldBox(orPlaceholder(data.implementationStrategies, ANSWER_PH))}
   `;
 }
 
 function bodyPage4HTML(data, BLUE, LIGHT, BORDER) {
+  const safe = (v) => (v == null ? '' : String(v));
   const ACCENT = '#4472C4';
   const placeholder = (text) =>
     `<span style="color:#94A3B8;font-style:italic;">${text}</span>`;
+  const filled = (text) => `<span style="color:${ACCENT};">${text}</span>`;
+  const orPlaceholder = (value, ph) =>
+    String(value || '').trim() ? filled(value) : placeholder(ph);
+
+  const ANSWER_PH = 'Click or tap here and replace this text with your response.';
 
   const H_SECTION = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 6px 0;`;
   const H_SUB = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 4px 0;`;
@@ -1045,10 +1077,6 @@ function bodyPage4HTML(data, BLUE, LIGHT, BORDER) {
 
   const fieldBox = (inner) =>
     `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;min-height:44px;">${inner}</div>`;
-
-  const answer = placeholder(
-    'Click or tap here and replace this text with your response.'
-  );
 
   return `
     <style>
@@ -1067,7 +1095,7 @@ function bodyPage4HTML(data, BLUE, LIGHT, BORDER) {
     <p style="${P}">
       Avoid presenting a simple chronological list of activities unless chronology is analytically important.
     </p>
-    ${fieldBox(answer)}
+    ${fieldBox(orPlaceholder(data.implementationStrategies, ANSWER_PH))}
 
     <!-- ===================== 2.6 ===================== -->
     <p style="${H_SUB}">2.6 Partnership and Stakeholder Participation</p>
@@ -1085,7 +1113,7 @@ function bodyPage4HTML(data, BLUE, LIGHT, BORDER) {
       <li style="${LI}">resource mobilization; or</li>
       <li style="${LI}">sustainability mechanisms.</li>
     </ul>
-    ${fieldBox(answer)}
+    ${fieldBox(orPlaceholder(data.partnership, ANSWER_PH))}
 
     <!-- ===================== 2.7 ===================== -->
     <p style="${H_SUB}">2.7 Monitoring and Evaluation Design</p>
@@ -1105,7 +1133,7 @@ function bodyPage4HTML(data, BLUE, LIGHT, BORDER) {
     <p style="${P}">
       Where baseline and endline measurements were conducted, describe them clearly.
     </p>
-    ${fieldBox(answer)}
+    ${fieldBox(orPlaceholder(data.monitoringEval, ANSWER_PH))}
 
     <!-- ===================== 2.8 ===================== -->
     <p style="${H_SUB}">2.8 Data Analysis</p>
@@ -1125,15 +1153,21 @@ function bodyPage4HTML(data, BLUE, LIGHT, BORDER) {
     <p style="${P}">
       Do not employ statistical tests merely to make the manuscript appear more scholarly. The analysis must be appropriate to the data and evaluation design.
     </p>
-    ${fieldBox(answer)}
+    ${fieldBox(orPlaceholder(data.dataAnalysis, ANSWER_PH))}
   `;
 }
 
 function bodyPage5HTML(data, BLUE, LIGHT, BORDER) {
+  const safe = (v) => (v == null ? '' : String(v));
   const ACCENT = '#4472C4';
   const RED = '#FF0000';
   const placeholder = (text) =>
     `<span style="color:#94A3B8;font-style:italic;">${text}</span>`;
+  const filled = (text) => `<span style="color:${ACCENT};">${text}</span>`;
+  const orPlaceholder = (value, ph) =>
+    String(value || '').trim() ? filled(value) : placeholder(ph);
+
+  const ANSWER_PH = 'Click or tap here and replace this text with your response.';
 
   const H_SECTION = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 6px 0;`;
   const H_SUB = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 4px 0;`;
@@ -1145,10 +1179,6 @@ function bodyPage5HTML(data, BLUE, LIGHT, BORDER) {
 
   const fieldBox = (inner) =>
     `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;min-height:44px;">${inner}</div>`;
-
-  const answer = placeholder(
-    'Click or tap here and replace this text with your response.'
-  );
 
   return `
     <style>
@@ -1174,7 +1204,7 @@ function bodyPage5HTML(data, BLUE, LIGHT, BORDER) {
     <p style="${P}">
       Where formal ethics clearance was required and obtained, state the approving body and approval/reference number.
     </p>
-    ${fieldBox(answer)}
+    ${fieldBox(orPlaceholder(data.ethicalConsiderations, ANSWER_PH))}
 
     <!-- ===================== 3. RESULTS ===================== -->
     <p style="${H_SECTION}margin-top:16px;">3. RESULTS</p>
@@ -1201,7 +1231,7 @@ function bodyPage5HTML(data, BLUE, LIGHT, BORDER) {
     <p style="${P}">
       Do not allow activity counts to dominate the Results section.
     </p>
-    ${fieldBox(answer)}
+    ${fieldBox(orPlaceholder(data.reachImplementation, ANSWER_PH))}
 
     <!-- ===================== 3.2 ===================== -->
     <p style="${H_SUB}">3.2 Immediate Results</p>
@@ -1220,7 +1250,7 @@ function bodyPage5HTML(data, BLUE, LIGHT, BORDER) {
       <li style="${LI}">service delivery; or</li>
       <li style="${LI}">institutional processes.</li>
     </ul>
-    ${fieldBox(answer)}
+    ${fieldBox(orPlaceholder(data.immediateResults, ANSWER_PH))}
 
     <!-- ===================== 3.3 ===================== -->
     <p style="${H_SUB}">3.3 Outcomes</p>
@@ -1240,9 +1270,15 @@ function bodyPage5HTML(data, BLUE, LIGHT, BORDER) {
 }
 
 function bodyPage6HTML(data, BLUE, LIGHT, BORDER) {
+  const safe = (v) => (v == null ? '' : String(v));
   const ACCENT = '#4472C4';
   const placeholder = (text) =>
     `<span style="color:#94A3B8;font-style:italic;">${text}</span>`;
+  const filled = (text) => `<span style="color:${ACCENT};">${text}</span>`;
+  const orPlaceholder = (value, ph) =>
+    String(value || '').trim() ? filled(value) : placeholder(ph);
+
+  const ANSWER_PH = 'Click or tap here and replace this text with your response.';
 
   const H_SUB = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 4px 0;`;
   const P = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
@@ -1251,10 +1287,6 @@ function bodyPage6HTML(data, BLUE, LIGHT, BORDER) {
 
   const fieldBox = (inner) =>
     `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;min-height:44px;">${inner}</div>`;
-
-  const answer = placeholder(
-    'Click or tap here and replace this text with your response.'
-  );
 
   return `
     <style>
@@ -1266,7 +1298,7 @@ function bodyPage6HTML(data, BLUE, LIGHT, BORDER) {
     <p style="${P_TIGHT}">
       <b>Outcome</b> – meaningful change in practice, behavior, condition, performance, or institutional capacity
     </p>
-    ${fieldBox(answer)}
+    ${fieldBox(orPlaceholder(data.outcomes, ANSWER_PH))}
 
     <!-- ===================== 3.4 ===================== -->
     <p style="${H_SUB}">3.4 Adoption, Utilization, Adaptation, or Continuation</p>
@@ -1283,7 +1315,7 @@ function bodyPage6HTML(data, BLUE, LIGHT, BORDER) {
     <p style="${P}">
       Specify who adopted what, how many, to what extent, and based on what evidence whenever the data permit.
     </p>
-    ${fieldBox(answer)}
+    ${fieldBox(orPlaceholder(data.adoption, ANSWER_PH))}
 
     <!-- ===================== 3.5 ===================== -->
     <p style="${H_SUB}">3.5 Institutionalization and Sustainability</p>
@@ -1302,7 +1334,7 @@ function bodyPage6HTML(data, BLUE, LIGHT, BORDER) {
       <li style="${LI}">locally generated resources; or</li>
       <li style="${LI}">other arrangements supporting continuation.</li>
     </ul>
-    ${fieldBox(answer)}
+    ${fieldBox(orPlaceholder(data.institutionalization, ANSWER_PH))}
 
     <!-- ===================== 3.6 ===================== -->
     <p style="${H_SUB}">3.6 Public Value and Broader Benefits</p>
@@ -1321,21 +1353,27 @@ function bodyPage6HTML(data, BLUE, LIGHT, BORDER) {
       <li style="${LI}">improved service delivery; or</li>
       <li style="${LI}">other documented public benefits.</li>
     </ul>
-    ${fieldBox(answer)}
+    ${fieldBox(orPlaceholder(data.publicValue, ANSWER_PH))}
 
     <!-- ===================== Important Evidence Rule ===================== -->
     <p style="${H_SUB}">Important Evidence Rule</p>
-    <p style="${P} color:#000; ">
+    <p style="${P}color:#000;">
       Attendance sheets, photographs, certificates, and activity reports can verify that an activity occurred, but they should not by themselves be used as proof that an outcome, adoption, utilization, or impact occurred. This distinction is expressly reflected in PEMNet's conference requirements.
     </p>
   `;
 }
 
 function bodyPage7HTML(data, BLUE, LIGHT, BORDER) {
+  const safe = (v) => (v == null ? '' : String(v));
   const ACCENT = '#4472C4';
   const RED = '#FF0000';
   const placeholder = (text) =>
     `<span style="color:#94A3B8;font-style:italic;">${text}</span>`;
+  const filled = (text) => `<span style="color:${ACCENT};">${text}</span>`;
+  const orPlaceholder = (value, ph) =>
+    String(value || '').trim() ? filled(value) : placeholder(ph);
+
+  const ANSWER_PH = 'Click or tap here and replace this text with your response.';
 
   const H_SECTION = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 6px 0;`;
   const H_SUB = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 4px 0;`;
@@ -1347,10 +1385,6 @@ function bodyPage7HTML(data, BLUE, LIGHT, BORDER) {
 
   const fieldBox = (inner) =>
     `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;min-height:44px;">${inner}</div>`;
-
-  const answer = placeholder(
-    'Click or tap here and replace this text with your response.'
-  );
 
   return `
     <style>
@@ -1387,7 +1421,7 @@ function bodyPage7HTML(data, BLUE, LIGHT, BORDER) {
     <p style="${P}">
       What conditions may explain the observed results?
     </p>
-    ${fieldBox(answer)}
+    ${fieldBox(orPlaceholder(data.interpretation, ANSWER_PH))}
 
     <!-- ===================== 4.2 ===================== -->
     <p style="${H_SUB}">4.2 Relationship to Previous Research and Extension Literature</p>
@@ -1404,7 +1438,7 @@ function bodyPage7HTML(data, BLUE, LIGHT, BORDER) {
     <p style="${P}">
       what is already known.
     </p>
-    ${fieldBox(answer)}
+    ${fieldBox(orPlaceholder(data.relationshipLiterature, ANSWER_PH))}
 
     <!-- ===================== 4.3 ===================== -->
     <p style="${H_SUB}">4.3 Factors Affecting Implementation and Outcomes</p>
@@ -1424,7 +1458,7 @@ function bodyPage7HTML(data, BLUE, LIGHT, BORDER) {
       <li style="${LI}">implementation fidelity; or</li>
       <li style="${LI}">other contextual factors.</li>
     </ul>
-    ${fieldBox(answer)}
+    ${fieldBox(orPlaceholder(data.factorsAffecting, ANSWER_PH))}
 
     <!-- ===================== 4.4 ===================== -->
     <p style="${H_SUB}">4.4 Inclusion, Sustainability, and Resilience</p>
@@ -1441,10 +1475,16 @@ function bodyPage7HTML(data, BLUE, LIGHT, BORDER) {
 }
 
 function bodyPage8HTML(data, BLUE, LIGHT, BORDER) {
+  const safe = (v) => (v == null ? '' : String(v));
   const ACCENT = '#4472C4';
   const RED = '#FF0000';
   const placeholder = (text) =>
     `<span style="color:#94A3B8;font-style:italic;">${text}</span>`;
+  const filled = (text) => `<span style="color:${ACCENT};">${text}</span>`;
+  const orPlaceholder = (value, ph) =>
+    String(value || '').trim() ? filled(value) : placeholder(ph);
+
+  const ANSWER_PH = 'Click or tap here and replace this text with your response.';
 
   const H_SECTION = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 6px 0;`;
   const H_SUB = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 4px 0;`;
@@ -1457,10 +1497,6 @@ function bodyPage8HTML(data, BLUE, LIGHT, BORDER) {
   const fieldBox = (inner) =>
     `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;min-height:44px;">${inner}</div>`;
 
-  const answer = placeholder(
-    'Click or tap here and replace this text with your response.'
-  );
-
   return `
     <style>
       ul > li::marker { color: #000; }
@@ -1472,7 +1508,7 @@ function bodyPage8HTML(data, BLUE, LIGHT, BORDER) {
       <li style="${LI}">institutional ownership; and</li>
       <li style="${LI}">local capacity.</li>
     </ul>
-    ${fieldBox(answer)}
+    ${fieldBox(orPlaceholder(data.inclusionResilience, ANSWER_PH))}
 
     <!-- ===================== 4.5 ===================== -->
     <p style="${H_SUB}">4.5 Transferability, Replication, or Scaling</p>
@@ -1489,7 +1525,7 @@ function bodyPage8HTML(data, BLUE, LIGHT, BORDER) {
     <p style="${P}">
       Do not automatically recommend scaling solely because participants were satisfied with the project.
     </p>
-    ${fieldBox(answer)}
+    ${fieldBox(orPlaceholder(data.transferability, ANSWER_PH))}
 
     <!-- ===================== 4.6 ===================== -->
     <p style="${H_SUB}">4.6 Limitations</p>
@@ -1511,7 +1547,7 @@ function bodyPage8HTML(data, BLUE, LIGHT, BORDER) {
     <p style="${P}">
       A credible limitations section strengthens, rather than weakens, a scholarly paper.
     </p>
-    ${fieldBox(answer)}
+    ${fieldBox(orPlaceholder(data.limitations, ANSWER_PH))}
 
     <!-- ===================== 5. IMPLICATIONS ===================== -->
     <p style="${H_SECTION}margin-top:16px;">5. IMPLICATIONS FOR EXTENSION PRACTICE AND POLICY</p>
@@ -1536,15 +1572,21 @@ function bodyPage8HTML(data, BLUE, LIGHT, BORDER) {
     <p style="${P}">
       Recommendations must arise from the evidence presented in the paper.
     </p>
-    ${fieldBox(answer)}
+    ${fieldBox(orPlaceholder(data.implications, ANSWER_PH))}
   `;
 }
 
 function bodyPage9HTML(data, BLUE, LIGHT, BORDER) {
+  const safe = (v) => (v == null ? '' : String(v));
   const ACCENT = '#4472C4';
   const RED = '#FF0000';
   const placeholder = (text) =>
     `<span style="color:#94A3B8;font-style:italic;">${text}</span>`;
+  const filled = (text) => `<span style="color:${ACCENT};">${text}</span>`;
+  const orPlaceholder = (value, ph) =>
+    String(value || '').trim() ? filled(value) : placeholder(ph);
+
+  const ANSWER_PH = 'Click or tap here and replace this text with your response.';
 
   const H_SECTION = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 6px 0;text-transform:uppercase;`;
   const P = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
@@ -1555,10 +1597,6 @@ function bodyPage9HTML(data, BLUE, LIGHT, BORDER) {
 
   const fieldBox = (inner) =>
     `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;min-height:44px;">${inner}</div>`;
-
-  const answer = placeholder(
-    'Click or tap here and replace this text with your response.'
-  );
 
   return `
     <style>
@@ -1585,7 +1623,7 @@ function bodyPage9HTML(data, BLUE, LIGHT, BORDER) {
     <p style="${P}">
       Avoid exaggerated claims such as "the project completely transformed the community" unless such a conclusion is genuinely supported by the evidence.
     </p>
-    ${fieldBox(answer)}
+    ${fieldBox(orPlaceholder(data.conclusion, ANSWER_PH))}
 
     <!-- ===================== ACKNOWLEDGMENTS ===================== -->
     <p style="${H_SECTION}margin-top:16px;">ACKNOWLEDGMENTS</p>
@@ -1595,7 +1633,7 @@ function bodyPage9HTML(data, BLUE, LIGHT, BORDER) {
     <p style="${P}">
       Do not use this section merely to list officials.
     </p>
-    ${fieldBox(answer)}
+    ${fieldBox(orPlaceholder(data.acknowledgments, ANSWER_PH))}
 
     <!-- ===================== FUNDING STATEMENT ===================== -->
     <p style="${H_SECTION}margin-top:16px;">FUNDING STATEMENT</p>
@@ -1607,7 +1645,7 @@ function bodyPage9HTML(data, BLUE, LIGHT, BORDER) {
     <p style="${P}">
       The authors received no external funding for the implementation of this project.
     </p>
-    ${fieldBox(answer)}
+    ${fieldBox(orPlaceholder(data.funding, ANSWER_PH))}
 
     <!-- ===================== CONFLICT OF INTEREST ===================== -->
     <p style="${H_SECTION}margin-top:16px;">CONFLICT OF INTEREST</p>
@@ -1618,7 +1656,7 @@ function bodyPage9HTML(data, BLUE, LIGHT, BORDER) {
     <p style="${P}">
       Where a relevant conflict exists, it should be disclosed.
     </p>
-    ${fieldBox(answer)}
+    ${fieldBox(orPlaceholder(data.conflictOfInterest, ANSWER_PH))}
 
     <!-- ===================== ETHICS AND INFORMED CONSENT ===================== -->
     <p style="${H_SECTION}margin-top:16px;">ETHICS AND INFORMED CONSENT STATEMENT</p>
@@ -1629,7 +1667,7 @@ function bodyPage9HTML(data, BLUE, LIGHT, BORDER) {
     <p style="${P}">
       Adapt the statement according to what actually occurred. Authors should not claim ethical clearance that was not obtained.
     </p>
-    ${fieldBox(answer)}
+    ${fieldBox(orPlaceholder(data.ethicsStatement, ANSWER_PH))}
 
     <!-- ===================== DATA AVAILABILITY ===================== -->
     <p style="${H_SECTION}margin-top:16px;">DATA AVAILABILITY STATEMENT</p>
@@ -1640,9 +1678,16 @@ function bodyPage9HTML(data, BLUE, LIGHT, BORDER) {
 }
 
 function bodyPage10HTML(data, BLUE, LIGHT, BORDER) {
+  const safe = (v) => (v == null ? '' : String(v));
   const ACCENT = '#4472C4';
   const placeholder = (text) =>
     `<span style="color:#94A3B8;font-style:italic;">${text}</span>`;
+  const filled = (text) => `<span style="color:${ACCENT};">${text}</span>`;
+  const orPlaceholder = (value, ph) =>
+    String(value || '').trim() ? filled(value) : placeholder(ph);
+
+  const ANSWER_PH = 'Click or tap here and replace this text with your response.';
+  const REF_PH = 'Click or tap here and enter the complete APA 7th Edition reference list.';
 
   const H_SECTION = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 6px 0;text-transform:uppercase;`;
   const P = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
@@ -1652,14 +1697,6 @@ function bodyPage10HTML(data, BLUE, LIGHT, BORDER) {
 
   const fieldBox = (inner, minH = 44) =>
     `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;min-height:${minH}px;">${inner}</div>`;
-
-  const answer = placeholder(
-    'Click or tap here and replace this text with your response.'
-  );
-
-  const refPlaceholder = placeholder(
-    'Click or tap here and enter the complete APA 7th Edition reference list.'
-  );
 
   return `
     <style>
@@ -1671,7 +1708,7 @@ function bodyPage10HTML(data, BLUE, LIGHT, BORDER) {
     <p style="${P}">
       The data supporting the findings of this paper are available from the corresponding author upon reasonable request, subject to applicable privacy, consent, institutional, and data-protection requirements.
     </p>
-    ${fieldBox(answer)}
+    ${fieldBox(orPlaceholder(data.dataAvailability, ANSWER_PH))}
 
     <!-- ===================== AUTHOR CONTRIBUTIONS ===================== -->
     <p style="${H_SECTION}margin-top:16px;">AUTHOR CONTRIBUTIONS</p>
@@ -1692,7 +1729,7 @@ function bodyPage10HTML(data, BLUE, LIGHT, BORDER) {
     <p style="${P}">
       This can be optional for the conference version but is valuable for eventual journal submission.
     </p>
-    ${fieldBox(answer)}
+    ${fieldBox(orPlaceholder(data.authorContributions, ANSWER_PH))}
 
     <!-- ===================== REFERENCES ===================== -->
     <p style="${H_SECTION}margin-top:16px;">REFERENCES</p>
@@ -1727,7 +1764,7 @@ function bodyPage10HTML(data, BLUE, LIGHT, BORDER) {
       Author, A. A. (Year). <i>Title of book</i>. Publisher.
     </p>
 
-    ${fieldBox(refPlaceholder, 120)}
+    ${fieldBox(orPlaceholder(data.references, REF_PH), 120)}
 
     <!-- ===================== APPENDICES ===================== -->
     <p style="${H_SECTION}margin-top:16px;">APPENDICES</p>
@@ -1741,40 +1778,47 @@ function bodyPage10HTML(data, BLUE, LIGHT, BORDER) {
 }
 
 function bodyPage11HTML(data, BLUE, LIGHT, BORDER) {
+  const safe = (v) => (v == null ? '' : String(v));
+  const ACCENT = '#4472C4';
   const placeholder = (text) =>
     `<span style="color:#94A3B8;font-style:italic;">${text}</span>`;
+  const filled = (text) => `<span style="color:${ACCENT};">${text}</span>`;
+  const orPlaceholder = (value, ph) =>
+    String(value || '').trim() ? filled(value) : placeholder(ph);
 
-  const H_SUB = `font-family:Arial;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 4px 0;`;
-  const P = `font-family:Arial;font-size:11pt;color:#000;line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
-  const P_TIGHT = `font-family:Arial;font-size:11pt;color:#000;line-height:1.0;margin:0 0 4px 0;`;
-  const NOTE_ITALIC = `font-family:Arial;font-size:11pt;font-style:italic;color:#000;line-height:1.0;margin:0 0 6px 0;`;
-  const RED_NOTE = `font-family:Arial;font-size:11pt;font-weight:700;color:#DC2626;line-height:1.0;margin:0 0 6px 0;`;
+  const APPENDICES_PH =
+    'Click or tap here to insert or list only the appendices necessary for understanding or verifying the manuscript.';
+  const ANSWER_PH =
+    'Click or tap here to enter the source or explanatory note, where necessary.';
+
+  const H_SUB = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 4px 0;`;
+  const P = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
+  const P_TIGHT = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 4px 0;`;
+  const NOTE_ITALIC = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-style:italic;color:${ACCENT};line-height:1.0;margin:0 0 6px 0;`;
+  const RED_NOTE = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#DC2626;line-height:1.0;margin:0 0 6px 0;`;
 
   const fieldBox = (inner, minH = 44) =>
-    `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial;font-size:11pt;line-height:1.0;min-height:${minH}px;">${inner}</div>`;
-
-  const answer = placeholder(
-    'Click or tap here and replace this text with your response.'
-  );
+    `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;min-height:${minH}px;">${inner}</div>`;
 
   // -------- Sample table cells --------
-  const thStyle = `border:1px solid #94A3B8;background:#F1F5F9;font-family:Arial;font-size:11pt;font-weight:700;color:#000;line-height:1.0;padding:6px 8px;text-align:left;`;
-  const tdStyle = `border:1px solid #94A3B8;font-family:Arial;font-size:11pt;color:#000;line-height:1.0;padding:6px 8px;`;
-  const tdPlaceholder = `border:1px solid #94A3B8;font-family:Arial;font-size:11pt;color:#94A3B8;font-style:italic;line-height:1.0;padding:6px 8px;`;
+  const thStyle = `border:1px solid #94A3B8;background:#F1F5F9;font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;padding:6px 8px;text-align:left;`;
+  const tdStyle = `border:1px solid #94A3B8;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;padding:6px 8px;`;
+  const tdPlaceholder = `border:1px solid #94A3B8;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#94A3B8;font-style:italic;line-height:1.0;padding:6px 8px;`;
 
   return `
+    <style>
+      ul > li::marker { color: #000; }
+      ol > li::marker { color: #000; }
+    </style>
+
     <!-- ========== continuation of Appendices ========== -->
-    <p style="${P_TIGHT}color:#4472C4;">Appendix C: Relevant Data Collection Instrument</p>
-    <p style="${P_TIGHT}color:#4472C4;">Appendix D: Additional Results Table</p>
-    <p style="${P_TIGHT}color:#4472C4">Appendix E: Evidence of Institutionalization</p>
-    <p style="${P}color:#4472C4">
+    <p style="${P_TIGHT}">Appendix C: Relevant Data Collection Instrument</p>
+    <p style="${P_TIGHT}">Appendix D: Additional Results Table</p>
+    <p style="${P_TIGHT}">Appendix E: Evidence of Institutionalization</p>
+    <p style="${P}">
       Do not turn the manuscript into a portfolio of certificates, attendance sheets, photographs, and administrative documents.
     </p>
-    ${fieldBox(
-      placeholder(
-        'Click or tap here to insert or list only the appendices necessary for understanding or verifying the manuscript.'
-      )
-    )}
+    ${fieldBox(orPlaceholder(data.appendices, APPENDICES_PH))}
 
     <!-- ===================== TABLE AND FIGURE FORMAT ===================== -->
     <p style="${H_SUB}margin-top:16px;text-transform:uppercase;">TABLE AND FIGURE FORMAT</p>
@@ -1819,7 +1863,7 @@ function bodyPage11HTML(data, BLUE, LIGHT, BORDER) {
     <p style="${P_TIGHT}margin-top:10px;">Figure 1</p>
     <p style="${NOTE_ITALIC}">Extension Project Results Pathway</p>
 
-    <div style="border:1px solid #94A3B8;background:#F8FAFC;padding:24px 12px;margin:0 0 6px 0;text-align:center;font-family:Arial;font-size:11pt;font-style:italic;color:#94A3B8;line-height:1.0;">
+    <div style="border:1px solid #94A3B8;background:#F8FAFC;padding:24px 12px;margin:0 0 6px 0;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-style:italic;color:#94A3B8;line-height:1.0;">
       [Insert figure]
     </div>
 
@@ -1833,11 +1877,7 @@ function bodyPage11HTML(data, BLUE, LIGHT, BORDER) {
     <p style="${P}">
       PEMNet's existing requirements similarly provide that tables and figures be properly numbered, labeled, explained in the text, and directly relevant to the claims being presented.
     </p>
-    ${fieldBox(
-      placeholder(
-        'Click or tap here to enter the source or explanatory note, where necessary.'
-      )
-    )}
+    ${fieldBox(orPlaceholder(data.appendices, ANSWER_PH))}
 
     <p style="${P}margin-top:150px;">
       NOTE: By submitting this manuscript, the author/s confirm their acceptance of the Author Consent and Limited Publication License stated earlier in this template.
@@ -1958,6 +1998,56 @@ export default function SubmitFullPaper({
   const [correspondingOrcid, setCorrespondingOrcid] = useState('');
   const [thematicArea, setThematicArea] = useState('');
   const [thematicAreaTitle, setThematicAreaTitle] = useState('');
+
+  // Section 1
+  const [backgroundContext, setBackgroundContext] = useState('');
+  const [evidenceNeed, setEvidenceNeed] = useState('');
+  const [relatedLiterature, setRelatedLiterature] = useState('');
+  const [rationale, setRationale] = useState('');
+  const [objectives, setObjectives] = useState('');
+
+  // Section 2
+  const [reachPopulation, setReachPopulation] = useState('');
+  const [settingDuration, setSettingDuration] = useState('');
+  const [participantsDesc, setParticipantsDesc] = useState('');
+  const [situationalAnalysis, setSituationalAnalysis] = useState('');
+  const [interventionRationale, setInterventionRationale] = useState('');
+  const [implementationStrategies, setImplementationStrategies] = useState('');
+  const [partnership, setPartnership] = useState('');
+  const [monitoringEval, setMonitoringEval] = useState('');
+  const [dataAnalysis, setDataAnalysis] = useState('');
+  const [ethicalConsiderations, setEthicalConsiderations] = useState('');
+
+  // Section 3 — Results
+  const [reachImplementation, setReachImplementation] = useState('');
+  const [immediateResults, setImmediateResults] = useState('');
+  const [outcomes, setOutcomes] = useState('');
+  const [adoption, setAdoption] = useState('');
+  const [institutionalization, setInstitutionalization] = useState('');
+  const [publicValue, setPublicValue] = useState('');
+
+  // Section 4 — Discussion
+  const [interpretation, setInterpretation] = useState('');
+  const [relationshipLiterature, setRelationshipLiterature] = useState('');
+  const [factorsAffecting, setFactorsAffecting] = useState('');
+  const [inclusionResilience, setInclusionResilience] = useState('');
+  const [transferability, setTransferability] = useState('');
+  const [limitations, setLimitations] = useState('');
+
+  // Section 5 — Implications
+  const [implications, setImplications] = useState('');
+
+  // Section 6 — Conclusion + back matter
+  const [conclusion, setConclusion] = useState('');
+  const [acknowledgments, setAcknowledgments] = useState('');
+  const [funding, setFunding] = useState('');
+  const [conflictOfInterest, setConflictOfInterest] = useState('');
+  const [ethicsStatement, setEthicsStatement] = useState('');
+  const [dataAvailability, setDataAvailability] = useState('');
+  const [authorContributions, setAuthorContributions] = useState('');
+  const [references, setReferences] = useState('');
+  const [appendices, setAppendices] = useState('');
+
   const [file, setFile] = useState(null);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -2001,6 +2091,50 @@ export default function SubmitFullPaper({
     setCorrespondingOrcid('');
     setThematicArea('');
     setThematicAreaTitle('');
+
+    setBackgroundContext('');
+    setEvidenceNeed('');
+    setRelatedLiterature('');
+    setRationale('');
+    setObjectives('');
+
+    setReachPopulation('');
+    setSettingDuration('');
+    setParticipantsDesc('');
+    setSituationalAnalysis('');
+    setInterventionRationale('');
+    setImplementationStrategies('');
+    setPartnership('');
+    setMonitoringEval('');
+    setDataAnalysis('');
+    setEthicalConsiderations('');
+
+    setReachImplementation('');
+    setImmediateResults('');
+    setOutcomes('');
+    setAdoption('');
+    setInstitutionalization('');
+    setPublicValue('');
+
+    setInterpretation('');
+    setRelationshipLiterature('');
+    setFactorsAffecting('');
+    setInclusionResilience('');
+    setTransferability('');
+    setLimitations('');
+
+    setImplications('');
+
+    setConclusion('');
+    setAcknowledgments('');
+    setFunding('');
+    setConflictOfInterest('');
+    setEthicsStatement('');
+    setDataAvailability('');
+    setAuthorContributions('');
+    setReferences('');
+    setAppendices('');
+
     setFile(null);
     setError('');
   };
@@ -2045,7 +2179,9 @@ export default function SubmitFullPaper({
         (s) => String(s.id) === String(submissionId)
       );
       const previewData = {
-        linked_abstract_title: linked?.extension_project_title || '',
+        linked_abstract_title:
+          acceptedSubmissions.find((s) => String(s.id) === String(submissionId))
+            ?.extension_project_title || '',
         title,
         authors,
         affiliations,
@@ -2056,6 +2192,43 @@ export default function SubmitFullPaper({
         correspondingOrcid,
         thematicArea,
         thematicAreaTitle,
+        backgroundContext,
+        evidenceNeed,
+        relatedLiterature,
+        rationale,
+        objectives,
+        reachPopulation,
+        settingDuration,
+        participantsDesc,
+        situationalAnalysis,
+        interventionRationale,
+        implementationStrategies,
+        partnership,
+        monitoringEval,
+        dataAnalysis,
+        ethicalConsiderations,
+        reachImplementation,
+        immediateResults,
+        outcomes,
+        adoption,
+        institutionalization,
+        publicValue,
+        interpretation,
+        relationshipLiterature,
+        factorsAffecting,
+        inclusionResilience,
+        transferability,
+        limitations,
+        implications,
+        conclusion,
+        acknowledgments,
+        funding,
+        conflictOfInterest,
+        ethicsStatement,
+        dataAvailability,
+        authorContributions,
+        references,
+        appendices,
       };
       
       try {
@@ -2082,6 +2255,55 @@ export default function SubmitFullPaper({
       fd.append('full_paper_corresponding_orcid', correspondingOrcid);
       fd.append('full_paper_thematic_area', thematicArea);
       fd.append('full_paper_thematic_area_title', thematicAreaTitle);
+
+      // Section 1
+      fd.append('full_paper_background_context', backgroundContext);
+      fd.append('full_paper_evidence_need', evidenceNeed);
+      fd.append('full_paper_related_literature', relatedLiterature);
+      fd.append('full_paper_rationale', rationale);
+      fd.append('full_paper_objectives', objectives);
+
+      // Section 2
+      fd.append('full_paper_reach_population', reachPopulation);
+      fd.append('full_paper_setting_duration', settingDuration);
+      fd.append('full_paper_participants_desc', participantsDesc);
+      fd.append('full_paper_situational_analysis', situationalAnalysis);
+      fd.append('full_paper_intervention_rationale', interventionRationale);
+      fd.append('full_paper_implementation_strategies', implementationStrategies);
+      fd.append('full_paper_partnership', partnership);
+      fd.append('full_paper_monitoring_eval', monitoringEval);
+      fd.append('full_paper_data_analysis', dataAnalysis);
+      fd.append('full_paper_ethical_considerations', ethicalConsiderations);
+
+      // Section 3
+      fd.append('full_paper_reach_implementation', reachImplementation);
+      fd.append('full_paper_immediate_results', immediateResults);
+      fd.append('full_paper_outcomes', outcomes);
+      fd.append('full_paper_adoption', adoption);
+      fd.append('full_paper_institutionalization', institutionalization);
+      fd.append('full_paper_public_value', publicValue);
+
+      // Section 4
+      fd.append('full_paper_interpretation', interpretation);
+      fd.append('full_paper_relationship_literature', relationshipLiterature);
+      fd.append('full_paper_factors_affecting', factorsAffecting);
+      fd.append('full_paper_inclusion_resilience', inclusionResilience);
+      fd.append('full_paper_transferability', transferability);
+      fd.append('full_paper_limitations', limitations);
+
+      // Section 5
+      fd.append('full_paper_implications', implications);
+
+      // Section 6 + Back matter
+      fd.append('full_paper_conclusion', conclusion);
+      fd.append('full_paper_acknowledgments', acknowledgments);
+      fd.append('full_paper_funding', funding);
+      fd.append('full_paper_conflict_of_interest', conflictOfInterest);
+      fd.append('full_paper_ethics_statement', ethicsStatement);
+      fd.append('full_paper_data_availability', dataAvailability);
+      fd.append('full_paper_author_contributions', authorContributions);
+      fd.append('full_paper_references', references);
+      fd.append('full_paper_appendices', appendices);
 
       const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
       fd.append(
@@ -2156,47 +2378,61 @@ export default function SubmitFullPaper({
   /* ---------------- Preview mode ---------------- */
   if (showPreview) {
     return (
-      <div>
-        <div className="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-slate-200 px-6 py-3 flex items-center justify-between no-print">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-purple-600">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-            </div>
-            <div>
-              <h2 className="font-bold text-slate-900">Full Paper Preview (A4)</h2>
-              <p className="text-xs text-slate-500">Review before submitting</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <PrintA4SheetsButton
-              className="px-4 py-2 text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition inline-flex items-center gap-2"
-              documentTitle="FullPaper"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0l.229 2.523a1.125 1.125 0 01-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0021 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 00-1.913-.247M6.34 18H5.25A2.25 2.25 0 013 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 011.913-.247m10.5 0a48.536 48.536 0 00-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659" />
-              </svg>
-              Print
-            </PrintA4SheetsButton>
-            <button
-              type="button"
-              onClick={() => setShowPreview(false)}
-              className="px-4 py-2 text-sm font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-xl transition inline-flex items-center gap-2"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
-              </svg>
-              Edit
-            </button>
-          </div>
-        </div>
+      <>
+        {/* Lock only the outer page scroll while preview is open */}
+        <style jsx global>{`
+          html, body {
+            overflow: hidden !important;
+            height: 100% !important;
+          }
+        `}</style>
 
-        <div className="a4-preview-wrapper p-6 overflow-auto bg-slate-100">
-          <FullPaperPreview data={previewData} />
+        <div className="flex flex-col" style={{ height: 'calc(100vh - 73px)' }}>
+          {/* Toolbar — sits below PEMNet header, never scrolls */}
+          <div className="flex-shrink-0 bg-white/95 backdrop-blur border-b border-slate-200 px-6 py-3 flex items-center justify-between no-print shadow-sm">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-purple-600">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+              <div>
+                <h2 className="font-bold text-slate-900">Full Paper Preview (A4)</h2>
+                <p className="text-xs text-slate-500">Review before submitting</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <PrintA4SheetsButton
+                className="px-4 py-2 text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition inline-flex items-center gap-2"
+                documentTitle="FullPaper"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0l.229 2.523a1.125 1.125 0 01-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0021 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 00-1.913-.247M6.34 18H5.25A2.25 2.25 0 013 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 011.913-.247m10.5 0a48.536 48.536 0 00-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659" />
+                </svg>
+                Print
+              </PrintA4SheetsButton>
+              <button
+                type="button"
+                onClick={() => setShowPreview(false)}
+                className="px-4 py-2 text-sm font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-xl transition inline-flex items-center gap-2"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
+                </svg>
+                Edit
+              </button>
+            </div>
+          </div>
+
+          {/* Canvas — the ONLY scrollable area (scrollbar on its right edge) */}
+          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden bg-slate-100">
+            <div className="a4-preview-wrapper p-6">
+              <FullPaperPreview data={previewData} />
+            </div>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
@@ -2254,9 +2490,7 @@ export default function SubmitFullPaper({
             </div>
           )}
 
-          {/* ============================================================
-           * Linked Abstract
-           * ============================================================ */}
+          {/* ============ Linked Accepted Abstract ============ */}
           <div>
             <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
               Linked Accepted Abstract <span className="text-red-500">*</span>
@@ -2292,9 +2526,7 @@ export default function SubmitFullPaper({
             )}
           </div>
 
-          {/* ============================================================
-           * Title of the Paper
-           * ============================================================ */}
+          {/* ============ Title of the Paper ============ */}
           <div>
             <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
               Full Paper Title <span className="text-red-500">*</span>
@@ -2306,14 +2538,9 @@ export default function SubmitFullPaper({
               placeholder="Enter a concise, informative, and scholarly title"
               className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
             />
-            <p className="text-xs text-slate-500 mt-1">
-              Communicate the central intervention or extension issue, major outcome, and context. Avoid titles with only the institutional project name or acronym.
-            </p>
           </div>
 
-          {/* ============================================================
-           * Author Information
-           * ============================================================ */}
+          {/* ============ Author Information ============ */}
           <div>
             <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
               Author/s <span className="text-red-500">*</span>
@@ -2325,12 +2552,8 @@ export default function SubmitFullPaper({
               placeholder="e.g., Juan Dela Cruz¹, Maria Santos², Pedro Reyes³"
               className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
             />
-            <p className="text-xs text-slate-500 mt-1">
-              List all authors with superscript affiliation numbers (¹, ², ³). Use an asterisk (*) after the project leader&apos;s name.
-            </p>
           </div>
 
-          {/* Affiliations */}
           <div>
             <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
               Author Affiliations <span className="text-red-500">*</span>
@@ -2338,18 +2561,12 @@ export default function SubmitFullPaper({
             <textarea
               value={affiliations}
               onChange={(e) => setAffiliations(e.target.value)}
-              placeholder={`e.g.,\n¹Department of Agriculture, University of the Philippines Los Baños, Laguna, Philippines\n²College of Education, Central Mindanao University, Bukidnon, Philippines\n³Partner Institution, if applicable`}
+              placeholder={`e.g.,\n¹Department of Agriculture, University of the Philippines Los Baños, Laguna, Philippines\n²College of Education, Central Mindanao University, Bukidnon, Philippines`}
               rows={3}
               className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
             />
-            <p className="text-xs text-slate-500 mt-1">
-              One affiliation per line. Use superscript numbers matching the author list.
-            </p>
           </div>
 
-          {/* ============================================================
-           * Corresponding Author
-           * ============================================================ */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
@@ -2377,7 +2594,6 @@ export default function SubmitFullPaper({
             </div>
           </div>
 
-          {/* ORCID */}
           <div>
             <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
               Corresponding Author ORCID{' '}
@@ -2392,16 +2608,11 @@ export default function SubmitFullPaper({
             />
           </div>
 
-          {/* ============================================================
-           * Thematic Area
-           * ============================================================ */}
+          {/* ============ Thematic Area ============ */}
           <div>
             <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
               Thematic Area <span className="text-red-500">*</span>
             </label>
-            <p className="text-xs text-slate-500 mb-2">
-              Select the area representing the project&apos;s primary intended outcome and strongest evidence of public value.
-            </p>
             <select
               value={thematicArea}
               onChange={(e) => {
@@ -2426,14 +2637,9 @@ export default function SubmitFullPaper({
               placeholder="Full title of the selected thematic area"
               className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
             />
-            <p className="text-xs text-slate-500 mt-1">
-              Auto-filled when you pick a number above; edit if needed.
-            </p>
           </div>
 
-          {/* ============================================================
-           * Keywords
-           * ============================================================ */}
+          {/* ============ Keywords ============ */}
           <div>
             <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
               Keywords <span className="text-red-500">*</span>
@@ -2442,55 +2648,515 @@ export default function SubmitFullPaper({
               type="text"
               value={keywords}
               onChange={(e) => setKeywords(e.target.value)}
-              placeholder="e.g., community extension, sustainable agriculture"
+              placeholder="e.g., community extension; sustainable agriculture; resilience"
               className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
             />
           </div>
 
-          {/* ============================================================
-           * Abstract
-           * ============================================================ */}
+          {/* ============ Abstract ============ */}
           <div>
             <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
-              Abstract (for the full paper)
+              Abstract <span className="text-red-500">*</span>
             </label>
             <textarea
               value={abstract}
               onChange={(e) => setAbstract(e.target.value)}
-              placeholder="Paste or write the abstract of the full paper (optional)"
-              rows={5}
+              placeholder="Write the 250–300-word abstract as one coherent paragraph"
+              rows={6}
               className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
             />
           </div>
 
-          {/* ============================================================
-           * File upload
-           * ============================================================ */}
-          <div>
-            <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
-              Full Paper File (PDF) <span className="text-red-500">*</span>
-            </label>
-            <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-5 text-center">
-              <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-purple-600">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-                </svg>
+          {/* =====================================================
+           * 1. INTRODUCTION
+           * ===================================================== */}
+          <div className="border-t border-slate-200 pt-5">
+            <h3 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">
+              1. Introduction
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">1.1 Background and Context</label>
+                <textarea
+                  value={backgroundContext}
+                  onChange={(e) => setBackgroundContext(e.target.value)}
+                  placeholder="Describe the community, institutional, sectoral, environmental, economic, educational, health, or development context..."
+                  rows={4}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                />
               </div>
-              <input
-                type="file"
-                accept=".pdf"
-                onChange={(e) => setFile(e.target.files?.[0] || null)}
-                className="w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-5 file:rounded-xl file:border-0 file:bg-purple-600 file:text-white file:font-semibold hover:file:bg-purple-700 cursor-pointer"
-              />
-              {file && (
-                <p className="text-xs text-purple-700 mt-2 break-all font-medium">
-                  {file.name} ({formatFileSize(file.size)})
-                </p>
-              )}
-              <p className="text-xs text-slate-400 mt-1">
-                PDF only. Max 64 MB.
-              </p>
+              <div>
+                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">1.2 Evidence of the Problem or Development Need</label>
+                <textarea
+                  value={evidenceNeed}
+                  onChange={(e) => setEvidenceNeed(e.target.value)}
+                  placeholder="Explain how the need, condition, gap, or opportunity was established..."
+                  rows={4}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">1.3 Related Literature and Extension Evidence</label>
+                <textarea
+                  value={relatedLiterature}
+                  onChange={(e) => setRelatedLiterature(e.target.value)}
+                  placeholder="Focused synthesis of relevant scholarly and technical literature..."
+                  rows={4}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">1.4 Rationale and Contribution of the Project</label>
+                <textarea
+                  value={rationale}
+                  onChange={(e) => setRationale(e.target.value)}
+                  placeholder="Why the intervention was appropriate given the problem, evidence, community context, and institutional expertise..."
+                  rows={3}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">1.5 Objectives</label>
+                <textarea
+                  value={objectives}
+                  onChange={(e) => setObjectives(e.target.value)}
+                  placeholder="General and specific objectives of the extension project..."
+                  rows={3}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                />
+              </div>
             </div>
+          </div>
+
+          {/* =====================================================
+           * 2. MATERIALS AND METHODS
+           * ===================================================== */}
+          <div className="border-t border-slate-200 pt-5">
+            <h3 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">
+              2. Materials and Methods / Extension Project Methodology
+            </h3>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.1 Project Setting and Duration</label>
+                  <textarea
+                    value={settingDuration}
+                    onChange={(e) => setSettingDuration(e.target.value)}
+                    placeholder="Project site, community characteristics, implementation period, contextual conditions..."
+                    rows={4}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.2 Participants, Intended Users, or Beneficiaries</label>
+                  <textarea
+                    value={participantsDesc}
+                    onChange={(e) => setParticipantsDesc(e.target.value)}
+                    placeholder="Target population, selection criteria, number reached, demographics..."
+                    rows={4}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
+                  Distinguish reach vs. population for whom outcome data were obtained
+                </label>
+                <textarea
+                  value={reachPopulation}
+                  onChange={(e) => setReachPopulation(e.target.value)}
+                  placeholder="Explain the distinction between reach and the population that provided outcome data..."
+                  rows={2}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.3 Situational Analysis and Baseline</label>
+                <textarea
+                  value={situationalAnalysis}
+                  onChange={(e) => setSituationalAnalysis(e.target.value)}
+                  placeholder="Information collected, data sources, methods/instruments, baseline indicators, major findings..."
+                  rows={4}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.4 Project / Intervention Design — Rationale</label>
+                <textarea
+                  value={interventionRationale}
+                  onChange={(e) => setInterventionRationale(e.target.value)}
+                  placeholder="Explain why the selected intervention was expected to address the identified condition..."
+                  rows={3}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.5 Implementation Strategies</label>
+                <textarea
+                  value={implementationStrategies}
+                  onChange={(e) => setImplementationStrategies(e.target.value)}
+                  placeholder="Capability-building, technical assistance, demonstrations, mentoring, community organizing, etc..."
+                  rows={3}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.6 Partnership and Stakeholder Participation</label>
+                <textarea
+                  value={partnership}
+                  onChange={(e) => setPartnership(e.target.value)}
+                  placeholder="Partners and their actual roles; community participation in planning, implementation, monitoring..."
+                  rows={3}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.7 Monitoring and Evaluation Design</label>
+                  <textarea
+                    value={monitoringEval}
+                    onChange={(e) => setMonitoringEval(e.target.value)}
+                    placeholder="Indicators, data sources, instruments, timing, follow-up, triangulation..."
+                    rows={4}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.8 Data Analysis</label>
+                  <textarea
+                    value={dataAnalysis}
+                    onChange={(e) => setDataAnalysis(e.target.value)}
+                    placeholder="Quantitative and/or qualitative analysis methods..."
+                    rows={4}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.9 Ethical Considerations</label>
+                <textarea
+                  value={ethicalConsiderations}
+                  onChange={(e) => setEthicalConsiderations(e.target.value)}
+                  placeholder="Informed consent, confidentiality, privacy, community data, ethics clearance..."
+                  rows={3}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* =====================================================
+           * 3. RESULTS
+           * ===================================================== */}
+          <div className="border-t border-slate-200 pt-5">
+            <h3 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">3. Results</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">3.1 Project Reach and Implementation</label>
+                <textarea
+                  value={reachImplementation}
+                  onChange={(e) => setReachImplementation(e.target.value)}
+                  placeholder="Actual participants, interventions delivered, completion levels, major outputs..."
+                  rows={3}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">3.2 Immediate Results</label>
+                <textarea
+                  value={immediateResults}
+                  onChange={(e) => setImmediateResults(e.target.value)}
+                  placeholder="Documented changes in knowledge, skills, practices, confidence, capacity..."
+                  rows={3}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">3.3 Outcomes</label>
+                <textarea
+                  value={outcomes}
+                  onChange={(e) => setOutcomes(e.target.value)}
+                  placeholder="Meaningful change in practice, behavior, condition, performance, or institutional capacity..."
+                  rows={3}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">3.4 Adoption, Utilization, Adaptation, or Continuation</label>
+                <textarea
+                  value={adoption}
+                  onChange={(e) => setAdoption(e.target.value)}
+                  placeholder="Who adopted what, how many, to what extent, on what evidence..."
+                  rows={3}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">3.5 Institutionalization and Sustainability</label>
+                <textarea
+                  value={institutionalization}
+                  onChange={(e) => setInstitutionalization(e.target.value)}
+                  placeholder="Partner policies, ordinances, budget allocations, integration into programs..."
+                  rows={3}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">3.6 Public Value and Broader Benefits</label>
+                <textarea
+                  value={publicValue}
+                  onChange={(e) => setPublicValue(e.target.value)}
+                  placeholder="Improved livelihood, health, education, resilience, environment, empowerment..."
+                  rows={3}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* =====================================================
+           * 4. DISCUSSION
+           * ===================================================== */}
+          <div className="border-t border-slate-200 pt-5">
+            <h3 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">4. Discussion</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">4.1 Interpretation of Major Findings</label>
+                <textarea
+                  value={interpretation}
+                  onChange={(e) => setInterpretation(e.target.value)}
+                  placeholder="Most important findings, why the intervention worked (or not), conditions explaining results..."
+                  rows={3}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">4.2 Relationship to Previous Research and Extension Literature</label>
+                <textarea
+                  value={relationshipLiterature}
+                  onChange={(e) => setRelationshipLiterature(e.target.value)}
+                  placeholder="Supporting, extending, differing from, or qualifying what is already known..."
+                  rows={3}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">4.3 Factors Affecting Implementation and Outcomes</label>
+                <textarea
+                  value={factorsAffecting}
+                  onChange={(e) => setFactorsAffecting(e.target.value)}
+                  placeholder="Enabling or constraining factors: participation, leadership, resources, culture, policy..."
+                  rows={3}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">4.4 Inclusion, Sustainability, and Resilience</label>
+                <textarea
+                  value={inclusionResilience}
+                  onChange={(e) => setInclusionResilience(e.target.value)}
+                  placeholder="Gender and social inclusion, vulnerable groups, sustainability, resilience, ownership, local capacity..."
+                  rows={3}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">4.5 Transferability, Replication, or Scaling</label>
+                <textarea
+                  value={transferability}
+                  onChange={(e) => setTransferability(e.target.value)}
+                  placeholder="Replicated, adapted, scaled, institutionalized, or transferred to another context..."
+                  rows={3}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">4.6 Limitations</label>
+                <textarea
+                  value={limitations}
+                  onChange={(e) => setLimitations(e.target.value)}
+                  placeholder="Baseline, sample size, comparison group, follow-up, self-report, missing data, measurement..."
+                  rows={3}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* =====================================================
+           * 5. IMPLICATIONS
+           * ===================================================== */}
+          <div className="border-t border-slate-200 pt-5">
+            <h3 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">
+              5. Implications for Extension Practice and Policy
+            </h3>
+            <textarea
+              value={implications}
+              onChange={(e) => setImplications(e.target.value)}
+              placeholder="What extension managers, HEIs, LGUs, policymakers, and partners can learn from the project..."
+              rows={4}
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+            />
+          </div>
+
+          {/* =====================================================
+           * 6. CONCLUSION + BACK MATTER
+           * ===================================================== */}
+          <div className="border-t border-slate-200 pt-5">
+            <h3 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">
+              6. Conclusion and Back Matter
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">6. Conclusion</label>
+                <textarea
+                  value={conclusion}
+                  onChange={(e) => setConclusion(e.target.value)}
+                  placeholder="Synthesis of issue, intervention, strongest results, significance, and central implication..."
+                  rows={4}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Acknowledgments</label>
+                <textarea
+                  value={acknowledgments}
+                  onChange={(e) => setAcknowledgments(e.target.value)}
+                  placeholder="Institutions, communities, partners, funders, technical personnel who contributed..."
+                  rows={3}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Funding Statement</label>
+                <textarea
+                  value={funding}
+                  onChange={(e) => setFunding(e.target.value)}
+                  placeholder="e.g., This extension project was funded by [Institution/Agency]..."
+                  rows={2}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Conflict of Interest</label>
+                <textarea
+                  value={conflictOfInterest}
+                  onChange={(e) => setConflictOfInterest(e.target.value)}
+                  placeholder="e.g., The authors declare no conflict of interest."
+                  rows={2}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Ethics and Informed Consent Statement</label>
+                <textarea
+                  value={ethicsStatement}
+                  onChange={(e) => setEthicsStatement(e.target.value)}
+                  placeholder="e.g., The project was reviewed/approved by [appropriate body]. Informed consent was obtained..."
+                  rows={3}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Data Availability Statement</label>
+                <textarea
+                  value={dataAvailability}
+                  onChange={(e) => setDataAvailability(e.target.value)}
+                  placeholder="e.g., Data are available from the corresponding author upon reasonable request..."
+                  rows={2}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Author Contributions (CRediT-style)</label>
+                <textarea
+                  value={authorContributions}
+                  onChange={(e) => setAuthorContributions(e.target.value)}
+                  placeholder={`e.g.,\nConceptualization: A.A., B.B.\nMethodology: A.A., C.C.\nWriting – Original Draft: A.A.`}
+                  rows={4}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">References (APA 7th Edition)</label>
+                <textarea
+                  value={references}
+                  onChange={(e) => setReferences(e.target.value)}
+                  placeholder="Enter the complete APA 7th Edition reference list, one entry per line..."
+                  rows={6}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Appendices</label>
+                <textarea
+                  value={appendices}
+                  onChange={(e) => setAppendices(e.target.value)}
+                  placeholder="List or describe appendices that support the manuscript..."
+                  rows={3}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* ============ Actions ============ */}
+          <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => setShowPreview(true)}
+              className="sm:flex-1 py-3 rounded-xl font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition inline-flex items-center justify-center gap-2"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              Preview Full Paper
+            </button>
+            <button
+              type="button"
+              disabled={
+                submitting ||
+                generatingPdf ||
+                acceptedSubmissions.length === 0 ||
+                !submissionId ||
+                !file ||
+                !title.trim() ||
+                !authors.trim() ||
+                !affiliations.trim() ||
+                !keywords.trim() ||
+                !correspondingName.trim() ||
+                !correspondingEmail.trim() ||
+                !thematicArea
+              }
+              onClick={handleSubmit}
+              className="sm:flex-2 py-3 rounded-xl font-bold text-white bg-linear-to-r from-purple-700 to-purple-800 hover:from-purple-800 hover:to-purple-900 transition shadow-lg shadow-purple-700/20 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
+            >
+              {generatingPdf ? (
+                <>
+                  <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                  </svg>
+                  Generating PDF…
+                </>
+              ) : submitting ? (
+                <>
+                  <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                  </svg>
+                  Submitting…
+                </>
+              ) : (
+                <>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                  </svg>
+                  Submit Full Paper
+                </>
+              )}
+            </button>
           </div>
         </div>
       </div>

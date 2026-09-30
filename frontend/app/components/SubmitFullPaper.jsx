@@ -523,33 +523,33 @@ function firstPageTitleHTML(BLUE, LIGHT, BORDER) {
         style="width:70px;height:70px;object-fit:contain;flex-shrink:0;"
       />
       <div style="flex:1;text-align:center;">
-        <p style="margin:0 0 8px 0;font-family:Arial,Helvetica,sans-serif;font-size:12pt;font-weight:700;color:#000;letter-spacing:0.3px;">
+        <p style="margin:0 0 8px 0;font-family:Arial;font-size:12pt;font-weight:700;color:#000;letter-spacing:0.3px;">
           PHILIPPINE EXTENSION MANAGERS NETWORK (PEMNet), INC.
         </p>
-        <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12pt;font-weight:700;color:#000;">
+        <p style="margin:0;font-family:Arial;font-size:12pt;font-weight:700;color:#000;">
           1st NATIONAL EXTENSION CONFERENCE 2026
         </p>
       </div>
     </div>
 
     <div style="margin-bottom:20px;">
-      <p style="margin:0 0 4px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;">
+      <p style="margin:0 0 4px 0;font-family:Arial;font-size:11pt;font-weight:700;color:#000;">
         Theme:
       </p>
-      <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-style:italic;color:#000;line-height:1.4;">
+      <p style="margin:0;font-family:Arial;font-size:11pt;font-style:italic;color:#000;line-height:1.4;">
         HEIs at the Forefront of Transformative Extension: Advancing Evidence-Based, Inclusive, Sustainable, and Resilient Community Development
       </p>
     </div>
 
-    <p style="margin:0 0 16px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;text-transform:uppercase;">
+    <p style="margin:0 0 16px 0;font-family:Arial;font-size:11pt;font-weight:700;color:#000;text-transform:uppercase;">
       COMPLETED EXTENSION PROJECT FULL PAPER TEMPLATE
     </p>
 
-    <p style="margin:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;">
+    <p style="margin:0 0 6px 0;font-family:Arial;font-size:11pt;font-weight:700;color:#000;">
       General Manuscript Format
     </p>
 
-    <div style="font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.5;margin-bottom:14px;">
+    <div style="font-family:Arial;font-size:11pt;color:#000;line-height:1.5;margin-bottom:14px;">
       <p style="margin:0;"><span style="font-weight:700;">Length:</span> Approximately 3,000–7,000 words, excluding references and appendices</p>
       <p style="margin:0;"><span style="font-weight:700;">Font:</span> Arial, 11 points</p>
       <p style="margin:0;"><span style="font-weight:700;">Spacing:</span> Single</p>
@@ -558,7 +558,7 @@ function firstPageTitleHTML(BLUE, LIGHT, BORDER) {
       <p style="margin:0;"><span style="font-weight:700;">File Format:</span> Microsoft Word (.docx)</p>
     </div>
 
-    <p style="margin:0 0 20px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.5;text-align:justify;">
+    <p style="margin:0 0 20px 0;font-family:Arial;font-size:11pt;color:#000;line-height:1.5;text-align:justify;">
       The manuscript should be written as a <span style="font-weight:700;">scholarly extension paper</span>, not merely as a chronological accomplishment report. It should demonstrate the relationship among the <span style="font-weight:700;">identified need, intervention, evidence, results, interpretation, and implications for extension practice.</span>
     </p>
   `;
@@ -566,14 +566,14 @@ function firstPageTitleHTML(BLUE, LIGHT, BORDER) {
 
 function consentPageHTML(BLUE, LIGHT, BORDER) {
   const para = (html) =>
-    `<p style="margin:0 0 12px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.5;text-align:justify;">${html}</p>`;
+    `<p style="margin:0 0 12px 0;font-family:Arial;font-size:11pt;color:#000;line-height:1.5;text-align:justify;">${html}</p>`;
   const li = (html) =>
-    `<li style="margin:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.5;text-align:justify;">${html}</li>`;
+    `<li style="margin:0 0 6px 0;font-family:Arial;font-size:11pt;color:#000;line-height:1.5;text-align:justify;">${html}</li>`;
 
   return `
-    <p style="margin:0 0 16px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;">Please read</p>
+    <p style="margin:0 0 16px 0;font-family:Arial;font-size:11pt;color:#000;">Please read</p>
 
-    <h2 style="margin:0 0 16px 0;font-family:Arial,Helvetica,sans-serif;font-size:13pt;font-weight:700;color:#000;text-align:center;text-transform:uppercase;letter-spacing:0.3px;">
+    <h2 style="margin:0 0 16px 0;font-family:Arial;font-size:13pt;font-weight:700;color:#000;text-align:center;text-transform:uppercase;letter-spacing:0.3px;">
       AUTHOR CONSENT AND LIMITED PUBLICATION LICENSE
     </h2>
 
@@ -609,12 +609,13 @@ const THEMATIC_AREAS = [
 
 function titleAuthorPageHTML(data, BLUE, LIGHT, BORDER) {
   const safe = (v) => (v == null ? '' : String(v));
+  const ACCENT = '#4472C4';
   const placeholder = (text) =>
     `<span style="color:#94A3B8;font-style:italic;">${text}</span>`;
-  const filled = (text) => `<span style="color:#000;">${text}</span>`;
+  const filled = (text) => `<span style="color:${ACCENT};">${text}</span>`;
 
   const fieldBox = (inner) =>
-    `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:10.5pt;line-height:1.4;min-height:30px;">${inner}</div>`;
+    `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;min-height:30px;">${inner}</div>`;
 
   const titleHTML = safe(data.title).trim()
     ? filled(safe(data.title))
@@ -639,53 +640,53 @@ function titleAuthorPageHTML(data, BLUE, LIGHT, BORDER) {
       );
 
   return `
-    <p style="margin:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;font-size:12pt;font-weight:700;color:#000;text-transform:uppercase;">
+    <p style="margin:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;text-transform:uppercase;line-height:1.0;">
       TITLE OF THE PAPER
     </p>
-    <div style="border:1px solid ${BORDER};padding:8px 12px;margin:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.4;">
+    <div style="border:1px solid ${BORDER};padding:8px 12px;margin:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;color:${ACCENT};">
       ${titleHTML}
     </div>
-    <p style="margin:0 0 12px 0;font-family:Arial,Helvetica,sans-serif;font-size:10.5pt;color:#000;line-height:1.45;text-align:justify;">
+    <p style="margin:0 0 12px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;text-align:justify;">
       The title should communicate the central intervention or extension issue, major outcome or focus, and context where appropriate. Avoid titles consisting only of the institutional project name or acronym.
     </p>
-    <p style="margin:0 0 4px 0;font-family:Arial,Helvetica,sans-serif;font-size:10.5pt;font-weight:700;color:#000;">
+    <p style="margin:0 0 4px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:${ACCENT};line-height:1.0;">
       Example structure:
     </p>
-    <p style="margin:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;font-size:10.5pt;font-style:italic;color:${BLUE};line-height:1.45;">
+    <p style="margin:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-style:italic;color:${ACCENT};line-height:1.0;">
       Implementation and Outcomes of a Community-Based Natural Farming Extension Program among Smallholder Farmers in [Location]
     </p>
-    <p style="margin:0 0 4px 0;font-family:Arial,Helvetica,sans-serif;font-size:10.5pt;color:#000;">
+    <p style="margin:0 0 4px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;">
       rather than:
     </p>
-    <p style="margin:0 0 18px 0;font-family:Arial,Helvetica,sans-serif;font-size:10.5pt;font-style:italic;color:${BLUE};line-height:1.45;">
+    <p style="margin:0 0 18px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-style:italic;color:${ACCENT};line-height:1.0;">
       Project UMWAD: An Extension Program
     </p>
 
-    <p style="margin:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;font-size:12pt;font-weight:700;color:#000;text-transform:uppercase;">
+    <p style="margin:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;text-transform:uppercase;line-height:1.0;">
       AUTHOR INFORMATION
     </p>
-    <p style="margin:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;font-size:10.5pt;color:${BLUE};font-weight:700;line-height:1.5;">
+    <p style="margin:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};font-weight:700;line-height:1.0;">
       First Author<sup>1</sup>, Second Author<sup>2</sup>, Third Author<sup>3</sup>
     </p>
-    <p style="margin:0 0 2px 0;font-family:Arial,Helvetica,sans-serif;font-size:10pt;color:${BLUE};line-height:1.45;">
+    <p style="margin:0 0 2px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;">
       <sup>1</sup>Department/College/Unit, University/Institution, City, Philippines
     </p>
-    <p style="margin:0 0 2px 0;font-family:Arial,Helvetica,sans-serif;font-size:10pt;color:${BLUE};line-height:1.45;">
+    <p style="margin:0 0 2px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;">
       <sup>2</sup>Department/College/Unit, University/Institution, City, Philippines
     </p>
-    <p style="margin:0 0 12px 0;font-family:Arial,Helvetica,sans-serif;font-size:10pt;color:${BLUE};line-height:1.45;">
+    <p style="margin:0 0 12px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;">
       <sup>3</sup>Partner Institution, if applicable
     </p>
     ${fieldBox(authorsHTML)}
     ${fieldBox(affiliationsHTML)}
 
-    <p style="margin:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:${BLUE};">
+    <p style="margin:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:${ACCENT};line-height:1.0;">
       Corresponding Author:
     </p>
-    <table style="width:100%;border-collapse:collapse;margin:0 0 16px 0;font-family:Arial,Helvetica,sans-serif;font-size:10.5pt;">
+    <table style="width:100%;border-collapse:collapse;margin:0 0 16px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;">
       <tbody>
         <tr>
-          <td style="width:30%;padding:6px 0;color:${BLUE};font-weight:700;">Name:</td>
+          <td style="width:30%;padding:6px 0;color:${ACCENT};font-weight:700;">Name:</td>
           <td style="padding:4px 0;">
             <div style="border-bottom:1px solid ${BORDER};min-height:22px;line-height:22px;">
               ${safe(data.correspondingName).trim() ? filled(safe(data.correspondingName)) : placeholder('Enter name')}
@@ -693,7 +694,7 @@ function titleAuthorPageHTML(data, BLUE, LIGHT, BORDER) {
           </td>
         </tr>
         <tr>
-          <td style="padding:6px 0;color:${BLUE};font-weight:700;">Email Address:</td>
+          <td style="padding:6px 0;color:${ACCENT};font-weight:700;">Email Address:</td>
           <td style="padding:4px 0;">
             <div style="border-bottom:1px solid ${BORDER};min-height:22px;line-height:22px;">
               ${safe(data.correspondingEmail).trim() ? filled(safe(data.correspondingEmail)) : placeholder('Enter email address')}
@@ -701,7 +702,7 @@ function titleAuthorPageHTML(data, BLUE, LIGHT, BORDER) {
           </td>
         </tr>
         <tr>
-          <td style="padding:6px 0;color:${BLUE};font-weight:700;">ORCID:</td>
+          <td style="padding:6px 0;color:${ACCENT};font-weight:700;">ORCID:</td>
           <td style="padding:4px 0;">
             <div style="border-bottom:1px solid ${BORDER};min-height:22px;line-height:22px;">
               ${safe(data.correspondingOrcid).trim() ? filled(safe(data.correspondingOrcid)) : placeholder('Enter ORCID, if available')}
@@ -711,19 +712,19 @@ function titleAuthorPageHTML(data, BLUE, LIGHT, BORDER) {
       </tbody>
     </table>
 
-    <p style="margin:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${BLUE};">
+    <p style="margin:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;">
       <b>Paper Category:</b> Completed Extension Project Paper
     </p>
-    <p style="margin:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:${BLUE};">
+    <p style="margin:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:${ACCENT};line-height:1.0;">
       Thematic Area:
     </p>
-    <p style="margin:0 0 4px 0;font-family:Arial,Helvetica,sans-serif;font-size:10.5pt;color:#000;">
+    <p style="margin:0 0 4px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;">
       [Select only one]
     </p>
-    <ol style="margin:0 0 10px 0;padding-left:24px;font-family:Arial,Helvetica,sans-serif;font-size:10.5pt;color:#000;line-height:1.5;">
+    <ol style="margin:0 0 10px 0;padding-left:24px;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;">
       ${THEMATIC_AREAS.map((a) => `<li style="margin:0 0 2px 0;">${a}</li>`).join('')}
     </ol>
-    <p style="margin:0 0 10px 0;font-family:Arial,Helvetica,sans-serif;font-size:10.5pt;color:#000;line-height:1.45;text-align:justify;">
+    <p style="margin:0 0 10px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;text-align:justify;">
       These five areas are the official thematic classifications of the conference, and authors are expected to select the area representing the project's primary intended outcome and strongest evidence of public value.
     </p>
     ${fieldBox(thematicLine)}
@@ -732,17 +733,20 @@ function titleAuthorPageHTML(data, BLUE, LIGHT, BORDER) {
 
 function bodyPageHTML(data, BLUE, LIGHT, BORDER) {
   const safe = (v) => (v == null ? '' : String(v));
+  const ACCENT = '#4472C4';
+  const RED = '#FF0000';
   const placeholder = (text) =>
     `<span style="color:#94A3B8;font-style:italic;">${text}</span>`;
-  const filled = (text) => `<span style="color:#000;">${text}</span>`;
+  const filled = (text) => `<span style="color:${ACCENT};">${text}</span>`;
 
-  // Body typography: 11pt, line-height 1.0 (per template requirements)
+  // Typography
   const H_SECTION = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 6px 0;`;
   const H_SUB = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 4px 0;`;
-  const P = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
-  const P_TIGHT = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 4px 0;`;
-  const NOTE = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#2563EB;line-height:1.0;margin:0 0 6px 0;`;
-  const LI = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 2px 0;`;
+  const P = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
+  const P_TIGHT = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 4px 0;`;
+  const LI = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 2px 0;`;
+  const NOTE = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:${ACCENT};line-height:1.0;margin:0 0 6px 0;`;
+  const NOTE_RED = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:${RED};line-height:1.0;`;
 
   const fieldBox = (inner) =>
     `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;min-height:80px;">${inner}</div>`;
@@ -762,7 +766,7 @@ function bodyPageHTML(data, BLUE, LIGHT, BORDER) {
   return `
     <!-- ===================== ABSTRACT ===================== -->
     <p style="${H_SECTION}text-transform:uppercase;">ABSTRACT</p>
-    <p style="${NOTE}">Recommended length: 250–300 words</p>
+    <p style="${NOTE}">Recommended length: <span style="${NOTE_RED}">250–300 words</span></p>
     <p style="${P}">
       Provide a concise, self-contained summary of the entire paper. The abstract should contain the following elements, preferably as one coherent paragraph:
     </p>
@@ -791,7 +795,7 @@ function bodyPageHTML(data, BLUE, LIGHT, BORDER) {
 
     <!-- ===================== 1. INTRODUCTION ===================== -->
     <p style="${H_SECTION}margin-top:16px;">1. INTRODUCTION</p>
-    <p style="${NOTE}">Recommended maximum: 900–1,100 words</p>
+    <p style="${NOTE}">Recommended maximum: <span style="${NOTE_RED}">900–1,100 words</span></p>
     <p style="${P}">
       The Introduction should establish the scholarly and development basis of the extension project.
     </p>
@@ -834,16 +838,19 @@ function bodyPageHTML(data, BLUE, LIGHT, BORDER) {
 }
 
 function bodyPage2HTML(data, BLUE, LIGHT, BORDER) {
+  const ACCENT = '#4472C4';
+  const RED = '#FF0000';
   const placeholder = (text) =>
     `<span style="color:#94A3B8;font-style:italic;">${text}</span>`;
 
-  // Body typography: 11pt, line-height 1.0
+  // Typography — 11pt, line-height 1.0
   const H_SECTION = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 6px 0;`;
   const H_SUB = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 4px 0;`;
-  const P = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
-  const P_TIGHT = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 4px 0;`;
-  const NOTE = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#2563EB;line-height:1.0;margin:0 0 6px 0;`;
-  const LI = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 2px 0;`;
+  const P = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
+  const P_TIGHT = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 4px 0;`;
+  const LI = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 2px 0;`;
+  const NOTE = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:${ACCENT};line-height:1.0;margin:0 0 6px 0;`;
+  const NOTE_RED = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:${RED};line-height:1.0;`;
 
   const fieldBox = (inner) =>
     `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;min-height:44px;">${inner}</div>`;
@@ -853,6 +860,11 @@ function bodyPage2HTML(data, BLUE, LIGHT, BORDER) {
   );
 
   return `
+    <style>
+      ul > li::marker { color: #000; }
+      ol > li::marker { color: #000; }
+    </style>
+
     <!-- ========== continuation of 1.2 bullet list ========== -->
     <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
       <li style="${LI}">other credible sources.</li>
@@ -901,7 +913,7 @@ function bodyPage2HTML(data, BLUE, LIGHT, BORDER) {
 
     <!-- ===================== 2. MATERIALS AND METHODS ===================== -->
     <p style="${H_SECTION}margin-top:16px;">2. MATERIALS AND METHODS / EXTENSION PROJECT METHODOLOGY</p>
-    <p style="${NOTE}">Recommended maximum: 1,100–1,400 words</p>
+    <p style="${NOTE}">Recommended maximum: <span style="${NOTE_RED}">1,100–1,400 words</span></p>
     <p style="${P}">
       This section must be sufficiently detailed to allow readers to understand what was done, with whom, how, why, and how results were determined.
     </p>
@@ -935,15 +947,15 @@ function bodyPage2HTML(data, BLUE, LIGHT, BORDER) {
 }
 
 function bodyPage3HTML(data, BLUE, LIGHT, BORDER) {
+  const ACCENT = '#4472C4';
   const placeholder = (text) =>
     `<span style="color:#94A3B8;font-style:italic;">${text}</span>`;
 
   const H_SECTION = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 6px 0;`;
   const H_SUB = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 4px 0;`;
-  const P = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
-  const P_TIGHT = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 4px 0;`;
-  const NOTE = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#2563EB;line-height:1.0;margin:0 0 6px 0;`;
-  const LI = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 2px 0;`;
+  const P = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
+  const P_TIGHT = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 4px 0;`;
+  const LI = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 2px 0;`;
 
   const fieldBox = (inner) =>
     `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;min-height:44px;">${inner}</div>`;
@@ -953,6 +965,11 @@ function bodyPage3HTML(data, BLUE, LIGHT, BORDER) {
   );
 
   return `
+    <style>
+      ul > li::marker { color: #000; }
+      ol > li::marker { color: #000; }
+    </style>
+
     <!-- ========== continuation of 2.2 ========== -->
     <p style="${P}">
       Distinguish between persons reached by project activities and the population for whom outcome data were actually obtained.
@@ -1016,15 +1033,15 @@ function bodyPage3HTML(data, BLUE, LIGHT, BORDER) {
 }
 
 function bodyPage4HTML(data, BLUE, LIGHT, BORDER) {
+  const ACCENT = '#4472C4';
   const placeholder = (text) =>
     `<span style="color:#94A3B8;font-style:italic;">${text}</span>`;
 
   const H_SECTION = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 6px 0;`;
   const H_SUB = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 4px 0;`;
-  const P = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
-  const P_TIGHT = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 4px 0;`;
-  const NOTE = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#2563EB;line-height:1.0;margin:0 0 6px 0;`;
-  const LI = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 2px 0;`;
+  const P = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
+  const P_TIGHT = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 4px 0;`;
+  const LI = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 2px 0;`;
 
   const fieldBox = (inner) =>
     `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;min-height:44px;">${inner}</div>`;
@@ -1034,6 +1051,11 @@ function bodyPage4HTML(data, BLUE, LIGHT, BORDER) {
   );
 
   return `
+    <style>
+      ul > li::marker { color: #000; }
+      ol > li::marker { color: #000; }
+    </style>
+
     <!-- ========== continuation of 2.5 bullet list ========== -->
     <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
       <li style="${LI}">enterprise development;</li>
@@ -1108,15 +1130,18 @@ function bodyPage4HTML(data, BLUE, LIGHT, BORDER) {
 }
 
 function bodyPage5HTML(data, BLUE, LIGHT, BORDER) {
+  const ACCENT = '#4472C4';
+  const RED = '#FF0000';
   const placeholder = (text) =>
     `<span style="color:#94A3B8;font-style:italic;">${text}</span>`;
 
   const H_SECTION = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 6px 0;`;
   const H_SUB = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 4px 0;`;
-  const P = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
-  const P_TIGHT = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 4px 0;`;
-  const NOTE = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#2563EB;line-height:1.0;margin:0 0 6px 0;`;
-  const LI = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 2px 0;`;
+  const P = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
+  const P_TIGHT = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 4px 0;`;
+  const LI = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 2px 0;`;
+  const NOTE = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:${ACCENT};line-height:1.0;margin:0 0 6px 0;`;
+  const NOTE_RED = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:${RED};line-height:1.0;`;
 
   const fieldBox = (inner) =>
     `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;min-height:44px;">${inner}</div>`;
@@ -1126,6 +1151,11 @@ function bodyPage5HTML(data, BLUE, LIGHT, BORDER) {
   );
 
   return `
+    <style>
+      ul > li::marker { color: #000; }
+      ol > li::marker { color: #000; }
+    </style>
+
     <!-- ===================== 2.9 ===================== -->
     <p style="${H_SUB}">2.9 Ethical Considerations</p>
     <p style="${P}">
@@ -1148,7 +1178,7 @@ function bodyPage5HTML(data, BLUE, LIGHT, BORDER) {
 
     <!-- ===================== 3. RESULTS ===================== -->
     <p style="${H_SECTION}margin-top:16px;">3. RESULTS</p>
-    <p style="${NOTE}">Recommended maximum: 1,200–1,600 words</p>
+    <p style="${NOTE}">Recommended maximum: <span style="${NOTE_RED}">1,200–1,600 words</span></p>
     <p style="${P}">
       Present the evidence objectively and systematically.
     </p>
@@ -1210,13 +1240,14 @@ function bodyPage5HTML(data, BLUE, LIGHT, BORDER) {
 }
 
 function bodyPage6HTML(data, BLUE, LIGHT, BORDER) {
+  const ACCENT = '#4472C4';
   const placeholder = (text) =>
     `<span style="color:#94A3B8;font-style:italic;">${text}</span>`;
 
   const H_SUB = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 4px 0;`;
-  const P = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
-  const P_TIGHT = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 4px 0;`;
-  const LI = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 2px 0;`;
+  const P = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
+  const P_TIGHT = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 4px 0;`;
+  const LI = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 2px 0;`;
 
   const fieldBox = (inner) =>
     `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;min-height:44px;">${inner}</div>`;
@@ -1226,6 +1257,11 @@ function bodyPage6HTML(data, BLUE, LIGHT, BORDER) {
   );
 
   return `
+    <style>
+      ul > li::marker { color: #000; }
+      ol > li::marker { color: #000; }
+    </style>
+
     <!-- ========== continuation of 3.3 ========== -->
     <p style="${P_TIGHT}">
       <b>Outcome</b> – meaningful change in practice, behavior, condition, performance, or institutional capacity
@@ -1289,21 +1325,25 @@ function bodyPage6HTML(data, BLUE, LIGHT, BORDER) {
 
     <!-- ===================== Important Evidence Rule ===================== -->
     <p style="${H_SUB}">Important Evidence Rule</p>
-    <p style="${P}">
+    <p style="${P} color:#000; ">
       Attendance sheets, photographs, certificates, and activity reports can verify that an activity occurred, but they should not by themselves be used as proof that an outcome, adoption, utilization, or impact occurred. This distinction is expressly reflected in PEMNet's conference requirements.
     </p>
   `;
 }
 
 function bodyPage7HTML(data, BLUE, LIGHT, BORDER) {
+  const ACCENT = '#4472C4';
+  const RED = '#FF0000';
   const placeholder = (text) =>
     `<span style="color:#94A3B8;font-style:italic;">${text}</span>`;
 
   const H_SECTION = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 6px 0;`;
   const H_SUB = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 4px 0;`;
-  const P = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
-  const NOTE = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#2563EB;line-height:1.0;margin:0 0 6px 0;`;
-  const LI = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 2px 0;`;
+  const P = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
+  const P_TIGHT = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 4px 0;`;
+  const LI = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 2px 0;`;
+  const NOTE = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:${ACCENT};line-height:1.0;margin:0 0 6px 0;`;
+  const NOTE_RED = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:${RED};line-height:1.0;`;
 
   const fieldBox = (inner) =>
     `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;min-height:44px;">${inner}</div>`;
@@ -1313,14 +1353,19 @@ function bodyPage7HTML(data, BLUE, LIGHT, BORDER) {
   );
 
   return `
+    <style>
+      ul > li::marker { color: #000; }
+      ol > li::marker { color: #000; }
+    </style>
+
     <!-- ========== closing note from section 3 ========== -->
-    <p style="${P}">
+    <p style="${P}color:#000">
       Authors should not feel compelled to claim "impact." The conference guidelines specifically recognize that completed projects need not claim long-term impact when such evidence is unavailable.
     </p>
 
     <!-- ===================== 4. DISCUSSION ===================== -->
     <p style="${H_SECTION}margin-top:16px;">4. DISCUSSION</p>
-    <p style="${NOTE}">Recommended maximum: 1,000–1,400 words</p>
+    <p style="${NOTE}">Recommended maximum: <span style="${NOTE_RED}">1,000–1,400 words</span></p>
     <p style="${P}">
       This is essential if PEMNet wants these papers eventually to become publishable scholarly manuscripts.
     </p>
@@ -1396,14 +1441,18 @@ function bodyPage7HTML(data, BLUE, LIGHT, BORDER) {
 }
 
 function bodyPage8HTML(data, BLUE, LIGHT, BORDER) {
+  const ACCENT = '#4472C4';
+  const RED = '#FF0000';
   const placeholder = (text) =>
     `<span style="color:#94A3B8;font-style:italic;">${text}</span>`;
 
   const H_SECTION = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 6px 0;`;
   const H_SUB = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 4px 0;`;
-  const P = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
-  const NOTE = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#2563EB;line-height:1.0;margin:0 0 6px 0;`;
-  const LI = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 2px 0;`;
+  const P = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
+  const P_TIGHT = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 4px 0;`;
+  const LI = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 2px 0;`;
+  const NOTE = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:${ACCENT};line-height:1.0;margin:0 0 6px 0;`;
+  const NOTE_RED = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:${RED};line-height:1.0;`;
 
   const fieldBox = (inner) =>
     `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;min-height:44px;">${inner}</div>`;
@@ -1413,6 +1462,11 @@ function bodyPage8HTML(data, BLUE, LIGHT, BORDER) {
   );
 
   return `
+    <style>
+      ul > li::marker { color: #000; }
+      ol > li::marker { color: #000; }
+    </style>
+
     <!-- ========== continuation of 4.4 bullet list ========== -->
     <ul style="margin:0 0 6px 0;padding-left:22px;list-style-type:disc;">
       <li style="${LI}">institutional ownership; and</li>
@@ -1461,7 +1515,7 @@ function bodyPage8HTML(data, BLUE, LIGHT, BORDER) {
 
     <!-- ===================== 5. IMPLICATIONS ===================== -->
     <p style="${H_SECTION}margin-top:16px;">5. IMPLICATIONS FOR EXTENSION PRACTICE AND POLICY</p>
-    <p style="${NOTE}">Recommended maximum: 400–500 words</p>
+    <p style="${NOTE}">Recommended maximum: <span style="${NOTE_RED}">400–500 words</span></p>
     <p style="${P}">
       Explain what extension managers, HEIs, practitioners, LGUs, partner institutions, policymakers, or other stakeholders can reasonably learn from the project.
     </p>
@@ -1487,13 +1541,17 @@ function bodyPage8HTML(data, BLUE, LIGHT, BORDER) {
 }
 
 function bodyPage9HTML(data, BLUE, LIGHT, BORDER) {
+  const ACCENT = '#4472C4';
+  const RED = '#FF0000';
   const placeholder = (text) =>
     `<span style="color:#94A3B8;font-style:italic;">${text}</span>`;
 
   const H_SECTION = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 6px 0;text-transform:uppercase;`;
-  const P = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
-  const P_TIGHT = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 4px 0;`;
-  const NOTE = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#2563EB;line-height:1.0;margin:0 0 6px 0;`;
+  const P = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
+  const P_TIGHT = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 4px 0;`;
+  const LI = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 2px 0;`;
+  const NOTE = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:${ACCENT};line-height:1.0;margin:0 0 6px 0;`;
+  const NOTE_RED = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:${RED};line-height:1.0;`;
 
   const fieldBox = (inner) =>
     `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;min-height:44px;">${inner}</div>`;
@@ -1503,13 +1561,18 @@ function bodyPage9HTML(data, BLUE, LIGHT, BORDER) {
   );
 
   return `
+    <style>
+      ul > li::marker { color: #000; }
+      ol > li::marker { color: #000; }
+    </style>
+
     <!-- ===================== 6. CONCLUSION ===================== -->
     <p style="${H_SECTION}">6. CONCLUSION</p>
-    <p style="${NOTE}">Recommended maximum: 300–500 words</p>
+    <p style="${NOTE}">Recommended maximum: <span style="${NOTE_RED}">300–500 words</span></p>
     <p style="${P}">
       Provide a concise synthesis of:
     </p>
-    <ol style="margin:0 0 6px 0;padding-left:24px;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;">
+    <ol style="margin:0 0 6px 0;padding-left:24px;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;">
       <li style="margin:0 0 2px 0;">the development issue addressed;</li>
       <li style="margin:0 0 2px 0;">the principal intervention;</li>
       <li style="margin:0 0 2px 0;">the strongest documented results;</li>
@@ -1577,14 +1640,15 @@ function bodyPage9HTML(data, BLUE, LIGHT, BORDER) {
 }
 
 function bodyPage10HTML(data, BLUE, LIGHT, BORDER) {
+  const ACCENT = '#4472C4';
   const placeholder = (text) =>
     `<span style="color:#94A3B8;font-style:italic;">${text}</span>`;
 
-  const H_SECTION = `font-family:Arial;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 6px 0;text-transform:uppercase;`;
-  const P = `font-family:Arial;font-size:11pt;color:#000;line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
-  const P_TIGHT = `font-family:Arial;font-size:11pt;color:#000;line-height:1.0;margin:0 0 4px 0;`;
-  const LI = `font-family:Arial;font-size:11pt;color:#000;line-height:1.0;margin:0 0 2px 0;`;
-  const REF_LINE = `font-family:Arial;font-size:11pt;color:#000;line-height:1.0;margin:0 0 2px 0;`;
+  const H_SECTION = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 6px 0;text-transform:uppercase;`;
+  const P = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
+  const P_TIGHT = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 4px 0;`;
+  const LI = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 2px 0;`;
+  const REF_LINE = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 2px 0;`;
 
   const fieldBox = (inner, minH = 44) =>
     `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;min-height:${minH}px;">${inner}</div>`;
@@ -1598,6 +1662,11 @@ function bodyPage10HTML(data, BLUE, LIGHT, BORDER) {
   );
 
   return `
+    <style>
+      ul > li::marker { color: #000; }
+      ol > li::marker { color: #000; }
+    </style>
+
     <!-- ========== Data Availability (continuation) ========== -->
     <p style="${P}">
       The data supporting the findings of this paper are available from the corresponding author upon reasonable request, subject to applicable privacy, consent, institutional, and data-protection requirements.
@@ -1675,30 +1744,30 @@ function bodyPage11HTML(data, BLUE, LIGHT, BORDER) {
   const placeholder = (text) =>
     `<span style="color:#94A3B8;font-style:italic;">${text}</span>`;
 
-  const H_SUB = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 4px 0;`;
-  const P = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
-  const P_TIGHT = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;margin:0 0 4px 0;`;
-  const NOTE_ITALIC = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-style:italic;color:#000;line-height:1.0;margin:0 0 6px 0;`;
-  const RED_NOTE = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#DC2626;line-height:1.0;margin:0 0 6px 0;`;
+  const H_SUB = `font-family:Arial;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 4px 0;`;
+  const P = `font-family:Arial;font-size:11pt;color:#000;line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
+  const P_TIGHT = `font-family:Arial;font-size:11pt;color:#000;line-height:1.0;margin:0 0 4px 0;`;
+  const NOTE_ITALIC = `font-family:Arial;font-size:11pt;font-style:italic;color:#000;line-height:1.0;margin:0 0 6px 0;`;
+  const RED_NOTE = `font-family:Arial;font-size:11pt;font-weight:700;color:#DC2626;line-height:1.0;margin:0 0 6px 0;`;
 
   const fieldBox = (inner, minH = 44) =>
-    `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;min-height:${minH}px;">${inner}</div>`;
+    `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial;font-size:11pt;line-height:1.0;min-height:${minH}px;">${inner}</div>`;
 
   const answer = placeholder(
     'Click or tap here and replace this text with your response.'
   );
 
   // -------- Sample table cells --------
-  const thStyle = `border:1px solid #94A3B8;background:#F1F5F9;font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;padding:6px 8px;text-align:left;`;
-  const tdStyle = `border:1px solid #94A3B8;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.0;padding:6px 8px;`;
-  const tdPlaceholder = `border:1px solid #94A3B8;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#94A3B8;font-style:italic;line-height:1.0;padding:6px 8px;`;
+  const thStyle = `border:1px solid #94A3B8;background:#F1F5F9;font-family:Arial;font-size:11pt;font-weight:700;color:#000;line-height:1.0;padding:6px 8px;text-align:left;`;
+  const tdStyle = `border:1px solid #94A3B8;font-family:Arial;font-size:11pt;color:#000;line-height:1.0;padding:6px 8px;`;
+  const tdPlaceholder = `border:1px solid #94A3B8;font-family:Arial;font-size:11pt;color:#94A3B8;font-style:italic;line-height:1.0;padding:6px 8px;`;
 
   return `
     <!-- ========== continuation of Appendices ========== -->
-    <p style="${P_TIGHT}">Appendix C: Relevant Data Collection Instrument</p>
-    <p style="${P_TIGHT}">Appendix D: Additional Results Table</p>
-    <p style="${P_TIGHT}">Appendix E: Evidence of Institutionalization</p>
-    <p style="${P}">
+    <p style="${P_TIGHT}color:#4472C4;">Appendix C: Relevant Data Collection Instrument</p>
+    <p style="${P_TIGHT}color:#4472C4;">Appendix D: Additional Results Table</p>
+    <p style="${P_TIGHT}color:#4472C4">Appendix E: Evidence of Institutionalization</p>
+    <p style="${P}color:#4472C4">
       Do not turn the manuscript into a portfolio of certificates, attendance sheets, photographs, and administrative documents.
     </p>
     ${fieldBox(
@@ -1750,7 +1819,7 @@ function bodyPage11HTML(data, BLUE, LIGHT, BORDER) {
     <p style="${P_TIGHT}margin-top:10px;">Figure 1</p>
     <p style="${NOTE_ITALIC}">Extension Project Results Pathway</p>
 
-    <div style="border:1px solid #94A3B8;background:#F8FAFC;padding:24px 12px;margin:0 0 6px 0;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-style:italic;color:#94A3B8;line-height:1.0;">
+    <div style="border:1px solid #94A3B8;background:#F8FAFC;padding:24px 12px;margin:0 0 6px 0;text-align:center;font-family:Arial;font-size:11pt;font-style:italic;color:#94A3B8;line-height:1.0;">
       [Insert figure]
     </div>
 
@@ -1770,12 +1839,7 @@ function bodyPage11HTML(data, BLUE, LIGHT, BORDER) {
       )
     )}
 
-    <!-- ===================== Closing notes ===================== -->
-    <p style="${RED_NOTE}margin-top:24px;">
-      Note: please submit this template both in PDF and in Word file.
-    </p>
-
-    <p style="${P}margin-top:28px;">
+    <p style="${P}margin-top:150px;">
       NOTE: By submitting this manuscript, the author/s confirm their acceptance of the Author Consent and Limited Publication License stated earlier in this template.
     </p>
   `;

@@ -7,10 +7,12 @@ from .payment_routes import payment_bp
 from .password_reset_routes import password_reset_bp
 from .news_routes import register_news_routes
 from .about_routes import register_about_routes
+from .full_paper_routes import full_paper_bp
 
 __all__ = [
     'auth_bp',
     'submission_bp',
+    'full_paper_bp',
     'email_submission_bp',
     'evaluator_bp',
     'master_approver_bp',

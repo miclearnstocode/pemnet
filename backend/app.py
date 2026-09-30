@@ -14,6 +14,7 @@ from cpanel_email_service import CPanelEmailService
 from routes import (
     auth_bp,
     submission_bp,
+    full_paper_bp,
     email_submission_bp,
     evaluator_bp,
     master_approver_bp,
@@ -119,6 +120,7 @@ def _configure_cors(app: Flask) -> None:
 def _register_blueprints(app: Flask) -> None:
     app.register_blueprint(auth_bp)
     app.register_blueprint(submission_bp)
+    app.register_blueprint(full_paper_bp)
     app.register_blueprint(email_submission_bp)
     app.register_blueprint(evaluator_bp)
     app.register_blueprint(master_approver_bp)

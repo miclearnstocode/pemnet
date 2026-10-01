@@ -1040,6 +1040,54 @@ function FieldLabel({ children, text, min, max }) {
   );
 }
 
+function validateAPAReference(line) {
+  const trimmed = line.trim();
+  if (!trimmed) return { valid: true }; // Skip empty lines
+
+  // Pattern 1: Journal Article
+  // Author, A. A., & Author, B. B. (Year). Title of article. Journal Title, Volume(Issue), xx–xx. DOI/URL
+  const journalPattern = /^[\w\s\-\.]+,\s*[\w\s\-\.]+(?:\s*&\s*[\w\s\-\.]+,\s*[\w\s\-\.]+)*\s*\(\d{4}\)\.\s*.+\.\s*[\w\s\-\.]+,\s*\d+[\(\d\)]*,\s*\d+[–\-]\d+\.?\s*(https?:\/\/.+|doi:.+)?$/i;
+
+  // Pattern 2: Book
+  // Author, A. A. (Year). Title of book. Publisher.
+  const bookPattern = /^[\w\s\-\.]+,\s*[\w\s\-\.]+\s*\(\d{4}\)\.\s*.+\.\s*[\w\s\-\.]+\.?$/i;
+
+  // Pattern 3: Report / Webpage
+  // Institution. (Year). Title. URL
+  const reportPattern = /^[\w\s\-\.]+\.\s*\(\d{4}\)\.\s*.+\.\s*(https?:\/\/.+)$/i;
+
+  // Check for required elements regardless of format
+  const hasYear = /\(\d{4}\)/.test(trimmed);
+  const hasTitle = trimmed.includes('. ') && trimmed.split('. ').length >= 2;
+  const endsWithPunctuation = /[.\?!]$/.test(trimmed);
+
+  // Specific structural checks
+  if (!hasYear) {
+    return { valid: false, message: 'Missing publication year in parentheses, e.g., (2024).' };
+  }
+  if (!hasTitle) {
+    return { valid: false, message: 'Missing title after the year. Format: (Year). Title.' };
+  }
+  if (!endsWithPunctuation) {
+    return { valid: false, message: 'Reference must end with a period.' };
+  }
+
+  // If it matches one of our known good patterns, it's valid
+  if (journalPattern.test(trimmed) || bookPattern.test(trimmed) || reportPattern.test(trimmed)) {
+    return { valid: true };
+  }
+
+  // Generic fallback for unrecognized but structurally plausible references
+  if (trimmed.startsWith('http') || trimmed.startsWith('www')) {
+    return { valid: false, message: 'URL should appear at the END of the reference, not the beginning.' };
+  }
+
+  return { 
+    valid: false, 
+    message: 'Format does not match standard APA 7th Edition. Verify: Author(s). (Year). Title. Source.' 
+  };
+}
+
 export default function SubmitFullPaper({
   user,
   submissions = [],
@@ -2742,7 +2790,9 @@ export default function SubmitFullPaper({
                       />
                     </div>
                     <div>
-                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">References (APA 7th Edition)</label>
+                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
+                        References (APA 7th Edition)
+                      </label>
                       <GuidanceBlock>
                         <p>Use APA 7th Edition consistently. References appearing in the list must be cited in the manuscript, and all cited works must appear in the reference list.</p>
                         <p>Prioritize peer-reviewed journal articles, scholarly books, government publications, official institutional reports, authoritative technical publications, and other credible primary sources.</p>
@@ -2750,13 +2800,46 @@ export default function SubmitFullPaper({
                         <p className="font-semibold">Government/Institutional Report: <i>Institution. (Year). Title of report. Publisher/Institution. URL</i></p>
                         <p className="font-semibold">Book: <i>Author, A. A. (Year). Title of book. Publisher.</i></p>
                       </GuidanceBlock>
-                      <textarea
-                        value={references}
-                        onChange={(e) => setReferences(e.target.value)}
-                        placeholder="Enter the complete APA 7th Edition reference list, one entry per line..."
-                        rows={6}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
-                      />
+
+                      {/* Validated textarea wrapper */}
+                      <div className="relative text-slate-700">
+                        <textarea
+                          value={references}
+                          onChange={(e) => setReferences(e.target.value)}
+                          placeholder={"Enter the complete APA 7th Edition reference list, one entry per line...\n\nExample:\nSmith, J. A., & Doe, R. B. (2024). Community-based extension methods. Journal of Extension Practice, 12(3), 45–62."}
+                          rows={8}
+                          className={`w-full px-4 py-3 bg-slate-50 border rounded-xl text-sm focus:ring-2 focus:outline-none resize-y transition-colors ${
+                            references.trim() && references.split('\n').some(l => l.trim() && !validateAPAReference(l).valid)
+                              ? 'border-red-300 focus:border-red-400 focus:ring-red-200'
+                              : 'border-slate-200 focus:border-purple-500 focus:ring-purple-500/20'
+                          }`}
+                        />
+
+                        {/* Per-line validation indicators */}
+                        {references.trim() && (
+                          <div className="mt-2 space-y-1 max-h-40 overflow-y-auto">
+                            {references.split('\n').map((line, idx) => {
+                              const result = validateAPAReference(line);
+                              if (!line.trim()) return null;
+                              if (result.valid) return null;
+                              return (
+                                <div
+                                  key={idx}
+                                  className="flex items-start gap-2 px-3 py-1.5 bg-red-50 border border-red-200 rounded-lg text-xs"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5 text-red-500 shrink-0 mt-0.5">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                                  </svg>
+                                  <div>
+                                    <span className="font-mono text-red-700 font-semibold">Line {idx + 1}:</span>{' '}
+                                    <span className="text-red-600">{result.message}</span>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <div>
                       <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Appendices</label>

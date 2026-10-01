@@ -557,36 +557,9 @@ function titleAuthorPageHTML(data, BLUE, LIGHT, BORDER) {
     <div style="border:1px solid ${BORDER};padding:8px 12px;margin:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;color:${ACCENT};">
       ${titleHTML}
     </div>
-    <p style="margin:0 0 12px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;text-align:justify;">
-      The title should communicate the central intervention or extension issue, major outcome or focus, and context where appropriate. Avoid titles consisting only of the institutional project name or acronym.
-    </p>
-    <p style="margin:0 0 4px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:${ACCENT};line-height:1.0;">
-      Example structure:
-    </p>
-    <p style="margin:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-style:italic;color:${ACCENT};line-height:1.0;">
-      Implementation and Outcomes of a Community-Based Natural Farming Extension Program among Smallholder Farmers in [Location]
-    </p>
-    <p style="margin:0 0 4px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;">
-      rather than:
-    </p>
-    <p style="margin:0 0 18px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-style:italic;color:${ACCENT};line-height:1.0;">
-      Project UMWAD: An Extension Program
-    </p>
 
     <p style="margin:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;text-transform:uppercase;line-height:1.0;">
       AUTHOR INFORMATION
-    </p>
-    <p style="margin:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};font-weight:700;line-height:1.0;">
-      First Author<sup>1</sup>, Second Author<sup>2</sup>, Third Author<sup>3</sup>
-    </p>
-    <p style="margin:0 0 2px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;">
-      <sup>1</sup>Department/College/Unit, University/Institution, City, Philippines
-    </p>
-    <p style="margin:0 0 2px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;">
-      <sup>2</sup>Department/College/Unit, University/Institution, City, Philippines
-    </p>
-    <p style="margin:0 0 12px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;">
-      <sup>3</sup>Partner Institution, if applicable
     </p>
     ${fieldBox(authorsHTML)}
     ${fieldBox(affiliationsHTML)}
@@ -629,22 +602,6 @@ function titleAuthorPageHTML(data, BLUE, LIGHT, BORDER) {
     <p style="margin:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:${ACCENT};line-height:1.0;">
       Thematic Area:
     </p>
-    <p style="margin:0 0 4px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;">
-      [Select only one]
-    </p>
-    <ol style="margin:0 0 10px 0;padding-left:24px;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;">
-      ${THEMATIC_AREAS.map((a, idx) => {
-        const num = String(idx + 1);
-        const isSelected = num === selectedArea;
-        const style = isSelected
-          ? 'margin:0 0 2px 0;font-weight:700;'
-          : 'margin:0 0 2px 0;';
-        return `<li style="${style}">${a}</li>`;
-      }).join('')}
-    </ol>
-    <p style="margin:0 0 10px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;text-align:justify;">
-      These five areas are the official thematic classifications of the conference, and authors are expected to select the area representing the project's primary intended outcome and strongest evidence of public value.
-    </p>
     ${fieldBox(thematicLine)}
   `;
 }
@@ -673,22 +630,13 @@ function buildBodyBlocks(data, BLUE, LIGHT, BORDER) {
   const blocks = [];
   const push = (...b) => blocks.push(...b);
 
-  // ============================================================
-  // ABSTRACT
-  // ============================================================
+
   push(
     A(`<style>ul>li::marker{color:#000;}ol>li::marker{color:#000;}</style>`),
     A(`<p style="${H_SECTION}text-transform:uppercase;">ABSTRACT</p>`),
-    A(`<p style="${NOTE}">Recommended length: <span style="${NOTE_RED}">250–300 words</span></p>`),
-    A(`<p style="${P}">Provide a concise, self-contained summary of the entire paper. The abstract should contain the following elements, preferably as one coherent paragraph:</p>`),
-    A(`<p style="${P_TIGHT}"><b>Background/Need:</b> Briefly identify the community, institutional, or sectoral condition that justified the extension project.</p>`),
-    A(`<p style="${P_TIGHT}"><b>Objective:</b> State the principal objective or purpose of the project.</p>`),
-    A(`<p style="${P_TIGHT}"><b>Methods/Approach:</b> Briefly describe the setting, intended users or beneficiaries, extension intervention, implementation approach, and methods used to assess results.</p>`),
-    A(`<p style="${P_TIGHT}"><b>Results:</b> Present the most important quantitative and/or qualitative findings. Give actual evidence rather than merely stating that the project was "successful."</p>`),
-    A(`<p style="${P_TIGHT}"><b>Conclusion:</b> State what the evidence indicates and its principal implication for extension practice, sustainability, policy, or public value.</p>`),
-    A(`<p style="${P}">Do not introduce claims in the abstract that are not supported in the main paper.</p>`),
+
     N('', safe(data.abstract).trim() || ANSWER_PH),
-    A(`<p style="${P_TIGHT}"><b>Keywords:</b> [4–6 keywords, separated by semicolons]</p>`),
+    A(`<p style="${P_TIGHT}"><b>Keywords:</b></p>`),
     N('', safe(data.keywords).trim() || ANSWER_PH),
   );
 
@@ -697,45 +645,20 @@ function buildBodyBlocks(data, BLUE, LIGHT, BORDER) {
   // ============================================================
   push(
     A(`<p style="${H_SECTION}margin-top:16px;">1. INTRODUCTION</p>`),
-    A(`<p style="${NOTE}">Recommended maximum: <span style="${NOTE_RED}">900–1,100 words</span></p>`),
-    A(`<p style="${P}">The Introduction should establish the scholarly and development basis of the extension project.</p>`),
 
     A(`<p style="${H_SUB}">1.1 Background and Context</p>`),
-    A(`<p style="${P}">Describe the community, institutional, sectoral, environmental, economic, educational, health, or development context within which the project was implemented.</p>`),
-    A(`<p style="${P}">Explain the significance of the issue being addressed.</p>`),
-    A(`<p style="${P}">Where appropriate, provide relevant statistics, policies, research findings, or documented community evidence.</p>`),
     N('', safe(data.backgroundContext).trim() || ANSWER_PH),
 
     A(`<p style="${H_SUB}">1.2 Evidence of the Problem or Development Need</p>`),
-    A(`<p style="${P}">Explain how the need, condition, gap, or opportunity was established.</p>`),
-    A(`<p style="${P}">Evidence may come from:</p>`),
-    A(UL([
-      'situational or needs assessment;','baseline data;','community consultations;',
-      'surveys;','focus group discussions;','key informant interviews;',
-      'institutional records;','government statistics;','previous research;',
-      'technical assessments; or','other credible sources.'
-    ])),
-    A(`<p style="${P}">Avoid relying solely on statements such as "the community requested training."</p>`),
     N('', safe(data.evidenceNeed).trim() || ANSWER_PH),
 
     A(`<p style="${H_SUB}">1.3 Related Literature and Extension Evidence</p>`),
-    A(`<p style="${P}">Provide a focused synthesis of relevant scholarly and technical literature concerning:</p>`),
-    A(UL([
-      'the issue being addressed;','comparable interventions;',
-      'relevant extension approaches;','documented factors influencing adoption or outcomes; and',
-      'the knowledge or practice gap the project sought to address.'
-    ])),
-    A(`<p style="${P}">This section should not become an exhaustive review of literature. Its purpose is to demonstrate that the extension intervention was informed by existing knowledge and to establish how the project contributes to extension knowledge or practice.</p>`),
     N('', safe(data.relatedLiterature).trim() || ANSWER_PH),
 
     A(`<p style="${H_SUB}">1.4 Rationale and Contribution of the Project</p>`),
-    A(`<p style="${P}">Explain why the intervention was appropriate given the identified problem, available evidence, community context, and institutional expertise.</p>`),
-    A(`<p style="${P}">Clearly identify what is potentially distinctive or useful about the project.</p>`),
     N('', safe(data.rationale).trim() || ANSWER_PH),
 
     A(`<p style="${H_SUB}">1.5 Objectives</p>`),
-    A(`<p style="${P}">State the general and specific objectives.</p>`),
-    A(`<p style="${P}">The objectives reported here should correspond with the results presented later in the paper.</p>`),
     N('', safe(data.objectives).trim() || ANSWER_PH),
   );
 
@@ -744,97 +667,34 @@ function buildBodyBlocks(data, BLUE, LIGHT, BORDER) {
   // ============================================================
   push(
     A(`<p style="${H_SECTION}margin-top:16px;">2. MATERIALS AND METHODS / EXTENSION PROJECT METHODOLOGY</p>`),
-    A(`<p style="${NOTE}">Recommended maximum: <span style="${NOTE_RED}">1,100–1,400 words</span></p>`),
-    A(`<p style="${P}">This section must be sufficiently detailed to allow readers to understand what was done, with whom, how, why, and how results were determined.</p>`),
 
     A(`<p style="${H_SUB}">2.1 Project Setting and Duration</p>`),
-    A(`<p style="${P}">Describe:</p>`),
-    A(UL([
-      'project site;','relevant characteristics of the community or institution;',
-      'implementation period; and','contextual conditions important to understanding the intervention.'
-    ])),
-    A(`<p style="${P}">A map may be included when genuinely useful.</p>`),
     N('', safe(data.settingDuration).trim() || ANSWER_PH),
 
     A(`<p style="${H_SUB}">2.2 Participants, Intended Users, or Beneficiaries</p>`),
-    A(`<p style="${P}">Describe:</p>`),
-    A(UL([
-      'target population;','participant selection or inclusion criteria;',
-      'number of participants or households/institutions reached;',
-      'relevant demographic or sectoral characteristics; and',
-      'involvement of women, youth, vulnerable groups, or other relevant sectors where applicable.'
-    ])),
     N('', safe(data.participantsDesc).trim() || ANSWER_PH),
-
-    A(`<p style="${P}">Distinguish between persons reached by project activities and the population for whom outcome data were actually obtained.</p>`),
     N('', safe(data.reachPopulation).trim() || ANSWER_PH),
 
     A(`<p style="${H_SUB}">2.3 Situational Analysis and Baseline</p>`),
-    A(`<p style="${P}">Describe how the initial situation was established.</p>`),
-    A(`<p style="${P}">Identify:</p>`),
-    A(UL([
-      'information collected;','data sources;','methods or instruments used;',
-      'baseline indicators, where available; and','major findings that informed project design.'
-    ])),
     N('', safe(data.situationalAnalysis).trim() || ANSWER_PH),
 
     A(`<p style="${H_SUB}">2.4 Project or Intervention Design</p>`),
-    A(`<p style="${P}">Describe the extension intervention and its underlying logic.</p>`),
-    A(`<p style="${P}">Authors are encouraged to present a project logic or results pathway such as:</p>`),
     A(`<div style="margin:6px 0 14px 0;text-align:center;"><img src="/images/project%20design.png" alt="Project Design and Results Pathway" style="width:100%;max-width:100%;height:auto;display:block;margin:0 auto;" /></div>`),
-    A(`<p style="${P}">Explain why the selected intervention was expected to address the identified condition.</p>`),
     N('', safe(data.interventionRationale).trim() || ANSWER_PH),
 
     A(`<p style="${H_SUB}">2.5 Implementation Strategies</p>`),
-    A(`<p style="${P}">Describe the major strategies used, such as:</p>`),
-    A(UL([
-      'capability-building;','technical assistance;','demonstrations;',
-      'mentoring or coaching;','community organizing;','communication interventions;',
-      'technology transfer;','enterprise development;','policy or institutional development;',
-      'partnership building;','participatory planning; or','other relevant approaches.'
-    ])),
-    A(`<p style="${P}">Avoid presenting a simple chronological list of activities unless chronology is analytically important.</p>`),
     N('', safe(data.implementationStrategies).trim() || ANSWER_PH),
 
     A(`<p style="${H_SUB}">2.6 Partnership and Stakeholder Participation</p>`),
-    A(`<p style="${P}">Identify important partners and explain their actual roles, rather than merely listing organizations.</p>`),
-    A(`<p style="${P}">Describe relevant community participation in:</p>`),
-    A(UL([
-      'project planning;','implementation;','monitoring;','decision-making;',
-      'resource mobilization; or','sustainability mechanisms.'
-    ])),
     N('', safe(data.partnership).trim() || ANSWER_PH),
 
     A(`<p style="${H_SUB}">2.7 Monitoring and Evaluation Design</p>`),
-    A(`<p style="${P}">Explain how the project\'s results were measured or verified.</p>`),
-    A(`<p style="${P}">Identify:</p>`),
-    A(UL([
-      'indicators;','data sources;','instruments;','timing of measurements;',
-      'persons or groups from whom data were obtained;',
-      'follow-up procedures; and','methods used to verify or triangulate evidence.'
-    ])),
-    A(`<p style="${P}">Where baseline and endline measurements were conducted, describe them clearly.</p>`),
     N('', safe(data.monitoringEval).trim() || ANSWER_PH),
 
     A(`<p style="${H_SUB}">2.8 Data Analysis</p>`),
-    A(`<p style="${P}">Describe how quantitative and/or qualitative data were analyzed.</p>`),
-    A(`<p style="${P}">Examples include:</p>`),
-    A(UL([
-      'frequencies and percentages;','means or other descriptive statistics;',
-      'pre-post comparison;','appropriate statistical tests;','thematic analysis;',
-      'content analysis; or','triangulation of multiple evidence sources.'
-    ])),
-    A(`<p style="${P}">Do not employ statistical tests merely to make the manuscript appear more scholarly. The analysis must be appropriate to the data and evaluation design.</p>`),
     N('', safe(data.dataAnalysis).trim() || ANSWER_PH),
 
     A(`<p style="${H_SUB}">2.9 Ethical Considerations</p>`),
-    A(`<p style="${P}">Explain relevant safeguards concerning:</p>`),
-    A(UL([
-      'informed participation or consent;','confidentiality;','privacy;',
-      'community data;','photographs;','interviews and testimonies;',
-      'vulnerable participants; and','institutional records.'
-    ])),
-    A(`<p style="${P}">Where formal ethics clearance was required and obtained, state the approving body and approval/reference number.</p>`),
     N('', safe(data.ethicalConsiderations).trim() || ANSWER_PH),
   );
 
@@ -843,71 +703,24 @@ function buildBodyBlocks(data, BLUE, LIGHT, BORDER) {
   // ============================================================
   push(
     A(`<p style="${H_SECTION}margin-top:16px;">3. RESULTS</p>`),
-    A(`<p style="${NOTE}">Recommended maximum: <span style="${NOTE_RED}">1,200–1,600 words</span></p>`),
-    A(`<p style="${P}">Present the evidence objectively and systematically.</p>`),
-    A(`<p style="${P}">Results should correspond directly with the project objectives and indicators.</p>`),
 
     A(`<p style="${H_SUB}">3.1 Project Reach and Implementation</p>`),
-    A(`<p style="${P}">Briefly report important implementation evidence, including:</p>`),
-    A(UL([
-      'actual participants reached;','interventions delivered;','completion levels;',
-      'major products or outputs; and','significant deviations from the original project design.'
-    ])),
-    A(`<p style="${P}">Do not allow activity counts to dominate the Results section.</p>`),
     N('', safe(data.reachImplementation).trim() || ANSWER_PH),
 
     A(`<p style="${H_SUB}">3.2 Immediate Results</p>`),
-    A(`<p style="${P}">Present documented immediate changes following the intervention, where applicable.</p>`),
-    A(`<p style="${P}">Examples include changes in:</p>`),
-    A(UL([
-      'knowledge;','skills;','practices;','confidence;','organizational capacity;',
-      'access;','productivity;','service delivery; or','institutional processes.'
-    ])),
     N('', safe(data.immediateResults).trim() || ANSWER_PH),
 
     A(`<p style="${H_SUB}">3.3 Outcomes</p>`),
-    A(`<p style="${P}">Present evidence of changes that occurred beyond immediate project outputs.</p>`),
-    A(`<p style="${P}">Where possible, distinguish clearly among:</p>`),
-    A(`<p style="${P_TIGHT}"><b>Output</b> – what the project produced</p>`),
-    A(`<p style="${P_TIGHT}"><b>Immediate result</b> – what changed shortly after the intervention</p>`),
-    A(`<p style="${P_TIGHT}"><b>Outcome</b> – meaningful change in practice, behavior, condition, performance, or institutional capacity</p>`),
     N('', safe(data.outcomes).trim() || ANSWER_PH),
 
     A(`<p style="${H_SUB}">3.4 Adoption, Utilization, Adaptation, or Continuation</p>`),
-    A(`<p style="${P}">Where applicable, report evidence that project participants or partners:</p>`),
-    A(UL([
-      'used acquired knowledge or technologies;','adopted recommended practices;',
-      'adapted an intervention to local circumstances;',
-      'continued activities beyond project-supported delivery; or','replicated project practices.'
-    ])),
-    A(`<p style="${P}">Specify who adopted what, how many, to what extent, and based on what evidence whenever the data permit.</p>`),
     N('', safe(data.adoption).trim() || ANSWER_PH),
 
     A(`<p style="${H_SUB}">3.5 Institutionalization and Sustainability</p>`),
-    A(`<p style="${P}">Present documented evidence of mechanisms such as:</p>`),
-    A(UL([
-      'partner policies;','local ordinances or resolutions;','budget allocations;',
-      'integration into regular programs;','institutional structures;',
-      'trained local implementers;','community management mechanisms;',
-      'continuing partnerships;','locally generated resources; or',
-      'other arrangements supporting continuation.'
-    ])),
     N('', safe(data.institutionalization).trim() || ANSWER_PH),
 
     A(`<p style="${H_SUB}">3.6 Public Value and Broader Benefits</p>`),
-    A(`<p style="${P}">Where supported by evidence, describe the project\'s contribution to community or institutional benefit.</p>`),
-    A(`<p style="${P}">Possible areas include:</p>`),
-    A(UL([
-      'improved livelihood;','health or wellbeing;','educational improvement;',
-      'strengthened institutional capacity;','increased resilience;',
-      'improved environmental practices;','empowerment;',
-      'improved service delivery; or','other documented public benefits.'
-    ])),
     N('', safe(data.publicValue).trim() || ANSWER_PH),
-
-    A(`<p style="${H_SUB}">Important Evidence Rule</p>`),
-    A(`<p style="${P}color:#000;">Attendance sheets, photographs, certificates, and activity reports can verify that an activity occurred, but they should not by themselves be used as proof that an outcome, adoption, utilization, or impact occurred. This distinction is expressly reflected in PEMNet\'s conference requirements.</p>`),
-    A(`<p style="${P}color:#000">Authors should not feel compelled to claim "impact." The conference guidelines specifically recognize that completed projects need not claim long-term impact when such evidence is unavailable.</p>`),
   );
 
   // ============================================================
@@ -915,59 +728,23 @@ function buildBodyBlocks(data, BLUE, LIGHT, BORDER) {
   // ============================================================
   push(
     A(`<p style="${H_SECTION}margin-top:16px;">4. DISCUSSION</p>`),
-    A(`<p style="${NOTE}">Recommended maximum: <span style="${NOTE_RED}">1,000–1,400 words</span></p>`),
-    A(`<p style="${P}">This is essential if PEMNet wants these papers eventually to become publishable scholarly manuscripts.</p>`),
-    A(`<p style="${P}">The Discussion should explain what the results mean, rather than repeat the Results section.</p>`),
-    A(`<p style="${P}">Address the following as applicable.</p>`),
 
     A(`<p style="${H_SUB}">4.1 Interpretation of Major Findings</p>`),
-    A(`<p style="${P}">Explain the most important findings.</p>`),
-    A(`<p style="${P}">Why did the intervention appear to work—or not work?</p>`),
-    A(`<p style="${P}">What conditions may explain the observed results?</p>`),
     N('', safe(data.interpretation).trim() || ANSWER_PH),
 
     A(`<p style="${H_SUB}">4.2 Relationship to Previous Research and Extension Literature</p>`),
-    A(`<p style="${P}">Compare the results with relevant published studies, extension literature, policies, frameworks, or previous interventions.</p>`),
-    A(`<p style="${P}">Explain whether the results support, extend, differ from, or qualify what is already known.</p>`),
     N('', safe(data.relationshipLiterature).trim() || ANSWER_PH),
 
     A(`<p style="${H_SUB}">4.3 Factors Affecting Implementation and Outcomes</p>`),
-    A(`<p style="${P}">Discuss important enabling or constraining factors, such as:</p>`),
-    A(UL([
-      'community participation;','leadership;','institutional support;',
-      'local culture;','resources;','partnerships;','market conditions;',
-      'environmental conditions;','policy context;','implementation fidelity; or',
-      'other contextual factors.'
-    ])),
     N('', safe(data.factorsAffecting).trim() || ANSWER_PH),
 
     A(`<p style="${H_SUB}">4.4 Inclusion, Sustainability, and Resilience</p>`),
-    A(`<p style="${P}">Where applicable, interpret how the project addressed:</p>`),
-    A(UL([
-      'gender and social inclusion;','participation of vulnerable or underserved groups;',
-      'sustainability;','resilience;','institutional ownership; and','local capacity.'
-    ])),
     N('', safe(data.inclusionResilience).trim() || ANSWER_PH),
 
     A(`<p style="${H_SUB}">4.5 Transferability, Replication, or Scaling</p>`),
-    A(`<p style="${P}">Discuss whether the intervention may reasonably be:</p>`),
-    A(UL([
-      'replicated;','adapted;','scaled;','institutionalized; or',
-      'transferred to another context.'
-    ])),
-    A(`<p style="${P}">Do not automatically recommend scaling solely because participants were satisfied with the project.</p>`),
     N('', safe(data.transferability).trim() || ANSWER_PH),
 
     A(`<p style="${H_SUB}">4.6 Limitations</p>`),
-    A(`<p style="${P}">Clearly acknowledge relevant limitations, including possible weaknesses in:</p>`),
-    A(UL([
-      'baseline information;','participant selection;','sample size;',
-      'absence of a comparison group;','duration of follow-up;',
-      'reliance on self-reported information;','missing data;',
-      'measurement instruments;','attribution of outcomes; or',
-      'other methodological constraints.'
-    ])),
-    A(`<p style="${P}">A credible limitations section strengthens, rather than weakens, a scholarly paper.</p>`),
     N('', safe(data.limitations).trim() || ANSWER_PH),
   );
 
@@ -976,16 +753,6 @@ function buildBodyBlocks(data, BLUE, LIGHT, BORDER) {
   // ============================================================
   push(
     A(`<p style="${H_SECTION}margin-top:16px;">5. IMPLICATIONS FOR EXTENSION PRACTICE AND POLICY</p>`),
-    A(`<p style="${NOTE}">Recommended maximum: <span style="${NOTE_RED}">400–500 words</span></p>`),
-    A(`<p style="${P}">Explain what extension managers, HEIs, practitioners, LGUs, partner institutions, policymakers, or other stakeholders can reasonably learn from the project.</p>`),
-    A(`<p style="${P}">Possible implications may concern:</p>`),
-    A(UL([
-      'extension project design;','community engagement;','monitoring and evaluation;',
-      'evidence generation;','institutional partnerships;','technology adoption;',
-      'capability-building;','sustainability mechanisms;','quality assurance;',
-      'policy development; or','scaling and replication.'
-    ])),
-    A(`<p style="${P}">Recommendations must arise from the evidence presented in the paper.</p>`),
     N('', safe(data.implications).trim() || ANSWER_PH),
   );
 
@@ -994,71 +761,30 @@ function buildBodyBlocks(data, BLUE, LIGHT, BORDER) {
   // ============================================================
   push(
     A(`<p style="${H_SECTION}margin-top:16px;text-transform:uppercase;">6. CONCLUSION</p>`),
-    A(`<p style="${NOTE}">Recommended maximum: <span style="${NOTE_RED}">300–500 words</span></p>`),
-    A(`<p style="${P}">Provide a concise synthesis of:</p>`),
-    A(`<ol style="margin:0 0 6px 0;padding-left:24px;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;"><li>the development issue addressed;</li><li>the principal intervention;</li><li>the strongest documented results;</li><li>the significance of those results; and</li><li>the central implication for transformative extension.</li></ol>`),
-    A(`<p style="${P}">Do not introduce new data or literature in the Conclusion.</p>`),
-    A(`<p style="${P}">Avoid exaggerated claims such as "the project completely transformed the community" unless such a conclusion is genuinely supported by the evidence.</p>`),
     N('', safe(data.conclusion).trim() || ANSWER_PH),
 
     A(`<p style="${H_SECTION}margin-top:16px;">ACKNOWLEDGMENTS</p>`),
-    A(`<p style="${P}">Acknowledge institutions, communities, partners, funders, technical personnel, or individuals who contributed materially to the project but do not qualify for authorship.</p>`),
-    A(`<p style="${P}">Do not use this section merely to list officials.</p>`),
     N('', safe(data.acknowledgments).trim() || ANSWER_PH),
 
     A(`<p style="${H_SECTION}margin-top:16px;">FUNDING STATEMENT</p>`),
-    A(`<p style="${P}">Example:</p>`),
-    A(`<p style="${P}">This extension project was funded by [Institution/Agency] under [program/grant, if applicable].</p>`),
-    A(`<p style="${P}">or</p>`),
-    A(`<p style="${P}">The authors received no external funding for the implementation of this project.</p>`),
     N('', safe(data.funding).trim() || ANSWER_PH),
 
     A(`<p style="${H_SECTION}margin-top:16px;">CONFLICT OF INTEREST</p>`),
-    A(`<p style="${P}">Example: The authors declare no conflict of interest.</p>`),
-    A(`<p style="${P}">Where a relevant conflict exists, it should be disclosed.</p>`),
     N('', safe(data.conflictOfInterest).trim() || ANSWER_PH),
 
     A(`<p style="${H_SECTION}margin-top:16px;">ETHICS AND INFORMED CONSENT STATEMENT</p>`),
-    A(`<p style="${P}">Where applicable: The project and associated data-gathering procedures were reviewed/approved by [appropriate body]. Informed consent was obtained from participants prior to data collection and/or use of identifiable photographs and testimonies.</p>`),
-    A(`<p style="${P}">Adapt the statement according to what actually occurred. Authors should not claim ethical clearance that was not obtained.</p>`),
     N('', safe(data.ethicsStatement).trim() || ANSWER_PH),
 
     A(`<p style="${H_SECTION}margin-top:16px;">DATA AVAILABILITY STATEMENT</p>`),
-    A(`<p style="${P}">Where appropriate: The data supporting the findings of this paper are available from the corresponding author upon reasonable request, subject to applicable privacy, consent, institutional, and data-protection requirements.</p>`),
     N('', safe(data.dataAvailability).trim() || ANSWER_PH),
 
     A(`<p style="${H_SECTION}margin-top:16px;">AUTHOR CONTRIBUTIONS</p>`),
-    A(`<p style="${P}">For stronger publication readiness, PEMNet can encourage the CRediT-style contributor approach. Example:</p>`),
-    A(`<div style="margin:0 0 10px 0;"><p style="${P_TIGHT}">Conceptualization: A.A., B.B.</p><p style="${P_TIGHT}">Project Implementation: A.A., B.B., C.C.</p><p style="${P_TIGHT}">Methodology: A.A., C.C.</p><p style="${P_TIGHT}">Data Collection: B.B., C.C.</p><p style="${P_TIGHT}">Data Analysis: A.A.</p><p style="${P_TIGHT}">Writing – Original Draft: A.A.</p><p style="${P_TIGHT}">Writing – Review and Editing: A.A., B.B., C.C.</p><p style="${P_TIGHT}">Project Administration: B.B.</p></div>`),
-    A(`<p style="${P}">This can be optional for the conference version but is valuable for eventual journal submission.</p>`),
     N('', safe(data.authorContributions).trim() || ANSWER_PH),
 
     A(`<p style="${H_SECTION}margin-top:16px;">REFERENCES</p>`),
-    A(`<p style="${P}">Use APA 7th Edition consistently.</p>`),
-    A(`<p style="${P}">Authors should prioritize:</p>`),
-    A(UL([
-      'peer-reviewed journal articles;','scholarly books;','government publications;',
-      'official institutional reports;','authoritative technical publications; and',
-      'other credible primary sources.'
-    ])),
-    A(`<p style="${P}">References appearing in the list must be cited in the manuscript, and all cited works must appear in the reference list.</p>`),
-    A(`<p style="${P_TIGHT}"><b>Journal Article</b></p>`),
-    A(`<p style="${P_TIGHT}">Author, A. A., &amp; Author, B. B. (Year). Title of article. <i>Journal Title</i>, <u>Volume</u>(Issue), xx–xx. DOI</p>`),
-    A(`<p style="${P_TIGHT}margin-top:8px;"><b>Government/Institutional Report</b></p>`),
-    A(`<p style="${P_TIGHT}">Institution. (Year). <i>Title of report</i>. Publisher/Institution. URL</p>`),
-    A(`<p style="${P_TIGHT}margin-top:8px;"><b>Book</b></p>`),
-    A(`<p style="${P_TIGHT}">Author, A. A. (Year). <i>Title of book</i>. Publisher.</p>`),
     N('', safe(data.references).trim() || 'Click or tap here and enter the complete APA 7th Edition reference list.'),
 
     A(`<p style="${H_SECTION}margin-top:16px;">APPENDICES</p>`),
-    A(`<p style="${P}">Appendices are optional and should contain only evidence necessary for understanding or verifying the manuscript.</p>`),
-    A(`<p style="${P}">Possible appendices include:</p>`),
-    A(`<p style="${P_TIGHT}">Appendix A: Project Results Framework</p>`),
-    A(`<p style="${P_TIGHT}">Appendix B: Major Monitoring Indicators</p>`),
-    A(`<p style="${P_TIGHT}">Appendix C: Relevant Data Collection Instrument</p>`),
-    A(`<p style="${P_TIGHT}">Appendix D: Additional Results Table</p>`),
-    A(`<p style="${P_TIGHT}">Appendix E: Evidence of Institutionalization</p>`),
-    A(`<p style="${P}">Do not turn the manuscript into a portfolio of certificates, attendance sheets, photographs, and administrative documents.</p>`),
     N('', safe(data.appendices).trim() || 'Click or tap here to insert or list only the appendices necessary for understanding or verifying the manuscript.'),
 
     A(`<p style="${P_TIGHT}">Table 1</p>`),
@@ -1091,7 +817,6 @@ function buildBodyBlocks(data, BLUE, LIGHT, BORDER) {
       </table>
     `),
     A(`<p style="${P_TIGHT}font-style:italic;">${safe(data.table1Note) || 'Baseline and Post-Intervention Status of Selected Indicators. Note. Explain abbreviations or important qualifications.'}</p>`),
-    A(`<p style="${P}">Every table must be discussed in the text.</p>`),
   );
 
     // Dynamic Figures from uploaded files
@@ -1213,9 +938,43 @@ async function generateFullPaperPdfBlob(previewData) {
   }
 }
 
-/* ============================================================
- *  Main component
- * ============================================================ */
+
+function GuidanceBlock({ children }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="mb-3 rounded-xl border border-blue-100 bg-blue-50/50 overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between px-4 py-2.5 text-left text-xs font-semibold text-blue-800 hover:bg-blue-100/60 transition"
+      >
+        <span className="inline-flex items-center gap-1.5">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+          </svg>
+          {open ? 'Hide guidelines' : 'Show writing guidelines'}
+        </span>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          strokeWidth={2}
+          stroke="currentColor"
+          className={`w-3.5 h-3.5 transition-transform ${open ? 'rotate-180' : ''}`}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+        </svg>
+      </button>
+      {open && (
+        <div className="px-4 pb-3 pt-0.5 text-xs leading-relaxed space-y-1.5 border-t border-blue-100 bg-white/60" style={{ color: '#4472C4' }}>
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 export default function SubmitFullPaper({
   user,
   submissions = [],
@@ -1763,8 +1522,8 @@ export default function SubmitFullPaper({
             {/* Toolbar — sits below PEMNet header, never scrolls */}
             <div className="shrink-0 bg-white/95 backdrop-blur border-b border-slate-200 px-6 py-3 flex items-center justify-between no-print shadow-sm">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-purple-600">
+                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-blue-600">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
@@ -1787,7 +1546,7 @@ export default function SubmitFullPaper({
                 <button
                   type="button"
                   onClick={() => setShowPreview(false)}
-                  className="px-4 py-2 text-sm font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-xl transition inline-flex items-center gap-2"
+                  className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition inline-flex items-center gap-2"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
@@ -1851,7 +1610,7 @@ export default function SubmitFullPaper({
                 Submit Full Paper
               </h1>
               <p className="text-slate-500 text-sm mt-1">
-                Upload the full paper corresponding to your accepted abstract.
+                Complete the full paper using the provided scholarly template below. No separate file upload is required.
               </p>
             </div>
             <button
@@ -1870,17 +1629,17 @@ export default function SubmitFullPaper({
         <div className="flex-1 min-h-0 px-6 pb-6">
           <div className="form-scroll max-w-4xl mx-auto h-full overflow-y-scroll">
             <div className="bg-white border border-slate-200 rounded-2xl shadow-sm">
-              <div className="bg-linear-to-r from-purple-700 to-purple-800 px-6 py-4 flex items-center justify-between">
+              <div className="bg-linear-to-r from-blue-700 to-blue-800 px-6 py-4 flex items-center justify-between">
                 <div className="text-white">
-                  <h2 className="text-lg font-bold">Full Paper Submission</h2>
-                  <p className="text-xs text-purple-100">
+                  <h2 className="text-lg font-bold">Full Paper Submission Template</h2>
+                  <p className="text-xs text-blue-100">
                     1<sup>st</sup> PEMNet National Extension Conference 2026
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setShowPreview(true)}
-                  className="px-4 py-2 text-sm font-semibold text-purple-800 bg-white hover:bg-purple-50 rounded-xl transition inline-flex items-center gap-2"
+                  className="px-4 py-2 text-sm font-semibold text-blue-800 bg-white hover:bg-blue-50 rounded-xl transition inline-flex items-center gap-2"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
@@ -1905,9 +1664,9 @@ export default function SubmitFullPaper({
                   <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
                     Linked Accepted Abstract <span className="text-red-500">*</span>
                   </label>
-                  <p className="text-xs text-slate-500 mb-2">
-                    Select which of your accepted abstracts this full paper belongs to.
-                  </p>
+                  <GuidanceBlock>
+                    <p>Select which of your accepted abstracts this full paper belongs to. The title, keywords, and author information from that abstract will be auto-filled where possible.</p>
+                  </GuidanceBlock>
                   {acceptedSubmissions.length === 0 ? (
                     <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-amber-600 shrink-0 mt-0.5">
@@ -1941,6 +1700,11 @@ export default function SubmitFullPaper({
                   <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
                     Full Paper Title <span className="text-red-500">*</span>
                   </label>
+                  <GuidanceBlock>
+                    <p className="font-semibold">The title should communicate the central intervention or extension issue, major outcome or focus, and context where appropriate. Avoid titles consisting only of the institutional project name or acronym.</p>
+                    <p className="italic">Example structure: <b>Implementation and Outcomes of a Community-Based Natural Farming Extension Program among Smallholder Farmers in [Location]</b></p>
+                    <p className="italic">rather than: <b>Project UMWAD: An Extension Program</b></p>
+                  </GuidanceBlock>
                   <input
                     type="text"
                     value={title}
@@ -1955,6 +1719,10 @@ export default function SubmitFullPaper({
                   <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
                     Author/s <span className="text-red-500">*</span>
                   </label>
+                  <GuidanceBlock>
+                    <p>Enter all author names using superscript affiliation numbers as applicable.</p>
+                    <p className="font-semibold">Example format: <b>First Author<sup>1</sup>, Second Author<sup>2</sup>, Third Author<sup>3</sup></b></p>
+                  </GuidanceBlock>
                   <input
                     type="text"
                     value={authors}
@@ -1968,6 +1736,10 @@ export default function SubmitFullPaper({
                   <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
                     Author Affiliations <span className="text-red-500">*</span>
                   </label>
+                  <GuidanceBlock>
+                    <p>Enter the corresponding institutional affiliation for each author, using superscript numbers.</p>
+                    <p className="font-semibold">Format each line as: <b><sup>n</sup>Department/College/Unit, University/Institution, City, Philippines</b></p>
+                  </GuidanceBlock>
                   <textarea
                     value={affiliations}
                     onChange={(e) => setAffiliations(e.target.value)}
@@ -1982,6 +1754,9 @@ export default function SubmitFullPaper({
                     <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
                       Corresponding Author Name <span className="text-red-500">*</span>
                     </label>
+                    <GuidanceBlock>
+                      <p>Enter the full name of the author who will handle correspondence.</p>
+                    </GuidanceBlock>
                     <input
                       type="text"
                       value={correspondingName}
@@ -1994,6 +1769,9 @@ export default function SubmitFullPaper({
                     <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
                       Corresponding Author Email <span className="text-red-500">*</span>
                     </label>
+                    <GuidanceBlock>
+                      <p>Enter a valid institutional or personal email address.</p>
+                    </GuidanceBlock>
                     <input
                       type="email"
                       value={correspondingEmail}
@@ -2009,6 +1787,9 @@ export default function SubmitFullPaper({
                     Corresponding Author ORCID{' '}
                     <span className="text-slate-400 font-normal">(optional)</span>
                   </label>
+                  <GuidanceBlock>
+                    <p>Enter your ORCID iD if available (e.g., 0000-0002-1825-0097).</p>
+                  </GuidanceBlock>
                   <input
                     type="text"
                     value={correspondingOrcid}
@@ -2023,6 +1804,9 @@ export default function SubmitFullPaper({
                   <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
                     Thematic Area <span className="text-red-500">*</span>
                   </label>
+                  <GuidanceBlock>
+                    <p>Select the single thematic area that best represents the project&apos;s primary intended outcome and strongest evidence of public value.</p>
+                  </GuidanceBlock>
                   <select
                     value={thematicArea}
                     onChange={(e) => {
@@ -2054,6 +1838,9 @@ export default function SubmitFullPaper({
                   <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
                     Keywords <span className="text-red-500">*</span>
                   </label>
+                  <GuidanceBlock>
+                    <p>Provide 4–6 keywords separated by semicolons.</p>
+                  </GuidanceBlock>
                   <input
                     type="text"
                     value={keywords}
@@ -2068,6 +1855,11 @@ export default function SubmitFullPaper({
                   <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
                     Abstract <span className="text-red-500">*</span>
                   </label>
+                  <GuidanceBlock>
+                    <p className="font-semibold">Recommended length: <span style={{ color: '#FF0000' }}>250–300 words</span>, preferably as one coherent paragraph.</p>
+                    <p>Include these elements: <b>Background/Need</b>, <b>Objective</b>, <b>Methods/Approach</b>, <b>Results</b> (with actual evidence), and <b>Conclusion</b> (with implication for practice/policy).</p>
+                    <p>Do not introduce claims in the abstract that are not supported in the main paper.</p>
+                  </GuidanceBlock>
                   <textarea
                     value={abstract}
                     onChange={(e) => setAbstract(e.target.value)}
@@ -2084,9 +1876,16 @@ export default function SubmitFullPaper({
                   <h3 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">
                     1. Introduction
                   </h3>
+                  <GuidanceBlock>
+                    <p className="font-semibold">Recommended maximum: <span style={{ color: '#FF0000' }}>900–1,100 words</span></p>
+                    <p>The Introduction should establish the scholarly and development basis of the extension project, demonstrate how the intervention was informed by existing knowledge, and clearly identify the project&apos;s objectives.</p>
+                  </GuidanceBlock>
                   <div className="space-y-4">
                     <div>
                       <label className="text-sm font-semibold text-slate-700 mb-1.5 block">1.1 Background and Context</label>
+                      <GuidanceBlock>
+                        <p>Describe the community, institutional, sectoral, environmental, economic, educational, health, or development context. Explain the significance of the issue and provide relevant statistics, policies, research findings, or documented community evidence where appropriate.</p>
+                      </GuidanceBlock>
                       <textarea
                         value={backgroundContext}
                         onChange={(e) => setBackgroundContext(e.target.value)}
@@ -2097,6 +1896,15 @@ export default function SubmitFullPaper({
                     </div>
                     <div>
                       <label className="text-sm font-semibold text-slate-700 mb-1.5 block">1.2 Evidence of the Problem or Development Need</label>
+                      <GuidanceBlock>
+                        <p>Explain how the need, condition, gap, or opportunity was established. Evidence may come from:</p>
+                        <ul className="list-disc list-inside ml-1">
+                          <li>situational or needs assessment; baseline data; community consultations</li>
+                          <li>surveys; focus group discussions; key informant interviews</li>
+                          <li>institutional records; government statistics; previous research; technical assessments; or other credible sources</li>
+                        </ul>
+                        <p>Avoid relying solely on statements such as &ldquo;the community requested training.&rdquo;</p>
+                      </GuidanceBlock>
                       <textarea
                         value={evidenceNeed}
                         onChange={(e) => setEvidenceNeed(e.target.value)}
@@ -2107,6 +1915,14 @@ export default function SubmitFullPaper({
                     </div>
                     <div>
                       <label className="text-sm font-semibold text-slate-700 mb-1.5 block">1.3 Related Literature and Extension Evidence</label>
+                      <GuidanceBlock>
+                        <p>Provide a focused synthesis of relevant scholarly and technical literature concerning:</p>
+                        <ul className="list-disc list-inside ml-1">
+                          <li>the issue being addressed; comparable interventions; relevant extension approaches</li>
+                          <li>documented factors influencing adoption or outcomes; and the knowledge or practice gap the project sought to address</li>
+                        </ul>
+                        <p>This should not become an exhaustive review — its purpose is to demonstrate that the intervention was informed by existing knowledge.</p>
+                      </GuidanceBlock>
                       <textarea
                         value={relatedLiterature}
                         onChange={(e) => setRelatedLiterature(e.target.value)}
@@ -2117,6 +1933,9 @@ export default function SubmitFullPaper({
                     </div>
                     <div>
                       <label className="text-sm font-semibold text-slate-700 mb-1.5 block">1.4 Rationale and Contribution of the Project</label>
+                      <GuidanceBlock>
+                        <p>Explain why the intervention was appropriate given the identified problem, available evidence, community context, and institutional expertise. Clearly identify what is potentially distinctive or useful about the project.</p>
+                      </GuidanceBlock>
                       <textarea
                         value={rationale}
                         onChange={(e) => setRationale(e.target.value)}
@@ -2127,6 +1946,9 @@ export default function SubmitFullPaper({
                     </div>
                     <div>
                       <label className="text-sm font-semibold text-slate-700 mb-1.5 block">1.5 Objectives</label>
+                      <GuidanceBlock>
+                        <p>State the general and specific objectives. The objectives reported here should correspond with the results presented later in the paper.</p>
+                      </GuidanceBlock>
                       <textarea
                         value={objectives}
                         onChange={(e) => setObjectives(e.target.value)}
@@ -2145,10 +1967,17 @@ export default function SubmitFullPaper({
                   <h3 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">
                     2. Materials and Methods / Extension Project Methodology
                   </h3>
+                  <GuidanceBlock>
+                    <p className="font-semibold">Recommended maximum: <span style={{ color: '#FF0000' }}>1,100–1,400 words</span></p>
+                    <p>This section must be sufficiently detailed to allow readers to understand what was done, with whom, how, why, and how results were determined.</p>
+                  </GuidanceBlock>
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.1 Project Setting and Duration</label>
+                        <GuidanceBlock>
+                          <p>Describe the project site, relevant characteristics of the community or institution, implementation period, and contextual conditions important to understanding the intervention. A map may be included when genuinely useful.</p>
+                        </GuidanceBlock>
                         <textarea
                           value={settingDuration}
                           onChange={(e) => setSettingDuration(e.target.value)}
@@ -2159,6 +1988,10 @@ export default function SubmitFullPaper({
                       </div>
                       <div>
                         <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.2 Participants, Intended Users, or Beneficiaries</label>
+                        <GuidanceBlock>
+                          <p>Describe the target population, participant selection or inclusion criteria, number reached, relevant demographic or sectoral characteristics, and involvement of women, youth, vulnerable groups, or other relevant sectors where applicable.</p>
+                          <p>Distinguish between persons reached by project activities and the population for whom outcome data were actually obtained.</p>
+                        </GuidanceBlock>
                         <textarea
                           value={participantsDesc}
                           onChange={(e) => setParticipantsDesc(e.target.value)}
@@ -2172,6 +2005,9 @@ export default function SubmitFullPaper({
                       <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
                         Distinguish reach vs. population for whom outcome data were obtained
                       </label>
+                      <GuidanceBlock>
+                        <p>Clarify the distinction between the number of people reached by project activities and the population that actually provided outcome data.</p>
+                      </GuidanceBlock>
                       <textarea
                         value={reachPopulation}
                         onChange={(e) => setReachPopulation(e.target.value)}
@@ -2182,6 +2018,9 @@ export default function SubmitFullPaper({
                     </div>
                     <div>
                       <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.3 Situational Analysis and Baseline</label>
+                      <GuidanceBlock>
+                        <p>Describe how the initial situation was established. Identify information collected, data sources, methods or instruments used, baseline indicators (where available), and major findings that informed project design.</p>
+                      </GuidanceBlock>
                       <textarea
                         value={situationalAnalysis}
                         onChange={(e) => setSituationalAnalysis(e.target.value)}
@@ -2192,6 +2031,9 @@ export default function SubmitFullPaper({
                     </div>
                     <div>
                       <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.4 Project / Intervention Design — Rationale</label>
+                      <GuidanceBlock>
+                        <p>Describe the extension intervention and its underlying logic. Explain why the selected intervention was expected to address the identified condition.</p>
+                      </GuidanceBlock>
                       <textarea
                         value={interventionRationale}
                         onChange={(e) => setInterventionRationale(e.target.value)}
@@ -2202,6 +2044,10 @@ export default function SubmitFullPaper({
                     </div>
                     <div>
                       <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.5 Implementation Strategies</label>
+                      <GuidanceBlock>
+                        <p>Describe the major strategies used, such as capability-building, technical assistance, demonstrations, mentoring or coaching, community organizing, communication interventions, technology transfer, enterprise development, policy or institutional development, partnership building, participatory planning, or other relevant approaches.</p>
+                        <p>Avoid presenting a simple chronological list of activities unless chronology is analytically important.</p>
+                      </GuidanceBlock>
                       <textarea
                         value={implementationStrategies}
                         onChange={(e) => setImplementationStrategies(e.target.value)}
@@ -2212,6 +2058,9 @@ export default function SubmitFullPaper({
                     </div>
                     <div>
                       <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.6 Partnership and Stakeholder Participation</label>
+                      <GuidanceBlock>
+                        <p>Identify important partners and explain their actual roles, rather than merely listing organizations. Describe relevant community participation in project planning, implementation, monitoring, decision-making, resource mobilization, or sustainability mechanisms.</p>
+                      </GuidanceBlock>
                       <textarea
                         value={partnership}
                         onChange={(e) => setPartnership(e.target.value)}
@@ -2223,6 +2072,10 @@ export default function SubmitFullPaper({
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.7 Monitoring and Evaluation Design</label>
+                        <GuidanceBlock>
+                          <p>Explain how the project&apos;s results were measured or verified. Identify indicators, data sources, instruments, timing of measurements, persons or groups from whom data were obtained, follow-up procedures, and methods used to verify or triangulate evidence.</p>
+                          <p>Where baseline and endline measurements were conducted, describe them clearly.</p>
+                        </GuidanceBlock>
                         <textarea
                           value={monitoringEval}
                           onChange={(e) => setMonitoringEval(e.target.value)}
@@ -2233,6 +2086,10 @@ export default function SubmitFullPaper({
                       </div>
                       <div>
                         <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.8 Data Analysis</label>
+                        <GuidanceBlock>
+                          <p>Describe how quantitative and/or qualitative data were analyzed. Examples: frequencies and percentages; means or other descriptive statistics; pre-post comparison; appropriate statistical tests; thematic analysis; content analysis; or triangulation of multiple evidence sources.</p>
+                          <p>Do not employ statistical tests merely to make the manuscript appear more scholarly.</p>
+                        </GuidanceBlock>
                         <textarea
                           value={dataAnalysis}
                           onChange={(e) => setDataAnalysis(e.target.value)}
@@ -2244,6 +2101,10 @@ export default function SubmitFullPaper({
                     </div>
                     <div>
                       <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.9 Ethical Considerations</label>
+                      <GuidanceBlock>
+                        <p>Explain relevant safeguards concerning informed participation or consent, confidentiality, privacy, community data, photographs, interviews and testimonies, vulnerable participants, and institutional records.</p>
+                        <p>Where formal ethics clearance was required and obtained, state the approving body and approval/reference number.</p>
+                      </GuidanceBlock>
                       <textarea
                         value={ethicalConsiderations}
                         onChange={(e) => setEthicalConsiderations(e.target.value)}
@@ -2260,9 +2121,18 @@ export default function SubmitFullPaper({
                 * ===================================================== */}
                 <div className="border-t border-slate-200 pt-5">
                   <h3 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">3. Results</h3>
+                  <GuidanceBlock>
+                    <p className="font-semibold">Recommended maximum: <span style={{ color: '#FF0000' }}>1,200–1,600 words</span></p>
+                    <p>Present the evidence objectively and systematically. Results should correspond directly with the project objectives and indicators.</p>
+                    <p><b>Important Evidence Rule:</b> Attendance sheets, photographs, certificates, and activity reports can verify that an activity occurred, but they should not by themselves be used as proof that an outcome, adoption, utilization, or impact occurred.</p>
+                  </GuidanceBlock>
                   <div className="space-y-4">
                     <div>
                       <label className="text-sm font-semibold text-slate-700 mb-1.5 block">3.1 Project Reach and Implementation</label>
+                      <GuidanceBlock>
+                        <p>Briefly report important implementation evidence: actual participants reached, interventions delivered, completion levels, major products or outputs, and significant deviations from the original project design.</p>
+                        <p>Do not allow activity counts to dominate the Results section.</p>
+                      </GuidanceBlock>
                       <textarea
                         value={reachImplementation}
                         onChange={(e) => setReachImplementation(e.target.value)}
@@ -2273,6 +2143,9 @@ export default function SubmitFullPaper({
                     </div>
                     <div>
                       <label className="text-sm font-semibold text-slate-700 mb-1.5 block">3.2 Immediate Results</label>
+                      <GuidanceBlock>
+                        <p>Present documented immediate changes following the intervention, where applicable. Examples include changes in knowledge, skills, practices, confidence, organizational capacity, access, productivity, service delivery, or institutional processes.</p>
+                      </GuidanceBlock>
                       <textarea
                         value={immediateResults}
                         onChange={(e) => setImmediateResults(e.target.value)}
@@ -2283,6 +2156,14 @@ export default function SubmitFullPaper({
                     </div>
                     <div>
                       <label className="text-sm font-semibold text-slate-700 mb-1.5 block">3.3 Outcomes</label>
+                      <GuidanceBlock>
+                        <p>Present evidence of changes that occurred beyond immediate project outputs. Where possible, distinguish clearly among:</p>
+                        <ul className="list-disc list-inside ml-1">
+                          <li><b>Output</b> – what the project produced</li>
+                          <li><b>Immediate result</b> – what changed shortly after the intervention</li>
+                          <li><b>Outcome</b> – meaningful change in practice, behavior, condition, performance, or institutional capacity</li>
+                        </ul>
+                      </GuidanceBlock>
                       <textarea
                         value={outcomes}
                         onChange={(e) => setOutcomes(e.target.value)}
@@ -2293,6 +2174,10 @@ export default function SubmitFullPaper({
                     </div>
                     <div>
                       <label className="text-sm font-semibold text-slate-700 mb-1.5 block">3.4 Adoption, Utilization, Adaptation, or Continuation</label>
+                      <GuidanceBlock>
+                        <p>Where applicable, report evidence that project participants or partners used acquired knowledge or technologies, adopted recommended practices, adapted an intervention to local circumstances, continued activities beyond project-supported delivery, or replicated project practices.</p>
+                        <p>Specify who adopted what, how many, to what extent, and based on what evidence whenever the data permit.</p>
+                      </GuidanceBlock>
                       <textarea
                         value={adoption}
                         onChange={(e) => setAdoption(e.target.value)}
@@ -2303,6 +2188,9 @@ export default function SubmitFullPaper({
                     </div>
                     <div>
                       <label className="text-sm font-semibold text-slate-700 mb-1.5 block">3.5 Institutionalization and Sustainability</label>
+                      <GuidanceBlock>
+                        <p>Present documented evidence of mechanisms such as partner policies, local ordinances or resolutions, budget allocations, integration into regular programs, institutional structures, trained local implementers, community management mechanisms, continuing partnerships, locally generated resources, or other arrangements supporting continuation.</p>
+                      </GuidanceBlock>
                       <textarea
                         value={institutionalization}
                         onChange={(e) => setInstitutionalization(e.target.value)}
@@ -2313,6 +2201,9 @@ export default function SubmitFullPaper({
                     </div>
                     <div>
                       <label className="text-sm font-semibold text-slate-700 mb-1.5 block">3.6 Public Value and Broader Benefits</label>
+                      <GuidanceBlock>
+                        <p>Where supported by evidence, describe the project&apos;s contribution to community or institutional benefit. Possible areas include improved livelihood, health or wellbeing, educational improvement, strengthened institutional capacity, increased resilience, improved environmental practices, empowerment, improved service delivery, or other documented public benefits.</p>
+                      </GuidanceBlock>
                       <textarea
                         value={publicValue}
                         onChange={(e) => setPublicValue(e.target.value)}
@@ -2329,9 +2220,16 @@ export default function SubmitFullPaper({
                 * ===================================================== */}
                 <div className="border-t border-slate-200 pt-5">
                   <h3 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">4. Discussion</h3>
+                  <GuidanceBlock>
+                    <p className="font-semibold">Recommended maximum: <span style={{ color: '#FF0000' }}>1,000–1,400 words</span></p>
+                    <p>The Discussion should explain what the results mean, rather than repeat the Results section.</p>
+                  </GuidanceBlock>
                   <div className="space-y-4">
                     <div>
                       <label className="text-sm font-semibold text-slate-700 mb-1.5 block">4.1 Interpretation of Major Findings</label>
+                      <GuidanceBlock>
+                        <p>Explain the most important findings. Why did the intervention appear to work—or not work? What conditions may explain the observed results?</p>
+                      </GuidanceBlock>
                       <textarea
                         value={interpretation}
                         onChange={(e) => setInterpretation(e.target.value)}
@@ -2342,6 +2240,9 @@ export default function SubmitFullPaper({
                     </div>
                     <div>
                       <label className="text-sm font-semibold text-slate-700 mb-1.5 block">4.2 Relationship to Previous Research and Extension Literature</label>
+                      <GuidanceBlock>
+                        <p>Compare the results with relevant published studies, extension literature, policies, frameworks, or previous interventions. Explain whether the results support, extend, differ from, or qualify what is already known.</p>
+                      </GuidanceBlock>
                       <textarea
                         value={relationshipLiterature}
                         onChange={(e) => setRelationshipLiterature(e.target.value)}
@@ -2352,6 +2253,9 @@ export default function SubmitFullPaper({
                     </div>
                     <div>
                       <label className="text-sm font-semibold text-slate-700 mb-1.5 block">4.3 Factors Affecting Implementation and Outcomes</label>
+                      <GuidanceBlock>
+                        <p>Discuss important enabling or constraining factors, such as community participation, leadership, institutional support, local culture, resources, partnerships, market conditions, environmental conditions, policy context, implementation fidelity, or other contextual factors.</p>
+                      </GuidanceBlock>
                       <textarea
                         value={factorsAffecting}
                         onChange={(e) => setFactorsAffecting(e.target.value)}
@@ -2362,6 +2266,9 @@ export default function SubmitFullPaper({
                     </div>
                     <div>
                       <label className="text-sm font-semibold text-slate-700 mb-1.5 block">4.4 Inclusion, Sustainability, and Resilience</label>
+                      <GuidanceBlock>
+                        <p>Where applicable, interpret how the project addressed gender and social inclusion, participation of vulnerable or underserved groups, sustainability, resilience, institutional ownership, and local capacity.</p>
+                      </GuidanceBlock>
                       <textarea
                         value={inclusionResilience}
                         onChange={(e) => setInclusionResilience(e.target.value)}
@@ -2372,6 +2279,10 @@ export default function SubmitFullPaper({
                     </div>
                     <div>
                       <label className="text-sm font-semibold text-slate-700 mb-1.5 block">4.5 Transferability, Replication, or Scaling</label>
+                      <GuidanceBlock>
+                        <p>Discuss whether the intervention may reasonably be replicated, adapted, scaled, institutionalized, or transferred to another context.</p>
+                        <p>Do not automatically recommend scaling solely because participants were satisfied with the project.</p>
+                      </GuidanceBlock>
                       <textarea
                         value={transferability}
                         onChange={(e) => setTransferability(e.target.value)}
@@ -2382,6 +2293,10 @@ export default function SubmitFullPaper({
                     </div>
                     <div>
                       <label className="text-sm font-semibold text-slate-700 mb-1.5 block">4.6 Limitations</label>
+                      <GuidanceBlock>
+                        <p>Clearly acknowledge relevant limitations, including possible weaknesses in baseline information, participant selection, sample size, absence of a comparison group, duration of follow-up, reliance on self-reported information, missing data, measurement instruments, attribution of outcomes, or other methodological constraints.</p>
+                        <p>A credible limitations section strengthens, rather than weakens, a scholarly paper.</p>
+                      </GuidanceBlock>
                       <textarea
                         value={limitations}
                         onChange={(e) => setLimitations(e.target.value)}
@@ -2400,6 +2315,11 @@ export default function SubmitFullPaper({
                   <h3 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">
                     5. Implications for Extension Practice and Policy
                   </h3>
+                  <GuidanceBlock>
+                    <p className="font-semibold">Recommended maximum: <span style={{ color: '#FF0000' }}>400–500 words</span></p>
+                    <p>Explain what extension managers, HEIs, practitioners, LGUs, partner institutions, policymakers, or other stakeholders can reasonably learn from the project. Possible implications may concern extension project design, community engagement, monitoring and evaluation, evidence generation, institutional partnerships, technology adoption, capability-building, sustainability mechanisms, quality assurance, policy development, or scaling and replication.</p>
+                    <p>Recommendations must arise from the evidence presented in the paper.</p>
+                  </GuidanceBlock>
                   <textarea
                     value={implications}
                     onChange={(e) => setImplications(e.target.value)}
@@ -2419,6 +2339,11 @@ export default function SubmitFullPaper({
                   <div className="space-y-4">
                     <div>
                       <label className="text-sm font-semibold text-slate-700 mb-1.5 block">6. Conclusion</label>
+                      <GuidanceBlock>
+                        <p className="font-semibold">Recommended maximum: <span style={{ color: '#FF0000' }}>300–500 words</span></p>
+                        <p>Provide a concise synthesis of the development issue addressed, the principal intervention, the strongest documented results, the significance of those results, and the central implication for transformative extension.</p>
+                        <p>Do not introduce new data or literature in the Conclusion. Avoid exaggerated claims unless genuinely supported by evidence.</p>
+                      </GuidanceBlock>
                       <textarea
                         value={conclusion}
                         onChange={(e) => setConclusion(e.target.value)}
@@ -2429,6 +2354,10 @@ export default function SubmitFullPaper({
                     </div>
                     <div>
                       <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Acknowledgments</label>
+                      <GuidanceBlock>
+                        <p>Acknowledge institutions, communities, partners, funders, technical personnel, or individuals who contributed materially to the project but do not qualify for authorship.</p>
+                        <p>Do not use this section merely to list officials.</p>
+                      </GuidanceBlock>
                       <textarea
                         value={acknowledgments}
                         onChange={(e) => setAcknowledgments(e.target.value)}
@@ -2439,6 +2368,10 @@ export default function SubmitFullPaper({
                     </div>
                     <div>
                       <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Funding Statement</label>
+                      <GuidanceBlock>
+                        <p>Example: <i>This extension project was funded by [Institution/Agency] under [program/grant, if applicable].</i></p>
+                        <p>Or: <i>The authors received no external funding for the implementation of this project.</i></p>
+                      </GuidanceBlock>
                       <textarea
                         value={funding}
                         onChange={(e) => setFunding(e.target.value)}
@@ -2449,6 +2382,9 @@ export default function SubmitFullPaper({
                     </div>
                     <div>
                       <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Conflict of Interest</label>
+                      <GuidanceBlock>
+                        <p>Example: <i>The authors declare no conflict of interest.</i> Where a relevant conflict exists, it should be disclosed.</p>
+                      </GuidanceBlock>
                       <textarea
                         value={conflictOfInterest}
                         onChange={(e) => setConflictOfInterest(e.target.value)}
@@ -2459,6 +2395,10 @@ export default function SubmitFullPaper({
                     </div>
                     <div>
                       <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Ethics and Informed Consent Statement</label>
+                      <GuidanceBlock>
+                        <p>Where applicable: <i>The project and associated data-gathering procedures were reviewed/approved by [appropriate body]. Informed consent was obtained from participants prior to data collection and/or use of identifiable photographs and testimonies.</i></p>
+                        <p>Adapt the statement according to what actually occurred. Do not claim ethical clearance that was not obtained.</p>
+                      </GuidanceBlock>
                       <textarea
                         value={ethicsStatement}
                         onChange={(e) => setEthicsStatement(e.target.value)}
@@ -2469,6 +2409,9 @@ export default function SubmitFullPaper({
                     </div>
                     <div>
                       <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Data Availability Statement</label>
+                      <GuidanceBlock>
+                        <p>Where appropriate: <i>The data supporting the findings of this paper are available from the corresponding author upon reasonable request, subject to applicable privacy, consent, institutional, and data-protection requirements.</i></p>
+                      </GuidanceBlock>
                       <textarea
                         value={dataAvailability}
                         onChange={(e) => setDataAvailability(e.target.value)}
@@ -2479,6 +2422,10 @@ export default function SubmitFullPaper({
                     </div>
                     <div>
                       <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Author Contributions (CRediT-style)</label>
+                      <GuidanceBlock>
+                        <p>For stronger publication readiness, use a CRediT-style contributor approach. Example:</p>
+                        <p><i>Conceptualization: A.A., B.B.<br/>Methodology: A.A., C.C.<br/>Data Collection: B.B., C.C.<br/>Data Analysis: A.A.<br/>Writing – Original Draft: A.A.<br/>Writing – Review and Editing: A.A., B.B., C.C.<br/>Project Administration: B.B.</i></p>
+                      </GuidanceBlock>
                       <textarea
                         value={authorContributions}
                         onChange={(e) => setAuthorContributions(e.target.value)}
@@ -2489,6 +2436,13 @@ export default function SubmitFullPaper({
                     </div>
                     <div>
                       <label className="text-sm font-semibold text-slate-700 mb-1.5 block">References (APA 7th Edition)</label>
+                      <GuidanceBlock>
+                        <p>Use APA 7th Edition consistently. References appearing in the list must be cited in the manuscript, and all cited works must appear in the reference list.</p>
+                        <p>Prioritize peer-reviewed journal articles, scholarly books, government publications, official institutional reports, authoritative technical publications, and other credible primary sources.</p>
+                        <p className="font-semibold">Journal Article format: <i>Author, A. A., &amp; Author, B. B. (Year). Title of article. Journal Title, Volume(Issue), xx–xx. DOI</i></p>
+                        <p className="font-semibold">Government/Institutional Report: <i>Institution. (Year). Title of report. Publisher/Institution. URL</i></p>
+                        <p className="font-semibold">Book: <i>Author, A. A. (Year). Title of book. Publisher.</i></p>
+                      </GuidanceBlock>
                       <textarea
                         value={references}
                         onChange={(e) => setReferences(e.target.value)}
@@ -2499,6 +2453,10 @@ export default function SubmitFullPaper({
                     </div>
                     <div>
                       <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Appendices</label>
+                      <GuidanceBlock>
+                        <p>Appendices are optional and should contain only evidence necessary for understanding or verifying the manuscript. Possible appendices include: Appendix A: Project Results Framework; Appendix B: Major Monitoring Indicators; Appendix C: Relevant Data Collection Instrument; Appendix D: Additional Results Table; Appendix E: Evidence of Institutionalization.</p>
+                        <p>Do not turn the manuscript into a portfolio of certificates, attendance sheets, photographs, and administrative documents.</p>
+                      </GuidanceBlock>
                       <textarea
                         value={appendices}
                         onChange={(e) => setAppendices(e.target.value)}
@@ -2513,6 +2471,10 @@ export default function SubmitFullPaper({
                       <h4 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">
                         Table and Figure Format
                       </h4>
+                      <GuidanceBlock>
+                        <p>Tables and figures should communicate evidence, not simply decorate the manuscript. They must be properly numbered, labeled, explained in the text, and directly relevant to the claims being presented.</p>
+                        <p>Every table must be discussed in the text.</p>
+                      </GuidanceBlock>
                       <div className="space-y-4">
 
                         {/* ---------- Table 1 title ---------- */}
@@ -2534,9 +2496,9 @@ export default function SubmitFullPaper({
                           <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
                             Table 1 — Rows
                           </label>
-                          <p className="text-xs text-slate-500 mb-3">
-                            Fill in the indicators and their baseline / endline values. Add or remove rows as needed.
-                          </p>
+                          <GuidanceBlock>
+                            <p>Fill in the indicators and their baseline / endline values. Add or remove rows as needed.</p>
+                          </GuidanceBlock>
 
                           {/* Column header row */}
                           <div className="hidden sm:grid sm:grid-cols-5 gap-2 mb-2 px-1">
@@ -2674,7 +2636,7 @@ export default function SubmitFullPaper({
                           <button
                             type="button"
                             onClick={addTable1Row}
-                            className="mt-3 px-3 py-2 text-sm font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-lg transition inline-flex items-center gap-1"
+                            className="mt-3 px-3 py-2 text-sm font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition inline-flex items-center gap-1"
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
                               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -2688,6 +2650,9 @@ export default function SubmitFullPaper({
                           <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
                             Table 1 — Note
                           </label>
+                          <GuidanceBlock>
+                            <p>Provide a note that explains abbreviations or important qualifications, following APA 7th Edition table notes style.</p>
+                          </GuidanceBlock>
                           <textarea
                             value={table1Note}
                             onChange={(e) => setTable1Note(e.target.value)}
@@ -2708,7 +2673,7 @@ export default function SubmitFullPaper({
                                 Attach one or more figure images. Each will be numbered sequentially (Figure 1, Figure 2, …).
                               </p>
                             </div>
-                            <label className="cursor-pointer px-3 py-2 text-sm font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-lg transition inline-flex items-center gap-1">
+                            <label className="cursor-pointer px-3 py-2 text-sm font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition inline-flex items-center gap-1">
                               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                               </svg>
@@ -2765,6 +2730,9 @@ export default function SubmitFullPaper({
                                     <label className="text-xs font-semibold text-slate-600 mb-1 block">
                                       Figure {idx + 1} — Title
                                     </label>
+                                    <GuidanceBlock>
+                                      <p>Provide a concise, descriptive title for the figure (e.g., &ldquo;Extension Project Results Pathway&rdquo;).</p>
+                                    </GuidanceBlock>
                                     <input
                                       type="text"
                                       value={fig.title}
@@ -2779,6 +2747,9 @@ export default function SubmitFullPaper({
                                     <label className="text-xs font-semibold text-slate-600 mb-1 block">
                                       Figure {idx + 1} — Description
                                     </label>
+                                    <GuidanceBlock>
+                                      <p>Provide a description or source note, where necessary, following APA 7th Edition figure notes style.</p>
+                                    </GuidanceBlock>
                                     <textarea
                                       value={fig.note}
                                       onChange={(e) => updateFigure(fig.id, 'note', e.target.value)}

@@ -1864,7 +1864,7 @@ export default function SubmitFullPaper({
                     <select
                       value={submissionId}
                       onChange={(e) => setSubmissionId(e.target.value)}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                     >
                       <option value="">— Select an accepted abstract —</option>
                       {acceptedSubmissions.map((s) => (
@@ -1891,7 +1891,7 @@ export default function SubmitFullPaper({
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="Enter a concise, informative, and scholarly title"
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                   />
                 </div>
 
@@ -1939,7 +1939,7 @@ export default function SubmitFullPaper({
                             value={author.name}
                             onChange={(e) => updateAuthor(idx, 'name', e.target.value)}
                             placeholder="e.g., Juan Dela Cruz"
-                            className="w-full px-3 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
+                            className="w-full px-3 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                           />
                         </div>
 
@@ -1952,7 +1952,7 @@ export default function SubmitFullPaper({
                             value={author.affiliation}
                             onChange={(e) => updateAuthor(idx, 'affiliation', e.target.value)}
                             placeholder="e.g., Department of Agriculture, University of the Philippines Los Baños, Laguna, Philippines"
-                            className="w-full px-3 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
+                            className="w-full px-3 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                           />
                         </div>
                       </div>
@@ -1984,7 +1984,7 @@ export default function SubmitFullPaper({
                     onChange={(e) => setAffiliations(e.target.value)}
                     placeholder={`e.g.,\n¹Department of Agriculture, University of the Philippines Los Baños, Laguna, Philippines\n²College of Education, Central Mindanao University, Bukidnon, Philippines`}
                     rows={3}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
                   />
                 </div>
 
@@ -2001,7 +2001,7 @@ export default function SubmitFullPaper({
                       value={correspondingName}
                       onChange={(e) => setCorrespondingName(e.target.value)}
                       placeholder="e.g., Juan Dela Cruz"
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                     />
                   </div>
                   <div>
@@ -2016,7 +2016,7 @@ export default function SubmitFullPaper({
                       value={correspondingEmail}
                       onChange={(e) => setCorrespondingEmail(e.target.value)}
                       placeholder="e.g., juan@university.edu.ph"
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                     />
                   </div>
                 </div>
@@ -2034,7 +2034,7 @@ export default function SubmitFullPaper({
                     value={correspondingOrcid}
                     onChange={(e) => setCorrespondingOrcid(e.target.value)}
                     placeholder="e.g., 0000-0002-1825-0097"
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                   />
                 </div>
 
@@ -2055,7 +2055,7 @@ export default function SubmitFullPaper({
                         key={option}
                         className={`flex items-center gap-3 px-4 py-3 rounded-xl border cursor-pointer transition ${
                           paperCategory === option
-                            ? 'border-purple-500 bg-purple-50'
+                            ? 'border-blue-500 bg-blue-50'
                             : 'border-slate-200 bg-slate-50 hover:bg-slate-100'
                         }`}
                       >
@@ -2065,7 +2065,7 @@ export default function SubmitFullPaper({
                           value={option}
                           checked={paperCategory === option}
                           onChange={(e) => setPaperCategory(e.target.value)}
-                          className="w-4 h-4 text-purple-600 focus:ring-purple-500/30"
+                          className="w-4 h-4 text-blue-600 focus:ring-blue-500/30"
                         />
                         <span className="text-sm font-medium text-slate-700">{option}</span>
                       </label>
@@ -2084,7 +2084,7 @@ export default function SubmitFullPaper({
                   <select
                     value={thematicArea}
                     onChange={(e) => setThematicArea(e.target.value)}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none mb-3"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none mb-3"
                   >
                     <option value="">— Select a thematic area —</option>
                     {THEMATIC_AREAS.map((area, idx) => (
@@ -2108,7 +2108,7 @@ export default function SubmitFullPaper({
                     value={keywords}
                     onChange={(e) => setKeywords(e.target.value)}
                     placeholder="e.g., community extension; sustainable agriculture; resilience"
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                   />
                 </div>
 
@@ -2127,7 +2127,7 @@ export default function SubmitFullPaper({
                     onChange={(e) => setAbstract(e.target.value)}
                     placeholder="Write the 250–300-word abstract as one coherent paragraph"
                     rows={6}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
                   />
                 </div>
 
@@ -2163,7 +2163,7 @@ export default function SubmitFullPaper({
                         onChange={(e) => setBackgroundContext(e.target.value)}
                         placeholder="Describe the community, institutional, sectoral, environmental, economic, educational, health, or development context..."
                         rows={4}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
                       />
                     </div>
                     <div>
@@ -2182,7 +2182,7 @@ export default function SubmitFullPaper({
                         onChange={(e) => setEvidenceNeed(e.target.value)}
                         placeholder="Explain how the need, condition, gap, or opportunity was established..."
                         rows={4}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
                       />
                     </div>
                     <div>
@@ -2200,7 +2200,7 @@ export default function SubmitFullPaper({
                         onChange={(e) => setRelatedLiterature(e.target.value)}
                         placeholder="Focused synthesis of relevant scholarly and technical literature..."
                         rows={4}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
                       />
                     </div>
                     <div>
@@ -2213,7 +2213,7 @@ export default function SubmitFullPaper({
                         onChange={(e) => setRationale(e.target.value)}
                         placeholder="Why the intervention was appropriate given the problem, evidence, community context, and institutional expertise..."
                         rows={3}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
                       />
                     </div>
                     <div>
@@ -2226,7 +2226,7 @@ export default function SubmitFullPaper({
                         onChange={(e) => setObjectives(e.target.value)}
                         placeholder="General and specific objectives of the extension project..."
                         rows={3}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
                       />
                     </div>
                   </div>
@@ -2264,7 +2264,7 @@ export default function SubmitFullPaper({
                           onChange={(e) => setSettingDuration(e.target.value)}
                           placeholder="Project site, community characteristics, implementation period, contextual conditions..."
                           rows={4}
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
                         />
                       </div>
                       <div>
@@ -2278,7 +2278,7 @@ export default function SubmitFullPaper({
                           onChange={(e) => setParticipantsDesc(e.target.value)}
                           placeholder="Target population, selection criteria, number reached, demographics..."
                           rows={4}
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
                         />
                       </div>
                     </div>
@@ -2294,7 +2294,7 @@ export default function SubmitFullPaper({
                         onChange={(e) => setReachPopulation(e.target.value)}
                         placeholder="Explain the distinction between reach and the population that provided outcome data..."
                         rows={2}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
                       />
                     </div>
                     <div>
@@ -2307,7 +2307,7 @@ export default function SubmitFullPaper({
                         onChange={(e) => setSituationalAnalysis(e.target.value)}
                         placeholder="Information collected, data sources, methods/instruments, baseline indicators, major findings..."
                         rows={4}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
                       />
                     </div>
                     <div>
@@ -2378,7 +2378,7 @@ export default function SubmitFullPaper({
                         onChange={(e) => setInterventionRationale(e.target.value)}
                         placeholder="Explain why the selected intervention was expected to address the identified condition..."
                         rows={3}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
                       />
                     </div>
                     <div>
@@ -2392,7 +2392,7 @@ export default function SubmitFullPaper({
                         onChange={(e) => setImplementationStrategies(e.target.value)}
                         placeholder="Capability-building, technical assistance, demonstrations, mentoring, community organizing, etc..."
                         rows={3}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
                       />
                     </div>
                     <div>
@@ -2405,7 +2405,7 @@ export default function SubmitFullPaper({
                         onChange={(e) => setPartnership(e.target.value)}
                         placeholder="Partners and their actual roles; community participation in planning, implementation, monitoring..."
                         rows={3}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
                       />
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -2420,7 +2420,7 @@ export default function SubmitFullPaper({
                           onChange={(e) => setMonitoringEval(e.target.value)}
                           placeholder="Indicators, data sources, instruments, timing, follow-up, triangulation..."
                           rows={4}
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
                         />
                       </div>
                       <div>
@@ -2434,7 +2434,7 @@ export default function SubmitFullPaper({
                           onChange={(e) => setDataAnalysis(e.target.value)}
                           placeholder="Quantitative and/or qualitative analysis methods..."
                           rows={4}
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
                         />
                       </div>
                     </div>
@@ -2449,7 +2449,7 @@ export default function SubmitFullPaper({
                         onChange={(e) => setEthicalConsiderations(e.target.value)}
                         placeholder="Informed consent, confidentiality, privacy, community data, ethics clearance..."
                         rows={3}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
                       />
                     </div>
                   </div>
@@ -2485,7 +2485,7 @@ export default function SubmitFullPaper({
                         onChange={(e) => setReachImplementation(e.target.value)}
                         placeholder="Actual participants, interventions delivered, completion levels, major outputs..."
                         rows={3}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
                       />
                     </div>
                     <div>
@@ -2498,7 +2498,7 @@ export default function SubmitFullPaper({
                         onChange={(e) => setImmediateResults(e.target.value)}
                         placeholder="Documented changes in knowledge, skills, practices, confidence, capacity..."
                         rows={3}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
                       />
                     </div>
                     <div>
@@ -2516,7 +2516,7 @@ export default function SubmitFullPaper({
                         onChange={(e) => setOutcomes(e.target.value)}
                         placeholder="Meaningful change in practice, behavior, condition, performance, or institutional capacity..."
                         rows={3}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
                       />
                     </div>
                     <div>
@@ -2530,7 +2530,7 @@ export default function SubmitFullPaper({
                         onChange={(e) => setAdoption(e.target.value)}
                         placeholder="Who adopted what, how many, to what extent, on what evidence..."
                         rows={3}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
                       />
                     </div>
                     <div>
@@ -2543,7 +2543,7 @@ export default function SubmitFullPaper({
                         onChange={(e) => setInstitutionalization(e.target.value)}
                         placeholder="Partner policies, ordinances, budget allocations, integration into programs..."
                         rows={3}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
                       />
                     </div>
                     <div>
@@ -2556,7 +2556,7 @@ export default function SubmitFullPaper({
                         onChange={(e) => setPublicValue(e.target.value)}
                         placeholder="Improved livelihood, health, education, resilience, environment, empowerment..."
                         rows={3}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
                       />
                     </div>
                   </div>
@@ -2590,7 +2590,7 @@ export default function SubmitFullPaper({
                         onChange={(e) => setInterpretation(e.target.value)}
                         placeholder="Most important findings, why the intervention worked (or not), conditions explaining results..."
                         rows={3}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
                       />
                     </div>
                     <div>
@@ -2603,7 +2603,7 @@ export default function SubmitFullPaper({
                         onChange={(e) => setRelationshipLiterature(e.target.value)}
                         placeholder="Supporting, extending, differing from, or qualifying what is already known..."
                         rows={3}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
                       />
                     </div>
                     <div>
@@ -2616,7 +2616,7 @@ export default function SubmitFullPaper({
                         onChange={(e) => setFactorsAffecting(e.target.value)}
                         placeholder="Enabling or constraining factors: participation, leadership, resources, culture, policy..."
                         rows={3}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
                       />
                     </div>
                     <div>
@@ -2629,7 +2629,7 @@ export default function SubmitFullPaper({
                         onChange={(e) => setInclusionResilience(e.target.value)}
                         placeholder="Gender and social inclusion, vulnerable groups, sustainability, resilience, ownership, local capacity..."
                         rows={3}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
                       />
                     </div>
                     <div>
@@ -2643,7 +2643,7 @@ export default function SubmitFullPaper({
                         onChange={(e) => setTransferability(e.target.value)}
                         placeholder="Replicated, adapted, scaled, institutionalized, or transferred to another context..."
                         rows={3}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
                       />
                     </div>
                     <div>
@@ -2657,7 +2657,7 @@ export default function SubmitFullPaper({
                         onChange={(e) => setLimitations(e.target.value)}
                         placeholder="Baseline, sample size, comparison group, follow-up, self-report, missing data, measurement..."
                         rows={3}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
                       />
                     </div>
                   </div>
@@ -2680,7 +2680,7 @@ export default function SubmitFullPaper({
                     onChange={(e) => setImplications(e.target.value)}
                     placeholder="What extension managers, HEIs, LGUs, policymakers, and partners can learn from the project..."
                     rows={4}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
                   />
                 </div>
 
@@ -2704,7 +2704,7 @@ export default function SubmitFullPaper({
                         onChange={(e) => setConclusion(e.target.value)}
                         placeholder="Synthesis of issue, intervention, strongest results, significance, and central implication..."
                         rows={4}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
                       />
                     </div>
                     <div>
@@ -2718,7 +2718,7 @@ export default function SubmitFullPaper({
                         onChange={(e) => setAcknowledgments(e.target.value)}
                         placeholder="Institutions, communities, partners, funders, technical personnel who contributed..."
                         rows={3}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
                       />
                     </div>
                     <div>
@@ -2732,7 +2732,7 @@ export default function SubmitFullPaper({
                         onChange={(e) => setFunding(e.target.value)}
                         placeholder="e.g., This extension project was funded by [Institution/Agency]..."
                         rows={2}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
                       />
                     </div>
                     <div>
@@ -2745,7 +2745,7 @@ export default function SubmitFullPaper({
                         onChange={(e) => setConflictOfInterest(e.target.value)}
                         placeholder="e.g., The authors declare no conflict of interest."
                         rows={2}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
                       />
                     </div>
                     <div>
@@ -2759,7 +2759,7 @@ export default function SubmitFullPaper({
                         onChange={(e) => setEthicsStatement(e.target.value)}
                         placeholder="e.g., The project was reviewed/approved by [appropriate body]. Informed consent was obtained..."
                         rows={3}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
                       />
                     </div>
                     <div>
@@ -2772,7 +2772,7 @@ export default function SubmitFullPaper({
                         onChange={(e) => setDataAvailability(e.target.value)}
                         placeholder="e.g., Data are available from the corresponding author upon reasonable request..."
                         rows={2}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
                       />
                     </div>
                     <div>
@@ -2786,7 +2786,7 @@ export default function SubmitFullPaper({
                         onChange={(e) => setAuthorContributions(e.target.value)}
                         placeholder={`e.g.,\nConceptualization: A.A., B.B.\nMethodology: A.A., C.C.\nWriting – Original Draft: A.A.`}
                         rows={4}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
                       />
                     </div>
                     <div>
@@ -2811,7 +2811,7 @@ export default function SubmitFullPaper({
                           className={`w-full px-4 py-3 bg-slate-50 border rounded-xl text-sm focus:ring-2 focus:outline-none resize-y transition-colors ${
                             references.trim() && references.split('\n').some(l => l.trim() && !validateAPAReference(l).valid)
                               ? 'border-red-300 focus:border-red-400 focus:ring-red-200'
-                              : 'border-slate-200 focus:border-purple-500 focus:ring-purple-500/20'
+                              : 'border-slate-200 focus:border-blue-500 focus:ring-blue-500/20'
                           }`}
                         />
 
@@ -2852,7 +2852,7 @@ export default function SubmitFullPaper({
                         onChange={(e) => setAppendices(e.target.value)}
                         placeholder="List or describe appendices that support the manuscript..."
                         rows={3}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
                       />
                     </div>
 
@@ -2877,7 +2877,7 @@ export default function SubmitFullPaper({
                             value={table1Title}
                             onChange={(e) => setTable1Title(e.target.value)}
                             placeholder="e.g., Baseline and Post-Intervention Status of Selected Indicators"
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                           />
                         </div>
 
@@ -2918,7 +2918,7 @@ export default function SubmitFullPaper({
                                     value={row.indicator}
                                     onChange={(e) => updateTable1Row(idx, 'indicator', e.target.value)}
                                     placeholder="Indicator"
-                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
+                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                                   />
                                 </div>
                                 <div className="sm:hidden">
@@ -2928,7 +2928,7 @@ export default function SubmitFullPaper({
                                     value={row.baseline}
                                     onChange={(e) => updateTable1Row(idx, 'baseline', e.target.value)}
                                     placeholder="Baseline"
-                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
+                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                                   />
                                 </div>
                                 <div className="sm:hidden">
@@ -2938,7 +2938,7 @@ export default function SubmitFullPaper({
                                     value={row.endline}
                                     onChange={(e) => updateTable1Row(idx, 'endline', e.target.value)}
                                     placeholder="Endline/Follow-up"
-                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
+                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                                   />
                                 </div>
                                 <div className="sm:hidden">
@@ -2948,7 +2948,7 @@ export default function SubmitFullPaper({
                                     value={row.change}
                                     onChange={(e) => updateTable1Row(idx, 'change', e.target.value)}
                                     placeholder="Change"
-                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
+                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                                   />
                                 </div>
                                 <div className="sm:hidden">
@@ -2959,7 +2959,7 @@ export default function SubmitFullPaper({
                                       value={row.source}
                                       onChange={(e) => updateTable1Row(idx, 'source', e.target.value)}
                                       placeholder="Source"
-                                      className="flex-1 min-w-0 px-3 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
+                                      className="flex-1 min-w-0 px-3 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                                     />
                                     {table1Rows.length > 1 && (
                                       <button
@@ -2982,28 +2982,28 @@ export default function SubmitFullPaper({
                                   value={row.indicator}
                                   onChange={(e) => updateTable1Row(idx, 'indicator', e.target.value)}
                                   placeholder="Indicator"
-                                  className="hidden sm:block w-full min-w-0 px-2 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
+                                  className="hidden sm:block w-full min-w-0 px-2 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                                 />
                                 <input
                                   type="text"
                                   value={row.baseline}
                                   onChange={(e) => updateTable1Row(idx, 'baseline', e.target.value)}
                                   placeholder="Baseline"
-                                  className="hidden sm:block w-full min-w-0 px-2 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
+                                  className="hidden sm:block w-full min-w-0 px-2 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                                 />
                                 <input
                                   type="text"
                                   value={row.endline}
                                   onChange={(e) => updateTable1Row(idx, 'endline', e.target.value)}
                                   placeholder="Endline"
-                                  className="hidden sm:block w-full min-w-0 px-2 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
+                                  className="hidden sm:block w-full min-w-0 px-2 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                                 />
                                 <input
                                   type="text"
                                   value={row.change}
                                   onChange={(e) => updateTable1Row(idx, 'change', e.target.value)}
                                   placeholder="Change"
-                                  className="hidden sm:block w-full min-w-0 px-2 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
+                                  className="hidden sm:block w-full min-w-0 px-2 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                                 />
                                 <div className="hidden sm:flex gap-2 min-w-0">
                                   <input
@@ -3011,7 +3011,7 @@ export default function SubmitFullPaper({
                                     value={row.source}
                                     onChange={(e) => updateTable1Row(idx, 'source', e.target.value)}
                                     placeholder="Source"
-                                    className="flex-1 min-w-0 px-2 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
+                                    className="flex-1 min-w-0 px-2 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                                   />
                                   {table1Rows.length > 1 && (
                                     <button
@@ -3055,7 +3055,7 @@ export default function SubmitFullPaper({
                             onChange={(e) => setTable1Note(e.target.value)}
                             placeholder="e.g., Baseline and Post-Intervention Status of Selected Indicators. Note. Explain abbreviations or important qualifications."
                             rows={2}
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
                           />
                         </div>
 
@@ -3135,7 +3135,7 @@ export default function SubmitFullPaper({
                                       value={fig.title}
                                       onChange={(e) => updateFigure(fig.id, 'title', e.target.value)}
                                       placeholder="e.g., Extension Project Results Pathway"
-                                      className="w-full px-3 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
+                                      className="w-full px-3 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                                     />
                                   </div>
 
@@ -3152,7 +3152,7 @@ export default function SubmitFullPaper({
                                       onChange={(e) => updateFigure(fig.id, 'note', e.target.value)}
                                       placeholder="e.g., Description. Source or explanatory sentences, where necessary."
                                       rows={2}
-                                      className="w-full px-3 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none resize-y"
+                                      className="w-full px-3 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
                                     />
                                   </div>
                                 </div>
@@ -3195,7 +3195,7 @@ export default function SubmitFullPaper({
                       !thematicArea
                     }
                     onClick={handleSubmit}
-                    className="sm:flex-2 py-3 rounded-xl font-bold text-white bg-linear-to-r from-purple-700 to-purple-800 hover:from-purple-800 hover:to-purple-900 transition shadow-lg shadow-purple-700/20 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
+                    className="sm:flex-2 py-3 rounded-xl font-bold text-white bg-linear-to-r from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 transition shadow-lg shadow-blue-700/20 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
                   >
                     {generatingPdf ? (
                       <>

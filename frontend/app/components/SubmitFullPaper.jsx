@@ -525,7 +525,7 @@ function titleAuthorPageHTML(data, BLUE, LIGHT, BORDER) {
 
   const fieldBox = (inner) =>
     `<div style="padding:8px 0;font-family:Arial;font-size:11pt;line-height:1.0;">
-      <div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px 20px;min-height:30px;">${inner}</div>
+      <div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px 20px;min-height:30px;white-space:pre-line;">${inner}</div>
     </div>`;
 
   const titleHTML = safe(data.title).trim()
@@ -677,7 +677,10 @@ function buildBodyBlocks(data, BLUE, LIGHT, BORDER) {
     N('', safe(data.situationalAnalysis).trim() || ANSWER_PH),
 
     A(`<p style="${H_SUB}">2.4 Project or Intervention Design</p>`),
-    A(`<div style="margin:6px 0 14px 0;text-align:center;"><img src="/images/project%20design.png" alt="Project Design and Results Pathway" style="width:100%;max-width:100%;height:auto;display:block;margin:0 auto;" /></div>`),
+    A(data.projectDesignImage?.dataUrl
+    ? `<div style="margin:6px 0 14px 0;text-align:center;"><img src="${data.projectDesignImage.dataUrl}" alt="Project Design and Results Pathway" style="width:100%;max-width:100%;height:auto;display:block;margin:0 auto;" /></div>`
+    : `<div style="margin:6px 0 14px 0;text-align:center;"><img src="/images/project%20design.png" alt="Project Design and Results Pathway" style="width:100%;max-width:100%;height:auto;display:block;margin:0 auto;" /></div>`
+),
     N('', safe(data.interventionRationale).trim() || ANSWER_PH),
 
     A(`<p style="${H_SUB}">2.5 Implementation Strategies</p>`),
@@ -982,6 +985,60 @@ function GuidanceBlock({ children }) {
   );
 }
 
+function countWords(text) {
+  const trimmed = String(text || '').trim();
+  if (!trimmed) return 0;
+  return trimmed.split(/\s+/).length;
+}
+
+function WordCounter({ text, min = 0, max, warnAt = 0.9 }) {
+  const count = countWords(text);
+  const isUnder = typeof min === 'number' && min > 0 && count < min;
+  const isOver = typeof max === 'number' && count > max;
+  const isNearMax =
+    !isUnder && !isOver && typeof max === 'number' && count >= Math.floor(max * warnAt);
+
+  // Priority: over > under > near-max > ok
+  let color = 'text-emerald-600';   // satisfied range
+  let suffix = '';
+
+  if (isOver) {
+    color = 'text-red-600';
+    suffix = ' — over maximum';
+  } else if (isUnder) {
+    color = 'text-amber-600';
+    suffix = ` — ${min - count} more to reach minimum`;
+  } else if (isNearMax) {
+    color = 'text-amber-600';
+    suffix = '';
+  }
+
+  const rangeLabel =
+    typeof min === 'number' && min > 0 && typeof max === 'number'
+      ? `${min}–${max}`
+      : typeof max === 'number'
+        ? `0–${max}`
+        : '';
+
+  return (
+    <span className={`text-xs font-semibold tabular-nums ${color}`}>
+      {count} / {rangeLabel} words{suffix}
+    </span>
+  );
+}
+
+function FieldLabel({ children, text, min, max }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3 mb-1.5">
+      <label className="text-sm font-semibold text-slate-700 block">
+        {children}
+      </label>
+      {(typeof min === 'number' && min > 0) || typeof max === 'number' ? (
+        <WordCounter text={text} min={min} max={max} />
+      ) : null}
+    </div>
+  );
+}
 
 export default function SubmitFullPaper({
   user,
@@ -992,8 +1049,9 @@ export default function SubmitFullPaper({
 }) {
   const [submissionId, setSubmissionId] = useState('');
   const [title, setTitle] = useState('');
-  const [authors, setAuthors] = useState('');
-  const [affiliations, setAffiliations] = useState('');
+  const [authorsList, setAuthorsList] = useState([
+    { name: '', affiliation: '' },
+  ]);
   const [keywords, setKeywords] = useState('');
   const [abstract, setAbstract] = useState('');
   const [correspondingName, setCorrespondingName] = useState('');
@@ -1015,6 +1073,7 @@ export default function SubmitFullPaper({
   const [participantsDesc, setParticipantsDesc] = useState('');
   const [situationalAnalysis, setSituationalAnalysis] = useState('');
   const [interventionRationale, setInterventionRationale] = useState('');
+  const [projectDesignImage, setProjectDesignImage] = useState(null);
   const [implementationStrategies, setImplementationStrategies] = useState('');
   const [partnership, setPartnership] = useState('');
   const [monitoringEval, setMonitoringEval] = useState('');
@@ -1059,6 +1118,17 @@ export default function SubmitFullPaper({
   const [figure1Title, setFigure1Title] = useState('');
   const [figure1Note, setFigure1Note] = useState('');
   const [figures, setFigures] = useState([]);
+  const addAuthor = () =>
+    setAuthorsList((list) => [...list, { name: '', affiliation: '' }]);
+
+  const removeAuthor = (idx) =>
+    setAuthorsList((list) => list.filter((_, i) => i !== idx));
+
+  const updateAuthor = (idx, field, value) =>
+    setAuthorsList((list) =>
+      list.map((a, i) => (i === idx ? { ...a, [field]: value } : a))
+    );
+    
   const addTable1Row = () =>
     setTable1Rows((rows) => [...rows, { indicator: '', baseline: '', endline: '', change: '', source: '' }]);
 
@@ -1106,6 +1176,37 @@ export default function SubmitFullPaper({
       e.target.value = '';
     };
 
+    const handleAddProjectDesign = (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      const MAX_BYTES = 8 * 1024 * 1024; // 8 MB
+      const allowed = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+
+      if (!allowed.includes(file.type)) {
+        onToast?.(`"${file.name}" is not a supported image type.`, 'error');
+        e.target.value = '';
+        return;
+      }
+      if (file.size > MAX_BYTES) {
+        onToast?.(`"${file.name}" exceeds the 8 MB limit.`, 'error');
+        e.target.value = '';
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        setProjectDesignImage({
+          dataUrl: String(reader.result),
+          fileName: file.name,
+        });
+      };
+      reader.readAsDataURL(file);
+      e.target.value = '';
+    };
+
+    const removeProjectDesign = () => setProjectDesignImage(null);
+
     const removeFigure = (id) =>
       setFigures((prev) => prev.filter((f) => f.id !== id));
 
@@ -1148,8 +1249,7 @@ export default function SubmitFullPaper({
   const resetForm = () => {
     setSubmissionId('');
     setTitle('');
-    setAuthors('');
-    setAffiliations('');
+    setAuthorsList([{ name: '', affiliation: '' }]);
     setKeywords('');
     setAbstract('');
     setCorrespondingName('');
@@ -1169,6 +1269,7 @@ export default function SubmitFullPaper({
     setParticipantsDesc('');
     setSituationalAnalysis('');
     setInterventionRationale('');
+    setProjectDesignImage(null);
     setImplementationStrategies('');
     setPartnership('');
     setMonitoringEval('');
@@ -1217,8 +1318,10 @@ export default function SubmitFullPaper({
   const validate = () => {
     if (!submissionId) return 'Please select the linked accepted abstract.';
     if (!title.trim()) return 'Full paper title is required.';
-    if (!authors.trim()) return 'Author/s is required.';
-    if (!affiliations.trim()) return 'Author affiliations are required.';
+    const validAuthors = authorsList.filter((a) => a.name.trim());
+    if (validAuthors.length === 0) return 'At least one author is required.';
+    if (validAuthors.some((a) => !a.affiliation.trim()))
+      return 'Each author must have an affiliation.';
     if (!keywords.trim()) return 'Keywords are required.';
     if (!correspondingName.trim())
       return 'Corresponding author name is required.';
@@ -1234,6 +1337,24 @@ export default function SubmitFullPaper({
       return 'Full paper file is too large (max 64 MB).';
     return null;
   };
+
+  const SUPERSCRIPTS = ['¹','²','³','⁴','⁵','⁶','⁷','⁸','⁹','¹⁰'];
+  const sup = (n) => SUPERSCRIPTS[n - 1] || `^${n}`;
+
+  const buildAuthorsString = (list) =>
+    list
+      .filter((a) => a.name.trim())
+      .map((a, idx) => `${a.name.trim()}${sup(idx + 1)}`)
+      .join(', ');
+
+  const buildAffiliationsString = (list) =>
+    list
+      .filter((a) => a.affiliation.trim())
+      .map((a, idx) => `${sup(idx + 1)}${a.affiliation.trim()}`)
+      .join('\n');
+
+  const authors = buildAuthorsString(authorsList);
+  const affiliations = buildAffiliationsString(authorsList);
 
   const handleSubmit = async () => {
     setError('');
@@ -1253,6 +1374,7 @@ export default function SubmitFullPaper({
       const linked = acceptedSubmissions.find(
         (s) => String(s.id) === String(submissionId)
       );
+
       const previewData = {
         linked_abstract_title:
           acceptedSubmissions.find((s) => String(s.id) === String(submissionId))
@@ -1281,6 +1403,7 @@ export default function SubmitFullPaper({
         participantsDesc,
         situationalAnalysis,
         interventionRationale,
+        projectDesignImage,
         implementationStrategies,
         partnership,
         monitoringEval,
@@ -1362,6 +1485,7 @@ export default function SubmitFullPaper({
       fd.append('full_paper_participants_desc', participantsDesc);
       fd.append('full_paper_situational_analysis', situationalAnalysis);
       fd.append('full_paper_intervention_rationale', interventionRationale);
+      fd.append('full_paper_project_design_image', JSON.stringify(projectDesignImage || null));
       fd.append('full_paper_implementation_strategies', implementationStrategies);
       fd.append('full_paper_partnership', partnership);
       fd.append('full_paper_monitoring_eval', monitoringEval);
@@ -1473,6 +1597,7 @@ export default function SubmitFullPaper({
         participantsDesc,
         situationalAnalysis,
         interventionRationale,
+        projectDesignImage,
         implementationStrategies,
         partnership,
         monitoringEval,
@@ -1725,19 +1850,77 @@ export default function SubmitFullPaper({
                 {/* ============ Author Information ============ */}
                 <div>
                   <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
-                    Author/s <span className="text-red-500">*</span>
+                    Author/s &amp; Affiliations <span className="text-red-500">*</span>
                   </label>
                   <GuidanceBlock>
-                    <p>Enter all author names using superscript affiliation numbers as applicable.</p>
-                    <p className="font-semibold">Example format: <b>First Author<sup>1</sup>, Second Author<sup>2</sup>, Third Author<sup>3</sup></b></p>
+                    <p>Add each author in order. The number is assigned automatically and is used as their superscript in the paper.</p>
+                    <p className="font-semibold">Example: <b>Juan Dela Cruz<sup>1</sup></b> — <i>¹Department of Agriculture, University of the Philippines Los Baños, Laguna, Philippines</i></p>
+                    <p>If two authors share the same affiliation, repeat the affiliation text — the number stays unique per author.</p>
                   </GuidanceBlock>
-                  <input
-                    type="text"
-                    value={authors}
-                    onChange={(e) => setAuthors(e.target.value)}
-                    placeholder="e.g., Juan Dela Cruz¹, Maria Santos², Pedro Reyes³"
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
-                  />
+
+                  <div className="space-y-4">
+                    {authorsList.map((author, idx) => (
+                      <div
+                        key={idx}
+                        className="border border-slate-200 rounded-xl p-4 bg-slate-50/50 space-y-3"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-bold text-slate-700">
+                            Author {idx + 1}
+                          </span>
+                          {authorsList.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => removeAuthor(idx)}
+                              className="text-slate-400 hover:text-red-500 transition"
+                              aria-label={`Remove author ${idx + 1}`}
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          )}
+                        </div>
+
+                        <div>
+                          <label className="text-xs font-semibold text-slate-600 mb-1 block">
+                            Author {idx + 1} — Full Name
+                          </label>
+                          <input
+                            type="text"
+                            value={author.name}
+                            onChange={(e) => updateAuthor(idx, 'name', e.target.value)}
+                            placeholder="e.g., Juan Dela Cruz"
+                            className="w-full px-3 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-xs font-semibold text-slate-600 mb-1 block">
+                            Author {idx + 1} — Affiliation
+                          </label>
+                          <input
+                            type="text"
+                            value={author.affiliation}
+                            onChange={(e) => updateAuthor(idx, 'affiliation', e.target.value)}
+                            placeholder="e.g., Department of Agriculture, University of the Philippines Los Baños, Laguna, Philippines"
+                            className="w-full px-3 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={addAuthor}
+                    className="mt-3 px-3 py-2 text-sm font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition inline-flex items-center gap-1"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                    Add author
+                  </button>
                 </div>
 
                 <div>
@@ -1883,9 +2066,9 @@ export default function SubmitFullPaper({
 
                 {/* ============ Abstract ============ */}
                 <div>
-                  <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
+                  <FieldLabel text={abstract} min={250} max={300}>
                     Abstract <span className="text-red-500">*</span>
-                  </label>
+                  </FieldLabel>
                   <GuidanceBlock>
                     <p className="font-semibold">Recommended length: <span style={{ color: '#FF0000' }}>250–300 words</span>, preferably as one coherent paragraph.</p>
                     <p>Include these elements: <b>Background/Need</b>, <b>Objective</b>, <b>Methods/Approach</b>, <b>Results</b> (with actual evidence), and <b>Conclusion</b> (with implication for practice/policy).</p>
@@ -1907,6 +2090,16 @@ export default function SubmitFullPaper({
                   <h3 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">
                     1. Introduction
                   </h3>
+                  <div className="flex items-baseline justify-between mb-1">
+                    <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                      Section total
+                    </span>
+                    <WordCounter
+                      text={[backgroundContext, evidenceNeed, relatedLiterature, rationale, objectives].join(' ')}
+                      min={900}
+                      max={1100}
+                    />
+                  </div>
                   <GuidanceBlock>
                     <p className="font-semibold">Recommended maximum: <span style={{ color: '#FF0000' }}>900–1,100 words</span></p>
                     <p>The Introduction should establish the scholarly and development basis of the extension project, demonstrate how the intervention was informed by existing knowledge, and clearly identify the project&apos;s objectives.</p>
@@ -1998,6 +2191,15 @@ export default function SubmitFullPaper({
                   <h3 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">
                     2. Materials and Methods / Extension Project Methodology
                   </h3>
+                  <WordCounter
+                    text={[
+                      settingDuration, participantsDesc, reachPopulation, situationalAnalysis,
+                      interventionRationale, implementationStrategies, partnership,
+                      monitoringEval, dataAnalysis, ethicalConsiderations,
+                    ].join(' ')}
+                    min={1100}
+                    max={1400}
+                  />
                   <GuidanceBlock>
                     <p className="font-semibold">Recommended maximum: <span style={{ color: '#FF0000' }}>1,100–1,400 words</span></p>
                     <p>This section must be sufficiently detailed to allow readers to understand what was done, with whom, how, why, and how results were determined.</p>
@@ -2065,6 +2267,64 @@ export default function SubmitFullPaper({
                       <GuidanceBlock>
                         <p>Describe the extension intervention and its underlying logic. Explain why the selected intervention was expected to address the identified condition.</p>
                       </GuidanceBlock>
+                      {/* ---- 2.4 Project Design Image Upload ---- */}
+                      <div className="mt-3 mb-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <div>
+                            <label className="text-sm font-semibold text-slate-700 block">
+                              Project Design / Results Pathway (optional)
+                            </label>
+                            <p className="text-xs text-slate-500 mt-0.5">
+                              Upload your own diagram. If none is uploaded, the template default
+                              (PEMNet sample pathway) will be used.
+                            </p>
+                          </div>
+                          <label className="cursor-pointer px-3 py-2 text-sm font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition inline-flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                            </svg>
+                            {projectDesignImage ? 'Replace image' : 'Add image'}
+                            <input
+                              type="file"
+                              accept="image/png,image/jpeg,image/jpg,image/webp"
+                              className="hidden"
+                              onChange={handleAddProjectDesign}
+                            />
+                          </label>
+                        </div>
+
+                        {projectDesignImage ? (
+                          <div className="border border-slate-200 rounded-xl p-3 bg-slate-50/50 space-y-2">
+                            <div className="flex items-start justify-between gap-3">
+                              <span className="text-xs font-semibold text-slate-600 truncate">
+                                {projectDesignImage.fileName}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={removeProjectDesign}
+                                className="text-slate-400 hover:text-red-500 transition shrink-0"
+                                aria-label="Remove project design image"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </button>
+                            </div>
+                            <div className="border border-slate-200 rounded-lg bg-white p-2 flex items-center justify-center">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={projectDesignImage.dataUrl}
+                                alt="Project design preview"
+                                className="max-h-64 w-auto object-contain"
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center text-xs text-slate-400">
+                            No image uploaded — the default pathway diagram will be shown in the PDF.
+                          </div>
+                        )}
+                      </div>
                       <textarea
                         value={interventionRationale}
                         onChange={(e) => setInterventionRationale(e.target.value)}
@@ -2152,6 +2412,14 @@ export default function SubmitFullPaper({
                 * ===================================================== */}
                 <div className="border-t border-slate-200 pt-5">
                   <h3 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">3. Results</h3>
+                  <WordCounter
+                    text={[
+                      reachImplementation, immediateResults, outcomes, adoption,
+                      institutionalization, publicValue,
+                    ].join(' ')}
+                    min={1200}
+                    max={1600}
+                  />
                   <GuidanceBlock>
                     <p className="font-semibold">Recommended maximum: <span style={{ color: '#FF0000' }}>1,200–1,600 words</span></p>
                     <p>Present the evidence objectively and systematically. Results should correspond directly with the project objectives and indicators.</p>
@@ -2251,6 +2519,14 @@ export default function SubmitFullPaper({
                 * ===================================================== */}
                 <div className="border-t border-slate-200 pt-5">
                   <h3 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">4. Discussion</h3>
+                  <WordCounter
+                    text={[
+                      interpretation, relationshipLiterature, factorsAffecting,
+                      inclusionResilience, transferability, limitations,
+                    ].join(' ')}
+                    min={1000}
+                    max={1400}
+                  />
                   <GuidanceBlock>
                     <p className="font-semibold">Recommended maximum: <span style={{ color: '#FF0000' }}>1,000–1,400 words</span></p>
                     <p>The Discussion should explain what the results mean, rather than repeat the Results section.</p>
@@ -2343,9 +2619,9 @@ export default function SubmitFullPaper({
                 * 5. IMPLICATIONS
                 * ===================================================== */}
                 <div className="border-t border-slate-200 pt-5">
-                  <h3 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">
+                  <FieldLabel text={implications} min={400} max={500}>
                     5. Implications for Extension Practice and Policy
-                  </h3>
+                  </FieldLabel>
                   <GuidanceBlock>
                     <p className="font-semibold">Recommended maximum: <span style={{ color: '#FF0000' }}>400–500 words</span></p>
                     <p>Explain what extension managers, HEIs, practitioners, LGUs, partner institutions, policymakers, or other stakeholders can reasonably learn from the project. Possible implications may concern extension project design, community engagement, monitoring and evaluation, evidence generation, institutional partnerships, technology adoption, capability-building, sustainability mechanisms, quality assurance, policy development, or scaling and replication.</p>
@@ -2364,9 +2640,9 @@ export default function SubmitFullPaper({
                 * 6. CONCLUSION + BACK MATTER
                 * ===================================================== */}
                 <div className="border-t border-slate-200 pt-5">
-                  <h3 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">
-                    6. Conclusion and Back Matter
-                  </h3>
+                  <FieldLabel text={conclusion} min={300} max={500}>
+                    6. Conclusion
+                  </FieldLabel>
                   <div className="space-y-4">
                     <div>
                       <label className="text-sm font-semibold text-slate-700 mb-1.5 block">6. Conclusion</label>
@@ -2532,7 +2808,10 @@ export default function SubmitFullPaper({
                           </GuidanceBlock>
 
                           {/* Column header row */}
-                          <div className="hidden sm:grid sm:grid-cols-5 gap-2 mb-2 px-1">
+                          <div
+                            className="hidden sm:grid gap-2 mb-2 px-1"
+                            style={{ gridTemplateColumns: '1.4fr 1fr 1.2fr 0.8fr 1.6fr' }}
+                          >
                             <span className="text-xs font-bold text-slate-600 uppercase tracking-wide">Indicator</span>
                             <span className="text-xs font-bold text-slate-600 uppercase tracking-wide">Baseline</span>
                             <span className="text-xs font-bold text-slate-600 uppercase tracking-wide">Endline/Follow-up</span>
@@ -2542,7 +2821,11 @@ export default function SubmitFullPaper({
 
                           <div className="space-y-3">
                             {table1Rows.map((row, idx) => (
-                              <div key={idx} className="space-y-2 sm:space-y-0 sm:grid sm:grid-cols-5 sm:gap-2 sm:items-start pb-3 sm:pb-0 border-b border-slate-100 sm:border-0">
+                              <div
+                                key={idx}
+                                className="space-y-2 sm:space-y-0 sm:grid sm:gap-2 sm:items-start pb-3 sm:pb-0 border-b border-slate-100 sm:border-0"
+                                style={{ gridTemplateColumns: '1.4fr 1fr 1.2fr 0.8fr 1.6fr' }}
+                              >
 
                                 {/* Mobile labels + inputs */}
                                 <div className="sm:hidden">
@@ -2587,19 +2870,19 @@ export default function SubmitFullPaper({
                                 </div>
                                 <div className="sm:hidden">
                                   <span className="text-xs font-semibold text-slate-500 mb-1 block">Source of Evidence</span>
-                                  <div className="flex gap-2">
+                                  <div className="flex gap-2 min-w-0">
                                     <input
                                       type="text"
                                       value={row.source}
                                       onChange={(e) => updateTable1Row(idx, 'source', e.target.value)}
-                                      placeholder="Source of Evidence"
-                                      className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
+                                      placeholder="Source"
+                                      className="flex-1 min-w-0 px-3 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
                                     />
                                     {table1Rows.length > 1 && (
                                       <button
                                         type="button"
                                         onClick={() => removeTable1Row(idx)}
-                                        className="px-2 text-slate-400 hover:text-red-500 transition"
+                                        className="px-2 text-slate-400 hover:text-red-500 transition shrink-0"
                                         aria-label="Remove row"
                                       >
                                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
@@ -2616,42 +2899,42 @@ export default function SubmitFullPaper({
                                   value={row.indicator}
                                   onChange={(e) => updateTable1Row(idx, 'indicator', e.target.value)}
                                   placeholder="Indicator"
-                                  className="hidden sm:block px-3 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
+                                  className="hidden sm:block w-full min-w-0 px-2 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
                                 />
                                 <input
                                   type="text"
                                   value={row.baseline}
                                   onChange={(e) => updateTable1Row(idx, 'baseline', e.target.value)}
                                   placeholder="Baseline"
-                                  className="hidden sm:block px-3 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
+                                  className="hidden sm:block w-full min-w-0 px-2 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
                                 />
                                 <input
                                   type="text"
                                   value={row.endline}
                                   onChange={(e) => updateTable1Row(idx, 'endline', e.target.value)}
-                                  placeholder="Endline/Follow-up"
-                                  className="hidden sm:block px-3 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
+                                  placeholder="Endline"
+                                  className="hidden sm:block w-full min-w-0 px-2 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
                                 />
                                 <input
                                   type="text"
                                   value={row.change}
                                   onChange={(e) => updateTable1Row(idx, 'change', e.target.value)}
                                   placeholder="Change"
-                                  className="hidden sm:block px-3 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
+                                  className="hidden sm:block w-full min-w-0 px-2 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
                                 />
-                                <div className="hidden sm:flex gap-2">
+                                <div className="hidden sm:flex gap-2 min-w-0">
                                   <input
                                     type="text"
                                     value={row.source}
                                     onChange={(e) => updateTable1Row(idx, 'source', e.target.value)}
-                                    placeholder="Source of Evidence"
-                                    className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
+                                    placeholder="Source"
+                                    className="flex-1 min-w-0 px-2 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
                                   />
                                   {table1Rows.length > 1 && (
                                     <button
                                       type="button"
                                       onClick={() => removeTable1Row(idx)}
-                                      className="px-2 text-slate-400 hover:text-red-500 transition"
+                                      className="px-1 text-slate-400 hover:text-red-500 transition shrink-0"
                                       aria-label="Remove row"
                                     >
                                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">

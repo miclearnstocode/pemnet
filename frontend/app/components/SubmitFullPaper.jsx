@@ -432,33 +432,33 @@ function firstPageTitleHTML(BLUE, LIGHT, BORDER) {
         style="width:70px;height:70px;object-fit:contain;flex-shrink:0;margin-left:20px;"
       />
       <div style="flex:1;text-align:center;">
-        <p style="margin:0 0 8px 0;font-family:Arial,Helvetica,sans-serif;font-size:12pt;font-weight:700;color:#000;letter-spacing:0.3px;">
+        <p style="margin:0 0 8px 0;font-family:Arial;font-size:12pt;font-weight:700;color:#000;letter-spacing:0.3px;">
           PHILIPPINE EXTENSION MANAGERS NETWORK (PEMNet), INC.
         </p>
-        <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12pt;font-weight:700;color:#000;">
+        <p style="margin:0;font-family:Arial;font-size:12pt;font-weight:700;color:#000;">
           1st NATIONAL EXTENSION CONFERENCE 2026
         </p>
       </div>
     </div>
 
     <div style="margin-bottom:20px;">
-      <p style="margin:0 0 4px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;">
+      <p style="margin:0 0 4px 0;font-family:Arial;font-size:11pt;font-weight:700;color:#000;">
         Theme:
       </p>
-      <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-style:italic;color:#000;line-height:1.4;">
+      <p style="margin:0;font-family:Arial;font-size:11pt;font-style:italic;color:#000;line-height:1.4;">
         HEIs at the Forefront of Transformative Extension: Advancing Evidence-Based, Inclusive, Sustainable, and Resilient Community Development
       </p>
     </div>
 
-    <p style="margin:0 0 16px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;text-transform:uppercase;">
+    <p style="margin:0 0 16px 0;font-family:Arial;font-size:11pt;font-weight:700;color:#000;text-transform:uppercase;">
       COMPLETED EXTENSION PROJECT FULL PAPER TEMPLATE
     </p>
 
-    <p style="margin:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;">
+    <p style="margin:0 0 6px 0;font-family:Arial;font-size:11pt;font-weight:700;color:#000;">
       General Manuscript Format
     </p>
 
-    <div style="font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.5;margin-bottom:14px;">
+    <div style="font-family:Arial;font-size:11pt;color:#000;line-height:1.5;margin-bottom:14px;">
       <p style="margin:0;"><span style="font-weight:700;">Length:</span> Approximately 3,000–7,000 words, excluding references and appendices</p>
       <p style="margin:0;"><span style="font-weight:700;">Font:</span> Arial, 11 points</p>
       <p style="margin:0;"><span style="font-weight:700;">Spacing:</span> Single</p>
@@ -467,7 +467,7 @@ function firstPageTitleHTML(BLUE, LIGHT, BORDER) {
       <p style="margin:0;"><span style="font-weight:700;">File Format:</span> Microsoft Word (.docx)</p>
     </div>
 
-    <p style="margin:0 0 20px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.5;text-align:justify;">
+    <p style="margin:0 0 20px 0;font-family:Arial;font-size:11pt;color:#000;line-height:1.5;text-align:justify;">
       The manuscript should be written as a <span style="font-weight:700;">scholarly extension paper</span>, not merely as a chronological accomplishment report. It should demonstrate the relationship among the <span style="font-weight:700;">identified need, intervention, evidence, results, interpretation, and implications for extension practice.</span>
     </p>
   `;
@@ -475,14 +475,14 @@ function firstPageTitleHTML(BLUE, LIGHT, BORDER) {
 
 function consentPageHTML(BLUE, LIGHT, BORDER) {
   const para = (html) =>
-    `<p style="margin:0 0 12px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.5;text-align:justify;">${html}</p>`;
+    `<p style="margin:0 0 12px 0;font-family:Arial;font-size:11pt;color:#000;line-height:1.5;text-align:justify;">${html}</p>`;
   const li = (html) =>
-    `<li style="margin:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.5;text-align:justify;">${html}</li>`;
+    `<li style="margin:0 0 6px 0;font-family:Arial;font-size:11pt;color:#000;line-height:1.5;text-align:justify;">${html}</li>`;
 
   return `
-    <p style="margin:0 0 16px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;">Please read</p>
+    <p style="margin:0 0 16px 0;font-family:Arial;font-size:11pt;color:#000;">Please read</p>
 
-    <h2 style="margin:0 0 16px 0;font-family:Arial,Helvetica,sans-serif;font-size:13pt;font-weight:700;color:#000;text-align:center;text-transform:uppercase;letter-spacing:0.3px;">
+    <h2 style="margin:0 0 16px 0;font-family:Arial;font-size:13pt;font-weight:700;color:#000;text-align:center;text-transform:uppercase;letter-spacing:0.3px;">
       AUTHOR CONSENT AND LIMITED PUBLICATION LICENSE
     </h2>
 
@@ -490,7 +490,7 @@ function consentPageHTML(BLUE, LIGHT, BORDER) {
 
     ${para(`The author/s grant PEMNet a <b>non-exclusive, royalty-free permission</b> to use the submitted manuscript, in whole or in part, for the following purposes:`)}
 
-    <ol style="margin:0 0 14px 0;padding-left:26px;list-style-type:decimal;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.5;">
+    <ol style="margin:0 0 14px 0;padding-left:26px;list-style-type:decimal;font-family:Arial;font-size:11pt;color:#000;line-height:1.5;">
       ${li(`peer, technical, editorial, and quality review of the manuscript;`)}
       ${li(`analysis and synthesis of information, evidence, findings, practices, outcomes, and lessons contained in the submitted paper;`)}
       ${li(`preparation of conference proceedings, reports, scholarly publications, policy or practice briefs, research syntheses, databases, and other knowledge products arising from or related to the conference;`)}
@@ -521,10 +521,12 @@ function titleAuthorPageHTML(data, BLUE, LIGHT, BORDER) {
   const ACCENT = '#4472C4';
   const placeholder = (text) =>
     `<span style="color:#94A3B8;font-style:italic;">${text}</span>`;
-  const filled = (text) => `<span style="color:${ACCENT};">${text}</span>`;
+  const filled = (text) => `<span style="color:${ACCENT};padding:8px 0">${text}</span>`;
 
   const fieldBox = (inner) =>
-    `<div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px;margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;min-height:30px;">${inner}</div>`;
+    `<div style="padding:8px 0;font-family:Arial;font-size:11pt;line-height:1.0;">
+      <div style="border:1px solid ${BORDER};background:#F8FAFC;padding:8px 12px 20px;min-height:30px;">${inner}</div>
+    </div>`;
 
   const titleHTML = safe(data.title).trim()
     ? filled(safe(data.title))
@@ -543,81 +545,77 @@ function titleAuthorPageHTML(data, BLUE, LIGHT, BORDER) {
       );
 
   const thematicLine = data.thematicArea
-    ? filled(`${data.thematicArea}. ${safe(data.thematicAreaTitle) || ''}`)
+    ? filled(safe(data.thematicArea) || '')
     : placeholder(
-        'Click or tap here and enter the selected thematic area number and full title.'
+        'Click or tap here and enter the selected thematic area full title.'
       );
 
-  const selectedArea = safe(data.thematicArea).trim();
-
   return `
-    <p style="margin:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;text-transform:uppercase;line-height:1.0;">
-      TITLE OF THE PAPER
-    </p>
-    <div style="border:1px solid ${BORDER};padding:8px 12px;margin:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;color:${ACCENT};">
-      ${titleHTML}
+    <div style="padding:6px 0 4px 0;">
+      <p style="margin:0 0 14px 0;font-family:Arial;font-size:11pt;font-weight:700;color:#000;text-transform:uppercase;line-height:1.0;">
+        TITLE OF THE PAPER
+      </p>
+      <div style="border:1px solid ${BORDER};padding:8px 12px 20px;margin:0 0 12px 0;font-family:Arial;font-size:11pt;line-height:1.0;color:${ACCENT};">
+        ${titleHTML}
+      </div>
+
+      <p style="margin:0 0 6px 0;font-family:Arial;font-size:11pt;font-weight:700;color:#000;text-transform:uppercase;line-height:1.0;">
+        AUTHOR INFORMATION
+      </p>
+      ${fieldBox(authorsHTML)}
+      ${fieldBox(affiliationsHTML)}
+
+      <p style="margin:0 0 6px 0;font-family:Arial;font-size:11pt;font-weight:700;color:${ACCENT};line-height:1.0;">
+        Corresponding Author:
+      </p>
+      <table style="width:100%;border-collapse:collapse;margin:0 0 16px 0;font-family:Arial;font-size:11pt;line-height:1.0;">
+        <tbody>
+          <tr>
+            <td style="width:30%;padding:6px 0;color:${ACCENT};font-weight:700;">Name:</td>
+            <td style="padding:4px 0;">
+              <div style="border-bottom:1px solid ${BORDER};min-height:22px;line-height:22px;padding:8px 0">
+                ${safe(data.correspondingName).trim() ? filled(safe(data.correspondingName)) : placeholder('Enter name')}
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0;color:${ACCENT};font-weight:700;">Email Address:</td>
+            <td style="padding:4px 0;">
+              <div style="border-bottom:1px solid ${BORDER};min-height:22px;line-height:22px;padding:8px 0">
+                ${safe(data.correspondingEmail).trim() ? filled(safe(data.correspondingEmail)) : placeholder('Enter email address')}
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0;color:${ACCENT};font-weight:700;">ORCID:</td>
+            <td style="padding:4px 0;">
+              <div style="border-bottom:1px solid ${BORDER};min-height:22px;line-height:22px;padding:8px 0">
+                ${safe(data.correspondingOrcid).trim() ? filled(safe(data.correspondingOrcid)) : placeholder('Enter ORCID, if available')}
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p style="margin:0 0 6px 0;font-family:Arial;font-size:11pt;color:${ACCENT};line-height:1.0;">
+        <b>Paper Category:</b> ${safe(data.paperCategory)}
+      </p>
+      <p style="margin:0 0 6px 0;font-family:Arial;font-size:11pt;color:${ACCENT};line-height:1.0;">
+        <b>Thematic Area:</b> ${safe(data.thematicArea)}
+      </p>
     </div>
-
-    <p style="margin:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;text-transform:uppercase;line-height:1.0;">
-      AUTHOR INFORMATION
-    </p>
-    ${fieldBox(authorsHTML)}
-    ${fieldBox(affiliationsHTML)}
-
-    <p style="margin:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:${ACCENT};line-height:1.0;">
-      Corresponding Author:
-    </p>
-    <table style="width:100%;border-collapse:collapse;margin:0 0 16px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.0;">
-      <tbody>
-        <tr>
-          <td style="width:30%;padding:6px 0;color:${ACCENT};font-weight:700;">Name:</td>
-          <td style="padding:4px 0;">
-            <div style="border-bottom:1px solid ${BORDER};min-height:22px;line-height:22px;">
-              ${safe(data.correspondingName).trim() ? filled(safe(data.correspondingName)) : placeholder('Enter name')}
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:6px 0;color:${ACCENT};font-weight:700;">Email Address:</td>
-          <td style="padding:4px 0;">
-            <div style="border-bottom:1px solid ${BORDER};min-height:22px;line-height:22px;">
-              ${safe(data.correspondingEmail).trim() ? filled(safe(data.correspondingEmail)) : placeholder('Enter email address')}
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:6px 0;color:${ACCENT};font-weight:700;">ORCID:</td>
-          <td style="padding:4px 0;">
-            <div style="border-bottom:1px solid ${BORDER};min-height:22px;line-height:22px;">
-              ${safe(data.correspondingOrcid).trim() ? filled(safe(data.correspondingOrcid)) : placeholder('Enter ORCID, if available')}
-            </div>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-
-    <p style="margin:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;">
-      <b>Paper Category:</b> Completed Extension Project Paper
-    </p>
-    <p style="margin:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:${ACCENT};line-height:1.0;">
-      Thematic Area:
-    </p>
-    ${fieldBox(thematicLine)}
   `;
 }
 
 function buildBodyBlocks(data, BLUE, LIGHT, BORDER) {
   const safe = (v) => (v == null ? '' : String(v));
   const ACCENT = '#4472C4';
-  const RED = '#FF0000';
 
-  const H_SECTION = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 6px 0;`;
-  const H_SUB     = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:0 0 4px 0;`;
-  const P         = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
-  const P_TIGHT   = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 4px 0;`;
-  const LI        = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 2px 0;`;
-  const NOTE      = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:${ACCENT};line-height:1.0;margin:0 0 6px 0;`;
-  const NOTE_RED  = `font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;color:${RED};line-height:1.0;`;
+  const H_SECTION = `font-family:Arial;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:11px 0 11px 0;`;
+  const H_SUB     = `font-family:Arial;font-size:11pt;font-weight:700;color:#000;line-height:1.0;margin:11px 0 11px 0;`;
+  const P         = `font-family:Arial;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 6px 0;text-align:justify;`;
+  const P_TIGHT   = `font-family:Arial;font-size:11pt;color:${ACCENT};line-height:1.0;margin:10px 0 14px 0;`;
+  const LI        = `font-family:Arial;font-size:11pt;color:${ACCENT};line-height:1.0;margin:0 0 2px 0;`;
 
   const ANSWER_PH = 'Click or tap here and replace this text with your response.';
 
@@ -793,18 +791,18 @@ function buildBodyBlocks(data, BLUE, LIGHT, BORDER) {
       <table style="width:100%;border-collapse:collapse;margin:0 0 8px 0;">
         <thead>
           <tr>
-            <th style="border:1px solid #94A3B8;background:#F1F5F9;font-family:Arial;font-size:11pt;font-weight:700;color:#000;line-height:1.0;padding:6px 8px;text-align:left;">Indicator</th>
-            <th style="border:1px solid #94A3B8;background:#F1F5F9;font-family:Arial;font-size:11pt;font-weight:700;color:#000;line-height:1.0;padding:6px 8px;text-align:left;">Baseline</th>
-            <th style="border:1px solid #94A3B8;background:#F1F5F9;font-family:Arial;font-size:11pt;font-weight:700;color:#000;line-height:1.0;padding:6px 8px;text-align:left;">Endline/Follow-up</th>
-            <th style="border:1px solid #94A3B8;background:#F1F5F9;font-family:Arial;font-size:11pt;font-weight:700;color:#000;line-height:1.0;padding:6px 8px;text-align:left;">Change</th>
-            <th style="border:1px solid #94A3B8;background:#F1F5F9;font-family:Arial;font-size:11pt;font-weight:700;color:#000;line-height:1.0;padding:6px 8px;text-align:left;">Source of Evidence</th>
+            <th style="border:1px solid #94A3B8;background:#F1F5F9;font-family:Arial;font-size:11pt;font-weight:700;color:#000;line-height:1.0;padding:6px 8px 15px;text-align:left;">Indicator</th>
+            <th style="border:1px solid #94A3B8;background:#F1F5F9;font-family:Arial;font-size:11pt;font-weight:700;color:#000;line-height:1.0;padding:6px 8px 15px;text-align:left;">Baseline</th>
+            <th style="border:1px solid #94A3B8;background:#F1F5F9;font-family:Arial;font-size:11pt;font-weight:700;color:#000;line-height:1.0;padding:6px 8px 15px;text-align:left;">Endline/Follow-up</th>
+            <th style="border:1px solid #94A3B8;background:#F1F5F9;font-family:Arial;font-size:11pt;font-weight:700;color:#000;line-height:1.0;padding:6px 8px 15px;text-align:left;">Change</th>
+            <th style="border:1px solid #94A3B8;background:#F1F5F9;font-family:Arial;font-size:11pt;font-weight:700;color:#000;line-height:1.0;padding:6px 8px 15px;text-align:left;">Source of Evidence</th>
           </tr>
         </thead>
         <tbody>
           ${(Array.isArray(data.table1Rows) ? data.table1Rows : []).map((row) => {
             const cell = (v, ph) => v && String(v).trim()
-              ? `<td style="border:1px solid #94A3B8;font-family:Arial;font-size:11pt;color:${ACCENT};line-height:1.0;padding:6px 8px;">${String(v).replace(/[&<>"']/g, (c)=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}</td>`
-              : `<td style="border:1px solid #94A3B8;font-family:Arial;font-size:11pt;color:#94A3B8;font-style:italic;line-height:1.0;padding:6px 8px;">${ph}</td>`;
+              ? `<td style="border:1px solid #94A3B8;font-family:Arial;font-size:11pt;color:${ACCENT};line-height:1.0;padding:6px 8px 15px;">${String(v).replace(/[&<>"']/g, (c)=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}</td>`
+              : `<td style="border:1px solid #94A3B8;font-family:Arial;font-size:11pt;color:#94A3B8;font-style:italic;line-height:1.0;padding:6px 8px 15px;">${ph}</td>`;
             return `<tr>
               ${cell(row.indicator, 'Indicator')}
               ${cell(row.baseline, '[Type here]')}
@@ -835,7 +833,7 @@ function buildBodyBlocks(data, BLUE, LIGHT, BORDER) {
       push(
         A(`<p style="${P_TIGHT}margin-top:10px;">Figure 1</p>`),
         A(`<p style="${P_TIGHT}font-style:italic;">${safe(data.figure1Title) || 'Extension Project Results Pathway'}</p>`),
-        A(`<div style="border:1px solid #94A3B8;background:#F8FAFC;padding:24px 12px;margin:0 0 6px 0;text-align:center;font-family:Arial;font-size:11pt;font-style:italic;color:#94A3B8;line-height:1.0;">[Insert figure]</div>`),
+        A(`<div style="border:1px solid #94A3B8;background:#F8FAFC;padding:24px 12px;margin:0 0 6px 0;padding:15px 0 25px 0;text-align:center;font-family:Arial;font-size:11pt;font-style:italic;color:#94A3B8;line-height:1.0;">[Insert figure]</div>`),
         A(`<p style="${P_TIGHT}font-style:italic;">${safe(data.figure1Note) || 'Note. Source or explanatory note, where necessary.'}</p>`),
       );
     }
@@ -869,6 +867,7 @@ async function generateFullPaperPdfBlob(previewData) {
   const { flushSync } = await import('react-dom');
   const { captureA4SheetsAsPDF } = await import('@/app/components/PrintA4Sheets');
 
+  // Create off-screen host for rendering preview
   const host = document.createElement('div');
   host.setAttribute('aria-hidden', 'true');
   host.style.position = 'absolute';
@@ -885,10 +884,12 @@ async function generateFullPaperPdfBlob(previewData) {
   const root = createRoot(host);
 
   try {
+    // Render preview synchronously
     flushSync(() => {
       root.render(<FullPaperPreview data={previewData} />);
     });
 
+    // Wait for A4 sheets to mount
     const deadline = Date.now() + 5000;
     let sheets = [];
     while (Date.now() < deadline) {
@@ -896,10 +897,12 @@ async function generateFullPaperPdfBlob(previewData) {
       if (sheets.length > 0) break;
       await new Promise((r) => setTimeout(r, 60));
     }
+
     if (sheets.length === 0) {
       throw new Error('Preview did not render any A4 sheets.');
     }
 
+    // Wait for all fonts to load
     if (document.fonts && document.fonts.ready) {
       try {
         await document.fonts.ready;
@@ -907,9 +910,11 @@ async function generateFullPaperPdfBlob(previewData) {
         /* ignore */
       }
     }
-    await new Promise((r) => setTimeout(r, 150));
 
-    // Ensure all images (e.g., the PEMNet logo) are loaded before capture.
+    // Extra buffer for layout stabilization
+    await new Promise((r) => setTimeout(r, 200));
+
+    // Ensure ALL images are fully loaded before capture
     const imgs = Array.from(host.querySelectorAll('img'));
     await Promise.all(
       imgs.map((img) =>
@@ -922,13 +927,16 @@ async function generateFullPaperPdfBlob(previewData) {
       )
     );
 
+    // Capture as PNG for lossless fidelity and universal compatibility
     return await captureA4SheetsAsPDF({
       selector: '.a4-sheet',
       root: host,
       scale: 2,
+      imageFormat: 'png',       // Force PNG instead of default/WebP
       onStatus: () => {},
     });
   } finally {
+    // Cleanup
     try {
       root.unmount();
     } catch {
@@ -991,8 +999,8 @@ export default function SubmitFullPaper({
   const [correspondingName, setCorrespondingName] = useState('');
   const [correspondingEmail, setCorrespondingEmail] = useState('');
   const [correspondingOrcid, setCorrespondingOrcid] = useState('');
+  const [paperCategory, setPaperCategory] = useState('');
   const [thematicArea, setThematicArea] = useState('');
-  const [thematicAreaTitle, setThematicAreaTitle] = useState('');
 
   // Section 1
   const [backgroundContext, setBackgroundContext] = useState('');
@@ -1147,8 +1155,8 @@ export default function SubmitFullPaper({
     setCorrespondingName('');
     setCorrespondingEmail('');
     setCorrespondingOrcid('');
+    setPaperCategory('');
     setThematicArea('');
-    setThematicAreaTitle('');
 
     setBackgroundContext('');
     setEvidenceNeed('');
@@ -1257,8 +1265,8 @@ export default function SubmitFullPaper({
         correspondingName,
         correspondingEmail,
         correspondingOrcid,
+        paperCategory,
         thematicArea,
-        thematicAreaTitle,
 
         // Section 1 — Introduction
         backgroundContext,
@@ -1338,8 +1346,8 @@ export default function SubmitFullPaper({
       fd.append('full_paper_corresponding_name', correspondingName);
       fd.append('full_paper_corresponding_email', correspondingEmail);
       fd.append('full_paper_corresponding_orcid', correspondingOrcid);
+      fd.append('full_paper_category', paperCategory);
       fd.append('full_paper_thematic_area', thematicArea);
-      fd.append('full_paper_thematic_area_title', thematicAreaTitle);
 
       // Section 1
       fd.append('full_paper_background_context', backgroundContext);
@@ -1449,8 +1457,8 @@ export default function SubmitFullPaper({
         correspondingName,
         correspondingEmail,
         correspondingOrcid,
+        paperCategory,
         thematicArea,
-        thematicAreaTitle,
 
         // Section 1 — Introduction
         backgroundContext,
@@ -1799,6 +1807,41 @@ export default function SubmitFullPaper({
                   />
                 </div>
 
+                {/* ============ Paper Category ============ */}
+                <div>
+                  <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
+                    Paper Category <span className="text-red-500">*</span>
+                  </label>
+                  <GuidanceBlock>
+                    <p>Select the category that best describes the status of your extension project at the time of submission.</p>
+                  </GuidanceBlock>
+                  <div className="space-y-2">
+                    {[
+                      'Completed Extension Project Paper',
+                      'Ongoing Extension Project Paper',
+                    ].map((option) => (
+                      <label
+                        key={option}
+                        className={`flex items-center gap-3 px-4 py-3 rounded-xl border cursor-pointer transition ${
+                          paperCategory === option
+                            ? 'border-purple-500 bg-purple-50'
+                            : 'border-slate-200 bg-slate-50 hover:bg-slate-100'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="paperCategory"
+                          value={option}
+                          checked={paperCategory === option}
+                          onChange={(e) => setPaperCategory(e.target.value)}
+                          className="w-4 h-4 text-purple-600 focus:ring-purple-500/30"
+                        />
+                        <span className="text-sm font-medium text-slate-700">{option}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
                 {/* ============ Thematic Area ============ */}
                 <div>
                   <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
@@ -1809,28 +1852,16 @@ export default function SubmitFullPaper({
                   </GuidanceBlock>
                   <select
                     value={thematicArea}
-                    onChange={(e) => {
-                      const num = e.target.value;
-                      setThematicArea(num);
-                      const idx = parseInt(num, 10) - 1;
-                      if (THEMATIC_AREAS[idx]) setThematicAreaTitle(THEMATIC_AREAS[idx]);
-                    }}
+                    onChange={(e) => setThematicArea(e.target.value)}
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none mb-3"
                   >
                     <option value="">— Select a thematic area —</option>
                     {THEMATIC_AREAS.map((area, idx) => (
-                      <option key={idx} value={String(idx + 1)}>
-                        {idx + 1}. {area}
+                      <option key={idx} value={area}>
+                        {area}
                       </option>
                     ))}
                   </select>
-                  <input
-                    type="text"
-                    value={thematicAreaTitle}
-                    onChange={(e) => setThematicAreaTitle(e.target.value)}
-                    placeholder="Full title of the selected thematic area"
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 focus:outline-none"
-                  />
                 </div>
 
                 {/* ============ Keywords ============ */}

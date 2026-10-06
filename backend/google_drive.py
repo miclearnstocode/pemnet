@@ -330,7 +330,22 @@ def extract_file_id_from_url(url):
 
     return None
 
-
+def get_file_parent_folder_id(service, file_id):
+    """Return the ID of the first parent folder of a Drive file."""
+    if not file_id:
+        return None
+    try:
+        f = service.files().get(
+            fileId=file_id,
+            fields='id, parents',
+            supportsAllDrives=True,
+        ).execute()
+        parents = f.get('parents', [])
+        return parents[0] if parents else None
+    except HttpError as e:
+        print(f"⚠️ Could not resolve parent folder for {file_id}: {e}")
+        return None
+    
 def move_file_to_folder(service, file_id, new_parent_folder_id):
     try:
         file = service.files().get(
@@ -699,3 +714,174 @@ def mark_file_parent_as_new(file_url):
     except Exception as e:
         print(f"⚠️ mark_file_parent_as_new failed (non-fatal): {e}")
         return None
+    
+def _get_or_create_abstract_full_paper_folder(
+    service, abstract_file_id=None, abstract_view_url=None,
+    paper_category=None, thematic_area=None, sender_name=None,
+):
+    """Locate (or fall back to) the folder that holds this abstract's full paper."""
+    parent_folder_id = None
+    if abstract_file_id:
+        parent_folder_id = get_file_parent_folder_id(service, abstract_file_id)
+    if not parent_folder_id and abstract_view_url:
+        fid = extract_file_id_from_url(abstract_view_url)
+        if fid:
+            parent_folder_id = get_file_parent_folder_id(service, fid)
+
+    if parent_folder_id:
+        return get_or_create_folder(service, "Full Paper", parent_folder_id)
+
+    # Fallback hierarchy
+    event_folder_id = get_or_create_folder(service, EVENT_NAME, ROOT_FOLDER_ID)
+    category_id = get_or_create_folder(
+        service, get_paper_category_folder_name(paper_category), event_folder_id,
+    )
+    thematic_id = get_or_create_folder(
+        service, get_thematic_area_folder_name(thematic_area), category_id,
+    )
+    sender_id = get_or_create_folder(
+        service, sanitize_folder_name(sender_name) if sender_name else "Unidentified Sender",
+        thematic_id,
+    )
+    return get_or_create_folder(service, "Full Paper", sender_id)
+
+
+def upload_image_to_full_paper(
+    file_path,
+    filename,
+    abstract_file_id=None,
+    abstract_view_url=None,
+    paper_category=None,
+    thematic_area=None,
+    sender_name=None,
+    subfolder="Figures",
+):
+    """
+    Upload an image into <AbstractFolder>/Full Paper/<subfolder>/.
+    Returns (file_id, view_url, download_url, folder_id).
+    """
+    if not file_path or not os.path.exists(file_path):
+        raise Exception(f"File not found: {file_path}")
+
+    if not filename or not isinstance(filename, str):
+        filename = "image.png"
+    filename = sanitize_folder_name(filename)
+
+    service = get_drive_service()
+    fp_folder_id = _get_or_create_abstract_full_paper_folder(
+        service, abstract_file_id, abstract_view_url,
+        paper_category, thematic_area, sender_name,
+    )
+    target_folder_id = get_or_create_folder(service, subfolder, fp_folder_id)
+
+    ext = os.path.splitext(filename)[1].lower()
+    mime_map = {
+        '.png': 'image/png',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.webp': 'image/webp',
+        '.gif': 'image/gif',
+        '.bmp': 'image/bmp',
+    }
+    mimetype = mime_map.get(ext, 'application/octet-stream')
+
+    metadata = {'name': filename, 'parents': [target_folder_id]}
+    media = MediaFileUpload(file_path, mimetype=mimetype, resumable=True)
+
+    created = service.files().create(
+        body=metadata, media_body=media,
+        fields='id, name', supportsAllDrives=True,
+    ).execute()
+
+    file_id = created.get('id')
+    if not file_id:
+        raise Exception("No file ID returned from Drive")
+
+    view_url = f"https://drive.google.com/file/d/{file_id}/view"
+    download_url = f"https://drive.google.com/uc?export=download&id={file_id}"
+    return file_id, view_url, download_url, target_folder_id
+
+def upload_full_paper_pdf(
+    file_path,
+    filename,
+    abstract_file_id=None,
+    abstract_view_url=None,
+    paper_category=None,
+    thematic_area=None,
+    sender_name=None,
+):
+    """Upload the generated full paper PDF into the abstract's Full Paper folder."""
+    if not file_path or not os.path.exists(file_path):
+        raise Exception(f"File not found: {file_path}")
+    if not filename or not isinstance(filename, str):
+        filename = "full_paper.pdf"
+    filename = sanitize_folder_name(filename)
+
+    service = get_drive_service()
+    fp_folder_id = _get_or_create_abstract_full_paper_folder(
+        service, abstract_file_id, abstract_view_url,
+        paper_category, thematic_area, sender_name,
+    )
+
+    metadata = {'name': filename, 'parents': [fp_folder_id]}
+    media = MediaFileUpload(file_path, mimetype='application/pdf', resumable=True)
+
+    created = service.files().create(
+        body=metadata, media_body=media,
+        fields='id, name', supportsAllDrives=True,
+    ).execute()
+
+    file_id = created.get('id')
+    if not file_id:
+        raise Exception("No file ID returned from Drive")
+
+    view_url = f"https://drive.google.com/file/d/{file_id}/view"
+    download_url = f"https://drive.google.com/uc?export=download&id={file_id}"
+    return file_id, view_url, download_url, fp_folder_id
+
+def trash_file(file_id):
+    """
+    Move a Drive file to trash by ID.
+    Returns True on success (or if already trashed / not found),
+    False only on unexpected API errors.
+    """
+    if not file_id:
+        return True
+    try:
+        service = get_drive_service()
+        service.files().update(
+            fileId=file_id,
+            body={'trashed': True},
+            supportsAllDrives=True,
+        ).execute()
+        print(f"🗑️  Trashed file {file_id}")
+        return True
+    except HttpError as e:
+        # 404 = already gone; treat as success
+        status = getattr(e, 'resp', None)
+        code = getattr(status, 'status', None) if status else None
+        if code == 404:
+            print(f"ℹ️  File {file_id} not found (already gone)")
+            return True
+        print(f"⚠️ Could not trash file {file_id}: {e}")
+        return False
+    except Exception as e:
+        print(f"⚠️ Unexpected error trashing file {file_id}: {e}")
+        return False
+
+
+def trash_files(file_ids):
+    """
+    Trash multiple Drive files. Ignores falsy IDs.
+    Returns (trashed, failed) counts.
+    """
+    trashed = 0
+    failed = 0
+    for fid in file_ids:
+        if not fid:
+            continue
+        if trash_file(fid):
+            trashed += 1
+        else:
+            failed += 1
+    return trashed, failed

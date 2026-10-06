@@ -628,7 +628,6 @@ function buildBodyBlocks(data, BLUE, LIGHT, BORDER) {
   const blocks = [];
   const push = (...b) => blocks.push(...b);
 
-
   push(
     A(`<style>ul>li::marker{color:#000;}ol>li::marker{color:#000;}</style>`),
     A(`<p style="${H_SECTION}text-transform:uppercase;">ABSTRACT</p>`),
@@ -677,10 +676,9 @@ function buildBodyBlocks(data, BLUE, LIGHT, BORDER) {
     N('', safe(data.situationalAnalysis).trim() || ANSWER_PH),
 
     A(`<p style="${H_SUB}">2.4 Project or Intervention Design</p>`),
-    A(data.projectDesignImage?.dataUrl
-    ? `<div style="margin:6px 0 14px 0;text-align:center;"><img src="${data.projectDesignImage.dataUrl}" alt="Project Design and Results Pathway" style="width:100%;max-width:100%;height:auto;display:block;margin:0 auto;" /></div>`
-    : `<div style="margin:6px 0 14px 0;text-align:center;"><img src="/images/project%20design.png" alt="Project Design and Results Pathway" style="width:100%;max-width:100%;height:auto;display:block;margin:0 auto;" /></div>`
-),
+    A(data.projectDesignImage?.previewUrl
+      ? `<div style="margin:6px 0 14px 0;text-align:center;"><img src="${data.projectDesignImage.previewUrl}" alt="Project Design and Results Pathway" style="width:100%;max-width:100%;height:auto;display:block;margin:0 auto;" /></div>`
+      : `<div style="margin:6px 0 14px 0;text-align:center;"><img src="/images/project%20design.png" alt="Project Design and Results Pathway" style="width:100%;max-width:100%;height:auto;display:block;margin:0 auto;" /></div>`),
     N('', safe(data.interventionRationale).trim() || ANSWER_PH),
 
     A(`<p style="${H_SUB}">2.5 Implementation Strategies</p>`),
@@ -787,60 +785,98 @@ function buildBodyBlocks(data, BLUE, LIGHT, BORDER) {
 
     A(`<p style="${H_SECTION}margin-top:16px;">APPENDICES</p>`),
     N('', safe(data.appendices).trim() || 'Click or tap here to insert or list only the appendices necessary for understanding or verifying the manuscript.'),
-
-    A(`<p style="${P_TIGHT}">Table 1</p>`),
-    A(`<p style="${P_TIGHT}font-style:italic;">${safe(data.table1Title) || 'Baseline and Post-Intervention Status of Selected Indicators'}</p>`),
-    A(`
-      <table style="width:100%;border-collapse:collapse;margin:0 0 8px 0;">
-        <thead>
-          <tr>
-            <th style="border:1px solid #94A3B8;background:#F1F5F9;font-family:Arial;font-size:11pt;font-weight:700;color:#000;line-height:1.0;padding:6px 8px 15px;text-align:left;">Indicator</th>
-            <th style="border:1px solid #94A3B8;background:#F1F5F9;font-family:Arial;font-size:11pt;font-weight:700;color:#000;line-height:1.0;padding:6px 8px 15px;text-align:left;">Baseline</th>
-            <th style="border:1px solid #94A3B8;background:#F1F5F9;font-family:Arial;font-size:11pt;font-weight:700;color:#000;line-height:1.0;padding:6px 8px 15px;text-align:left;">Endline/Follow-up</th>
-            <th style="border:1px solid #94A3B8;background:#F1F5F9;font-family:Arial;font-size:11pt;font-weight:700;color:#000;line-height:1.0;padding:6px 8px 15px;text-align:left;">Change</th>
-            <th style="border:1px solid #94A3B8;background:#F1F5F9;font-family:Arial;font-size:11pt;font-weight:700;color:#000;line-height:1.0;padding:6px 8px 15px;text-align:left;">Source of Evidence</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${(Array.isArray(data.table1Rows) ? data.table1Rows : []).map((row) => {
-            const cell = (v, ph) => v && String(v).trim()
-              ? `<td style="border:1px solid #94A3B8;font-family:Arial;font-size:11pt;color:${ACCENT};line-height:1.0;padding:6px 8px 15px;">${String(v).replace(/[&<>"']/g, (c)=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}</td>`
-              : `<td style="border:1px solid #94A3B8;font-family:Arial;font-size:11pt;color:#94A3B8;font-style:italic;line-height:1.0;padding:6px 8px 15px;">${ph}</td>`;
-            return `<tr>
-              ${cell(row.indicator, 'Indicator')}
-              ${cell(row.baseline, '[Type here]')}
-              ${cell(row.endline, '[Type here]')}
-              ${cell(row.change, '[Type here]')}
-              ${cell(row.source, '[Type here]')}
-            </tr>`;
-          }).join('')}
-        </tbody>
-      </table>
-    `),
-    A(`<p style="${P_TIGHT}font-style:italic;">${safe(data.table1Note) || 'Baseline and Post-Intervention Status of Selected Indicators. Note. Explain abbreviations or important qualifications.'}</p>`),
   );
+  // ↑↑↑ push() closes here with its OWN );
 
-    // Dynamic Figures from uploaded files
-    if (Array.isArray(data.figures) && data.figures.length > 0) {
-      data.figures.forEach((fig, idx) => {
-        const figNum = idx + 1;
-        push(
-          A(`<p style="${P_TIGHT}margin-top:10px;">Figure ${figNum} <i>${safe(fig.title) || ''}</i></p>`),
-          fig.dataUrl 
-            ? A(`<div style="border:1px solid #94A3B8;background:#fff;padding:12px;margin:0 0 6px 0;text-align:center;"><img src="${fig.dataUrl}" alt="${safe(fig.title)}" style="max-width:100%;height:auto;display:block;margin:0 auto;" /></div>`)
-            : A(`<div style="border:1px solid #94A3B8;background:#F8FAFC;padding:24px 12px;margin:0 0 6px 0;text-align:center;font-family:Arial;font-size:11pt;font-style:italic;color:#94A3B8;line-height:1.0;">[Image loading...]</div>`),
-          A(`<p style="${P_TIGHT}font-style:italic;">${safe(fig.note) || ''}</p>`),
-        );
-      });
-    } else {
+  // ============================================================
+  // DYNAMIC TABLES (top-level statement, NOT inside push)
+  // ============================================================
+  const tables = Array.isArray(data.tables) ? data.tables : [];
+
+  if (tables.length === 0) {
+    // Fallback: template placeholder
+    push(
+      A(`<p style="${P_TIGHT}">Table 1</p>`),
+      A(`<p style="${P_TIGHT}font-style:italic;">Baseline and Post-Intervention Status of Selected Indicators</p>`),
+      A(`<div style="border:1px dashed #94A3B8;background:#F8FAFC;padding:24px 12px;text-align:center;font-family:Arial;font-size:11pt;font-style:italic;color:#94A3B8;line-height:1.0;">[No tables added]</div>`),
+      A(`<p style="${P_TIGHT}font-style:italic;">Note. Explain abbreviations or important qualifications.</p>`),
+    );
+  } else {
+    tables.forEach((table, tIdx) => {
+      const tableNum = tIdx + 1;
+      const rows = Array.isArray(table.rows) ? table.rows : [];
+
+      const escapeCell = (v) =>
+        String(v).replace(/[&<>"']/g, (c) => ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;',
+        }[c]));
+
+      const cell = (v, ph) =>
+        v && String(v).trim()
+          ? `<td style="border:1px solid #94A3B8;font-family:Arial;font-size:11pt;color:${ACCENT};line-height:1.0;padding:6px 8px 15px;">${escapeCell(v)}</td>`
+          : `<td style="border:1px solid #94A3B8;font-family:Arial;font-size:11pt;color:#94A3B8;font-style:italic;line-height:1.0;padding:6px 8px 15px;">${ph}</td>`;
+
       push(
-        A(`<p style="${P_TIGHT}margin-top:10px;">Figure 1</p>`),
-        A(`<p style="${P_TIGHT}font-style:italic;">${safe(data.figure1Title) || 'Extension Project Results Pathway'}</p>`),
-        A(`<div style="border:1px solid #94A3B8;background:#F8FAFC;padding:24px 12px;margin:0 0 6px 0;padding:15px 0 25px 0;text-align:center;font-family:Arial;font-size:11pt;font-style:italic;color:#94A3B8;line-height:1.0;">[Insert figure]</div>`),
-        A(`<p style="${P_TIGHT}font-style:italic;">${safe(data.figure1Note) || 'Note. Source or explanatory note, where necessary.'}</p>`),
+        A(`<p style="${P_TIGHT}">Table ${tableNum}</p>`),
+        A(`<p style="${P_TIGHT}font-style:italic;">${safe(table.title) || 'Title of the table'}</p>`),
+        A(`
+          <table style="width:100%;border-collapse:collapse;margin:0 0 8px 0;">
+            <thead>
+              <tr>
+                <th style="border:1px solid #94A3B8;background:#F1F5F9;font-family:Arial;font-size:11pt;font-weight:700;color:#000;line-height:1.0;padding:6px 8px 15px;text-align:left;">Indicator</th>
+                <th style="border:1px solid #94A3B8;background:#F1F5F9;font-family:Arial;font-size:11pt;font-weight:700;color:#000;line-height:1.0;padding:6px 8px 15px;text-align:left;">Baseline</th>
+                <th style="border:1px solid #94A3B8;background:#F1F5F9;font-family:Arial;font-size:11pt;font-weight:700;color:#000;line-height:1.0;padding:6px 8px 15px;text-align:left;">Endline/Follow-up</th>
+                <th style="border:1px solid #94A3B8;background:#F1F5F9;font-family:Arial;font-size:11pt;font-weight:700;color:#000;line-height:1.0;padding:6px 8px 15px;text-align:left;">Change</th>
+                <th style="border:1px solid #94A3B8;background:#F1F5F9;font-family:Arial;font-size:11pt;font-weight:700;color:#000;line-height:1.0;padding:6px 8px 15px;text-align:left;">Source of Evidence</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.map((row) => `<tr>
+                ${cell(row.indicator, 'Indicator')}
+                ${cell(row.baseline, '[Type here]')}
+                ${cell(row.endline, '[Type here]')}
+                ${cell(row.change, '[Type here]')}
+                ${cell(row.source, '[Type here]')}
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        `),
+        A(`<p style="${P_TIGHT}font-style:italic;">${safe(table.note) || ''}</p>`),
       );
-    }
+    });
+  }
+  // ↑↑↑ if/else closes here — NO stray ); after the closing }
 
+  // ============================================================
+  // DYNAMIC FIGURES (top-level statement)
+  // ============================================================
+  if (Array.isArray(data.figures) && data.figures.length > 0) {
+    data.figures.forEach((fig, idx) => {
+      const figNum = idx + 1;
+      push(
+        A(`<p style="${P_TIGHT}margin-top:10px;">Figure ${figNum} <i>${safe(fig.title) || ''}</i></p>`),
+        fig.previewUrl
+          ? A(`<div style="border:1px solid #94A3B8;background:#fff;padding:12px;margin:0 0 6px 0;text-align:center;"><img src="${fig.previewUrl}" alt="${safe(fig.title)}" style="max-width:100%;height:auto;display:block;margin:0 auto;" /></div>`)
+          : A(`<div style="border:1px solid #94A3B8;background:#F8FAFC;padding:24px 12px;margin:0 0 6px 0;text-align:center;font-family:Arial;font-size:11pt;font-style:italic;color:#94A3B8;line-height:1.0;">[Image loading...]</div>`),
+        A(`<p style="${P_TIGHT}font-style:italic;">${safe(fig.note) || ''}</p>`),
+      );
+    });
+  } else {
+    push(
+      A(`<p style="${P_TIGHT}margin-top:10px;">Figure 1</p>`),
+      A(`<p style="${P_TIGHT}font-style:italic;">${safe(data.figure1Title) || 'Extension Project Results Pathway'}</p>`),
+      A(`<div style="border:1px solid #94A3B8;background:#F8FAFC;padding:24px 12px;margin:0 0 6px 0;padding:15px 0 25px 0;text-align:center;font-family:Arial;font-size:11pt;font-style:italic;color:#94A3B8;line-height:1.0;">[Insert figure]</div>`),
+      A(`<p style="${P_TIGHT}font-style:italic;">${safe(data.figure1Note) || 'Note. Source or explanatory note, where necessary.'}</p>`),
+    );
+  }
+
+  // ============================================================
+  // CONCLUDING NOTES
+  // ============================================================
   const concludingNotesHTML = `
     <div style="margin-top:30px;">
       <p style="${P}">Tables and figures should communicate evidence, not simply decorate the manuscript.</p>
@@ -1044,48 +1080,68 @@ function validateAPAReference(line) {
   const trimmed = line.trim();
   if (!trimmed) return { valid: true }; // Skip empty lines
 
-  // Pattern 1: Journal Article
-  // Author, A. A., & Author, B. B. (Year). Title of article. Journal Title, Volume(Issue), xx–xx. DOI/URL
-  const journalPattern = /^[\w\s\-\.]+,\s*[\w\s\-\.]+(?:\s*&\s*[\w\s\-\.]+,\s*[\w\s\-\.]+)*\s*\(\d{4}\)\.\s*.+\.\s*[\w\s\-\.]+,\s*\d+[\(\d\)]*,\s*\d+[–\-]\d+\.?\s*(https?:\/\/.+|doi:.+)?$/i;
+  // ---------- Mandatory element checks (structural, not regex-strict) ----------
 
-  // Pattern 2: Book
-  // Author, A. A. (Year). Title of book. Publisher.
-  const bookPattern = /^[\w\s\-\.]+,\s*[\w\s\-\.]+\s*\(\d{4}\)\.\s*.+\.\s*[\w\s\-\.]+\.?$/i;
-
-  // Pattern 3: Report / Webpage
-  // Institution. (Year). Title. URL
-  const reportPattern = /^[\w\s\-\.]+\.\s*\(\d{4}\)\.\s*.+\.\s*(https?:\/\/.+)$/i;
-
-  // Check for required elements regardless of format
-  const hasYear = /\(\d{4}\)/.test(trimmed);
-  const hasTitle = trimmed.includes('. ') && trimmed.split('. ').length >= 2;
-  const endsWithPunctuation = /[.\?!]$/.test(trimmed);
-
-  // Specific structural checks
-  if (!hasYear) {
-    return { valid: false, message: 'Missing publication year in parentheses, e.g., (2024).' };
-  }
-  if (!hasTitle) {
-    return { valid: false, message: 'Missing title after the year. Format: (Year). Title.' };
-  }
-  if (!endsWithPunctuation) {
-    return { valid: false, message: 'Reference must end with a period.' };
+  // 1) Must contain a 4-digit year in parentheses
+  const yearMatch = trimmed.match(/\((\d{4}[a-z]?)\)/);
+  if (!yearMatch) {
+    return {
+      valid: false,
+      message: 'Missing publication year in parentheses, e.g., (2024).',
+    };
   }
 
-  // If it matches one of our known good patterns, it's valid
-  if (journalPattern.test(trimmed) || bookPattern.test(trimmed) || reportPattern.test(trimmed)) {
-    return { valid: true };
+  const yearIndex = yearMatch.index;
+  const beforeYear = trimmed.slice(0, yearIndex).trim();
+  const afterYear = trimmed.slice(yearIndex + yearMatch[0].length).trim();
+
+  // 2) Something must come before the year (authors OR institution)
+  if (!beforeYear) {
+    return {
+      valid: false,
+      message: 'Missing author(s) or institution name before the year.',
+    };
   }
 
-  // Generic fallback for unrecognized but structurally plausible references
-  if (trimmed.startsWith('http') || trimmed.startsWith('www')) {
-    return { valid: false, message: 'URL should appear at the END of the reference, not the beginning.' };
+  // 3) Something must come after the year (title, then source)
+  if (!afterYear) {
+    return {
+      valid: false,
+      message: 'Missing title and source after the year. Format: (Year). Title. Source.',
+    };
   }
 
-  return { 
-    valid: false, 
-    message: 'Format does not match standard APA 7th Edition. Verify: Author(s). (Year). Title. Source.' 
-  };
+  // 4) The part after the year must contain at least one period —
+  //    this is what separates the title from the source.
+  //    Trailing periods are excluded so a bare "Title." doesn't count as title+source.
+  const afterYearNoTrailingDot = afterYear.replace(/[.\s]+$/, '');
+  if (!afterYearNoTrailingDot.includes('.')) {
+    return {
+      valid: false,
+      message: 'Missing source after the title. Format: (Year). Title. Source.',
+    };
+  }
+
+  // 5) Reference must end with a period
+  if (!/[.]$/.test(trimmed)) {
+    return {
+      valid: false,
+      message: 'Reference must end with a period.',
+    };
+  }
+
+  // 6) URL-only lines are a common mistake
+  if (/^(https?:\/\/|www\.)/i.test(trimmed)) {
+    return {
+      valid: false,
+      message: 'URL should appear at the END of the reference, not the beginning.',
+    };
+  }
+
+  // ---------- Everything else is accepted ----------
+  // We do NOT try to enforce a specific publisher/journal layout,
+  // because APA 7 allows many shapes (journal, book, report, webpage, etc.).
+  return { valid: true };
 }
 
 export default function SubmitFullPaper({
@@ -1157,12 +1213,17 @@ export default function SubmitFullPaper({
   const [authorContributions, setAuthorContributions] = useState('');
   const [references, setReferences] = useState('');
   const [appendices, setAppendices] = useState('');
-  const [table1Title, setTable1Title] = useState('');
-  const [table1Rows, setTable1Rows] = useState([
-    { indicator: '', baseline: '', endline: '', change: '', source: '' },
-    { indicator: '', baseline: '', endline: '', change: '', source: '' },
-  ]);
-  const [table1Note, setTable1Note] = useState('');
+  const makeEmptyTable = () => ({
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    title: '',
+    note: '',
+    rows: [
+      { indicator: '', baseline: '', endline: '', change: '', source: '' },
+      { indicator: '', baseline: '', endline: '', change: '', source: '' },
+    ],
+  });
+
+  const [tables, setTables] = useState(() => [makeEmptyTable()]);
   const [figure1Title, setFigure1Title] = useState('');
   const [figure1Note, setFigure1Note] = useState('');
   const [figures, setFigures] = useState([]);
@@ -1177,93 +1238,137 @@ export default function SubmitFullPaper({
       list.map((a, i) => (i === idx ? { ...a, [field]: value } : a))
     );
     
-  const addTable1Row = () =>
-    setTable1Rows((rows) => [...rows, { indicator: '', baseline: '', endline: '', change: '', source: '' }]);
+  const addTable = () =>
+    setTables((prev) => [...prev, makeEmptyTable()]);
 
-  const removeTable1Row = (idx) =>
-    setTable1Rows((rows) => rows.filter((_, i) => i !== idx));
+  const removeTable = (tableId) =>
+    setTables((prev) => prev.filter((t) => t.id !== tableId));
 
-  const updateTable1Row = (idx, field, value) =>
-    setTable1Rows((rows) =>
-      rows.map((r, i) => (i === idx ? { ...r, [field]: value } : r))
+  const updateTableField = (tableId, field, value) =>
+    setTables((prev) =>
+      prev.map((t) => (t.id === tableId ? { ...t, [field]: value } : t))
     );
-    const handleAddFigures = (e) => {
-      const files = Array.from(e.target.files || []);
-      if (!files.length) return;
 
-      const MAX_BYTES = 8 * 1024 * 1024; // 8 MB per figure
-      const allowed = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+  const addTableRow = (tableId) =>
+    setTables((prev) =>
+      prev.map((t) =>
+        t.id === tableId
+          ? {
+              ...t,
+              rows: [
+                ...t.rows,
+                { indicator: '', baseline: '', endline: '', change: '', source: '' },
+              ],
+            }
+          : t
+      )
+    );
 
-      files.forEach((file) => {
-        if (!allowed.includes(file.type)) {
-          onToast?.(`"${file.name}" is not a supported image type.`, 'error');
-          return;
-        }
-        if (file.size > MAX_BYTES) {
-          onToast?.(`"${file.name}" exceeds the 8 MB limit.`, 'error');
-          return;
-        }
-        const reader = new FileReader();
-        reader.onload = () => {
-          setFigures((prev) => [
-            ...prev,
-            {
-              id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-              title: '',
-              note: '',
-              dataUrl: String(reader.result),
-              fileName: file.name,
-              mimeType: file.type,
-            },
-          ]);
-        };
-        reader.readAsDataURL(file);
-      });
+  const removeTableRow = (tableId, rowIdx) =>
+    setTables((prev) =>
+      prev.map((t) =>
+        t.id === tableId
+          ? { ...t, rows: t.rows.filter((_, i) => i !== rowIdx) }
+          : t
+      )
+    );
 
-      // reset input so the same file can be re-added if removed
-      e.target.value = '';
-    };
+  const updateTableRow = (tableId, rowIdx, field, value) =>
+    setTables((prev) =>
+      prev.map((t) =>
+        t.id === tableId
+          ? {
+              ...t,
+              rows: t.rows.map((r, i) =>
+                i === rowIdx ? { ...r, [field]: value } : r
+              ),
+            }
+          : t
+      )
+    );
+  const handleAddFigures = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
 
-    const handleAddProjectDesign = (e) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
+    const MAX_BYTES = 8 * 1024 * 1024; // 8 MB per figure
+    const allowed = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
 
-      const MAX_BYTES = 8 * 1024 * 1024; // 8 MB
-      const allowed = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
-
+    files.forEach((file) => {
       if (!allowed.includes(file.type)) {
         onToast?.(`"${file.name}" is not a supported image type.`, 'error');
-        e.target.value = '';
         return;
       }
       if (file.size > MAX_BYTES) {
         onToast?.(`"${file.name}" exceeds the 8 MB limit.`, 'error');
-        e.target.value = '';
         return;
       }
-
-      const reader = new FileReader();
-      reader.onload = () => {
-        setProjectDesignImage({
-          dataUrl: String(reader.result),
+      const previewUrl = URL.createObjectURL(file); // local preview only
+      setFigures((prev) => [
+        ...prev,
+        {
+          id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          title: '',
+          note: '',
+          file,           // ← raw File, sent to backend
+          previewUrl,     // ← object URL for <img src>
           fileName: file.name,
-        });
-      };
-      reader.readAsDataURL(file);
+          mimeType: file.type,
+        },
+      ]);
+    });
+
+    // reset input so the same file can be re-added if removed
+    e.target.value = '';
+  };
+
+  const handleAddProjectDesign = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const MAX_BYTES = 8 * 1024 * 1024; // 8 MB
+    const allowed = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+
+    if (!allowed.includes(file.type)) {
+      onToast?.(`"${file.name}" is not a supported image type.`, 'error');
       e.target.value = '';
-    };
+      return;
+    }
+    if (file.size > MAX_BYTES) {
+      onToast?.(`"${file.name}" exceeds the 8 MB limit.`, 'error');
+      e.target.value = '';
+      return;
+    }
 
-    const removeProjectDesign = () => setProjectDesignImage(null);
+    setProjectDesignImage({
+      file,                                   // ← raw File
+      previewUrl: URL.createObjectURL(file),  // ← local preview only
+      fileName: file.name,
+      mimeType: file.type,
+    });
+    e.target.value = '';
+  };
 
-    const removeFigure = (id) =>
-      setFigures((prev) => prev.filter((f) => f.id !== id));
+  const removeProjectDesign = () => {
+    if (projectDesignImage?.previewUrl) {
+      URL.revokeObjectURL(projectDesignImage.previewUrl);
+    }
+    setProjectDesignImage(null);
+  };
 
-    const updateFigure = (id, field, value) =>
-      setFigures((prev) =>
-        prev.map((f) => (f.id === id ? { ...f, [field]: value } : f))
-      );
+  const removeFigure = (id) =>
+    setFigures((prev) => {
+      const target = prev.find((f) => f.id === id);
+      if (target?.previewUrl) {
+        URL.revokeObjectURL(target.previewUrl);
+      }
+      return prev.filter((f) => f.id !== id);
+    });
 
-  const [file, setFile] = useState(null);
+  const updateFigure = (id, field, value) =>
+    setFigures((prev) =>
+      prev.map((f) => (f.id === id ? { ...f, [field]: value } : f))
+    );
+
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
@@ -1275,23 +1380,81 @@ export default function SubmitFullPaper({
   React.useEffect(() => {
     if (!submissionId) return;
     const linked = acceptedSubmissions.find(
-      (s) => String(s.id) === String(submissionId)
+      (s) => s.submission_id === submissionId
     );
     if (!linked) return;
 
+    // ---------- Title & keywords ----------
     setTitle((prev) => prev || linked.extension_project_title || '');
     setKeywords((prev) => prev || linked.keywords || '');
-    setAuthors((prev) => {
-      if (prev) return prev;
-      const list = [];
-      if (linked.project_leader) list.push(`${linked.project_leader}*`);
-      if (linked.presenter && linked.presenter !== linked.project_leader) {
-        list.push(`${linked.presenter} (paper presenter)`);
+
+    // ---------- Corresponding author ----------
+    setCorrespondingName(
+      (prev) => prev || linked.corresponding_author_name || ''
+    );
+    setCorrespondingEmail(
+      (prev) => prev || linked.corresponding_author_email || ''
+    );
+
+    if (linked.paper_category) {
+      const normalized = String(linked.paper_category)
+        .trim()
+        .replace(/Papers$/i, 'Paper');
+      setPaperCategory((prev) => prev || normalized);
+    }
+
+    if (linked.thematic_area) {
+      const ta = String(linked.thematic_area).trim();
+      const match = THEMATIC_AREAS.find(
+        (area) => area.toLowerCase() === ta.toLowerCase()
+      );
+      setThematicArea((prev) => prev || (match || ta));
+    }
+
+    setAuthorsList((prev) => {
+      const hasAnyName = prev.some((a) => a?.name?.trim());
+      if (hasAnyName) return prev;
+
+      const newList = [];
+
+      // 1) Project leader (primary author)
+      if (linked.project_leader && linked.project_leader.trim()) {
+        newList.push({
+          name: linked.project_leader.trim(),
+          // Try to extract affiliation from suc_agencies if it looks usable
+          affiliation: (linked.suc_agencies || '').trim(),
+        });
       }
-      if (linked.co_authors) list.push(linked.co_authors);
-      return list.filter(Boolean).join('; ');
+
+      if (
+        linked.presenter &&
+        linked.presenter.trim() &&
+        linked.presenter.trim() !== (linked.project_leader || '').trim()
+      ) {
+        newList.push({
+          name: linked.presenter.trim(),
+          affiliation: (linked.suc_agencies || '').trim(),
+        });
+      }
+
+      if (linked.co_authors && String(linked.co_authors).trim()) {
+        const parts = String(linked.co_authors)
+          .split(/[;,]/)
+          .map((s) => s.trim())
+          .filter(Boolean);
+        parts.forEach((name) => {
+          newList.push({
+            name,
+            affiliation: (linked.suc_agencies || '').trim(),
+          });
+        });
+      }
+
+      return newList.length > 0
+        ? newList
+        : [{ name: '', affiliation: '' }];
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [submissionId]);
 
   const resetForm = () => {
@@ -1349,17 +1512,17 @@ export default function SubmitFullPaper({
     setAuthorContributions('');
     setReferences('');
     setAppendices('');
-    setTable1Title('');
-    setTable1Rows([
-      { indicator: '', baseline: '', endline: '', change: '', source: '' },
-      { indicator: '', baseline: '', endline: '', change: '', source: '' },
-    ]);
-    setTable1Note('');
+    setTables([makeEmptyTable()]);
     setFigure1Title('');
     setFigure1Note('');
+    figures.forEach((f) => {
+      if (f.previewUrl) URL.revokeObjectURL(f.previewUrl);
+    });
     setFigures([]);
+    if (projectDesignImage?.previewUrl) {
+      URL.revokeObjectURL(projectDesignImage.previewUrl);
+    }
 
-    setFile(null);
     setError('');
   };
 
@@ -1378,11 +1541,6 @@ export default function SubmitFullPaper({
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correspondingEmail))
       return 'Please enter a valid email address.';
     if (!thematicArea) return 'Please select a thematic area.';
-    if (!file) return 'Please attach the full paper PDF.';
-    if (!file.name.toLowerCase().endsWith('.pdf'))
-      return 'Full paper must be a PDF file.';
-    if (file.size > 64 * 1024 * 1024)
-      return 'Full paper file is too large (max 64 MB).';
     return null;
   };
 
@@ -1420,12 +1578,12 @@ export default function SubmitFullPaper({
       if (!userData.id) throw new Error('Session expired. Please login again.');
 
       const linked = acceptedSubmissions.find(
-        (s) => String(s.id) === String(submissionId)
+        (s) => s.submission_id === submissionId
       );
 
       const previewData = {
         linked_abstract_title:
-          acceptedSubmissions.find((s) => String(s.id) === String(submissionId))
+          acceptedSubmissions.find((s) => s.submission_id === submissionId)
             ?.extension_project_title || '',
         title,
         authors,
@@ -1451,7 +1609,9 @@ export default function SubmitFullPaper({
         participantsDesc,
         situationalAnalysis,
         interventionRationale,
-        projectDesignImage,
+        projectDesignImage: projectDesignImage
+          ? { previewUrl: projectDesignImage.previewUrl }
+          : null,
         implementationStrategies,
         partnership,
         monitoringEval,
@@ -1487,12 +1647,18 @@ export default function SubmitFullPaper({
         authorContributions,
         references,
         appendices,
-        table1Title,
-        table1Rows,
-        table1Note,
+        tables: tables.map((t) => ({
+          title: t.title,
+          note: t.note,
+          rows: t.rows,
+        })),
         figure1Title,
         figure1Note,
-        figures,
+        figures: figures.map((f) => ({
+          title: f.title,
+          note: f.note,
+          previewUrl: f.previewUrl,   // for live preview only
+        })),
       };
       
       try {
@@ -1509,6 +1675,8 @@ export default function SubmitFullPaper({
       }
 
       const fd = new FormData();
+      fd.append('user_id', String(userData.id));
+      fd.append('submission_id', String(submissionId));
       fd.append('full_paper_title', title);
       fd.append('full_paper_authors', authors);
       fd.append('full_paper_affiliations', affiliations);
@@ -1533,7 +1701,6 @@ export default function SubmitFullPaper({
       fd.append('full_paper_participants_desc', participantsDesc);
       fd.append('full_paper_situational_analysis', situationalAnalysis);
       fd.append('full_paper_intervention_rationale', interventionRationale);
-      fd.append('full_paper_project_design_image', JSON.stringify(projectDesignImage || null));
       fd.append('full_paper_implementation_strategies', implementationStrategies);
       fd.append('full_paper_partnership', partnership);
       fd.append('full_paper_monitoring_eval', monitoringEval);
@@ -1570,16 +1737,61 @@ export default function SubmitFullPaper({
       fd.append('full_paper_references', references);
       fd.append('full_paper_appendices', appendices);
 
-      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      // Tables
       fd.append(
-        'full_paper_file',
-        new File([file], safeName, { type: 'application/pdf' })
+        'full_paper_tables',
+        JSON.stringify(
+          tables.map((t, i) => ({
+            title: t.title || '',
+            note: t.note || '',
+            rows: t.rows || [],
+            display_order: i,
+          }))
+        )
       );
+      fd.append('full_paper_figure1_title', figure1Title || '');
+      fd.append('full_paper_figure1_note', figure1Note || '');
+
+      // Figures — send metadata as JSON + each image as a separate file
       fd.append(
-        'full_paper_preview_file',
-        previewBlob,
-        `full_paper_${title.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 60)}.pdf`
+        'full_paper_figures_meta',
+        JSON.stringify(
+          figures.map((f, i) => ({
+            title: f.title || '',
+            note: f.note || '',
+            original_filename: f.fileName || '',
+            mime_type: f.mimeType || '',
+            display_order: i,
+          }))
+        )
       );
+      figures.forEach((f, i) => {
+        if (f.file) {
+          fd.append(`full_paper_figure_${i}`, f.file, f.fileName || `figure_${i}.png`);
+        }
+      });
+
+      // Project design image
+      if (projectDesignImage?.file) {
+        fd.append(
+          'full_paper_project_design_meta',
+          JSON.stringify({
+            original_filename: projectDesignImage.fileName || '',
+            mime_type: projectDesignImage.mimeType || '',
+          })
+        );
+        fd.append(
+          'full_paper_project_design',
+          projectDesignImage.file,
+          projectDesignImage.fileName || 'project_design.png'
+        );
+      }
+
+      const baseName = `full_paper_${title
+        .replace(/[^a-zA-Z0-9]/g, '_')
+        .substring(0, 60)}`;
+      fd.append('full_paper_file', previewBlob, `${baseName}.pdf`);
+      fd.append('full_paper_preview_file', previewBlob, `preview_${baseName}.pdf`);
 
       const res = await fetch(`${API_URL}/api/submit-full-paper`, {
         method: 'POST',
@@ -1617,77 +1829,87 @@ export default function SubmitFullPaper({
     }
   };
 
-      const previewData = {
-        linked_abstract_title:
-          acceptedSubmissions.find((s) => String(s.id) === String(submissionId))
-            ?.extension_project_title || '',
-        title,
-        authors,
-        affiliations,
-        keywords,
-        abstract,
-        correspondingName,
-        correspondingEmail,
-        correspondingOrcid,
-        paperCategory,
-        thematicArea,
+  /* ---------------- Preview data (component scope) ---------------- */
+  const previewData = {
+    linked_abstract_title:
+      acceptedSubmissions.find((s) => s.submission_id === submissionId)
+        ?.extension_project_title || '',
+    title,
+    authors,
+    affiliations,
+    keywords,
+    abstract,
+    correspondingName,
+    correspondingEmail,
+    correspondingOrcid,
+    paperCategory,
+    thematicArea,
 
-        // Section 1 — Introduction
-        backgroundContext,
-        evidenceNeed,
-        relatedLiterature,
-        rationale,
-        objectives,
+    // Section 1 — Introduction
+    backgroundContext,
+    evidenceNeed,
+    relatedLiterature,
+    rationale,
+    objectives,
 
-        // Section 2 — Materials and Methods
-        reachPopulation,
-        settingDuration,
-        participantsDesc,
-        situationalAnalysis,
-        interventionRationale,
-        projectDesignImage,
-        implementationStrategies,
-        partnership,
-        monitoringEval,
-        dataAnalysis,
-        ethicalConsiderations,
+    // Section 2 — Materials and Methods
+    reachPopulation,
+    settingDuration,
+    participantsDesc,
+    situationalAnalysis,
+    interventionRationale,
+    projectDesignImage: projectDesignImage
+      ? { previewUrl: projectDesignImage.previewUrl }
+      : null,
+    implementationStrategies,
+    partnership,
+    monitoringEval,
+    dataAnalysis,
+    ethicalConsiderations,
 
-        // Section 3 — Results
-        reachImplementation,
-        immediateResults,
-        outcomes,
-        adoption,
-        institutionalization,
-        publicValue,
+    // Section 3 — Results
+    reachImplementation,
+    immediateResults,
+    outcomes,
+    adoption,
+    institutionalization,
+    publicValue,
 
-        // Section 4 — Discussion
-        interpretation,
-        relationshipLiterature,
-        factorsAffecting,
-        inclusionResilience,
-        transferability,
-        limitations,
+    // Section 4 — Discussion
+    interpretation,
+    relationshipLiterature,
+    factorsAffecting,
+    inclusionResilience,
+    transferability,
+    limitations,
 
-        // Section 5 — Implications
-        implications,
+    // Section 5 — Implications
+    implications,
 
-        // Section 6 + Back Matter
-        conclusion,
-        acknowledgments,
-        funding,
-        conflictOfInterest,
-        ethicsStatement,
-        dataAvailability,
-        authorContributions,
-        references,
-        appendices,
-        table1Title,
-        table1Rows,
-        table1Note,
-        figure1Title,
-        figure1Note,
-        figures,
-      };
+    // Section 6 + Back Matter
+    conclusion,
+    acknowledgments,
+    funding,
+    conflictOfInterest,
+    ethicsStatement,
+    dataAvailability,
+    authorContributions,
+    references,
+    appendices,
+    tables: tables.map((t) => ({
+      title: t.title,
+      note: t.note,
+      rows: t.rows,
+    })),
+    figure1Title,
+    figure1Note,
+    figures: figures.map((f) => ({
+      title: f.title,
+      note: f.note,
+      previewUrl: f.previewUrl,   // for live preview only
+    })),
+  };
+
   /* ---------------- Preview mode ---------------- */
   if (showPreview) {
     return (
@@ -1699,54 +1921,54 @@ export default function SubmitFullPaper({
             height: 100% !important;
           }
         `}</style>
-          <div className="flex flex-col" style={{ height: 'calc(100vh - 73px)' }}>
-            {/* Toolbar — sits below PEMNet header, never scrolls */}
-            <div className="shrink-0 bg-white/95 backdrop-blur border-b border-slate-200 px-6 py-3 flex items-center justify-between no-print shadow-sm">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-blue-600">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                </div>
-                <div>
-                  <h2 className="font-bold text-slate-900">Full Paper Preview (A4)</h2>
-                  <p className="text-xs text-slate-500">Review before submitting</p>
-                </div>
+        <div className="flex flex-col" style={{ height: 'calc(100vh - 73px)' }}>
+          {/* Toolbar — sits below PEMNet header, never scrolls */}
+          <div className="shrink-0 bg-white/95 backdrop-blur border-b border-slate-200 px-6 py-3 flex items-center justify-between no-print shadow-sm">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-blue-600">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
               </div>
-              <div className="flex items-center gap-2">
-                <PrintA4SheetsButton
-                  className="px-4 py-2 text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition inline-flex items-center gap-2"
-                  documentTitle="FullPaper"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0l.229 2.523a1.125 1.125 0 01-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0021 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 00-1.913-.247M6.34 18H5.25A2.25 2.25 0 013 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 011.913-.247m10.5 0a48.536 48.536 0 00-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659" />
-                  </svg>
-                  Print
-                </PrintA4SheetsButton>
-                <button
-                  type="button"
-                  onClick={() => setShowPreview(false)}
-                  className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition inline-flex items-center gap-2"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
-                  </svg>
-                  Edit
-                </button>
+              <div>
+                <h2 className="font-bold text-slate-900">Full Paper Preview (A4)</h2>
+                <p className="text-xs text-slate-500">Review before submitting</p>
               </div>
             </div>
-
-            {/* Canvas — the ONLY scrollable area (scrollbar on its right edge) */}
-            <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden bg-slate-100">
-              <div className="a4-preview-wrapper p-6">
-                <FullPaperPreview data={previewData} />
-              </div>
+            <div className="flex items-center gap-2">
+              <PrintA4SheetsButton
+                className="px-4 py-2 text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition inline-flex items-center gap-2"
+                documentTitle="FullPaper"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0l.229 2.523a1.125 1.125 0 01-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0021 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 00-1.913-.247M6.34 18H5.25A2.25 2.25 0 013 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 011.913-.247m10.5 0a48.536 48.536 0 00-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659" />
+                </svg>
+                Print
+              </PrintA4SheetsButton>
+              <button
+                type="button"
+                onClick={() => setShowPreview(false)}
+                className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition inline-flex items-center gap-2"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
+                </svg>
+                Edit
+              </button>
             </div>
           </div>
-        </>
-      );
-    }
+
+          {/* Canvas — the ONLY scrollable area (scrollbar on its right edge) */}
+          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden bg-slate-100">
+            <div className="a4-preview-wrapper p-6">
+              <FullPaperPreview data={previewData} />
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
@@ -1868,7 +2090,7 @@ export default function SubmitFullPaper({
                     >
                       <option value="">— Select an accepted abstract —</option>
                       {acceptedSubmissions.map((s) => (
-                        <option key={s.id} value={s.id}>
+                        <option key={s.id} value={s.submission_id}>
                           {s.extension_project_title}
                         </option>
                       ))}
@@ -1969,23 +2191,6 @@ export default function SubmitFullPaper({
                     </svg>
                     Add author
                   </button>
-                </div>
-
-                <div>
-                  <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
-                    Author Affiliations <span className="text-red-500">*</span>
-                  </label>
-                  <GuidanceBlock>
-                    <p>Enter the corresponding institutional affiliation for each author, using superscript numbers.</p>
-                    <p className="font-semibold">Format each line as: <b><sup>n</sup>Department/College/Unit, University/Institution, City, Philippines</b></p>
-                  </GuidanceBlock>
-                  <textarea
-                    value={affiliations}
-                    onChange={(e) => setAffiliations(e.target.value)}
-                    placeholder={`e.g.,\n¹Department of Agriculture, University of the Philippines Los Baños, Laguna, Philippines\n²College of Education, Central Mindanao University, Bukidnon, Philippines`}
-                    rows={3}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
-                  />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -2361,7 +2566,7 @@ export default function SubmitFullPaper({
                             <div className="border border-slate-200 rounded-lg bg-white p-2 flex items-center justify-center">
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
-                                src={projectDesignImage.dataUrl}
+                                src={projectDesignImage.previewUrl}
                                 alt="Project design preview"
                                 className="max-h-64 w-auto object-contain"
                               />
@@ -2867,196 +3072,230 @@ export default function SubmitFullPaper({
                       </GuidanceBlock>
                       <div className="space-y-4">
 
-                        {/* ---------- Table 1 title ---------- */}
-                        <div>
-                          <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
-                            Table 1 — Title
-                          </label>
-                          <input
-                            type="text"
-                            value={table1Title}
-                            onChange={(e) => setTable1Title(e.target.value)}
-                            placeholder="e.g., Baseline and Post-Intervention Status of Selected Indicators"
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                          />
-                        </div>
-
-                        {/* ---------- Table 1 rows ---------- */}
-                        <div>
-                          <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
-                            Table 1 — Rows
-                          </label>
-                          <GuidanceBlock>
-                            <p>Fill in the indicators and their baseline / endline values. Add or remove rows as needed.</p>
-                          </GuidanceBlock>
-
-                          {/* Column header row */}
-                          <div
-                            className="hidden sm:grid gap-2 mb-2 px-1"
-                            style={{ gridTemplateColumns: '1.4fr 1fr 1.2fr 0.8fr 1.6fr' }}
-                          >
-                            <span className="text-xs font-bold text-slate-600 uppercase tracking-wide">Indicator</span>
-                            <span className="text-xs font-bold text-slate-600 uppercase tracking-wide">Baseline</span>
-                            <span className="text-xs font-bold text-slate-600 uppercase tracking-wide">Endline/Follow-up</span>
-                            <span className="text-xs font-bold text-slate-600 uppercase tracking-wide">Change</span>
-                            <span className="text-xs font-bold text-slate-600 uppercase tracking-wide">Source of Evidence</span>
-                          </div>
-
-                          <div className="space-y-3">
-                            {table1Rows.map((row, idx) => (
-                              <div
-                                key={idx}
-                                className="space-y-2 sm:space-y-0 sm:grid sm:gap-2 sm:items-start pb-3 sm:pb-0 border-b border-slate-100 sm:border-0"
-                                style={{ gridTemplateColumns: '1.4fr 1fr 1.2fr 0.8fr 1.6fr' }}
-                              >
-
-                                {/* Mobile labels + inputs */}
-                                <div className="sm:hidden">
-                                  <span className="text-xs font-semibold text-slate-500 mb-1 block">Indicator</span>
-                                  <input
-                                    type="text"
-                                    value={row.indicator}
-                                    onChange={(e) => updateTable1Row(idx, 'indicator', e.target.value)}
-                                    placeholder="Indicator"
-                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                                  />
-                                </div>
-                                <div className="sm:hidden">
-                                  <span className="text-xs font-semibold text-slate-500 mb-1 block">Baseline</span>
-                                  <input
-                                    type="text"
-                                    value={row.baseline}
-                                    onChange={(e) => updateTable1Row(idx, 'baseline', e.target.value)}
-                                    placeholder="Baseline"
-                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                                  />
-                                </div>
-                                <div className="sm:hidden">
-                                  <span className="text-xs font-semibold text-slate-500 mb-1 block">Endline/Follow-up</span>
-                                  <input
-                                    type="text"
-                                    value={row.endline}
-                                    onChange={(e) => updateTable1Row(idx, 'endline', e.target.value)}
-                                    placeholder="Endline/Follow-up"
-                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                                  />
-                                </div>
-                                <div className="sm:hidden">
-                                  <span className="text-xs font-semibold text-slate-500 mb-1 block">Change</span>
-                                  <input
-                                    type="text"
-                                    value={row.change}
-                                    onChange={(e) => updateTable1Row(idx, 'change', e.target.value)}
-                                    placeholder="Change"
-                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                                  />
-                                </div>
-                                <div className="sm:hidden">
-                                  <span className="text-xs font-semibold text-slate-500 mb-1 block">Source of Evidence</span>
-                                  <div className="flex gap-2 min-w-0">
-                                    <input
-                                      type="text"
-                                      value={row.source}
-                                      onChange={(e) => updateTable1Row(idx, 'source', e.target.value)}
-                                      placeholder="Source"
-                                      className="flex-1 min-w-0 px-3 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                                    />
-                                    {table1Rows.length > 1 && (
-                                      <button
-                                        type="button"
-                                        onClick={() => removeTable1Row(idx)}
-                                        className="px-2 text-slate-400 hover:text-red-500 transition shrink-0"
-                                        aria-label="Remove row"
-                                      >
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                        </svg>
-                                      </button>
-                                    )}
-                                  </div>
-                                </div>
-
-                                {/* Desktop inputs (5-column grid) */}
-                                <input
-                                  type="text"
-                                  value={row.indicator}
-                                  onChange={(e) => updateTable1Row(idx, 'indicator', e.target.value)}
-                                  placeholder="Indicator"
-                                  className="hidden sm:block w-full min-w-0 px-2 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                                />
-                                <input
-                                  type="text"
-                                  value={row.baseline}
-                                  onChange={(e) => updateTable1Row(idx, 'baseline', e.target.value)}
-                                  placeholder="Baseline"
-                                  className="hidden sm:block w-full min-w-0 px-2 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                                />
-                                <input
-                                  type="text"
-                                  value={row.endline}
-                                  onChange={(e) => updateTable1Row(idx, 'endline', e.target.value)}
-                                  placeholder="Endline"
-                                  className="hidden sm:block w-full min-w-0 px-2 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                                />
-                                <input
-                                  type="text"
-                                  value={row.change}
-                                  onChange={(e) => updateTable1Row(idx, 'change', e.target.value)}
-                                  placeholder="Change"
-                                  className="hidden sm:block w-full min-w-0 px-2 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                                />
-                                <div className="hidden sm:flex gap-2 min-w-0">
-                                  <input
-                                    type="text"
-                                    value={row.source}
-                                    onChange={(e) => updateTable1Row(idx, 'source', e.target.value)}
-                                    placeholder="Source"
-                                    className="flex-1 min-w-0 px-2 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                                  />
-                                  {table1Rows.length > 1 && (
-                                    <button
-                                      type="button"
-                                      onClick={() => removeTable1Row(idx)}
-                                      className="px-1 text-slate-400 hover:text-red-500 transition shrink-0"
-                                      aria-label="Remove row"
-                                    >
-                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                      </svg>
-                                    </button>
-                                  )}
-                                </div>
+                        {/* ---------- Tables ---------- */}
+                        <div className="space-y-4">
+                          {tables.map((table, tIdx) => (
+                            <div
+                              key={table.id}
+                              className="border border-slate-200 rounded-xl p-4 bg-white space-y-3"
+                            >
+                              {/* Table header row */}
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-bold text-slate-800">
+                                  Table {tIdx + 1}
+                                </span>
+                                {tables.length > 1 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => removeTable(table.id)}
+                                    className="text-slate-400 hover:text-red-500 transition"
+                                    aria-label={`Remove table ${tIdx + 1}`}
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                  </button>
+                                )}
                               </div>
-                            ))}
-                          </div>
+
+                              {/* Title */}
+                              <div>
+                                <label className="text-xs font-semibold text-slate-600 mb-1 block">
+                                  Table {tIdx + 1} — Title
+                                </label>
+                                <input
+                                  type="text"
+                                  value={table.title}
+                                  onChange={(e) => updateTableField(table.id, 'title', e.target.value)}
+                                  placeholder="e.g., Baseline and Post-Intervention Status of Selected Indicators"
+                                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                                />
+                              </div>
+
+                              {/* Rows */}
+                              <div>
+                                <label className="text-xs font-semibold text-slate-600 mb-1 block">
+                                  Table {tIdx + 1} — Rows
+                                </label>
+
+                                {/* Desktop header row */}
+                                <div
+                                  className="hidden sm:grid gap-2 mb-2 px-1"
+                                  style={{ gridTemplateColumns: '1.4fr 1fr 1.2fr 0.8fr 1.6fr 32px' }}
+                                >
+                                  <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Indicator</span>
+                                  <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Baseline</span>
+                                  <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Endline/Follow-up</span>
+                                  <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Change</span>
+                                  <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Source of Evidence</span>
+                                  <span />
+                                </div>
+
+                                <div className="space-y-3">
+                                  {table.rows.map((row, rIdx) => (
+                                    <div
+                                      key={rIdx}
+                                      className="space-y-2 sm:space-y-0 sm:grid sm:gap-2 sm:items-start pb-3 sm:pb-0 border-b border-slate-100 sm:border-0"
+                                      style={{ gridTemplateColumns: '1.4fr 1fr 1.2fr 0.8fr 1.6fr 32px' }}
+                                    >
+                                      {/* Mobile inputs */}
+                                      <div className="sm:hidden">
+                                        <span className="text-xs font-semibold text-slate-500 mb-1 block">Indicator</span>
+                                        <input
+                                          type="text"
+                                          value={row.indicator}
+                                          onChange={(e) => updateTableRow(table.id, rIdx, 'indicator', e.target.value)}
+                                          placeholder="Indicator"
+                                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                                        />
+                                      </div>
+                                      <div className="sm:hidden">
+                                        <span className="text-xs font-semibold text-slate-500 mb-1 block">Baseline</span>
+                                        <input
+                                          type="text"
+                                          value={row.baseline}
+                                          onChange={(e) => updateTableRow(table.id, rIdx, 'baseline', e.target.value)}
+                                          placeholder="Baseline"
+                                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                                        />
+                                      </div>
+                                      <div className="sm:hidden">
+                                        <span className="text-xs font-semibold text-slate-500 mb-1 block">Endline/Follow-up</span>
+                                        <input
+                                          type="text"
+                                          value={row.endline}
+                                          onChange={(e) => updateTableRow(table.id, rIdx, 'endline', e.target.value)}
+                                          placeholder="Endline/Follow-up"
+                                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                                        />
+                                      </div>
+                                      <div className="sm:hidden">
+                                        <span className="text-xs font-semibold text-slate-500 mb-1 block">Change</span>
+                                        <input
+                                          type="text"
+                                          value={row.change}
+                                          onChange={(e) => updateTableRow(table.id, rIdx, 'change', e.target.value)}
+                                          placeholder="Change"
+                                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                                        />
+                                      </div>
+                                      <div className="sm:hidden">
+                                        <span className="text-xs font-semibold text-slate-500 mb-1 block">Source of Evidence</span>
+                                        <div className="flex gap-2 min-w-0">
+                                          <input
+                                            type="text"
+                                            value={row.source}
+                                            onChange={(e) => updateTableRow(table.id, rIdx, 'source', e.target.value)}
+                                            placeholder="Source"
+                                            className="flex-1 min-w-0 px-3 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                                          />
+                                          {table.rows.length > 1 && (
+                                            <button
+                                              type="button"
+                                              onClick={() => removeTableRow(table.id, rIdx)}
+                                              className="px-2 text-slate-400 hover:text-red-500 transition shrink-0"
+                                              aria-label="Remove row"
+                                            >
+                                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                              </svg>
+                                            </button>
+                                          )}
+                                        </div>
+                                      </div>
+
+                                      {/* Desktop inputs */}
+                                      <input
+                                        type="text"
+                                        value={row.indicator}
+                                        onChange={(e) => updateTableRow(table.id, rIdx, 'indicator', e.target.value)}
+                                        placeholder="Indicator"
+                                        className="hidden sm:block w-full min-w-0 px-2 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                                      />
+                                      <input
+                                        type="text"
+                                        value={row.baseline}
+                                        onChange={(e) => updateTableRow(table.id, rIdx, 'baseline', e.target.value)}
+                                        placeholder="Baseline"
+                                        className="hidden sm:block w-full min-w-0 px-2 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                                      />
+                                      <input
+                                        type="text"
+                                        value={row.endline}
+                                        onChange={(e) => updateTableRow(table.id, rIdx, 'endline', e.target.value)}
+                                        placeholder="Endline"
+                                        className="hidden sm:block w-full min-w-0 px-2 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                                      />
+                                      <input
+                                        type="text"
+                                        value={row.change}
+                                        onChange={(e) => updateTableRow(table.id, rIdx, 'change', e.target.value)}
+                                        placeholder="Change"
+                                        className="hidden sm:block w-full min-w-0 px-2 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                                      />
+                                      <input
+                                        type="text"
+                                        value={row.source}
+                                        onChange={(e) => updateTableRow(table.id, rIdx, 'source', e.target.value)}
+                                        placeholder="Source"
+                                        className="hidden sm:block w-full min-w-0 px-2 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                                      />
+                                      <div className="hidden sm:flex items-center justify-center">
+                                        {table.rows.length > 1 && (
+                                          <button
+                                            type="button"
+                                            onClick={() => removeTableRow(table.id, rIdx)}
+                                            className="text-slate-400 hover:text-red-500 transition"
+                                            aria-label="Remove row"
+                                          >
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                          </button>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+
+                                <button
+                                  type="button"
+                                  onClick={() => addTableRow(table.id)}
+                                  className="mt-3 px-3 py-2 text-sm font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition inline-flex items-center gap-1"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                                  </svg>
+                                  Add row
+                                </button>
+                              </div>
+
+                              {/* Note */}
+                              <div>
+                                <label className="text-xs font-semibold text-slate-600 mb-1 block">
+                                  Table {tIdx + 1} — Note
+                                </label>
+                                <textarea
+                                  value={table.note}
+                                  onChange={(e) => updateTableField(table.id, 'note', e.target.value)}
+                                  placeholder="e.g., Note. Explain abbreviations or important qualifications."
+                                  rows={2}
+                                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
+                                />
+                              </div>
+                            </div>
+                          ))}
 
                           <button
                             type="button"
-                            onClick={addTable1Row}
-                            className="mt-3 px-3 py-2 text-sm font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition inline-flex items-center gap-1"
+                            onClick={addTable}
+                            className="w-full px-4 py-3 text-sm font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border-2 border-dashed border-blue-200 hover:border-blue-300 rounded-xl transition inline-flex items-center justify-center gap-2"
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
                               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                             </svg>
-                            Add row
+                            Add table
                           </button>
-                        </div>
-
-                        {/* ---------- Table 1 note ---------- */}
-                        <div>
-                          <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
-                            Table 1 — Note
-                          </label>
-                          <GuidanceBlock>
-                            <p>Provide a note that explains abbreviations or important qualifications, following APA 7th Edition table notes style.</p>
-                          </GuidanceBlock>
-                          <textarea
-                            value={table1Note}
-                            onChange={(e) => setTable1Note(e.target.value)}
-                            placeholder="e.g., Baseline and Post-Intervention Status of Selected Indicators. Note. Explain abbreviations or important qualifications."
-                            rows={2}
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
-                          />
                         </div>
 
                         {/* ---------- Figures ---------- */}
@@ -3116,7 +3355,7 @@ export default function SubmitFullPaper({
                                   <div className="border border-slate-200 rounded-lg bg-white p-2 flex items-center justify-center">
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img
-                                      src={fig.dataUrl}
+                                      src={fig.previewUrl}
                                       alt={fig.title || `Figure ${idx + 1}`}
                                       className="max-h-48 w-auto object-contain"
                                     />
@@ -3185,7 +3424,6 @@ export default function SubmitFullPaper({
                       generatingPdf ||
                       acceptedSubmissions.length === 0 ||
                       !submissionId ||
-                      !file ||
                       !title.trim() ||
                       !authors.trim() ||
                       !affiliations.trim() ||

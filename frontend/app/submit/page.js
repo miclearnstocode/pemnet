@@ -102,9 +102,10 @@ const FileViewerModal = ({ isOpen, onClose, fileUrl, fileType, title }) => {
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50">
           <div className="flex items-center gap-3 min-w-0">
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-              fileType === 'abstract' ? 'bg-blue-100' : 
-              fileType === 'supporting' ? 'bg-purple-100' : 
-              'bg-emerald-100'
+              fileType === 'abstract' ? 'bg-blue-100'
+              : fileType === 'supporting' ? 'bg-purple-100'
+              : fileType === 'full-paper' ? 'bg-purple-100'
+              : 'bg-emerald-100'
             }`}>
               {fileType === 'abstract' ? (
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-blue-600">
@@ -114,6 +115,10 @@ const FileViewerModal = ({ isOpen, onClose, fileUrl, fileType, title }) => {
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-purple-600">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13" />
                 </svg>
+              ) : fileType === 'full-paper' ? (
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-purple-600">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+                </svg>
               ) : (
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-emerald-600">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
@@ -122,9 +127,10 @@ const FileViewerModal = ({ isOpen, onClose, fileUrl, fileType, title }) => {
             </div>
             <div className="min-w-0">
               <h3 className="font-bold text-slate-900 truncate">
-                {fileType === 'abstract' ? 'Abstract Document' : 
-                fileType === 'supporting' ? 'Supporting Document' : 
-                'Endorsement Document'}
+                {fileType === 'abstract' ? 'Abstract Document'
+                  : fileType === 'supporting' ? 'Supporting Document'
+                  : fileType === 'full-paper' ? 'Full Paper'
+                  : 'Endorsement Document'}
               </h3>
               <p className="text-xs text-slate-500 truncate">{title}</p>
             </div>
@@ -157,7 +163,12 @@ const FileViewerModal = ({ isOpen, onClose, fileUrl, fileType, title }) => {
           <iframe
             src={previewUrl}
             className="w-full h-full"
-            title={fileType === 'abstract' ? 'Abstract Preview' : 'Endorsement Preview'}
+            title={
+              fileType === 'abstract' ? 'Abstract Preview'
+              : fileType === 'supporting' ? 'Supporting Document Preview'
+              : fileType === 'full-paper' ? 'Full Paper Preview'
+              : 'Endorsement Preview'
+            }
             allow="autoplay"
           />
         </div>
@@ -211,6 +222,7 @@ export default function SubmitPage() {
   const [paymentStatus, setPaymentStatus] = useState(null);
   const [isUploadingPayment, setIsUploadingPayment] = useState(false);
   const [userPayments, setUserPayments] = useState([]);
+  const [userFullPapers, setUserFullPapers] = useState({}); // { [submission_id]: fullPaperObj }
   const [selectedSubmission, setSelectedSubmission] = useState(null);
 
   const [viewerModal, setViewerModal] = useState({
@@ -291,6 +303,7 @@ export default function SubmitPage() {
         setUser(parsedUser);
         fetchUserSubmissions(parsedUser.id);
         fetchUserPayments(parsedUser.id);
+        fetchUserFullPapers(parsedUser.id);
       } catch (error) {
         console.error('Error parsing user data:', error);
         localStorage.removeItem('pemnet_user');
@@ -323,6 +336,41 @@ export default function SubmitPage() {
       }
     } catch (error) {
       console.error('Error fetching payments:', error);
+    }
+  };
+
+  // Fetch every full paper the user has submitted, keyed by submission_id
+  const fetchUserFullPapers = async (userId) => {
+    try {
+      // Reuse the submissions endpoint so we only fetch once per abstract
+      const subsRes = await fetch(`${API_URL}/api/submissions/user/${userId}`);
+      if (!subsRes.ok) return;
+      const subs = await subsRes.json();
+
+      const results = {};
+      await Promise.all(
+        (subs || []).map(async (s) => {
+          try {
+            const res = await fetch(
+              `${API_URL}/api/submissions/${s.id}/full-paper`
+            );
+            if (!res.ok) return;
+            const data = await res.json();
+            if (data.exists) {
+              // Key by submission_id string so lookups match both
+              results[String(s.id)] = data.full_paper;
+              if (data.full_paper?.submission_id) {
+                results[String(data.full_paper.submission_id)] = data.full_paper;
+              }
+            }
+          } catch (err) {
+            console.error('Error fetching full paper for', s.id, err);
+          }
+        })
+      );
+      setUserFullPapers(results);
+    } catch (error) {
+      console.error('Error fetching user full papers:', error);
     }
   };
 
@@ -1066,6 +1114,305 @@ export default function SubmitPage() {
                   )}
               </div>
 
+              {/* ===== FULL PAPER SECTION ===== */}
+              <div className="px-6 py-5 border-t border-slate-100">
+                <div className="flex items-center gap-2 mb-3">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="w-4 h-4 text-slate-500"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"
+                    />
+                  </svg>
+                  <span className="font-semibold text-sm text-slate-700">
+                    Full Paper
+                  </span>
+                </div>
+
+                {(() => {
+                  const fp =
+                    userFullPapers[String(submission.id)] ||
+                    userFullPapers[String(submission.submission_id)] ||
+                    null;
+
+                  // Only accepted abstracts can submit a full paper
+                  if (!isAccepted && !fp) {
+                    return (
+                      <div className="flex items-center gap-2 text-slate-500 text-sm bg-slate-50 p-3 rounded-xl border border-slate-100">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          strokeWidth={1.5}
+                          stroke="currentColor"
+                          className="w-4 h-4 shrink-0"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"
+                          />
+                        </svg>
+                        Full paper submission will be available once your
+                        abstract is accepted.
+                      </div>
+                    );
+                  }
+
+                  // Accepted but no full paper yet
+                  if (isAccepted && !fp) {
+                    return (
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-purple-50 border border-purple-200 p-4 rounded-xl">
+                        <div className="flex items-start gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center shrink-0">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              strokeWidth={2}
+                              stroke="currentColor"
+                              className="w-4 h-4 text-purple-600"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M12 4.5v15m7.5-7.5h-15"
+                              />
+                            </svg>
+                          </div>
+                          <div className="text-sm">
+                            <p className="font-semibold text-purple-900">
+                              Full paper not yet submitted
+                            </p>
+                            <p className="text-xs text-purple-700 mt-0.5">
+                              Your abstract has been accepted. You can now
+                              submit the full paper.
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveTab('full-paper');
+                          }}
+                          className="shrink-0 inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-semibold transition"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth={2}
+                            stroke="currentColor"
+                            className="w-4 h-4"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
+                            />
+                          </svg>
+                          Submit Full Paper
+                        </button>
+                      </div>
+                    );
+                  }
+
+                  // Full paper exists
+                  const fpStatus = fp.status || 'submitted';
+                  const statusColor =
+                    fpStatus === 'accepted'
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      : fpStatus === 'rejected'
+                      ? 'bg-red-50 text-red-700 border-red-200'
+                      : fpStatus === 'revision'
+                      ? 'bg-amber-50 text-amber-700 border-amber-200'
+                      : fpStatus === 'under_review'
+                      ? 'bg-blue-50 text-blue-700 border-blue-200'
+                      : 'bg-yellow-50 text-yellow-700 border-yellow-200';
+
+                  const prettyStatus = fpStatus
+                    .split('_')
+                    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+                    .join(' ');
+
+                  return (
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
+                      {/* Top row: status + file ID */}
+                      <div className="flex items-start justify-between gap-3 flex-wrap">
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-slate-800 truncate">
+                            {fp.title || 'Untitled full paper'}
+                          </p>
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            Submitted{' '}
+                            {fp.submitted_at
+                              ? new Date(fp.submitted_at).toLocaleDateString(
+                                  undefined,
+                                  {
+                                    year: 'numeric',
+                                    month: 'short',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                  }
+                                )
+                              : '—'}
+                          </p>
+                        </div>
+                        <span
+                          className={`shrink-0 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${statusColor}`}
+                        >
+                          {prettyStatus}
+                        </span>
+                      </div>
+
+                      {/* Extras: figures + project design count */}
+                      <div className="flex flex-wrap gap-2 text-xs">
+                        {Array.isArray(fp.figures) && fp.figures.length > 0 && (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-white border border-slate-200 rounded-full text-slate-600">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              strokeWidth={1.8}
+                              stroke="currentColor"
+                              className="w-3 h-3"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3 4.5h18M3 4.5v15h18v-15"
+                              />
+                            </svg>
+                            {fp.figures.length} figure
+                            {fp.figures.length === 1 ? '' : 's'}
+                          </span>
+                        )}
+                        {fp.project_design && (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-white border border-slate-200 rounded-full text-slate-600">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              strokeWidth={1.8}
+                              stroke="currentColor"
+                              className="w-3 h-3"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z"
+                              />
+                            </svg>
+                            Project design
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Action buttons */}
+                      <div className="flex flex-wrap gap-2">
+                        {fp.full_paper_view_url && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              openFileViewer(
+                                fp.full_paper_view_url,
+                                'full-paper',
+                                fp.title || submission.extension_project_title
+                              )
+                            }
+                            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg transition"
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              strokeWidth={2}
+                              stroke="currentColor"
+                              className="w-3.5 h-3.5"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"
+                              />
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                              />
+                            </svg>
+                            View Full Paper
+                          </button>
+                        )}
+
+                        {fp.preview_view_url && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              openFileViewer(
+                                fp.preview_view_url,
+                                'full-paper',
+                                `Preview — ${fp.title || submission.extension_project_title}`
+                              )
+                            }
+                            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg transition"
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              strokeWidth={2}
+                              stroke="currentColor"
+                              className="w-3.5 h-3.5"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
+                              />
+                            </svg>
+                            Preview PDF
+                          </button>
+                        )}
+
+                        {fp.full_paper_download_url && (
+                          <a
+                            href={fp.full_paper_download_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition"
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              strokeWidth={2}
+                              stroke="currentColor"
+                              className="w-3.5 h-3.5"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"
+                              />
+                            </svg>
+                            Download
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+
               {/* ===== PAYMENT SECTION ===== */}
               <div className="px-6 py-5 border-t border-slate-100">
                 <div className="flex items-center gap-2 mb-3">
@@ -1324,7 +1671,7 @@ export default function SubmitPage() {
                   <p className="text-sm text-slate-500">Create and submit your extension project abstract for review.</p>
                 </button>
 
-                <button onClick={() => { setActiveTab('my-submissions'); fetchUserSubmissions(user.id); }} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition text-left group">
+                <button onClick={() => { setActiveTab('my-submissions'); fetchUserSubmissions(user.id); fetchUserFullPapers(user.id); }} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition text-left group">
                   <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center mb-4 group-hover:bg-emerald-200 transition">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-emerald-600">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
@@ -1471,6 +1818,7 @@ export default function SubmitPage() {
               onToast={showToast}
               onSubmitted={() => {
                 fetchUserSubmissions(user.id);
+                fetchUserFullPapers(user.id);
                 setTimeout(() => setActiveTab('my-submissions'), 1000);
               }}
             />

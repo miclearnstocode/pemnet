@@ -105,6 +105,311 @@ class Submission(db.Model):
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None,
         }
         
+class FullPaper(db.Model):
+    __tablename__ = 'full_papers'
+    id = db.Column(db.Integer, primary_key=True)
+
+    submission_id = db.Column(
+        db.String(50),
+        db.ForeignKey('submissions.submission_id'),
+        nullable=False,
+        unique=True,
+        index=True,
+    )
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+
+    # ---- Core metadata ----
+    title = db.Column(db.String(500), nullable=True)
+    authors = db.Column(db.Text, nullable=True)
+    affiliations = db.Column(db.Text, nullable=True)
+    keywords = db.Column(db.Text, nullable=True)
+    abstract = db.Column(db.Text, nullable=True)
+    corresponding_name = db.Column(db.String(191), nullable=True)
+    corresponding_email = db.Column(db.String(191), nullable=True)
+    corresponding_orcid = db.Column(db.String(191), nullable=True)
+    paper_category = db.Column(db.String(191), nullable=True)
+    thematic_area = db.Column(db.String(191), nullable=True)
+
+    # ---- Section 1 ----
+    background_context = db.Column(db.Text, nullable=True)
+    evidence_need = db.Column(db.Text, nullable=True)
+    related_literature = db.Column(db.Text, nullable=True)
+    rationale = db.Column(db.Text, nullable=True)
+    objectives = db.Column(db.Text, nullable=True)
+
+    # ---- Section 2 ----
+    reach_population = db.Column(db.Text, nullable=True)
+    setting_duration = db.Column(db.Text, nullable=True)
+    participants_desc = db.Column(db.Text, nullable=True)
+    situational_analysis = db.Column(db.Text, nullable=True)
+    intervention_rationale = db.Column(db.Text, nullable=True)
+    implementation_strategies = db.Column(db.Text, nullable=True)
+    partnership = db.Column(db.Text, nullable=True)
+    monitoring_eval = db.Column(db.Text, nullable=True)
+    data_analysis = db.Column(db.Text, nullable=True)
+    ethical_considerations = db.Column(db.Text, nullable=True)
+
+    # ---- Section 3 ----
+    reach_implementation = db.Column(db.Text, nullable=True)
+    immediate_results = db.Column(db.Text, nullable=True)
+    outcomes = db.Column(db.Text, nullable=True)
+    adoption = db.Column(db.Text, nullable=True)
+    institutionalization = db.Column(db.Text, nullable=True)
+    public_value = db.Column(db.Text, nullable=True)
+
+    # ---- Section 4 ----
+    interpretation = db.Column(db.Text, nullable=True)
+    relationship_literature = db.Column(db.Text, nullable=True)
+    factors_affecting = db.Column(db.Text, nullable=True)
+    inclusion_resilience = db.Column(db.Text, nullable=True)
+    transferability = db.Column(db.Text, nullable=True)
+    limitations = db.Column(db.Text, nullable=True)
+
+    # ---- Section 5 ----
+    implications = db.Column(db.Text, nullable=True)
+
+    # ---- Section 6 + back matter ----
+    conclusion = db.Column(db.Text, nullable=True)
+    acknowledgments = db.Column(db.Text, nullable=True)
+    funding = db.Column(db.Text, nullable=True)
+    conflict_of_interest = db.Column(db.Text, nullable=True)
+    ethics_statement = db.Column(db.Text, nullable=True)
+    data_availability = db.Column(db.Text, nullable=True)
+    author_contributions = db.Column(db.Text, nullable=True)
+    references = db.Column(db.Text, nullable=True)
+    appendices = db.Column(db.Text, nullable=True)
+
+    # ---- Tables (text only) ----
+    table1_title = db.Column(db.String(500), nullable=True)
+    table1_rows = db.Column(db.Text, nullable=True)   # JSON: [{indicator, baseline, endline, change, source}, ...]
+    table1_note = db.Column(db.Text, nullable=True)
+    figure1_title = db.Column(db.String(500), nullable=True)
+    figure1_note = db.Column(db.Text, nullable=True)
+
+    # ---- Generated PDFs (Drive metadata only) ----
+    full_paper_file_id = db.Column(db.String(191), nullable=True)
+    full_paper_view_url = db.Column(db.String(500), nullable=True)
+    full_paper_download_url = db.Column(db.String(500), nullable=True)
+    preview_file_id = db.Column(db.String(191), nullable=True)
+    preview_view_url = db.Column(db.String(500), nullable=True)
+    drive_folder_id = db.Column(db.String(191), nullable=True)
+
+    status = db.Column(
+        db.Enum('submitted', 'under_review', 'revision', 'accepted', 'rejected'),
+        nullable=False,
+        default='submitted',
+    )
+    submitted_at = db.Column(db.DateTime, server_default=db.func.now())
+    updated_at = db.Column(
+        db.DateTime, server_default=db.func.now(), onupdate=db.func.now()
+    )
+
+    # Relationships
+    submission = db.relationship(
+        'Submission',
+        foreign_keys=[submission_id],
+        primaryjoin='Submission.submission_id == FullPaper.submission_id',
+        backref=db.backref('full_paper', uselist=False),
+    )
+    user = db.relationship('User', foreign_keys=[user_id])
+    figures = db.relationship(
+        'FullPaperFigure',
+        backref='full_paper',
+        cascade='all, delete-orphan',
+        order_by='FullPaperFigure.display_order',
+    )
+    project_design = db.relationship(
+        'FullPaperProjectDesign',
+        backref='full_paper',
+        uselist=False,
+        cascade='all, delete-orphan',
+    )
+    tables = db.relationship(
+        'FullPaperTable',
+        backref='full_paper',
+        cascade='all, delete-orphan',
+        order_by='FullPaperTable.display_order',
+    )
+    
+    def to_dict(self, include_children=True):
+        data = {
+            'id': self.id,
+            'submission_id': self.submission_id,
+            'user_id': self.user_id,
+            'title': self.title,
+            'authors': self.authors,
+            'affiliations': self.affiliations,
+            'keywords': self.keywords,
+            'abstract': self.abstract,
+            'corresponding_name': self.corresponding_name,
+            'corresponding_email': self.corresponding_email,
+            'corresponding_orcid': self.corresponding_orcid,
+            'paper_category': self.paper_category,
+            'thematic_area': self.thematic_area,
+
+            'background_context': self.background_context,
+            'evidence_need': self.evidence_need,
+            'related_literature': self.related_literature,
+            'rationale': self.rationale,
+            'objectives': self.objectives,
+
+            'reach_population': self.reach_population,
+            'setting_duration': self.setting_duration,
+            'participants_desc': self.participants_desc,
+            'situational_analysis': self.situational_analysis,
+            'intervention_rationale': self.intervention_rationale,
+            'implementation_strategies': self.implementation_strategies,
+            'partnership': self.partnership,
+            'monitoring_eval': self.monitoring_eval,
+            'data_analysis': self.data_analysis,
+            'ethical_considerations': self.ethical_considerations,
+
+            'reach_implementation': self.reach_implementation,
+            'immediate_results': self.immediate_results,
+            'outcomes': self.outcomes,
+            'adoption': self.adoption,
+            'institutionalization': self.institutionalization,
+            'public_value': self.public_value,
+
+            'interpretation': self.interpretation,
+            'relationship_literature': self.relationship_literature,
+            'factors_affecting': self.factors_affecting,
+            'inclusion_resilience': self.inclusion_resilience,
+            'transferability': self.transferability,
+            'limitations': self.limitations,
+
+            'implications': self.implications,
+
+            'conclusion': self.conclusion,
+            'acknowledgments': self.acknowledgments,
+            'funding': self.funding,
+            'conflict_of_interest': self.conflict_of_interest,
+            'ethics_statement': self.ethics_statement,
+            'data_availability': self.data_availability,
+            'author_contributions': self.author_contributions,
+            'references': self.references,
+            'appendices': self.appendices,
+
+            'table1_title': self.table1_title,
+            'table1_rows': json.loads(self.table1_rows) if self.table1_rows else [],
+            'table1_note': self.table1_note,
+            'figure1_title': self.figure1_title,
+            'figure1_note': self.figure1_note,
+
+            'full_paper_file_id': self.full_paper_file_id,
+            'full_paper_view_url': self.full_paper_view_url,
+            'full_paper_download_url': self.full_paper_download_url,
+            'preview_file_id': self.preview_file_id,
+            'preview_view_url': self.preview_view_url,
+            'drive_folder_id': self.drive_folder_id,
+
+            'status': self.status,
+            'submitted_at': self.submitted_at.strftime('%Y-%m-%d %H:%M:%S') if self.submitted_at else None,
+            'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S') if self.updated_at else None,
+        }
+
+        if include_children:
+            data['figures'] = [f.to_dict() for f in self.figures]
+            data['project_design'] = (
+                self.project_design.to_dict() if self.project_design else None
+            )
+            data['tables'] = [t.to_dict() for t in self.tables]
+
+        return data
+
+class FullPaperFigure(db.Model):
+    __tablename__ = 'full_paper_figures'
+    id = db.Column(db.Integer, primary_key=True)
+    full_paper_id = db.Column(
+        db.Integer,
+        db.ForeignKey('full_papers.id', ondelete='CASCADE'),
+        nullable=False,
+        index=True,
+    )
+
+    title = db.Column(db.String(500), nullable=True)
+    note = db.Column(db.Text, nullable=True)
+
+    # Drive references (bytes live on Drive)
+    drive_file_id = db.Column(db.String(191), nullable=True)
+    view_url = db.Column(db.String(500), nullable=True)
+    download_url = db.Column(db.String(500), nullable=True)
+    original_filename = db.Column(db.String(500), nullable=True)
+    mime_type = db.Column(db.String(100), nullable=True)
+    file_size = db.Column(db.Integer, nullable=True)
+
+    display_order = db.Column(db.Integer, default=0)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'title': self.title,
+            'note': self.note,
+            'drive_file_id': self.drive_file_id,
+            'view_url': self.view_url,
+            'download_url': self.download_url,
+            'original_filename': self.original_filename,
+            'mime_type': self.mime_type,
+            'file_size': self.file_size,
+            'display_order': self.display_order,
+        }
+        
+class FullPaperProjectDesign(db.Model):
+    __tablename__ = 'full_paper_project_designs'
+    id = db.Column(db.Integer, primary_key=True)
+    full_paper_id = db.Column(
+        db.Integer,
+        db.ForeignKey('full_papers.id', ondelete='CASCADE'),
+        nullable=False,
+        unique=True,
+        index=True,
+    )
+
+    drive_file_id = db.Column(db.String(191), nullable=True)
+    view_url = db.Column(db.String(500), nullable=True)
+    download_url = db.Column(db.String(500), nullable=True)
+    original_filename = db.Column(db.String(500), nullable=True)
+    mime_type = db.Column(db.String(100), nullable=True)
+    file_size = db.Column(db.Integer, nullable=True)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'drive_file_id': self.drive_file_id,
+            'view_url': self.view_url,
+            'download_url': self.download_url,
+            'original_filename': self.original_filename,
+            'mime_type': self.mime_type,
+            'file_size': self.file_size,
+        }
+        
+class FullPaperTable(db.Model):
+    __tablename__ = 'full_paper_tables'
+    id = db.Column(db.Integer, primary_key=True)
+    full_paper_id = db.Column(
+        db.Integer,
+        db.ForeignKey('full_papers.id', ondelete='CASCADE'),
+        nullable=False,
+        index=True,
+    )
+
+    title = db.Column(db.String(500), nullable=True)
+    note = db.Column(db.Text, nullable=True)
+
+    # Rows stored as JSON: [ {indicator, baseline, endline, change, source}, ... ]
+    rows_json = db.Column(db.Text, nullable=True)
+
+    display_order = db.Column(db.Integer, default=0)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'title': self.title,
+            'note': self.note,
+            'rows': json.loads(self.rows_json) if self.rows_json else [],
+            'display_order': self.display_order,
+        }
+        
 class SupportingDocument(db.Model):
     __tablename__ = 'supporting_documents'
     id = db.Column(db.Integer, primary_key=True)

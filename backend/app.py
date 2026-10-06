@@ -71,11 +71,15 @@ def _configure_app(app: Flask) -> None:
     app.config['MAX_CONTENT_LENGTH'] = 64 * 1024 * 1024
     app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
         'connect_args': {
-            'connect_timeout': 5,
-            'read_timeout': 5,
-            'write_timeout': 5,
+            'connect_timeout': 10,   
+            'read_timeout': 60,    
+            'write_timeout': 60,
         },
-        'pool_pre_ping': True,
+        'pool_pre_ping': True,      
+        'pool_recycle': 1800,    
+        'pool_timeout': 30,
+        'pool_size': 10,
+        'max_overflow': 20,
     }
 
 

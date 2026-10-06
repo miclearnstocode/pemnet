@@ -3,12 +3,10 @@ import os
 import tempfile
 import traceback
 from datetime import datetime
-
 from flask import Blueprint, jsonify, request
 from werkzeug.utils import secure_filename
-
 from sqlalchemy import text as sa_text
-from models import (db, Submission, FullPaper, FullPaperFigure, FullPaperProjectDesign, FullPaperTable)
+from models import (db, Submission, FullPaper, FullPaperFigure, FullPaperProjectDesign, FullPaperTable,)
 from google_drive import (
     extract_file_id_from_url,
     upload_full_paper_pdf,
@@ -25,7 +23,6 @@ def _form(key, default=''):
 
 
 def _form_json(key):
-    """Parse a JSON-encoded form field; returns the raw string if it isn't JSON."""
     raw = request.form.get(key)
     if raw in (None, '', 'null'):
         return None
@@ -46,14 +43,9 @@ def _safe_json_loads(raw, fallback):
 
 
 def _clean_stored_name(name: str) -> str:
-    """
-    Strip any previously-added 'full_paper_' or 'preview_' prefix so we
-    never end up with 'full_paper_full_paper_...' or 'preview_preview_...'.
-    """
     if not name:
         return name
     base = name
-    # remove any leading prefix pairs repeatedly (covers legacy double prefixes)
     while True:
         if base.startswith('full_paper_'):
             base = base[len('full_paper_'):]
@@ -64,6 +56,26 @@ def _clean_stored_name(name: str) -> str:
     return base or name
 
 
+def _trash_full_paper_files(fp):
+    """Trash every Drive file referenced by the existing FullPaper row."""
+    if not fp:
+        return 0, 0
+
+    ids = []
+    for fid in (fp.full_paper_file_id, fp.preview_file_id):
+        if fid:
+            ids.append(fid)
+
+    for fig in (fp.figures or []):
+        if fig.drive_file_id:
+            ids.append(fig.drive_file_id)
+
+    if fp.project_design and fp.project_design.drive_file_id:
+        ids.append(fp.project_design.drive_file_id)
+
+    return trash_files(ids)
+
+
 @full_paper_bp.route('/api/submit-full-paper', methods=['POST', 'OPTIONS'])
 def submit_full_paper():
     if request.method == 'OPTIONS':
@@ -71,6 +83,7 @@ def submit_full_paper():
 
     temp_files = []
     temp_dir = None
+    restored_refs = None  # used to undo the file_id clearing if we crash
 
     try:
         # ---------------- Required scalar fields ----------------
@@ -104,11 +117,6 @@ def submit_full_paper():
         # ---------------- Locate the linked abstract ----------------
         linked = Submission.query.filter_by(submission_id=submission_id).first()
         if not linked:
-            all_subs = Submission.query.with_entities(
-                Submission.submission_id
-            ).all()
-            print(f"❌ Lookup failed for submission_id={submission_id!r}")
-            print(f"   Available submission_ids: {[s[0] for s in all_subs]}")
             return jsonify({
                 "detail": f"Linked abstract '{submission_id}' not found"
             }), 404
@@ -128,32 +136,63 @@ def submit_full_paper():
         full_paper_file = request.files.get('full_paper_file')
         if not full_paper_file or not full_paper_file.filename:
             return jsonify({"detail": "Full paper PDF is required"}), 400
-
         if not full_paper_file.filename.lower().endswith('.pdf'):
             return jsonify({"detail": "Full paper must be a PDF"}), 400
 
-        # Strip any prior prefix so we never store 'full_paper_full_paper_x.pdf'
         raw_name = _clean_stored_name(full_paper_file.filename)
-        safe_name = secure_filename(
-            raw_name.replace(' ', '_')
-        ) or 'full_paper.pdf'
+        safe_name = secure_filename(raw_name.replace(' ', '_')) or 'full_paper.pdf'
 
         temp_dir = tempfile.mkdtemp()
         file_path = os.path.join(temp_dir, safe_name)
         full_paper_file.save(file_path)
         temp_files.append(file_path)
 
-        # NOTE: preview_file upload removed. The frontend already sends the
-        # same PDF for preview, and generating a duplicate in Drive was
-        # producing 'preview_preview_full_paper_...' garbage.
-
         # ---------------- Resolve abstract file ID for Drive placement ----------------
         abstract_file_id = linked.abstract_file_id
         if not abstract_file_id and linked.abstract_view_url:
             abstract_file_id = extract_file_id_from_url(linked.abstract_view_url)
 
-        # ---------------- Upload main PDF into abstract's Full Paper folder ----------------
-        # Naming: use just the safe filename (no extra 'full_paper_' prefix)
+        if existing:
+            fp = existing
+            print(f"♻️  Updating existing FullPaper id={existing.id}")
+        else:
+            fp = FullPaper(submission_id=submission_id, user_id=user_id_int)
+            db.session.add(fp)
+            print(f"🆕 Creating new FullPaper for submission_id={submission_id!r}, user_id={user_id_int}")
+
+        if existing:
+            trashed_n, failed_n = _trash_full_paper_files(existing)
+            print(
+                f"🗑️  Pre-upload cleanup: trashed {trashed_n} old file(s), "
+                f"{failed_n} failed (submission={submission_id})"
+            )
+
+            restored_refs = {
+                'full_paper_file_id': existing.full_paper_file_id,
+                'full_paper_view_url': existing.full_paper_view_url,
+                'full_paper_download_url': existing.full_paper_download_url,
+                'preview_file_id': existing.preview_file_id,
+                'preview_view_url': existing.preview_view_url,
+                'drive_folder_id': existing.drive_folder_id,
+            }
+
+            existing.full_paper_file_id = None
+            existing.full_paper_view_url = None
+            existing.full_paper_download_url = None
+            existing.preview_file_id = None
+            existing.preview_view_url = None
+
+            # Delete all child rows
+            for old_fig in list(existing.figures):
+                db.session.delete(old_fig)
+            if existing.project_design:
+                db.session.delete(existing.project_design)
+            for old_table in list(existing.tables):
+                db.session.delete(old_table)
+
+            db.session.flush()
+            db.session.expire(existing, ['figures', 'project_design', 'tables'])
+
         try:
             file_id, view_url, download_url, folder_id = upload_full_paper_pdf(
                 file_path=file_path,
@@ -167,6 +206,10 @@ def submit_full_paper():
         except Exception as drive_err:
             print(f"Drive upload error (full paper): {drive_err}")
             traceback.print_exc()
+            if existing and restored_refs:
+                for k, v in restored_refs.items():
+                    setattr(existing, k, v)
+                db.session.commit()
             return jsonify({
                 "detail": f"Failed to upload full paper: {drive_err}"
             }), 500
@@ -198,23 +241,18 @@ def submit_full_paper():
         except Exception:
             tables_meta = []
 
-        # ---------------- Reconnect DB after potentially long Drive uploads ----------------
+        # ---------------- Reconnect DB after long Drive uploads ----------------
         try:
             db.session.execute(sa_text('SELECT 1'))
         except Exception:
             db.session.rollback()
             db.session.execute(sa_text('SELECT 1'))
 
-        # ---------------- Persist / update FullPaper row ----------------
         if existing:
-            print(f"♻️  Updating existing FullPaper id={existing.id}")
-            fp = existing
-        else:
-            print(f"🆕 Creating new FullPaper for submission_id={submission_id!r}, user_id={user_id_int}")
-            fp = FullPaper(submission_id=submission_id, user_id=user_id_int)
-            db.session.add(fp)
+            fp = FullPaper.query.filter_by(submission_id=submission_id).first()
+            if fp is None:
+                return jsonify({"detail": "Existing FullPaper lost during cleanup"}), 500
 
-        # Core metadata
         fp.title = title
         fp.authors = authors
         fp.affiliations = _form('full_paper_affiliations')
@@ -275,14 +313,14 @@ def submit_full_paper():
         fp.references = _form('full_paper_references')
         fp.appendices = _form('full_paper_appendices')
 
-        # Legacy single-table / single-figure fields
+        # Legacy fields
         fp.table1_title = _form('full_paper_table1_title')
         fp.table1_rows = _form_json('full_paper_table1_rows')
         fp.table1_note = _form('full_paper_table1_note')
         fp.figure1_title = _form('full_paper_figure1_title')
         fp.figure1_note = _form('full_paper_figure1_note')
 
-        # File references (main PDF only — no preview PDF)
+        # File refs — set AFTER we know the upload succeeded
         fp.full_paper_file_id = file_id
         fp.full_paper_view_url = view_url
         fp.full_paper_download_url = download_url
@@ -293,47 +331,14 @@ def submit_full_paper():
         fp.status = 'submitted'
         fp.submitted_at = datetime.now()
 
-        # Flush so fp.id is available for child rows
         db.session.flush()
 
+        # Update the parent Submission flags
         linked.has_full_paper = True
         linked.full_paper_submitted_at = datetime.now()
 
-        # ---------------- Clear previous children on resubmission ----------------
-        if existing:
-            for old_fig in list(fp.figures):
-                db.session.delete(old_fig)
-            if fp.project_design:
-                db.session.delete(fp.project_design)
-            db.session.flush()
-
         # ---------------- Upload + persist each figure ----------------
         for idx, fig_file in enumerate(figure_files):
-            meta = figures_meta[idx] if idx < len(figures_meta) else {}
-            keep_id = meta.get('keep_existing_id') or ''
-
-            # Nothing new uploaded for this slot — restore existing row
-            if (not fig_file or not fig_file.filename) and keep_id:
-                # Find the old figure record (was NOT deleted above)
-                old = next(
-                    (f for f in existing.figures if f.drive_file_id == keep_id),
-                    None,
-                ) if existing else None
-                if old:
-                    # Re-append by re-creating a copy attached to fp
-                    fp.figures.append(FullPaperFigure(
-                        title=old.title,
-                        note=old.note,
-                        drive_file_id=old.drive_file_id,
-                        view_url=old.view_url,
-                        download_url=old.download_url,
-                        original_filename=old.original_filename,
-                        mime_type=old.mime_type,
-                        file_size=old.file_size,
-                        display_order=old.display_order,
-                    ))
-                continue
-
             if not fig_file or not fig_file.filename:
                 continue
 
@@ -360,25 +365,7 @@ def submit_full_paper():
             except Exception as fig_err:
                 print(f"⚠️ Figure {idx + 1} upload failed (non-fatal): {fig_err}")
                 continue
-            
-        # ---------------- Clear previous children on resubmission ----------------
-        if existing:
-            for old_fig in list(fp.figures):
-                # Only delete figures that were NOT marked as "keep"
-                keep_ids = {
-                    (m.get('keep_existing_id') or '')
-                    for m in figures_meta
-                    if isinstance(m, dict)
-                }
-                if old_fig.drive_file_id and old_fig.drive_file_id in keep_ids:
-                    continue
-                db.session.delete(old_fig)
-            if fp.project_design:
-                pd_keep = bool(project_design_meta.get('keep_existing_id'))
-                if not pd_keep:
-                    db.session.delete(fp.project_design)
-            db.session.flush()
-            
+
             fp.figures.append(FullPaperFigure(
                 title=meta.get('title') or '',
                 note=meta.get('note') or '',
@@ -423,12 +410,6 @@ def submit_full_paper():
             except Exception as pd_err:
                 print(f"⚠️ Project design upload failed (non-fatal): {pd_err}")
 
-        # ---------------- Clear old tables on resubmission ----------------
-        if existing:
-            for old_table in list(fp.tables):
-                db.session.delete(old_table)
-            db.session.flush()
-
         # ---------------- Persist tables ----------------
         for idx, table in enumerate(tables_meta):
             if not isinstance(table, dict):
@@ -456,7 +437,6 @@ def submit_full_paper():
 
         db.session.commit()
 
-        # ---------------- Build SAFE response ----------------
         try:
             fp_dict = fp.to_dict()
         except Exception as dict_err:
@@ -478,8 +458,7 @@ def submit_full_paper():
             "project_design_saved": bool(fp.project_design),
             "tables_saved": len(fp.tables or []),
             "db_committed": True,
-            "full_paper": fp_dict,
-        }), 200
+            "full_paper": fp_dict,}), 200
 
     except Exception as e:
         db.session.rollback()
@@ -501,91 +480,3 @@ def submit_full_paper():
                 os.rmdir(temp_dir)
             except Exception:
                 pass
-
-
-@full_paper_bp.route('/api/submissions/<string:submission_id>/full-paper', methods=['GET', 'OPTIONS'])
-def get_full_paper(submission_id):
-    if request.method == 'OPTIONS':
-        return jsonify({})
-
-    try:
-        fp = FullPaper.query.filter_by(submission_id=submission_id).first()
-        if not fp:
-            return jsonify({"exists": False}), 200
-
-        return jsonify({
-            "exists": True,
-            "full_paper": fp.to_dict(),
-        }), 200
-
-    except Exception as e:
-        print(f"Error fetching full paper: {e}")
-        traceback.print_exc()
-        return jsonify({"detail": str(e)}), 500
-
-
-@full_paper_bp.route('/api/submissions/<string:submission_id>/full-paper', methods=['DELETE', 'OPTIONS'])
-def delete_full_paper(submission_id):
-    if request.method == 'OPTIONS':
-        return jsonify({})
-
-    try:
-        data = request.get_json(silent=True) or {}
-        user_id = data.get('user_id')
-
-        fp = FullPaper.query.filter_by(submission_id=submission_id).first()
-        if not fp:
-            return jsonify({"detail": "No full paper found"}), 404
-
-        if user_id and int(user_id) != fp.user_id:
-            return jsonify({"detail": "You do not own this submission"}), 403
-
-        drive_file_ids = []
-
-        if fp.full_paper_file_id:
-            drive_file_ids.append(fp.full_paper_file_id)
-        if fp.preview_file_id:
-            drive_file_ids.append(fp.preview_file_id)
-        for fig in (fp.figures or []):
-            if fig.drive_file_id:
-                drive_file_ids.append(fig.drive_file_id)
-        if fp.project_design and fp.project_design.drive_file_id:
-            drive_file_ids.append(fp.project_design.drive_file_id)
-
-        trashed_count, failed_count = trash_files(drive_file_ids)
-
-        print(
-            f"🗑️  Full paper delete: trashed {trashed_count} Drive file(s), "
-            f"{failed_count} failed (submission={submission_id})"
-        )
-
-        db.session.delete(fp)
-        linked = Submission.query.filter_by(submission_id=submission_id).first()
-        if linked:
-            linked.has_full_paper = False
-            linked.full_paper_submitted_at = None
-        db.session.commit()
-
-        response = {
-            "message": (
-                "Full paper deleted. Drive files moved to trash; you may upload a new one."
-            ),
-            "submission_id": submission_id,
-            "drive_files_trashed": trashed_count,
-            "drive_files_failed": failed_count,
-            "drive_file_ids": drive_file_ids,
-        }
-
-        if failed_count:
-            response["warning"] = (
-                f"{failed_count} Drive file(s) could not be trashed. "
-                "They may need manual cleanup. DB record was still removed."
-            )
-
-        return jsonify(response), 200
-
-    except Exception as e:
-        db.session.rollback()
-        print(f"Error deleting full paper: {e}")
-        traceback.print_exc()
-        return jsonify({"detail": str(e)}), 500

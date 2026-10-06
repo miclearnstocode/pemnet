@@ -1135,7 +1135,7 @@ export default function SubmitPage() {
                     />
                   </svg>
                   <span className="font-semibold text-sm text-slate-700">
-                    Full Paper
+                    Full Extension Project Paper
                   </span>
                 </div>
 
@@ -1259,7 +1259,7 @@ export default function SubmitPage() {
                             </span>
                           </div>
                           <p className="text-xs text-slate-500 truncate mt-0.5">
-                            {fp?.title || 'Uploaded full paper PDF'}
+                            {'Uploaded full paper PDF'}
                             {submittedAt && (
                               <>
                                 {' · '}

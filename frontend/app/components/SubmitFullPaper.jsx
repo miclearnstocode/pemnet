@@ -2229,7 +2229,7 @@ export default function SubmitFullPaper({
 
         {/* ---- Scrollable form area ---- */}
         <div className="flex-1 min-h-0 px-6 pb-6">
-          <div className="form-scroll max-w-4xl mx-auto h-full overflow-y-scroll">
+          <div className="form-scroll max-w-4xl mx-auto h-full overflow-y-scroll" style={{ scrollPaddingTop: '80px' }}>
             <div className="bg-white border border-slate-200 rounded-2xl shadow-sm">
               <div className="sticky top-0 z-20 bg-linear-to-r from-blue-700 to-blue-800 px-6 py-4 flex items-center justify-between rounded-t-2xl">
                 <div className="text-white">

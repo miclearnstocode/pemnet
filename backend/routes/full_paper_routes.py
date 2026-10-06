@@ -8,7 +8,7 @@ from flask import Blueprint, jsonify, request
 from werkzeug.utils import secure_filename
 
 from sqlalchemy import text as sa_text
-from models import ( db, Submission, FullPaper, FullPaperFigure, FullPaperProjectDesign, FullPaperTable)
+from models import (db, Submission, FullPaper, FullPaperFigure, FullPaperProjectDesign, FullPaperTable)
 from google_drive import (
     extract_file_id_from_url,
     upload_full_paper_pdf,
@@ -31,7 +31,7 @@ def _form_json(key):
         return None
     try:
         json.loads(raw)
-        return raw  # already valid JSON string
+        return raw
     except Exception:
         return raw
 
@@ -43,6 +43,25 @@ def _safe_json_loads(raw, fallback):
         return json.loads(raw)
     except Exception:
         return fallback
+
+
+def _clean_stored_name(name: str) -> str:
+    """
+    Strip any previously-added 'full_paper_' or 'preview_' prefix so we
+    never end up with 'full_paper_full_paper_...' or 'preview_preview_...'.
+    """
+    if not name:
+        return name
+    base = name
+    # remove any leading prefix pairs repeatedly (covers legacy double prefixes)
+    while True:
+        if base.startswith('full_paper_'):
+            base = base[len('full_paper_'):]
+        elif base.startswith('preview_'):
+            base = base[len('preview_'):]
+        else:
+            break
+    return base or name
 
 
 @full_paper_bp.route('/api/submit-full-paper', methods=['POST', 'OPTIONS'])
@@ -85,6 +104,11 @@ def submit_full_paper():
         # ---------------- Locate the linked abstract ----------------
         linked = Submission.query.filter_by(submission_id=submission_id).first()
         if not linked:
+            all_subs = Submission.query.with_entities(
+                Submission.submission_id
+            ).all()
+            print(f"❌ Lookup failed for submission_id={submission_id!r}")
+            print(f"   Available submission_ids: {[s[0] for s in all_subs]}")
             return jsonify({
                 "detail": f"Linked abstract '{submission_id}' not found"
             }), 404
@@ -108,8 +132,10 @@ def submit_full_paper():
         if not full_paper_file.filename.lower().endswith('.pdf'):
             return jsonify({"detail": "Full paper must be a PDF"}), 400
 
+        # Strip any prior prefix so we never store 'full_paper_full_paper_x.pdf'
+        raw_name = _clean_stored_name(full_paper_file.filename)
         safe_name = secure_filename(
-            full_paper_file.filename.replace(' ', '_')
+            raw_name.replace(' ', '_')
         ) or 'full_paper.pdf'
 
         temp_dir = tempfile.mkdtemp()
@@ -117,17 +143,9 @@ def submit_full_paper():
         full_paper_file.save(file_path)
         temp_files.append(file_path)
 
-        # ---------------- Optional preview PDF (from frontend) ----------------
-        preview_file = request.files.get('full_paper_preview_file')
-        preview_path = None
-        preview_safe_name = None
-        if preview_file and preview_file.filename:
-            preview_safe_name = secure_filename(
-                preview_file.filename.replace(' ', '_')
-            ) or 'full_paper_preview.pdf'
-            preview_path = os.path.join(temp_dir, preview_safe_name)
-            preview_file.save(preview_path)
-            temp_files.append(preview_path)
+        # NOTE: preview_file upload removed. The frontend already sends the
+        # same PDF for preview, and generating a duplicate in Drive was
+        # producing 'preview_preview_full_paper_...' garbage.
 
         # ---------------- Resolve abstract file ID for Drive placement ----------------
         abstract_file_id = linked.abstract_file_id
@@ -135,10 +153,11 @@ def submit_full_paper():
             abstract_file_id = extract_file_id_from_url(linked.abstract_view_url)
 
         # ---------------- Upload main PDF into abstract's Full Paper folder ----------------
+        # Naming: use just the safe filename (no extra 'full_paper_' prefix)
         try:
             file_id, view_url, download_url, folder_id = upload_full_paper_pdf(
                 file_path=file_path,
-                filename=f"full_paper_{safe_name}",
+                filename=safe_name,
                 abstract_file_id=abstract_file_id,
                 abstract_view_url=linked.abstract_view_url,
                 paper_category=linked.paper_category,
@@ -151,28 +170,6 @@ def submit_full_paper():
             return jsonify({
                 "detail": f"Failed to upload full paper: {drive_err}"
             }), 500
-
-        # ---------------- Optionally upload preview PDF (non-fatal) ----------------
-        preview_file_id = None
-        preview_view_url = None
-        if preview_path:
-            try:
-                (
-                    preview_file_id,
-                    preview_view_url,
-                    _preview_dl,
-                    _preview_folder,
-                ) = upload_full_paper_pdf(
-                    file_path=preview_path,
-                    filename=f"preview_{preview_safe_name}",
-                    abstract_file_id=abstract_file_id,
-                    abstract_view_url=linked.abstract_view_url,
-                    paper_category=linked.paper_category,
-                    thematic_area=linked.thematic_area,
-                    sender_name=linked.project_leader,
-                )
-            except Exception as preview_err:
-                print(f"⚠️ Preview upload failed (non-fatal): {preview_err}")
 
         # ---------------- Parse figures meta + files ----------------
         figures_meta = _safe_json_loads(
@@ -193,7 +190,7 @@ def submit_full_paper():
             request.form.get('full_paper_project_design_meta'), {}
         )
         project_design_file = request.files.get('full_paper_project_design')
-        
+
         # ---------------- Parse tables ----------------
         tables_meta_raw = request.form.get('full_paper_tables')
         try:
@@ -202,8 +199,6 @@ def submit_full_paper():
             tables_meta = []
 
         # ---------------- Reconnect DB after potentially long Drive uploads ----------------
-        # Drive uploads can take 30-60 s; ping the connection now so the INSERT
-        # below never hits a stale / timed-out connection.
         try:
             db.session.execute(sa_text('SELECT 1'))
         except Exception:
@@ -212,8 +207,10 @@ def submit_full_paper():
 
         # ---------------- Persist / update FullPaper row ----------------
         if existing:
+            print(f"♻️  Updating existing FullPaper id={existing.id}")
             fp = existing
         else:
+            print(f"🆕 Creating new FullPaper for submission_id={submission_id!r}, user_id={user_id_int}")
             fp = FullPaper(submission_id=submission_id, user_id=user_id_int)
             db.session.add(fp)
 
@@ -278,26 +275,29 @@ def submit_full_paper():
         fp.references = _form('full_paper_references')
         fp.appendices = _form('full_paper_appendices')
 
-        # Tables (text only)
+        # Legacy single-table / single-figure fields
         fp.table1_title = _form('full_paper_table1_title')
         fp.table1_rows = _form_json('full_paper_table1_rows')
         fp.table1_note = _form('full_paper_table1_note')
         fp.figure1_title = _form('full_paper_figure1_title')
         fp.figure1_note = _form('full_paper_figure1_note')
 
-        # File references (main PDFs)
+        # File references (main PDF only — no preview PDF)
         fp.full_paper_file_id = file_id
         fp.full_paper_view_url = view_url
         fp.full_paper_download_url = download_url
         fp.drive_folder_id = folder_id
-        fp.preview_file_id = preview_file_id
-        fp.preview_view_url = preview_view_url
+        fp.preview_file_id = None
+        fp.preview_view_url = None
 
         fp.status = 'submitted'
         fp.submitted_at = datetime.now()
 
         # Flush so fp.id is available for child rows
         db.session.flush()
+
+        linked.has_full_paper = True
+        linked.full_paper_submitted_at = datetime.now()
 
         # ---------------- Clear previous children on resubmission ----------------
         if existing:
@@ -392,7 +392,6 @@ def submit_full_paper():
                 continue
 
             rows = table.get('rows') or []
-            # Only persist tables that actually have content
             has_content = bool(
                 (table.get('title') or '').strip()
                 or (table.get('note') or '').strip()
@@ -411,9 +410,16 @@ def submit_full_paper():
                 rows_json=json.dumps(rows, ensure_ascii=False),
                 display_order=table.get('display_order', idx),
             ))
-            
-        # ---------------- Commit ----------------
+
         db.session.commit()
+
+        # ---------------- Build SAFE response ----------------
+        try:
+            fp_dict = fp.to_dict()
+        except Exception as dict_err:
+            print(f"⚠️ fp.to_dict() failed (non-fatal): {dict_err}")
+            traceback.print_exc()
+            fp_dict = None
 
         return jsonify({
             "message": "Full paper submitted successfully",
@@ -423,22 +429,24 @@ def submit_full_paper():
             "full_paper_view_url": view_url,
             "full_paper_download_url": download_url,
             "full_paper_drive_folder_id": folder_id,
-            "full_paper_preview_file_id": preview_file_id,
-            "full_paper_preview_view_url": preview_view_url,
-            "figures_saved": len(fp.figures),
+            "full_paper_preview_file_id": None,
+            "full_paper_preview_view_url": None,
+            "figures_saved": len(fp.figures or []),
             "project_design_saved": bool(fp.project_design),
-            "tables_saved": len(fp.tables),
-            "full_paper": fp.to_dict(),
+            "tables_saved": len(fp.tables or []),
+            "db_committed": True,
+            "full_paper": fp_dict,
         }), 200
 
     except Exception as e:
         db.session.rollback()
-        print(f"Full paper submission error: {e}")
+        print("=" * 60)
+        print(f"❌ FULL PAPER SUBMISSION EXCEPTION: {e}")
         traceback.print_exc()
+        print("=" * 60)
         return jsonify({"detail": str(e)}), 500
 
     finally:
-        # Cleanup temp files
         for fp_path in temp_files:
             try:
                 if os.path.exists(fp_path):
@@ -451,7 +459,8 @@ def submit_full_paper():
             except Exception:
                 pass
 
-@full_paper_bp.route('/api/submissions/<string:submission_id>/full-paper', methods=['GET', 'OPTIONS'],)
+
+@full_paper_bp.route('/api/submissions/<string:submission_id>/full-paper', methods=['GET', 'OPTIONS'])
 def get_full_paper(submission_id):
     if request.method == 'OPTIONS':
         return jsonify({})
@@ -472,18 +481,8 @@ def get_full_paper(submission_id):
         return jsonify({"detail": str(e)}), 500
 
 
-@full_paper_bp.route('/api/submissions/<string:submission_id>/full-paper', methods=['DELETE', 'OPTIONS'],)
+@full_paper_bp.route('/api/submissions/<string:submission_id>/full-paper', methods=['DELETE', 'OPTIONS'])
 def delete_full_paper(submission_id):
-    """
-    Delete a full paper.
-
-    Behavior:
-      * All Drive files belonging to the full paper (main PDF, preview PDF,
-        each figure, project design) are moved to Drive **trash**.
-      * The DB row + its children (figures, project design) are deleted.
-      * Accepts optional `hard_delete=true` in the JSON body to permanently
-        delete the Drive files instead of trashing them. Default: trash.
-    """
     if request.method == 'OPTIONS':
         return jsonify({})
 
@@ -498,27 +497,18 @@ def delete_full_paper(submission_id):
         if user_id and int(user_id) != fp.user_id:
             return jsonify({"detail": "You do not own this submission"}), 403
 
-        # ---- Collect every Drive file ID we need to trash ----
         drive_file_ids = []
 
-        # Main full paper PDF
         if fp.full_paper_file_id:
             drive_file_ids.append(fp.full_paper_file_id)
-
-        # Preview PDF
         if fp.preview_file_id:
             drive_file_ids.append(fp.preview_file_id)
-
-        # Figure images
         for fig in (fp.figures or []):
             if fig.drive_file_id:
                 drive_file_ids.append(fig.drive_file_id)
-
-        # Project design image
         if fp.project_design and fp.project_design.drive_file_id:
             drive_file_ids.append(fp.project_design.drive_file_id)
 
-        # ---- Trash them on Drive ----
         trashed_count, failed_count = trash_files(drive_file_ids)
 
         print(
@@ -526,8 +516,11 @@ def delete_full_paper(submission_id):
             f"{failed_count} failed (submission={submission_id})"
         )
 
-        # ---- Delete DB row (cascade removes figures + project_design) ----
         db.session.delete(fp)
+        linked = Submission.query.filter_by(submission_id=submission_id).first()
+        if linked:
+            linked.has_full_paper = False
+            linked.full_paper_submitted_at = None
         db.session.commit()
 
         response = {

@@ -211,17 +211,6 @@ def upload_file_to_drive(file_path, filename, project_title=None, sender_name=No
         raise
 
 def upload_supporting_document_to_drive(file_path, filename, parent_folder_id):
-    """
-    Upload a supporting document to a specific folder in Google Drive.
-    
-    Args:
-        file_path: Local path to the file
-        filename: Name to use in Drive
-        parent_folder_id: ID of the parent folder (the sender's folder)
-    
-    Returns:
-        tuple: (file_id, view_url)
-    """
     if not file_path or not os.path.exists(file_path):
         raise Exception(f"File not found: {file_path}")
 
@@ -801,21 +790,25 @@ def upload_image_to_full_paper(
     download_url = f"https://drive.google.com/uc?export=download&id={file_id}"
     return file_id, view_url, download_url, target_folder_id
 
-def upload_full_paper_pdf(
-    file_path,
-    filename,
-    abstract_file_id=None,
-    abstract_view_url=None,
-    paper_category=None,
-    thematic_area=None,
-    sender_name=None,
-):
-    """Upload the generated full paper PDF into the abstract's Full Paper folder."""
+def upload_full_paper_pdf(file_path, filename, abstract_file_id=None, abstract_view_url=None, paper_category=None, thematic_area=None, sender_name=None,):
+
     if not file_path or not os.path.exists(file_path):
         raise Exception(f"File not found: {file_path}")
+
     if not filename or not isinstance(filename, str):
         filename = "full_paper.pdf"
-    filename = sanitize_folder_name(filename)
+
+    # Strip any legacy 'full_paper_' / 'preview_' prefixes so we never store
+    # 'full_paper_full_paper_...' in Drive
+    base = filename
+    while True:
+        if base.startswith('full_paper_'):
+            base = base[len('full_paper_'):]
+        elif base.startswith('preview_'):
+            base = base[len('preview_'):]
+        else:
+            break
+    filename = sanitize_folder_name(base or filename)
 
     service = get_drive_service()
     fp_folder_id = _get_or_create_abstract_full_paper_folder(

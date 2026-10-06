@@ -7,7 +7,7 @@ from flask_bcrypt import Bcrypt
 from werkzeug.exceptions import UnprocessableEntity
 from models import db
 from gmail_service import GmailService
-from email_service import gmail_service as _default_gmail_service  # noqa: F401
+from email_service import gmail_service as _default_gmail_service 
 from cpanel_email_service import CPanelEmailService
 
 # Route blueprints

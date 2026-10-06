@@ -1,5 +1,3 @@
-"""Generates unique, year-scoped submission IDs in the format `pemnet-NNN-YYYY`."""
-
 from datetime import datetime
 from models import db, Submission, ExtractedAbstractData
 

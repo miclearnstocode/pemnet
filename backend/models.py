@@ -65,6 +65,8 @@ class Submission(db.Model):
     evaluation_status = db.Column(db.Enum('pending', 'endorse', 'downgraded-non_competitive', 'downgraded-poster_only'), nullable=False, default='pending')
     created_at = db.Column(db.DateTime, server_default=db.func.now())
     revisions = db.relationship( 'SubmissionRevision', foreign_keys='SubmissionRevision.submission_id', primaryjoin='Submission.submission_id == SubmissionRevision.submission_id', backref='submission_ref',)
+    has_full_paper = db.Column(db.Boolean, nullable=False, default=False, server_default='0')
+    full_paper_submitted_at = db.Column(db.DateTime, nullable=True)
 
     def to_dict(self):
         return {
@@ -103,6 +105,11 @@ class Submission(db.Model):
             'status': self.status,
             'evaluation_status': self.evaluation_status,
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None,
+            'has_full_paper': bool(self.has_full_paper),
+            'full_paper_submitted_at': (
+                self.full_paper_submitted_at.strftime('%Y-%m-%d %H:%M:%S')
+                if self.full_paper_submitted_at else None
+            ),
         }
         
 class FullPaper(db.Model):

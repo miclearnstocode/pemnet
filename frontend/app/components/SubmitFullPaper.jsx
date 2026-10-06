@@ -1112,8 +1112,6 @@ function validateAPAReference(line) {
   }
 
   // 4) The part after the year must contain at least one period —
-  //    this is what separates the title from the source.
-  //    Trailing periods are excluded so a bare "Title." doesn't count as title+source.
   const afterYearNoTrailingDot = afterYear.replace(/[.\s]+$/, '');
   if (!afterYearNoTrailingDot.includes('.')) {
     return {
@@ -1138,9 +1136,6 @@ function validateAPAReference(line) {
     };
   }
 
-  // ---------- Everything else is accepted ----------
-  // We do NOT try to enforce a specific publisher/journal layout,
-  // because APA 7 allows many shapes (journal, book, report, webpage, etc.).
   return { valid: true };
 }
 
@@ -1150,7 +1145,10 @@ export default function SubmitFullPaper({
   onSubmitted,
   onBack,
   onToast,
+  initialSubmission = null, 
+  existingFullPaper = null, 
 }) {
+  const isResubmit = Boolean(existingFullPaper || initialSubmission);
   const [submissionId, setSubmissionId] = useState('');
   const [title, setTitle] = useState('');
   const [authorsList, setAuthorsList] = useState([
@@ -1457,6 +1455,197 @@ export default function SubmitFullPaper({
 
   }, [submissionId]);
 
+  React.useEffect(() => {
+    if (!existingFullPaper && !initialSubmission) return;
+
+    const fp = existingFullPaper || {};
+
+    // ---------- Linked abstract ----------
+    const sid =
+      fp.submission_id ||
+      initialSubmission?.submission_id ||
+      initialSubmission?.id ||
+      '';
+    if (sid) setSubmissionId(String(sid));
+
+    // ---------- Core metadata ----------
+    setTitle(fp.title || initialSubmission?.extension_project_title || '');
+    setKeywords(fp.keywords || initialSubmission?.keywords || '');
+    setAbstract(fp.abstract || '');
+    setCorrespondingName(
+      fp.corresponding_name ||
+      initialSubmission?.corresponding_author_name ||
+      ''
+    );
+    setCorrespondingEmail(
+      fp.corresponding_email ||
+      initialSubmission?.corresponding_author_email ||
+      ''
+    );
+    setCorrespondingOrcid(fp.corresponding_orcid || '');
+    setPaperCategory(fp.paper_category || initialSubmission?.paper_category || '');
+    setThematicArea(fp.thematic_area || initialSubmission?.thematic_area || '');
+
+    // ---------- Author list ----------
+    if (fp.authors) {
+      const raw = String(fp.authors);
+      const parts = raw
+        .split(/,\s*(?=[A-Z])|(?=[¹²³⁴⁵⁶⁷⁸⁹])/)
+        .map((s) => s.replace(/[¹²³⁴⁵⁶⁷⁸⁹\s]+$/g, '').trim())
+        .filter(Boolean);
+
+      const affLines = String(fp.affiliations || '')
+        .split('\n')
+        .map((l) => l.replace(/^[¹²³⁴⁵⁶⁷⁸⁹]\s*/, '').trim());
+
+      const list = parts.map((name, i) => ({
+        name,
+        affiliation: affLines[i] || affLines[0] || '',
+      }));
+
+      setAuthorsList(list.length ? list : [{ name: '', affiliation: '' }]);
+    } else if (initialSubmission) {
+      const fallback = [];
+      if (initialSubmission.project_leader) {
+        fallback.push({
+          name: initialSubmission.project_leader,
+          affiliation: initialSubmission.suc_agencies || '',
+        });
+      }
+      if (
+        initialSubmission.presenter &&
+        initialSubmission.presenter !== initialSubmission.project_leader
+      ) {
+        fallback.push({
+          name: initialSubmission.presenter,
+          affiliation: initialSubmission.suc_agencies || '',
+        });
+      }
+      if (initialSubmission.co_authors) {
+        String(initialSubmission.co_authors)
+          .split(/[;,]/)
+          .map((s) => s.trim())
+          .filter(Boolean)
+          .forEach((name) =>
+            fallback.push({
+              name,
+              affiliation: initialSubmission.suc_agencies || '',
+            })
+          );
+      }
+      setAuthorsList(fallback.length ? fallback : [{ name: '', affiliation: '' }]);
+    }
+
+    // ---------- Section 1 ----------
+    setBackgroundContext(fp.background_context || '');
+    setEvidenceNeed(fp.evidence_need || '');
+    setRelatedLiterature(fp.related_literature || '');
+    setRationale(fp.rationale || '');
+    setObjectives(fp.objectives || '');
+
+    // ---------- Section 2 ----------
+    setReachPopulation(fp.reach_population || '');
+    setSettingDuration(fp.setting_duration || '');
+    setParticipantsDesc(fp.participants_desc || '');
+    setSituationalAnalysis(fp.situational_analysis || '');
+    setInterventionRationale(fp.intervention_rationale || '');
+    setImplementationStrategies(fp.implementation_strategies || '');
+    setPartnership(fp.partnership || '');
+    setMonitoringEval(fp.monitoring_eval || '');
+    setDataAnalysis(fp.data_analysis || '');
+    setEthicalConsiderations(fp.ethical_considerations || '');
+
+    // ---------- Section 3 ----------
+    setReachImplementation(fp.reach_implementation || '');
+    setImmediateResults(fp.immediate_results || '');
+    setOutcomes(fp.outcomes || '');
+    setAdoption(fp.adoption || '');
+    setInstitutionalization(fp.institutionalization || '');
+    setPublicValue(fp.public_value || '');
+
+    // ---------- Section 4 ----------
+    setInterpretation(fp.interpretation || '');
+    setRelationshipLiterature(fp.relationship_literature || '');
+    setFactorsAffecting(fp.factors_affecting || '');
+    setInclusionResilience(fp.inclusion_resilience || '');
+    setTransferability(fp.transferability || '');
+    setLimitations(fp.limitations || '');
+
+    // ---------- Section 5 ----------
+    setImplications(fp.implications || '');
+
+    // ---------- Section 6 + back matter ----------
+    setConclusion(fp.conclusion || '');
+    setAcknowledgments(fp.acknowledgments || '');
+    setFunding(fp.funding || '');
+    setConflictOfInterest(fp.conflict_of_interest || '');
+    setEthicsStatement(fp.ethics_statement || '');
+    setDataAvailability(fp.data_availability || '');
+    setAuthorContributions(fp.author_contributions || '');
+    setReferences(fp.references || '');
+    setAppendices(fp.appendices || '');
+
+    // ---------- Tables ----------
+    if (Array.isArray(fp.tables) && fp.tables.length > 0) {
+      setTables(
+        fp.tables.map((t, i) => ({
+          id: `${Date.now()}-${i}`,
+          title: t.title || '',
+          note: t.note || '',
+          rows:
+            Array.isArray(t.rows) && t.rows.length > 0
+              ? t.rows.map((r) => ({
+                  indicator: r.indicator || '',
+                  baseline: r.baseline || '',
+                  endline: r.endline || '',
+                  change: r.change || '',
+                  source: r.source || '',
+                }))
+              : [
+                  { indicator: '', baseline: '', endline: '', change: '', source: '' },
+                  { indicator: '', baseline: '', endline: '', change: '', source: '' },
+                ],
+        }))
+      );
+    }
+
+    // ---------- Legacy figure 1 metadata ----------
+    setFigure1Title(fp.figure1_title || '');
+    setFigure1Note(fp.figure1_note || '');
+
+    // ---------- Existing figures ----------
+    if (Array.isArray(fp.figures) && fp.figures.length > 0) {
+      setFigures(
+        fp.figures.map((fig, i) => ({
+          id: `${Date.now()}-${i}`,
+          title: fig.title || '',
+          note: fig.note || '',
+          file: null,
+          previewUrl: fig.view_url || fig.download_url || null,
+          fileName: fig.original_filename || `figure_${i + 1}`,
+          mimeType: fig.mime_type || 'image/png',
+          isExisting: true,
+          existingFileId: fig.drive_file_id || null,
+        }))
+      );
+    }
+
+    // ---------- Existing project design ----------
+    if (
+      fp.project_design &&
+      (fp.project_design.view_url || fp.project_design.drive_file_id)
+    ) {
+      setProjectDesignImage({
+        file: null,
+        previewUrl: fp.project_design.view_url || null,
+        fileName: fp.project_design.original_filename || 'project_design.png',
+        mimeType: fp.project_design.mime_type || 'image/png',
+        isExisting: true,
+        existingFileId: fp.project_design.drive_file_id || null,
+      });
+    }
+  }, [existingFullPaper, initialSubmission]);
+
   const resetForm = () => {
     setSubmissionId('');
     setTitle('');
@@ -1762,6 +1951,7 @@ export default function SubmitFullPaper({
             original_filename: f.fileName || '',
             mime_type: f.mimeType || '',
             display_order: i,
+            keep_existing_id: f.isExisting ? f.existingFileId : '',
           }))
         )
       );
@@ -1784,6 +1974,15 @@ export default function SubmitFullPaper({
           'full_paper_project_design',
           projectDesignImage.file,
           projectDesignImage.fileName || 'project_design.png'
+        );
+      } else if (projectDesignImage?.isExisting && projectDesignImage.existingFileId) {
+        fd.append(
+          'full_paper_project_design_meta',
+          JSON.stringify({
+            original_filename: projectDesignImage.fileName || '',
+            mime_type: projectDesignImage.mimeType || '',
+            keep_existing_id: projectDesignImage.existingFileId,
+          })
         );
       }
 
@@ -2010,10 +2209,10 @@ export default function SubmitFullPaper({
           <div className="max-w-4xl mx-auto px-6 pt-6 pb-4 flex justify-between items-center">
             <div>
               <h1 className="text-2xl font-bold text-slate-900">
-                Submit Full Paper
+                {isResubmit ? 'Resubmit Full Paper' : 'Submit Full Paper'}
               </h1>
               <p className="text-slate-500 text-sm mt-1">
-                Complete the full paper using the provided scholarly template below. No separate file upload is required.
+                {isResubmit ? 'Update your existing full paper submission.' : 'Complete the full paper using the provided scholarly template below. No separate file upload is required.'}
               </p>
             </div>
             <button
@@ -2032,7 +2231,7 @@ export default function SubmitFullPaper({
         <div className="flex-1 min-h-0 px-6 pb-6">
           <div className="form-scroll max-w-4xl mx-auto h-full overflow-y-scroll">
             <div className="bg-white border border-slate-200 rounded-2xl shadow-sm">
-              <div className="bg-linear-to-r from-blue-700 to-blue-800 px-6 py-4 flex items-center justify-between">
+              <div className="sticky top-0 z-20 bg-linear-to-r from-blue-700 to-blue-800 px-6 py-4 flex items-center justify-between rounded-t-2xl">
                 <div className="text-white">
                   <h2 className="text-lg font-bold">Full Paper Submission Template</h2>
                   <p className="text-xs text-blue-100">
@@ -3456,7 +3655,7 @@ export default function SubmitFullPaper({
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
                         </svg>
-                        Submit Full Paper
+                        {isResubmit ? 'Resubmit Full Paper' : 'Submit Full Paper'}
                       </>
                     )}
                   </button>

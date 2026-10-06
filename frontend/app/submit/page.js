@@ -224,6 +224,7 @@ export default function SubmitPage() {
   const [userPayments, setUserPayments] = useState([]);
   const [userFullPapers, setUserFullPapers] = useState({}); // { [submission_id]: fullPaperObj }
   const [selectedSubmission, setSelectedSubmission] = useState(null);
+  const [editingFullPaper, setEditingFullPaper] = useState(null);
 
   const [viewerModal, setViewerModal] = useState({
     isOpen: false,
@@ -342,7 +343,6 @@ export default function SubmitPage() {
   // Fetch every full paper the user has submitted, keyed by submission_id
   const fetchUserFullPapers = async (userId) => {
     try {
-      // Reuse the submissions endpoint so we only fetch once per abstract
       const subsRes = await fetch(`${API_URL}/api/submissions/user/${userId}`);
       if (!subsRes.ok) return;
       const subs = await subsRes.json();
@@ -350,21 +350,24 @@ export default function SubmitPage() {
       const results = {};
       await Promise.all(
         (subs || []).map(async (s) => {
+          // Only bother fetching if the submission actually has a full paper
+          if (!s.has_full_paper) return;
+
           try {
+            // IMPORTANT: backend route is keyed by the STRING submission_id,
+            // not the integer id.
+            const key = s.submission_id;
             const res = await fetch(
-              `${API_URL}/api/submissions/${s.id}/full-paper`
+              `${API_URL}/api/submissions/${encodeURIComponent(key)}/full-paper`
             );
             if (!res.ok) return;
             const data = await res.json();
-            if (data.exists) {
-              // Key by submission_id string so lookups match both
+            if (data.exists && data.full_paper) {
               results[String(s.id)] = data.full_paper;
-              if (data.full_paper?.submission_id) {
-                results[String(data.full_paper.submission_id)] = data.full_paper;
-              }
+              results[String(s.submission_id)] = data.full_paper;
             }
           } catch (err) {
-            console.error('Error fetching full paper for', s.id, err);
+            console.error('Error fetching full paper for', s.submission_id, err);
           }
         })
       );
@@ -1192,13 +1195,11 @@ export default function SubmitPage() {
                     );
                   }
 
-                  // ---------- Full paper exists: show ATTACHMENT CARD ----------
-                  // Use fp.full_paper_view_url if we have the FullPaper row,
-                  // otherwise fall back to any URL available on the submission.
                   const fullPaperUrl =
                     fp?.full_paper_view_url ||
-                    submission.full_paper_view_url ||
-                    null;
+                    (fp?.full_paper_file_id
+                      ? `https://drive.google.com/file/d/${fp.full_paper_file_id}/view`
+                      : null);
 
                   const previewUrl = fp?.preview_view_url || null;
                   const downloadUrl = fp?.full_paper_download_url || null;
@@ -1296,26 +1297,6 @@ export default function SubmitPage() {
 
                       {/* Secondary actions: preview, download, resubmit */}
                       <div className="flex flex-wrap gap-2">
-                        {previewUrl && (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              openFileViewer(
-                                previewUrl,
-                                'full-paper',
-                                `Preview — ${fp?.title || submission.extension_project_title}`
-                              )
-                            }
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg transition"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>
-                            Preview PDF
-                          </button>
-                        )}
-
                         {downloadUrl && (
                           <a
                             href={downloadUrl}
@@ -1332,7 +1313,11 @@ export default function SubmitPage() {
 
                         <button
                           type="button"
-                          onClick={() => setActiveTab('full-paper')}
+                          onClick={() => {
+                            setSelectedSubmission(submission);
+                            setEditingFullPaper(fp);       
+                            setActiveTab('full-paper');
+                          }}
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg transition"
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5">
@@ -1745,13 +1730,26 @@ export default function SubmitPage() {
 
           {activeTab === 'full-paper' && (
             <SubmitFullPaper
+              key={
+                editingFullPaper
+                  ? `resubmit-${editingFullPaper.id}`
+                  : `submit-${selectedSubmission?.id ?? 'new'}`
+              }
               user={user}
               submissions={userSubmissions}
-              onBack={() => setActiveTab('home')}
+              initialSubmission={selectedSubmission}
+              existingFullPaper={editingFullPaper}
+              onBack={() => {
+                setActiveTab('home');
+                setEditingFullPaper(null);
+                setSelectedSubmission(null);
+              }}
               onToast={showToast}
               onSubmitted={() => {
                 fetchUserSubmissions(user.id);
                 fetchUserFullPapers(user.id);
+                setEditingFullPaper(null);
+                setSelectedSubmission(null);
                 setTimeout(() => setActiveTab('my-submissions'), 1000);
               }}
             />

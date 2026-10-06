@@ -309,6 +309,31 @@ def submit_full_paper():
 
         # ---------------- Upload + persist each figure ----------------
         for idx, fig_file in enumerate(figure_files):
+            meta = figures_meta[idx] if idx < len(figures_meta) else {}
+            keep_id = meta.get('keep_existing_id') or ''
+
+            # Nothing new uploaded for this slot — restore existing row
+            if (not fig_file or not fig_file.filename) and keep_id:
+                # Find the old figure record (was NOT deleted above)
+                old = next(
+                    (f for f in existing.figures if f.drive_file_id == keep_id),
+                    None,
+                ) if existing else None
+                if old:
+                    # Re-append by re-creating a copy attached to fp
+                    fp.figures.append(FullPaperFigure(
+                        title=old.title,
+                        note=old.note,
+                        drive_file_id=old.drive_file_id,
+                        view_url=old.view_url,
+                        download_url=old.download_url,
+                        original_filename=old.original_filename,
+                        mime_type=old.mime_type,
+                        file_size=old.file_size,
+                        display_order=old.display_order,
+                    ))
+                continue
+
             if not fig_file or not fig_file.filename:
                 continue
 
@@ -335,7 +360,25 @@ def submit_full_paper():
             except Exception as fig_err:
                 print(f"⚠️ Figure {idx + 1} upload failed (non-fatal): {fig_err}")
                 continue
-
+            
+        # ---------------- Clear previous children on resubmission ----------------
+        if existing:
+            for old_fig in list(fp.figures):
+                # Only delete figures that were NOT marked as "keep"
+                keep_ids = {
+                    (m.get('keep_existing_id') or '')
+                    for m in figures_meta
+                    if isinstance(m, dict)
+                }
+                if old_fig.drive_file_id and old_fig.drive_file_id in keep_ids:
+                    continue
+                db.session.delete(old_fig)
+            if fp.project_design:
+                pd_keep = bool(project_design_meta.get('keep_existing_id'))
+                if not pd_keep:
+                    db.session.delete(fp.project_design)
+            db.session.flush()
+            
             fp.figures.append(FullPaperFigure(
                 title=meta.get('title') or '',
                 note=meta.get('note') or '',

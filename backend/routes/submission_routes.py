@@ -11,6 +11,64 @@ from services.submission_id_service import generate_submission_id
 submission_bp = Blueprint('submissions', __name__)
 
 
+# ---------------------------------------------------------------------------
+# Filename helpers
+# ---------------------------------------------------------------------------
+
+_PREFIXES = (
+    'abstract_',
+    'endorsement_',
+    'full_paper_',
+    'preview_',
+    'supporting_',
+)
+
+
+def strip_known_prefixes(name: str) -> str:
+    """
+    Strip any previously-added internal prefixes so we never end up with
+    'abstract_abstract_...' or 'endorsement_endorsement_...' in Drive.
+
+    Only strips prefixes repeatedly (covers legacy double prefixes).
+    """
+    if not name:
+        return name
+    base = name
+    changed = True
+    while changed:
+        changed = False
+        for p in _PREFIXES:
+            if base.startswith(p):
+                base = base[len(p):]
+                changed = True
+                break
+    return base or name
+
+
+def safe_drive_name(upload_filename: str, kind: str) -> str:
+    """
+    Build the filename we hand to Drive.
+
+    * kind in {'abstract', 'endorsement', 'supporting'} — prepends a single
+      canonical prefix like 'abstract_...' / 'endorsement_...'
+    * The original extension is preserved (.pdf, .png, etc.)
+    * Any prior internal prefix on the incoming name is stripped first.
+    """
+    if not upload_filename:
+        upload_filename = f"{kind}.pdf"
+
+    # Separate name and extension
+    stem, ext = os.path.splitext(upload_filename)
+    stem = strip_known_prefixes(stem)
+    stem = secure_filename(stem.replace(' ', '_')) or f"{kind}"
+    ext = ext or '.pdf'
+    return f"{kind}_{stem}{ext}"
+
+
+# ---------------------------------------------------------------------------
+# Submit abstract
+# ---------------------------------------------------------------------------
+
 @submission_bp.route('/api/submit', methods=['POST', 'OPTIONS'])
 def submit():
     if request.method == 'OPTIONS':
@@ -74,8 +132,13 @@ def submit():
         if not abstract_file.filename.lower().endswith('.pdf'):
             return jsonify({"detail": "Abstract file must be a PDF"}), 400
 
-        safe_abstract_name = secure_filename(abstract_file.filename.replace(' ', '_'))
-        safe_endorsement_name = secure_filename(endorsement_file.filename.replace(' ', '_'))
+        # Compute clean Drive filenames ONCE, before writing temp files.
+        abstract_drive_name = safe_drive_name(abstract_file.filename, 'abstract')
+        endorsement_drive_name = safe_drive_name(endorsement_file.filename, 'endorsement')
+
+        # Local temp names — use the *stripped* stem + extension
+        safe_abstract_name = os.path.splitext(abstract_drive_name)[0] + os.path.splitext(abstract_file.filename)[1].lower()
+        safe_endorsement_name = os.path.splitext(endorsement_drive_name)[0] + os.path.splitext(endorsement_file.filename)[1].lower()
 
         temp_dir = tempfile.mkdtemp()
 
@@ -91,8 +154,9 @@ def submit():
         for idx, sf in enumerate(supporting_files):
             if not sf or not sf.filename:
                 continue
-            safe_sf_name = secure_filename(sf.filename.replace(' ', '_'))
-            unique_name = f"{idx}_{safe_sf_name}"
+            # Preserve original name for storage but write a sanitized temp file
+            sf_drive_name = safe_drive_name(sf.filename, 'supporting')
+            unique_name = f"{idx}_{sf_drive_name}"
             sf_path = os.path.join(temp_dir, unique_name)
             sf.save(sf_path)
             temp_files.append(sf_path)
@@ -107,7 +171,7 @@ def submit():
         try:
             abstract_file_id, abstract_view_url = upload_file_to_drive(
                 abstract_path,
-                f"abstract_{safe_abstract_name}",
+                abstract_drive_name,          # e.g. "abstract_From_Farm_Residue_....pdf"
                 project_title=extension_project_title,
                 sender_name=project_leader,
                 paper_category=paper_category,
@@ -122,7 +186,7 @@ def submit():
         try:
             endorsement_file_id, endorsement_view_url = upload_file_to_drive(
                 endorsement_path,
-                f"endorsement_{safe_endorsement_name}",
+                endorsement_drive_name,       # e.g. "endorsement_From_Farm_Residue_....pdf"
                 project_title=extension_project_title,
                 sender_name=project_leader,
                 paper_category=paper_category,
@@ -416,11 +480,7 @@ def update_compextproj_urls(submission_id):
 
         db.session.commit()
 
-        return jsonify({
-            "message": "Comp Ext Project URL updated successfully",
-            "id": submission.id,
-            "compextproj_drive_view_url": submission.compextproj_drive_view_url,
-        }), 200
+        return jsonify({"message": "Comp Ext Project URL updated successfully","id": submission.id,"compextproj_drive_view_url": submission.compextproj_drive_view_url,}), 200
 
     except Exception as e:
         db.session.rollback()

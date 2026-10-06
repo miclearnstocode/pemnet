@@ -885,7 +885,7 @@ export default function ReviewPage() {
               {/* ================= HEADER ================= */}
               <div className="bg-white border-b border-slate-200 sticky top-0 z-20">
                 {/* thin accent bar */}
-                <div className="h-1 w-full bg-gradient-to-r from-indigo-400 via-purple-400 to-blue-400" />
+                <div className="h-1 w-full bg-linear-to-r from-indigo-400 via-purple-400 to-blue-400" />
 
                 <div className="px-8 py-5 flex items-start justify-between gap-6">
                   <div className="flex items-start gap-4 min-w-0 flex-1">
@@ -1446,10 +1446,11 @@ export default function ReviewPage() {
         </div>
 
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
+          {/* Scrollable table container with hidden scrollbar */}
+          <div className="overflow-x-auto max-h-125 overflow-y-auto scrollbar-hide">
             <table className="w-full">
-              <thead>
-                <tr className="bg-linear-to-r from-slate-50 to-blue-50/50 border-b border-slate-200">
+              <thead className="sticky top-0 z-10">
+                <tr className="bg-white from-slate-50 to-blue-50/50 border-b border-slate-200">
                   {activeTab === 'system' ? (
                     <>
                       <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
@@ -1531,7 +1532,7 @@ export default function ReviewPage() {
                             <p className="text-sm font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">{sub.extension_project_title}</p>
                             <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1.5">
                               <FontAwesomeIcon icon={faUserCircle} className="w-3 h-3 text-slate-400" />
-                              {sub.project_leader} {/* FIX: Use project_leader */}
+                              {sub.project_leader}
                             </p>
                           </td>
                           <td className="px-6 py-4 text-sm text-slate-600">{sub.suc_agencies}</td>
@@ -1620,6 +1621,15 @@ export default function ReviewPage() {
           to { transform: translateX(0); opacity: 1; }
         }
         .animate-slide-in { animation: slideIn 0.3s ease-out; }
+
+        /* Hide scrollbar for the table container */
+        .scrollbar-hide {
+          -ms-overflow-style: none;  /* IE and Edge */
+          scrollbar-width: none;  /* Firefox */
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none; /* Chrome, Safari and Opera */
+        }
       `}</style>
     </div>
   );

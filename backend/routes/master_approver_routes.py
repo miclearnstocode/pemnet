@@ -1,11 +1,8 @@
-"""Master Approver routes: final status decisions, bulk emails, email logs."""
-
 import traceback
-
 from flask import Blueprint, jsonify, request
-
-from models import db, EmailNotificationLog
 from master_approver import MasterApproverService
+from models import (db, Submission, ExtractedAbstractData, ExtractedDataRevision, EmailNotificationLog,)
+from sqlalchemy import func
 
 master_approver_bp = Blueprint('master_approver', __name__)
 
@@ -120,3 +117,117 @@ def get_all_email_logs():
     except Exception as e:
         print(f"Error fetching all email logs: {e}")
         return jsonify({"detail": str(e)}), 500
+    
+@master_approver_bp.route('/api/master-approver/chart-data', methods=['GET', 'OPTIONS'])
+def master_approver_chart_data():
+    if request.method == 'OPTIONS':
+        return jsonify({})
+
+    try:
+        palette = [
+            '#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
+            '#ec4899', '#14b8a6', '#3b82f6', '#a855f7', '#f97316'
+        ]
+
+        # ---- Canonical category names (edit this list if your DB has more) ----
+        CANONICAL_CATEGORIES = {
+            'completed extension project paper':  'Completed Extension Project Paper',
+            'completed extension project papers': 'Completed Extension Project Paper',
+            'ongoing extension project paper':    'Ongoing Extension Project Paper',
+            'ongoing extension project papers':   'Ongoing Extension Project Paper',
+        }
+
+        def normalize_category(label):
+            """Map near-duplicate category labels to a single canonical form."""
+            if not label:
+                return None
+            key = ' '.join(label.strip().lower().split())
+            return CANONICAL_CATEGORIES.get(key, label.strip())
+
+        def normalize_thematic(label):
+            """Normalize thematic areas: trim + collapse whitespace, preserve case."""
+            if not label:
+                return None
+            return ' '.join(label.strip().split())
+
+        # ------------------------------------------------------------
+        # 1) SYSTEM submissions
+        # ------------------------------------------------------------
+        category_counts = {}
+        thematic_counts = {}
+
+        for paper_category, cnt in (
+            db.session.query(Submission.paper_category, func.count(Submission.id))
+            .group_by(Submission.paper_category).all()
+        ):
+            norm = normalize_category(paper_category)
+            if norm:
+                category_counts[norm] = category_counts.get(norm, 0) + cnt
+
+        for thematic_area, cnt in (
+            db.session.query(Submission.thematic_area, func.count(Submission.id))
+            .group_by(Submission.thematic_area).all()
+        ):
+            norm = normalize_thematic(thematic_area)
+            if norm:
+                thematic_counts[norm] = thematic_counts.get(norm, 0) + cnt
+
+        # ------------------------------------------------------------
+        # 2) EMAIL submissions — use latest revision if present
+        # ------------------------------------------------------------
+        email_rows = ExtractedAbstractData.query.all()
+
+        for row in email_rows:
+            latest_rev = (
+                ExtractedDataRevision.query
+                .filter_by(extracted_data_id=row.id)
+                .order_by(ExtractedDataRevision.created_at.desc())
+                .first()
+            )
+
+            raw_category = None
+            if latest_rev and latest_rev.paper_category:
+                raw_category = latest_rev.paper_category
+            elif row.paper_category:
+                raw_category = row.paper_category
+
+            raw_thematic = None
+            if latest_rev and latest_rev.thematic_area:
+                raw_thematic = latest_rev.thematic_area
+            elif row.thematic_area:
+                raw_thematic = row.thematic_area
+
+            cat = normalize_category(raw_category)
+            the = normalize_thematic(raw_thematic)
+
+            if cat:
+                category_counts[cat] = category_counts.get(cat, 0) + 1
+            if the:
+                thematic_counts[the] = thematic_counts.get(the, 0) + 1
+
+        # ------------------------------------------------------------
+        # 3) Format for the chart
+        # ------------------------------------------------------------
+        category_data = [
+            {'label': label, 'value': value, 'color': palette[i % len(palette)]}
+            for i, (label, value) in enumerate(
+                sorted(category_counts.items(), key=lambda kv: -kv[1])
+            )
+        ]
+
+        thematic_data = [
+            {'label': label, 'value': value, 'color': palette[i % len(palette)]}
+            for i, (label, value) in enumerate(
+                sorted(thematic_counts.items(), key=lambda kv: -kv[1])
+            )
+        ]
+
+        return jsonify({
+            'category': category_data,
+            'thematic': thematic_data,
+        }), 200
+
+    except Exception as e:
+        print(f"Error in master_approver_chart_data: {e}")
+        traceback.print_exc()
+        return jsonify({"detail": str(e)}), 500 

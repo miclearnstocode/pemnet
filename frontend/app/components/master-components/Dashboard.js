@@ -1,23 +1,12 @@
 "use client";
 
+import { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-  faCheckCircle,
-  faClock,
-  faFileAlt,
-  faEnvelope,
-  faFolderOpen,
-  faInfoCircle,
-  faGavel,
-  faEdit,
-  faHistory,
-  faThumbsDown,
-  faChartLine,
-  faChartPie,
-  faChartBar,   
-  faLock,
+import {faCheckCircle,faClock,faFileAlt,faEnvelope,faFolderOpen,faInfoCircle,faGavel,faEdit,faHistory,faThumbsDown,faChartLine,faChartPie,faChartBar,faLock,
 } from '@fortawesome/free-solid-svg-icons';
 import UnderDevelopment from './UnderDevelopment';
+
+const API_URL = (process.env.NEXT_PUBLIC_API_URL).replace(/\/+$/, '');
 
 // ---------- Reusable helpers ----------
 function getStatusColor(status) {
@@ -48,9 +37,6 @@ function getStatusDisplay(status) {
   }
 }
 
-// ============================================================
-// MOCK DATA — feeds the chart placeholders
-// ============================================================
 const MOCK_LINE_DATA = [
   { month: 'Jan', count: 3 },
   { month: 'Feb', count: 7 },
@@ -63,21 +49,6 @@ const MOCK_LINE_DATA = [
   { month: 'Sep', count: 22 },
 ];
 
-const MOCK_CATEGORY_DATA = [
-  { label: 'Completed Extension', value: 34, color: '#6366f1' }, // indigo
-  { label: 'Ongoing Extension',  value: 21, color: '#10b981' }, // emerald
-  { label: 'Not Specified',      value: 8,  color: '#94a3b8' }, // slate
-];
-
-const MOCK_THEMATIC_DATA = [
-  { label: 'Food Production & Agriculture',       value: 14, color: '#10b981' },
-  { label: 'Health, Nutrition & Wellness',        value: 12, color: '#3b82f6' },
-  { label: 'Education & Skills Development',      value: 10, color: '#a855f7' },
-  { label: 'Livelihood & Entrepreneurship',       value: 15, color: '#f59e0b' },
-  { label: 'Environment & Climate Action',        value: 12, color: '#ef4444' },
-];
-
-// New mock data for SUCS bar chart
 const MOCK_SUCS_DATA = [
   { label: 'SUCS 1', value: 12, color: '#6366f1' },
   { label: 'SUCS 2', value: 18, color: '#10b981' },
@@ -88,11 +59,8 @@ const MOCK_SUCS_DATA = [
   { label: 'SUCS 7', value: 16, color: '#14b8a6' },
 ];
 
-// ============================================================
-// Inline SVG chart previews (mock, blurred)
-// ============================================================
 
-/** Simple line chart using SVG polyline */
+/** Line chart */
 function LineChartPreview({ data, color = '#6366f1' }) {
   const width = 480;
   const height = 180;
@@ -109,7 +77,6 @@ function LineChartPreview({ data, color = '#6366f1' }) {
 
   const polyline = points.map(p => `${p.x},${p.y}`).join(' ');
 
-  // Build area fill path
   const areaPath = `
     M ${points[0].x},${height - padding}
     L ${polyline.replace(/ /g, ' L ')}
@@ -118,12 +85,7 @@ function LineChartPreview({ data, color = '#6366f1' }) {
   `;
 
   return (
-    <svg
-      viewBox={`0 0 ${width} ${height}`}
-      className="w-full h-full"
-      preserveAspectRatio="none"
-    >
-      {/* Grid lines */}
+    <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full" preserveAspectRatio="none">
       {[0.25, 0.5, 0.75].map((t) => (
         <line
           key={t}
@@ -136,37 +98,16 @@ function LineChartPreview({ data, color = '#6366f1' }) {
           strokeDasharray="4 4"
         />
       ))}
-
-      {/* Area fill */}
       <path d={areaPath} fill={color} fillOpacity="0.12" />
-
-      {/* Line */}
-      <polyline
-        points={polyline}
-        fill="none"
-        stroke={color}
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-
-      {/* Data dots */}
+      <polyline points={polyline} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
       {points.map((p, i) => (
-        <circle
-          key={i}
-          cx={p.x}
-          cy={p.y}
-          r="3.5"
-          fill="white"
-          stroke={color}
-          strokeWidth="2"
-        />
+        <circle key={i} cx={p.x} cy={p.y} r="3.5" fill="white" stroke={color} strokeWidth="2" />
       ))}
     </svg>
   );
 }
 
-/** Simple donut/pie chart using SVG stroke-dasharray */
+/** Donut / pie chart */
 function PieChartPreview({ data, size = 160, thickness = 28 }) {
   const radius = (size - thickness) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -176,15 +117,7 @@ function PieChartPreview({ data, size = 160, thickness = 28 }) {
 
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="transform -rotate-90">
-      {/* Background ring */}
-      <circle
-        cx={size / 2}
-        cy={size / 2}
-        r={radius}
-        fill="transparent"
-        stroke="#f1f5f9"
-        strokeWidth={thickness}
-      />
+      <circle cx={size / 2} cy={size / 2} r={radius} fill="transparent" stroke="#f1f5f9" strokeWidth={thickness} />
       {data.map((slice, idx) => {
         const length = (slice.value / total) * circumference;
         const dashArray = `${length} ${circumference - length}`;
@@ -209,7 +142,7 @@ function PieChartPreview({ data, size = 160, thickness = 28 }) {
   );
 }
 
-/** Simple bar chart using SVG rects */
+/** Bar chart */
 function BarChartPreview({ data, color = '#6366f1' }) {
   const width = 480;
   const height = 180;
@@ -221,7 +154,6 @@ function BarChartPreview({ data, color = '#6366f1' }) {
 
   return (
     <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full" preserveAspectRatio="none">
-      {/* Grid lines */}
       {[0.25, 0.5, 0.75].map((t) => (
         <line
           key={t}
@@ -234,92 +166,81 @@ function BarChartPreview({ data, color = '#6366f1' }) {
           strokeDasharray="4 4"
         />
       ))}
-      {/* Bars */}
       {data.map((d, i) => {
         const barHeight = (d.value / maxValue) * chartHeight;
         const x = padding + i * (barWidth + barPadding);
         const y = height - padding - barHeight;
-        return (
-          <rect
-            key={i}
-            x={x}
-            y={y}
-            width={barWidth}
-            height={barHeight}
-            fill={d.color || color}
-            rx="4"
-          />
-        );
+        return <rect key={i} x={x} y={y} width={barWidth} height={barHeight} fill={d.color || color} rx="4" />;
       })}
     </svg>
   );
 }
 
-// ============================================================
-// Chart Cards with Under Development popup
-// ============================================================
-
-/** A clickable chart card with a blurred mock preview and lock overlay */
 function ChartCard({
-  icon,
-  title,
-  subtitle,
-  children,
-  featureName,
-  description,
+  icon, title, subtitle, children,
+  featureName, description,
   span = 1,
+  underDevelopment = true,   // <-- new
 }) {
   const colSpan = span === 2 ? 'lg:col-span-2' : '';
 
   return (
     <div className={`${colSpan} relative`}>
-      {/* The entire card is a clickable button that fires UnderDevelopment */}
-      <UnderDevelopment
-        icon={icon}
-        featureName={featureName}
-        description={description}
-        variant="ghost"
-        size="md"
-        className="block w-full h-auto rounded-2xl p-0 bg-transparent hover:bg-transparent"
-      />
+      {underDevelopment && (
+        <UnderDevelopment
+          icon={icon}
+          featureName={featureName}
+          description={description}
+          variant="ghost"
+          size="md"
+          className="block! w-full! h-auto! rounded-2xl! p-0! bg-transparent! hover:bg-transparent!"
+        />
+      )}
 
       <div className="relative bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        {/* Header */}
         <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <FontAwesomeIcon icon={icon} className="w-4 h-4 text-indigo-500" />
             <h3 className="font-bold text-slate-800">{title}</h3>
           </div>
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-amber-100 text-amber-700 border border-amber-200">
-            <FontAwesomeIcon icon={faLock} className="w-2.5 h-2.5" />
-            Preview
-          </span>
+
+          {underDevelopment ? (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-amber-100 text-amber-700 border border-amber-200">
+              <FontAwesomeIcon icon={faLock} className="w-2.5 h-2.5" />
+              Preview
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-emerald-100 text-emerald-700 border border-emerald-200">
+              Live
+            </span>
+          )}
         </div>
 
-        {/* Subtitle */}
-        {subtitle && (
-          <p className="px-6 pt-3 text-xs text-slate-500">{subtitle}</p>
-        )}
+        {subtitle && <p className="px-6 pt-3 text-xs text-slate-500">{subtitle}</p>}
 
-        {/* Chart preview area — slightly blurred to look "in-progress" */}
         <div className="relative p-6">
-          <div className="blur-[1.5px] opacity-80 select-none pointer-events-none">
+          <div className={
+            underDevelopment
+              ? 'blur-[1.5px] opacity-80 select-none pointer-events-none'
+              : ''
+          }>
             {children}
           </div>
 
-          {/* CTA overlay */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <UnderDevelopment
-              icon={icon}
-              featureName={featureName}
-              description={description}
-              variant="solid"
-              size="lg"
-              iconSize="w-5 h-5"
-              label={`Open ${featureName}`}
-              className="bg-slate-900! hover:bg-slate-800 shadow-lg px-4 py-2.5 w-auto h-auto rounded-xl"
-            />
-          </div>
+          {underDevelopment && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <UnderDevelopment
+                icon={icon}
+                featureName={featureName}
+                description={description}
+                variant="solid"
+                size="lg"
+                iconSize="w-5 h-5"
+                label={`Open ${featureName}`}
+                className="bg-slate-900! hover:bg-slate-800! shadow-lg! px-4! py-2.5! w-auto! h-auto! rounded-xl!"
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -340,6 +261,37 @@ export default function Dashboard({
   onStatCardClick,
   onSelectSubmission,
 }) {
+  // ----- real chart data from backend -----
+  const [chartData, setChartData] = useState({ category: [], thematic: [] });
+  const [loadingCharts, setLoadingCharts] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchChartData() {
+      try {
+        const res = await fetch(`${API_URL}/api/master-approver/chart-data`, {
+          credentials: 'include',
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        if (!cancelled) {
+          setChartData({
+            category: data.category || [],
+            thematic: data.thematic || [],
+          });
+        }
+      } catch (err) {
+        console.error('Failed to fetch chart data:', err);
+      } finally {
+        if (!cancelled) setLoadingCharts(false);
+      }
+    }
+
+    fetchChartData();
+    return () => { cancelled = true; };
+  }, []);
+
   return (
     <div className="space-y-6">
       {/* ===== Welcome Banner ===== */}
@@ -373,7 +325,7 @@ export default function Dashboard({
         </div>
       </div>
 
-      {/* ===== Stats Grid (combined totals) ===== */}
+      {/* ===== Stats Grid ===== */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <button
           type="button"
@@ -391,10 +343,7 @@ export default function Dashboard({
 
         <button
           type="button"
-          onClick={() => {
-            onNavigate?.('system');
-            onStatCardClick?.('pending');
-          }}
+          onClick={() => { onNavigate?.('system'); onStatCardClick?.('pending'); }}
           className="text-left bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all cursor-pointer"
         >
           <div className="flex items-center justify-between mb-3">
@@ -413,10 +362,7 @@ export default function Dashboard({
 
         <button
           type="button"
-          onClick={() => {
-            onNavigate?.('system');
-            onStatCardClick?.('endorsed');
-          }}
+          onClick={() => { onNavigate?.('system'); onStatCardClick?.('endorsed'); }}
           className="text-left bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all cursor-pointer"
         >
           <div className="flex items-center justify-between mb-3">
@@ -430,10 +376,7 @@ export default function Dashboard({
 
         <button
           type="button"
-          onClick={() => {
-            onNavigate?.('system');
-            onStatCardClick?.('non_competitive');
-          }}
+          onClick={() => { onNavigate?.('system'); onStatCardClick?.('non_competitive'); }}
           className="text-left bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all cursor-pointer"
         >
           <div className="flex items-center justify-between mb-3">
@@ -446,95 +389,102 @@ export default function Dashboard({
         </button>
       </div>
 
-      {/* ===== Analytics Section (Charts) ===== */}
+      {/* ===== Analytics Section ===== */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Line Chart — Submissions Over Time */}
+        {/* Line Chart — side by side with Bar Chart */}
         <ChartCard
-            icon={faChartLine}
-            title="Submissions Over Time"
-            subtitle="Monthly volume of abstract submissions (mock preview)"
-            featureName="Submission Trend Analytics"
-            description="Interactive time-series charts with filters by source, category, and date range are on the way."
+          icon={faChartLine}
+          title="Submissions Over Time"
+          subtitle="Monthly volume of abstract submissions (mock preview)"
+          featureName="Submission Trend Analytics"
+          description="Interactive time-series charts with filters by source, category, and date range are on the way."
         >
-            <div className="h-48">
+          <div className="h-48">
             <LineChartPreview data={MOCK_LINE_DATA} color="#6366f1" />
-            </div>
-            {/* X-axis labels */}
-            <div className="flex justify-between mt-2 text-[10px] text-slate-400 font-medium">
+          </div>
+          <div className="flex justify-between mt-2 text-[10px] text-slate-400 font-medium">
             {MOCK_LINE_DATA.map((d) => (
-                <span key={d.month}>{d.month}</span>
+              <span key={d.month}>{d.month}</span>
             ))}
-            </div>
+          </div>
         </ChartCard>
 
-        {/* Bar Chart — Submissions per SUCS */}
+        {/* Bar Chart — side by side with Line Chart */}
         <ChartCard
-            icon={faChartBar}
-            title="Submissions per SUCS"
-            subtitle="Number of submissions per State University/College (mock preview)"
-            featureName="SUCS Distribution Analytics"
-            description="Detailed bar charts with sorting, filtering, and drill-down per SUCS will be available here."
+          icon={faChartBar}
+          title="Submissions per SUCS"
+          subtitle="Number of submissions per State University/College (mock preview)"
+          featureName="SUCS Distribution Analytics"
+          description="Detailed bar charts with sorting, filtering, and drill-down per SUCS will be available here."
         >
-            <div className="h-48">
+          <div className="h-48">
             <BarChartPreview data={MOCK_SUCS_DATA} />
-            </div>
-            <div className="flex justify-between mt-2 text-[10px] text-slate-400 font-medium">
+          </div>
+          <div className="flex justify-between mt-2 text-[10px] text-slate-400 font-medium">
             {MOCK_SUCS_DATA.map((d) => (
-                <span key={d.label} className="truncate max-w-15" title={d.label}>
+              <span key={d.label} className="truncate max-w-15" title={d.label}>
                 {d.label}
-                </span>
+              </span>
             ))}
-            </div>
+          </div>
         </ChartCard>
 
-        {/* Pie Chart — Submissions per Category */}
+        {/* Pie Chart — Submissions by Category (real data) */}
         <ChartCard
           icon={faChartPie}
           title="Submissions by Category"
-          subtitle="Distribution across paper categories (mock preview)"
+          subtitle="Distribution across paper categories (live preview)"
           featureName="Category Breakdown"
+          underDevelopment={false}
           description="Live category distribution with drill-down and export options will be available here."
         >
-          <div className="flex items-center justify-center gap-6">
-            <PieChartPreview data={MOCK_CATEGORY_DATA} size={160} thickness={28} />
-            <div className="space-y-2">
-              {MOCK_CATEGORY_DATA.map((slice) => (
-                <div key={slice.label} className="flex items-center gap-2 text-xs">
-                  <span
-                    className="w-3 h-3 rounded-full shrink-0"
-                    style={{ backgroundColor: slice.color }}
-                  />
-                  <span className="text-slate-600 font-medium">{slice.label}</span>
-                  <span className="text-slate-400 ml-auto pl-2 font-bold">{slice.value}</span>
-                </div>
-              ))}
+          {loadingCharts ? (
+            <div className="h-40 flex items-center justify-center text-slate-400 text-sm">Loading…</div>
+          ) : chartData.category.length === 0 ? (
+            <div className="h-40 flex items-center justify-center text-slate-400 text-sm">No data yet</div>
+          ) : (
+            <div className="flex items-center justify-center gap-6">
+              <PieChartPreview data={chartData.category} size={160} thickness={28} />
+              <div className="space-y-2">
+                {chartData.category.map((slice) => (
+                  <div key={slice.label} className="flex items-center gap-2 text-xs">
+                    <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: slice.color }} />
+                    <span className="text-slate-600 font-medium">{slice.label}</span>
+                    <span className="text-slate-400 ml-auto pl-2 font-bold">{slice.value}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </ChartCard>
 
-        {/* Pie Chart — Submissions per Thematic Area */}
+        {/* Pie Chart — Submissions by Thematic Area (real data) */}
         <ChartCard
           icon={faChartPie}
           title="Submissions by Thematic Area"
-          subtitle="Distribution across thematic areas (mock preview)"
+          subtitle="Distribution across thematic areas (live preview)"
           featureName="Thematic Area Breakdown"
+          underDevelopment={false}
           description="Filterable thematic-area distribution with cross-tab analysis is coming soon."
         >
-          <div className="flex items-center justify-center gap-6">
-            <PieChartPreview data={MOCK_THEMATIC_DATA} size={160} thickness={28} />
-            <div className="space-y-2 flex-1">
-              {MOCK_THEMATIC_DATA.map((slice) => (
-                <div key={slice.label} className="flex items-center gap-2 text-xs">
-                  <span
-                    className="w-3 h-3 rounded-full shrink-0"
-                    style={{ backgroundColor: slice.color }}
-                  />
-                  <span className="text-slate-600 font-medium truncate">{slice.label}</span>
-                  <span className="text-slate-400 ml-auto pl-2 font-bold">{slice.value}</span>
-                </div>
-              ))}
+          {loadingCharts ? (
+            <div className="h-40 flex items-center justify-center text-slate-400 text-sm">Loading…</div>
+          ) : chartData.thematic.length === 0 ? (
+            <div className="h-40 flex items-center justify-center text-slate-400 text-sm">No data yet</div>
+          ) : (
+            <div className="flex items-center justify-center gap-6">
+              <PieChartPreview data={chartData.thematic} size={160} thickness={28} />
+              <div className="space-y-2 flex-1">
+                {chartData.thematic.map((slice) => (
+                  <div key={slice.label} className="flex items-center gap-2 text-xs">
+                    <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: slice.color }} />
+                    <span className="text-slate-600 font-medium truncate">{slice.label}</span>
+                    <span className="text-slate-400 ml-auto pl-2 font-bold">{slice.value}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </ChartCard>
       </div>
 

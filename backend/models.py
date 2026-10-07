@@ -514,8 +514,6 @@ class ExtractedDataRevision(db.Model):
     
     # Fields tracked (only storing what was changed)
     changes = db.Column(db.Text, nullable=True)  # JSON string of changed fields
-    
-    # Snapshot of the data AFTER the edit
     title = db.Column(db.String(500), nullable=True)
     authors = db.Column(db.Text, nullable=True)
     authors_list = db.Column(db.Text, nullable=True)

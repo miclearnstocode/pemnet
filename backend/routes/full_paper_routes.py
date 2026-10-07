@@ -7,12 +7,7 @@ from flask import Blueprint, jsonify, request
 from werkzeug.utils import secure_filename
 from sqlalchemy import text as sa_text
 from models import (db, Submission, FullPaper, FullPaperFigure, FullPaperProjectDesign, FullPaperTable,)
-from google_drive import (
-    extract_file_id_from_url,
-    upload_full_paper_pdf,
-    upload_image_to_full_paper,
-    trash_files,
-)
+from google_drive import (extract_file_id_from_url,upload_full_paper_pdf,upload_image_to_full_paper,trash_files,)
 
 full_paper_bp = Blueprint('full_paper', __name__)
 
@@ -55,7 +50,6 @@ def _clean_stored_name(name: str) -> str:
             break
     return base or name
 
-
 def _trash_full_paper_files(fp):
     """Trash every Drive file referenced by the existing FullPaper row."""
     if not fp:
@@ -83,10 +77,9 @@ def submit_full_paper():
 
     temp_files = []
     temp_dir = None
-    restored_refs = None  # used to undo the file_id clearing if we crash
+    restored_refs = None  
 
     try:
-        # ---------------- Required scalar fields ----------------
         user_id = _form('user_id')
         submission_id = _form('submission_id')
         title = _form('full_paper_title')
@@ -105,34 +98,25 @@ def submit_full_paper():
         if not keywords:
             missing.append('full_paper_keywords')
         if missing:
-            return jsonify({
-                "detail": f"Missing required fields: {', '.join(missing)}"
-            }), 400
+            return jsonify({"detail": f"Missing required fields: {', '.join(missing)}"}), 400
 
         try:
             user_id_int = int(user_id)
         except (ValueError, TypeError):
             return jsonify({"detail": "Invalid user_id"}), 400
 
-        # ---------------- Locate the linked abstract ----------------
         linked = Submission.query.filter_by(submission_id=submission_id).first()
         if not linked:
-            return jsonify({
-                "detail": f"Linked abstract '{submission_id}' not found"
-            }), 404
+            return jsonify({"detail": f"Linked abstract '{submission_id}' not found"}), 404
 
         if linked.user_id != user_id_int:
             return jsonify({"detail": "You do not own this submission"}), 403
 
         if linked.status != 'endorse':
-            return jsonify({
-                "detail": "Full paper submission is only allowed for accepted abstracts"
-            }), 400
+            return jsonify({"detail": "Full paper submission is only allowed for accepted abstracts"}), 400
 
-        # ---------------- Existing full paper (for resubmission) ----------------
         existing = FullPaper.query.filter_by(submission_id=submission_id).first()
 
-        # ---------------- Full paper file (required) ----------------
         full_paper_file = request.files.get('full_paper_file')
         if not full_paper_file or not full_paper_file.filename:
             return jsonify({"detail": "Full paper PDF is required"}), 400
@@ -147,26 +131,17 @@ def submit_full_paper():
         full_paper_file.save(file_path)
         temp_files.append(file_path)
 
-        # ---------------- Resolve abstract file ID for Drive placement ----------------
         abstract_file_id = linked.abstract_file_id
         if not abstract_file_id and linked.abstract_view_url:
             abstract_file_id = extract_file_id_from_url(linked.abstract_view_url)
 
         if existing:
             fp = existing
-            print(f"♻️  Updating existing FullPaper id={existing.id}")
         else:
             fp = FullPaper(submission_id=submission_id, user_id=user_id_int)
             db.session.add(fp)
-            print(f"🆕 Creating new FullPaper for submission_id={submission_id!r}, user_id={user_id_int}")
 
         if existing:
-            trashed_n, failed_n = _trash_full_paper_files(existing)
-            print(
-                f"🗑️  Pre-upload cleanup: trashed {trashed_n} old file(s), "
-                f"{failed_n} failed (submission={submission_id})"
-            )
-
             restored_refs = {
                 'full_paper_file_id': existing.full_paper_file_id,
                 'full_paper_view_url': existing.full_paper_view_url,
@@ -194,15 +169,9 @@ def submit_full_paper():
             db.session.expire(existing, ['figures', 'project_design', 'tables'])
 
         try:
-            file_id, view_url, download_url, folder_id = upload_full_paper_pdf(
-                file_path=file_path,
-                filename=safe_name,
-                abstract_file_id=abstract_file_id,
-                abstract_view_url=linked.abstract_view_url,
-                paper_category=linked.paper_category,
-                thematic_area=linked.thematic_area,
-                sender_name=linked.project_leader,
-            )
+            file_id, view_url, download_url, folder_id = upload_full_paper_pdf(file_path=file_path, filename=safe_name,
+                abstract_file_id=abstract_file_id, abstract_view_url=linked.abstract_view_url,
+                paper_category=linked.paper_category, thematic_area=linked.thematic_area, sender_name=linked.project_leader,)
         except Exception as drive_err:
             print(f"Drive upload error (full paper): {drive_err}")
             traceback.print_exc()
@@ -210,9 +179,7 @@ def submit_full_paper():
                 for k, v in restored_refs.items():
                     setattr(existing, k, v)
                 db.session.commit()
-            return jsonify({
-                "detail": f"Failed to upload full paper: {drive_err}"
-            }), 500
+            return jsonify({"detail": f"Failed to upload full paper: {drive_err}"}), 500
 
         # ---------------- Parse figures meta + files ----------------
         figures_meta = _safe_json_loads(
@@ -241,7 +208,6 @@ def submit_full_paper():
         except Exception:
             tables_meta = []
 
-        # ---------------- Reconnect DB after long Drive uploads ----------------
         try:
             db.session.execute(sa_text('SELECT 1'))
         except Exception:
@@ -352,31 +318,17 @@ def submit_full_paper():
             temp_files.append(fig_path)
 
             try:
-                fig_file_id, fig_view, fig_dl, _fig_folder = upload_image_to_full_paper(
-                    file_path=fig_path,
-                    filename=f"fig{idx + 1}_{safe_fig_name}",
-                    abstract_file_id=abstract_file_id,
-                    abstract_view_url=linked.abstract_view_url,
-                    paper_category=linked.paper_category,
-                    thematic_area=linked.thematic_area,
-                    sender_name=linked.project_leader,
-                    subfolder="Figures",
-                )
+                fig_file_id, fig_view, fig_dl, _fig_folder = upload_image_to_full_paper(file_path=fig_path, filename=f"fig{idx + 1}_{safe_fig_name}",
+                    abstract_file_id=abstract_file_id, abstract_view_url=linked.abstract_view_url, paper_category=linked.paper_category,
+                    thematic_area=linked.thematic_area, sender_name=linked.project_leader, subfolder="Figures",)
             except Exception as fig_err:
                 print(f"⚠️ Figure {idx + 1} upload failed (non-fatal): {fig_err}")
                 continue
 
-            fp.figures.append(FullPaperFigure(
-                title=meta.get('title') or '',
-                note=meta.get('note') or '',
-                drive_file_id=fig_file_id,
-                view_url=fig_view,
-                download_url=fig_dl,
-                original_filename=meta.get('original_filename') or safe_fig_name,
-                mime_type=meta.get('mime_type') or fig_file.mimetype,
-                file_size=os.path.getsize(fig_path),
-                display_order=meta.get('display_order', idx),
-            ))
+            fp.figures.append(FullPaperFigure(title=meta.get('title') or '', note=meta.get('note') or '',
+                drive_file_id=fig_file_id, view_url=fig_view, download_url=fig_dl,
+                original_filename=meta.get('original_filename') or safe_fig_name, mime_type=meta.get('mime_type') or fig_file.mimetype,
+                file_size=os.path.getsize(fig_path), display_order=meta.get('display_order', idx),))
 
         # ---------------- Upload + persist project design (optional) ----------------
         if project_design_file and project_design_file.filename:
@@ -388,25 +340,11 @@ def submit_full_paper():
             temp_files.append(pd_path)
 
             try:
-                pd_id, pd_view, pd_dl, _pd_folder = upload_image_to_full_paper(
-                    file_path=pd_path,
-                    filename=f"project_design_{safe_pd_name}",
-                    abstract_file_id=abstract_file_id,
-                    abstract_view_url=linked.abstract_view_url,
-                    paper_category=linked.paper_category,
-                    thematic_area=linked.thematic_area,
-                    sender_name=linked.project_leader,
-                    subfolder="ProjectDesign",
-                )
+                pd_id, pd_view, pd_dl, _pd_folder = upload_image_to_full_paper(file_path=pd_path, filename=f"project_design_{safe_pd_name}",
+                    abstract_file_id=abstract_file_id, abstract_view_url=linked.abstract_view_url, paper_category=linked.paper_category,
+                    thematic_area=linked.thematic_area, sender_name=linked.project_leader, subfolder="ProjectDesign",)
 
-                fp.project_design = FullPaperProjectDesign(
-                    drive_file_id=pd_id,
-                    view_url=pd_view,
-                    download_url=pd_dl,
-                    original_filename=project_design_meta.get('original_filename') or safe_pd_name,
-                    mime_type=project_design_meta.get('mime_type') or project_design_file.mimetype,
-                    file_size=os.path.getsize(pd_path),
-                )
+                fp.project_design = FullPaperProjectDesign(drive_file_id=pd_id, view_url=pd_view, download_url=pd_dl, original_filename=project_design_meta.get('original_filename') or safe_pd_name, mime_type=project_design_meta.get('mime_type') or project_design_file.mimetype, file_size=os.path.getsize(pd_path),)
             except Exception as pd_err:
                 print(f"⚠️ Project design upload failed (non-fatal): {pd_err}")
 
@@ -428,12 +366,7 @@ def submit_full_paper():
             if not has_content:
                 continue
 
-            fp.tables.append(FullPaperTable(
-                title=table.get('title') or '',
-                note=table.get('note') or '',
-                rows_json=json.dumps(rows, ensure_ascii=False),
-                display_order=table.get('display_order', idx),
-            ))
+            fp.tables.append(FullPaperTable(title=table.get('title') or '', note=table.get('note') or '', rows_json=json.dumps(rows, ensure_ascii=False), display_order=table.get('display_order', idx), ))
 
         db.session.commit()
 
@@ -462,10 +395,7 @@ def submit_full_paper():
 
     except Exception as e:
         db.session.rollback()
-        print("=" * 60)
-        print(f"❌ FULL PAPER SUBMISSION EXCEPTION: {e}")
         traceback.print_exc()
-        print("=" * 60)
         return jsonify({"detail": str(e)}), 500
 
     finally:
@@ -480,3 +410,84 @@ def submit_full_paper():
                 os.rmdir(temp_dir)
             except Exception:
                 pass
+
+@full_paper_bp.route('/api/submissions/<submission_id>/full-paper', methods=['GET', 'OPTIONS'])
+def get_full_paper_by_submission(submission_id):
+    if request.method == 'OPTIONS':
+        return jsonify({})
+
+    try:
+        fp = FullPaper.query.filter_by(submission_id=submission_id).first()
+
+        if not fp:
+            return jsonify({"exists": False, "full_paper": None}), 200
+
+        try:
+            fp_dict = fp.to_dict()
+        except Exception as dict_err:
+            print(f"⚠️ fp.to_dict() failed: {dict_err}")
+            traceback.print_exc()
+            fp_dict = None
+
+        if fp_dict is None:
+            fp_dict = {
+                "id": fp.id,
+                "submission_id": fp.submission_id,
+                "user_id": fp.user_id,
+                "title": fp.title,
+                "authors": fp.authors,
+                "affiliations": fp.affiliations,
+                "keywords": fp.keywords,
+                "abstract": fp.abstract,
+                "status": fp.status,
+                "submitted_at": fp.submitted_at.isoformat() if fp.submitted_at else None,
+                "full_paper_file_id": fp.full_paper_file_id,
+                "full_paper_view_url": fp.full_paper_view_url,
+                "full_paper_download_url": fp.full_paper_download_url,
+                "drive_folder_id": fp.drive_folder_id,
+                "preview_file_id": fp.preview_file_id,
+                "preview_view_url": fp.preview_view_url,
+                "figures": [
+                    {
+                        "id": f.id,
+                        "title": f.title,
+                        "note": f.note,
+                        "drive_file_id": f.drive_file_id,
+                        "view_url": f.view_url,
+                        "download_url": f.download_url,
+                        "original_filename": f.original_filename,
+                        "mime_type": f.mime_type,
+                        "file_size": f.file_size,
+                        "display_order": f.display_order,
+                    }
+                    for f in (fp.figures or [])
+                ],
+                "project_design": (
+                    {
+                        "id": fp.project_design.id,
+                        "drive_file_id": fp.project_design.drive_file_id,
+                        "view_url": fp.project_design.view_url,
+                        "download_url": fp.project_design.download_url,
+                        "original_filename": fp.project_design.original_filename,
+                        "mime_type": fp.project_design.mime_type,
+                        "file_size": fp.project_design.file_size,
+                    }
+                    if fp.project_design else None
+                ),
+                "tables": [
+                    {
+                        "id": t.id,
+                        "title": t.title,
+                        "note": t.note,
+                        "rows": _safe_json_loads(t.rows_json, []),
+                        "display_order": t.display_order,
+                    }
+                    for t in (fp.tables or [])
+                ],
+            }
+
+        return jsonify({"exists": True, "full_paper": fp_dict, }), 200
+
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"detail": str(e)}), 500

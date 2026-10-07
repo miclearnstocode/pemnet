@@ -10,21 +10,14 @@ const IN_TO_PX = 96;
 const A4_HEIGHT_PX = 297 * MM_TO_PX;
 const HEADER_ZONE_PX = 0.1 * IN_TO_PX + 18 * MM_TO_PX;
 const FOOTER_ZONE_PX = 0.2 * IN_TO_PX + 18 * MM_TO_PX;
-const CONTENT_HEIGHT_PX =
-  A4_HEIGHT_PX - HEADER_ZONE_PX - FOOTER_ZONE_PX;
+const CONTENT_HEIGHT_PX = A4_HEIGHT_PX - HEADER_ZONE_PX - FOOTER_ZONE_PX;
 
 const SAFETY_PX = 3;
 const LAST_PAGE_OVERFLOW_ALLOWANCE_PX = 120;
 const MAX_LOOP_GUARD = 10000;
 
 const escapeHtml = (s) =>
-  String(s ?? '').replace(/[&<>"']/g, (c) => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;',
-  }[c]));
+  String(s ?? '').replace(/[&<>"']/g, (c) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',}[c]));
 
 function packBlocks(blocks, { measure, boxHTML, titleHeight }) {
   const boxedBody = (text) => boxHTML(escapeHtml(text));
@@ -183,12 +176,10 @@ function packBlocks(blocks, { measure, boxHTML, titleHeight }) {
   flush();
   return result;
 }
-// Small atomic blocks for non-splittable content
+
 const A = (html) => ({ kind: 'atomic', html });
 const A_HEAD = (html) => ({ kind: 'atomic', html, forceNewPage: true });
 
-// A user-answer box: the body is splittable across pages,
-// and the heading (if any) is repeated if the block breaks.
 const N = (headingHtml, bodyText) => ({
   kind: 'narrative',
   heading: headingHtml,
@@ -332,8 +323,6 @@ function A4Paginator({ data, BLUE, LIGHT, BORDER }) {
     };
   }, [blocks, containerWidth, BLUE, LIGHT, BORDER]);
 
-  // Total = 1 cover page + however many continuation pages packBlocks produced
-  // (minus the merged-first-page if packBlocks already produced one).
   const extraPages = pages
     ? (pages[0]?.isFirstPage ? pages.length - 1 : pages.length)
     : 0;
@@ -343,17 +332,7 @@ function A4Paginator({ data, BLUE, LIGHT, BORDER }) {
     <div ref={wrapperRef} className="w-full flex justify-center">
       <div
         ref={measureRef}
-        style={{
-          position: 'absolute',
-          visibility: 'hidden',
-          pointerEvents: 'none',
-          width: '178mm',
-          fontFamily: 'Times New Roman, Georgia, serif',
-          fontSize: '11pt',
-          lineHeight: 1.4,
-          left: '-99999px',
-          top: 0,
-        }}
+        style={{position: 'absolute', visibility: 'hidden', pointerEvents: 'none', width: '178mm', fontFamily: 'Times New Roman, Georgia, serif', fontSize: '11pt', lineHeight: 1.4, left: '-99999px', top: 0, }}
         aria-hidden="true"
       />
 
@@ -387,18 +366,9 @@ function A4Sheet({ pageNumber, totalPages, isFirstPage, children, BLUE, LIGHT, B
   return (
     <div
       className="a4-sheet bg-white shadow-2xl"
-      style={{
-        width: '210mm',
-        height: '297mm',         // fixed, not minHeight
-        padding: '0 16mm',
-        fontFamily: 'Times New Roman, Georgia, serif',
-        fontSize: '11pt',
-        lineHeight: 1.4,
-        color: '#111',
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden',      // clip
-        position: 'relative',
+      style={{ width: '210mm', height: '297mm', padding: '0 16mm', fontFamily: 'Times New Roman, Georgia, serif',
+        fontSize: '11pt', lineHeight: 1.4, color: '#111', display: 'flex',
+        flexDirection: 'column', overflow: 'hidden',    position: 'relative',
       }}
     >
       {/* header */}
@@ -513,8 +483,7 @@ const THEMATIC_AREAS = [
   'Health, Nutrition, Wellness, and Community Care',
   'Education, Literacy, Skills Development, and Lifelong Learning',
   'Livelihood, Entrepreneurship, Cooperatives, MSMEs, and Local Economic Development',
-  'Environment, Climate Action, Disaster Risk Reduction, and Community Resilience',
-];
+  'Environment, Climate Action, Disaster Risk Reduction, and Community Resilience',];
 
 function titleAuthorPageHTML(data, BLUE, LIGHT, BORDER) {
   const safe = (v) => (v == null ? '' : String(v));
@@ -3719,18 +3688,11 @@ export default function SubmitFullPaper({
                   </button>
                   <button
                     type="button"
-                    disabled={
-                      submitting ||
-                      generatingPdf ||
-                      acceptedSubmissions.length === 0 ||
-                      !submissionId ||
-                      !title.trim() ||
-                      !authors.trim() ||
-                      !affiliations.trim() ||
-                      !keywords.trim() ||
-                      !correspondingName.trim() ||
-                      !correspondingEmail.trim() ||
-                      !thematicArea
+                    disabled={submitting || generatingPdf ||
+                      acceptedSubmissions.length === 0 || !submissionId ||
+                      !title.trim() || !authors.trim() ||
+                      !affiliations.trim() || !keywords.trim() ||
+                      !correspondingName.trim() || !correspondingEmail.trim() || !thematicArea
                     }
                     onClick={handleSubmit}
                     className="sm:flex-2 py-3 rounded-xl font-bold text-white bg-linear-to-r from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 transition shadow-lg shadow-blue-700/20 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"

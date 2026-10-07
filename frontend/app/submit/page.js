@@ -1104,9 +1104,7 @@ export default function SubmitPage() {
                                 </p>
                                 <p className="text-[10px] text-slate-500 uppercase tracking-wide">
                                   {ext}
-                                  {doc.file_size
-                                    ? ` · ${formatFileSize(doc.file_size)}`
-                                    : ''}
+                                  {doc.file_size ? ` · ${formatFileSize(doc.file_size)}` : ''}
                                 </p>
                               </div>
                             </button>
@@ -1195,17 +1193,13 @@ export default function SubmitPage() {
                     );
                   }
 
-                  const fullPaperUrl =
-                    fp?.full_paper_view_url ||
-                    (fp?.full_paper_file_id
-                      ? `https://drive.google.com/file/d/${fp.full_paper_file_id}/view`
-                      : null);
-
-                  const previewUrl = fp?.preview_view_url || null;
+                  let fullPaperUrl = fp?.full_paper_view_url || null;
+                  if (!fullPaperUrl && fp?.full_paper_file_id) {
+                    fullPaperUrl = `https://drive.google.com/file/d/${fp.full_paper_file_id}/view`;
+                  }
                   const downloadUrl = fp?.full_paper_download_url || null;
                   const fpStatus = fp?.status || 'submitted';
-                  const submittedAt =
-                    fp?.submitted_at || submission.full_paper_submitted_at || null;
+                  const submittedAt = fp?.submitted_at || submission.full_paper_submitted_at || null;
 
                   const statusColor =
                     fpStatus === 'accepted'

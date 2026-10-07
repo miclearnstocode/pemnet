@@ -14,6 +14,24 @@ import {
   faQuestionCircle,
 } from '@fortawesome/free-solid-svg-icons';
 
+// ---------- Helper to format role for display ----------
+function formatRole(role) {
+  if (!role) return 'User';
+  switch (role.toLowerCase()) {
+    case 'master_approver':
+      return 'Master Approver';
+    case 'evaluator':
+      return 'Evaluator';
+    case 'admin':
+      return 'Administrator';
+    default:
+      return role
+        .split('_')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ');
+  }
+}
+
 // ---------- Sidebar Navigation Item ----------
 export function SidebarItem({ icon, label, isActive, onClick, collapsed, badge = null }) {
   return (
@@ -104,6 +122,9 @@ export default function Sidebar({
     },
   ];
 
+  // ✅ Dynamic role display based on current user
+  const displayRole = formatRole(currentUser?.role);
+
   return (
     <>
       <aside
@@ -179,19 +200,20 @@ export default function Sidebar({
         <div className={`p-3 border-t border-slate-200 ${collapsed ? 'flex justify-center' : ''}`}>
           {collapsed ? (
             <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold uppercase text-sm shadow-sm cursor-pointer hover:ring-2 hover:ring-blue-300 transition">
-              {currentUser?.full_name?.charAt(0) || 'A'}
+              {currentUser?.full_name?.charAt(0) || 'U'}
             </div>
           ) : (
             <div className="flex items-center gap-3 p-2 bg-slate-50 rounded-xl border border-slate-200">
               <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold uppercase text-sm shadow-sm shrink-0">
-                {currentUser?.full_name?.charAt(0) || 'A'}
+                {currentUser?.full_name?.charAt(0) || 'U'}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-slate-800 truncate">
-                  {currentUser?.full_name || 'Master Approver'}
+                  {currentUser?.full_name || 'User'}
                 </p>
+                {/* ✅ Dynamic role text instead of hardcoded "Master Approver" */}
                 <p className="text-[10px] text-slate-500 uppercase tracking-wider font-medium">
-                  Master Approver
+                  {displayRole}
                 </p>
               </div>
               <Link

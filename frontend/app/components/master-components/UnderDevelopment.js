@@ -37,7 +37,7 @@ function UnderDevelopmentModal({ isOpen, onClose, featureName, description }) {
   if (!isOpen || !mounted) return null;
 
   const modalContent = (
-    <div className="fixed inset-0 z-[9999] overflow-y-auto">
+    <div className="fixed inset-0 z-500 overflow-y-auto">
       <div
         className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in"
         onClick={onClose}
@@ -45,7 +45,7 @@ function UnderDevelopmentModal({ isOpen, onClose, featureName, description }) {
       <div className="relative min-h-full flex items-center justify-center p-4">
         <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden animate-scale-in">
           {/* Top gradient bar */}
-          <div className="h-1.5 w-full bg-gradient-to-r from-amber-400 via-orange-400 to-amber-400" />
+          <div className="h-1.5 w-full bg-linear-to-r from-amber-400 via-orange-400 to-amber-400" />
 
           {/* Close button */}
           <button
@@ -60,7 +60,7 @@ function UnderDevelopmentModal({ isOpen, onClose, featureName, description }) {
             {/* Animated icon */}
             <div className="relative w-20 h-20 mx-auto mb-4">
               <div className="absolute inset-0 rounded-full bg-amber-100 animate-ping opacity-30" />
-              <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-amber-100 to-orange-100 border-2 border-amber-200 flex items-center justify-center">
+              <div className="relative w-20 h-20 rounded-full bg-linear-to-br from-amber-100 to-orange-100 border-2 border-amber-200 flex items-center justify-center">
                 <FontAwesomeIcon icon={faTools} className="w-8 h-8 text-amber-600" />
               </div>
             </div>
@@ -88,7 +88,7 @@ function UnderDevelopmentModal({ isOpen, onClose, featureName, description }) {
                 </span>
               </div>
               <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                <div className="h-full w-2/3 bg-gradient-to-r from-amber-400 to-orange-500 rounded-full animate-pulse" />
+                <div className="h-full w-2/3 bg-linear-to-r from-amber-400 to-orange-500 rounded-full animate-pulse" />
               </div>
             </div>
 

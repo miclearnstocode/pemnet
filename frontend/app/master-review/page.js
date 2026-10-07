@@ -8,7 +8,7 @@ import {
   faFilePdf, faCalendarAlt, faTag, faUser, faSchool, faFlag, faExclamationTriangle, 
   faThumbsUp, faThumbsDown, faArrowDown, faUsers, faBookOpen, faLayerGroup, faEdit, faHistory,
   faBars, faDashboard, faCog, faQuestionCircle, faBell, faLifeRing,
-  faChevronDown, faChevronUp, faSlidersH, faEnvelopeOpen, faClipboardList
+  faChevronDown, faChevronUp, faEnvelopeOpen, faClipboardList
 } from '@fortawesome/free-solid-svg-icons';
 import ConfirmModal from '../components/ConfirmModal';
 import DowngradeModal from '../components/DowngradeModal';
@@ -21,6 +21,19 @@ import { QuickLinkCard, UnderUpdateModal } from '../components/master-components
 import UnderDevelopment from '../components/master-components/UnderDevelopment';
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL).replace(/\/+$/, '');
+
+const PAPER_CATEGORIES = [
+  'Completed Extension Project Paper',
+  'Ongoing Extension Project Paper',
+];
+
+const THEMATIC_AREAS = [
+  'Food Production, Agriculture, Fisheries, and Natural Resource Systems',
+  'Health, Nutrition, Wellness, and Community Care',
+  'Education, Literacy, Skills Development, and Lifelong Learning',
+  'Livelihood, Entrepreneurship, Cooperatives, MSMEs, and Local Economic Development',
+  'Environment, Climate Action, Disaster Risk Reduction, and Community Resilience',
+];
 
 // ---------- Reusable modal sub-components ----------
 function SectionTitle({ icon, color = 'slate', label }) {
@@ -381,16 +394,12 @@ export default function MasterReviewPage() {
   const [allSubmissions, setAllSubmissions] = useState([]);
   const [selectedSubmission, setSelectedSubmission] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({
-    total: 0,
-    pending: 0,
-    endorsed: 0,
-    non_competitive: 0,
-    poster_only: 0
-  });
+  const [stats, setStats] = useState({total: 0, pending: 0, endorsed: 0, non_competitive: 0, poster_only: 0});
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [thematicAreaFilter, setThematicAreaFilter] = useState('all'); 
+  const [extractedCache, setExtractedCache] = useState({});
   const [toast, setToast] = useState(null);
   const [isSettingStatus, setIsSettingStatus] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -488,6 +497,7 @@ export default function MasterReviewPage() {
       let systemData = [];
       let emailData  = [];
 
+      
       // ── Parse system response ──
       if (systemRes.status === 'fulfilled' && systemRes.value.ok) {
         try {
@@ -533,6 +543,24 @@ export default function MasterReviewPage() {
 
       // ── Merged list for global stats & sidebar badges ──
       setAllSubmissions([...normalizedSystem, ...normalizedEmail]);
+
+      if (normalizedEmail.length > 0) {
+        const cacheEntries = await Promise.all(
+          normalizedEmail.map(async (sub) => {
+            try {
+              const res = await fetch(`${API_URL}/api/email-submissions/${sub.id}/extracted-data`);
+              if (!res.ok) return [sub.id, null];
+              const data = await res.json();
+              return [sub.id, data];
+            } catch {
+              return [sub.id, null];
+            }
+          })
+        );
+        const nextCache = {};
+        cacheEntries.forEach(([id, data]) => { if (data) nextCache[id] = data; });
+        setExtractedCache(nextCache);
+      }
 
       // ── Table data strictly depends on activeTab ──
       setSubmissions(activeTab === 'system' ? normalizedSystem : normalizedEmail);
@@ -939,47 +967,53 @@ export default function MasterReviewPage() {
   };
 
   const filteredSubmissions = submissions.filter(sub => {
+    const extracted = extractedCache[sub.id] || {};
+
+    // ── Status ──
     const matchesStatusFilter = (() => {
       if (statusFilter === 'all') return true;
       const s = String(sub.status || '').toLowerCase();
-
-      if (statusFilter === 'downgraded') {
-        return s === 'downgraded' || s === 'downgrade' || s.startsWith('downgraded');
-      }
-      if (statusFilter === 'downgraded-non_competitive') {
-        return s === 'downgraded-non_competitive' || s === 'downgraded_non_competitive';
-      }
-      if (statusFilter === 'downgraded-poster_only') {
-        return s === 'downgraded-poster_only' || s === 'downgraded_poster_only';
-      }
+      if (statusFilter === 'downgraded') return s === 'downgraded' || s === 'downgrade' || s.startsWith('downgraded');
+      if (statusFilter === 'downgraded-non_competitive') return s === 'downgraded-non_competitive' || s === 'downgraded_non_competitive';
+      if (statusFilter === 'downgraded-poster_only') return s === 'downgraded-poster_only' || s === 'downgraded_poster_only';
       return s === String(statusFilter).toLowerCase();
     })();
-
     if (!matchesStatusFilter) return false;
 
-    if (activeTab === 'system') {
-      if (categoryFilter !== 'all' && sub.paper_category !== categoryFilter) return false;
-      if (searchTerm) {
-        const search = searchTerm.toLowerCase();
-        return (
-          (sub.extension_project_title && sub.extension_project_title.toLowerCase().includes(search)) ||
-          (sub.project_leader && sub.project_leader.toLowerCase().includes(search)) ||
-          (sub.suc_agencies && sub.suc_agencies.toLowerCase().includes(search))
-        );
-      }
-      return true;
-    } else {
-      if (searchTerm) {
-        const search = searchTerm.toLowerCase();
-        return (
-          (sub.subject && sub.subject.toLowerCase().includes(search)) ||
-          (sub.sender_name && sub.sender_name.toLowerCase().includes(search)) ||
-          (sub.sender_email && sub.sender_email.toLowerCase().includes(search)) ||
-          (sub.project_leader_name && sub.project_leader_name.toLowerCase().includes(search))
-        );
-      }
-      return true;
+    // ── Category (both tabs) ──
+    if (categoryFilter !== 'all') {
+      const cat = (extracted.paper_category || sub.paper_category || '').toString();
+      if (!cat.toLowerCase().includes(categoryFilter.toLowerCase())) return false;
     }
+
+    // ── Thematic Area (both tabs) ──
+    if (thematicAreaFilter !== 'all') {
+      const area = (extracted.thematic_area || sub.thematic_area || '').toString();
+      if (area !== thematicAreaFilter) return false;
+    }
+
+    // ── Search ──
+    if (searchTerm) {
+      const q = searchTerm.toLowerCase();
+      if (activeTab === 'system') {
+        return (
+          (sub.extension_project_title && sub.extension_project_title.toLowerCase().includes(q)) ||
+          (sub.project_leader && sub.project_leader.toLowerCase().includes(q)) ||
+          (sub.suc_agencies && sub.suc_agencies.toLowerCase().includes(q))
+        );
+      } else {
+        return (
+          (sub.subject && sub.subject.toLowerCase().includes(q)) ||
+          (sub.sender_name && sub.sender_name.toLowerCase().includes(q)) ||
+          (sub.sender_email && sub.sender_email.toLowerCase().includes(q)) ||
+          (sub.project_leader_name && sub.project_leader_name.toLowerCase().includes(q)) ||
+          (extracted.title && extracted.title.toLowerCase().includes(q)) ||
+          (extracted.project_leader && extracted.project_leader.toLowerCase().includes(q))
+        );
+      }
+    }
+
+    return true;
   });
 
   const isDowngraded = (status) => {
@@ -1157,6 +1191,7 @@ export default function MasterReviewPage() {
         setActiveTab('system');
         setStatusFilter('all');
         setCategoryFilter('all');
+        setThematicAreaFilter('all');
         setSearchTerm('');
         break;
 
@@ -1164,6 +1199,7 @@ export default function MasterReviewPage() {
         setActiveTab('email');
         setStatusFilter('all');
         setCategoryFilter('all');
+        setThematicAreaFilter('all');
         setSearchTerm('');
         break;
 
@@ -1184,7 +1220,7 @@ export default function MasterReviewPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
           <p className="text-slate-500 text-sm font-medium">Loading dashboard...</p>
         </div>
       </div>
@@ -1272,7 +1308,7 @@ export default function MasterReviewPage() {
           {activeNavItem === 'dashboard' && (
             <div className="space-y-6">
               {/* Welcome Banner */}
-              <div className="bg-linear-to-r from-indigo-500 via-blue-500 to-blue-500 rounded-2xl p-6 sm:p-8 text-white shadow-xl shadow-indigo-500/20">
+              <div className="bg-linear-to-r from-blue-500 via-blue-500 to-blue-500 rounded-2xl p-6 sm:p-8 text-white shadow-xl shadow-blue-500/20">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div>
                     <h2 className="text-xl sm:text-2xl font-bold mb-1">
@@ -1458,6 +1494,7 @@ export default function MasterReviewPage() {
             <div className="space-y-6">
               {/* Stat Cards — tab-scoped so System vs Email show correct counts */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Total */}
                 <button
                   type="button"
                   onClick={() => handleStatCardClick('total')}
@@ -1465,10 +1502,16 @@ export default function MasterReviewPage() {
                     isStatCardActive('total') ? 'border-slate-500 ring-2 ring-slate-500/20' : 'border-slate-200'
                   }`}
                 >
-                  <p className="text-2xl font-bold text-slate-900">{tabTotal}</p>
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center shrink-0">
+                      <FontAwesomeIcon icon={faFolderOpen} className="w-5 h-5 text-slate-600" />
+                    </div>
+                    <p className="text-2xl font-bold text-slate-900">{tabTotal}</p>
+                  </div>
                   <p className="text-sm text-slate-500">Total Submissions</p>
                 </button>
 
+                {/* Pending */}
                 <button
                   type="button"
                   onClick={() => handleStatCardClick('pending')}
@@ -1476,10 +1519,16 @@ export default function MasterReviewPage() {
                     isStatCardActive('pending') ? 'border-yellow-500 ring-2 ring-yellow-500/20' : 'border-slate-200'
                   }`}
                 >
-                  <p className="text-2xl font-bold text-yellow-600">{tabPending}</p>
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
+                      <FontAwesomeIcon icon={faClock} className="w-5 h-5 text-amber-600" />
+                    </div>
+                    <p className="text-2xl font-bold text-yellow-600">{tabPending}</p>
+                  </div>
                   <p className="text-sm text-slate-500">Pending Review</p>
                 </button>
 
+                {/* Endorsed */}
                 <button
                   type="button"
                   onClick={() => handleStatCardClick('endorsed')}
@@ -1487,10 +1536,16 @@ export default function MasterReviewPage() {
                     isStatCardActive('endorsed') ? 'border-emerald-500 ring-2 ring-emerald-500/20' : 'border-slate-200'
                   }`}
                 >
-                  <p className="text-2xl font-bold text-emerald-600">{tabEndorsed}</p>
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
+                      <FontAwesomeIcon icon={faCheckCircle} className="w-5 h-5 text-emerald-600" />
+                    </div>
+                    <p className="text-2xl font-bold text-emerald-600">{tabEndorsed}</p>
+                  </div>
                   <p className="text-sm text-slate-500">Endorsed</p>
                 </button>
 
+                {/* Non-Competitive */}
                 <button
                   type="button"
                   onClick={() => handleStatCardClick('non_competitive')}
@@ -1498,13 +1553,19 @@ export default function MasterReviewPage() {
                     isStatCardActive('non_competitive') ? 'border-yellow-500 ring-2 ring-yellow-500/20' : 'border-slate-200'
                   }`}
                 >
-                  <p className="text-2xl font-bold text-yellow-600">{tabNonCompetitive}</p>
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-yellow-50 flex items-center justify-center shrink-0">
+                      <FontAwesomeIcon icon={faThumbsDown} className="w-5 h-5 text-yellow-600" />
+                    </div>
+                    <p className="text-2xl font-bold text-yellow-600">{tabNonCompetitive}</p>
+                  </div>
                   <p className="text-sm text-slate-500">Non-Competitive</p>
                 </button>
               </div>
 
               {/* Filters */}
               <div className="flex gap-3 flex-wrap items-center">
+                {/* Search */}
                 <div className="flex-1 min-w-50 relative">
                   <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400">
                     <FontAwesomeIcon icon={faSearch} className="w-4 h-4" />
@@ -1517,6 +1578,8 @@ export default function MasterReviewPage() {
                     className="w-full px-4 py-2.5 pl-10 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none"
                   />
                 </div>
+
+                {/* Status */}
                 <div className="relative">
                   <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400">
                     <FontAwesomeIcon icon={faFilter} className="w-4 h-4" />
@@ -1533,21 +1596,54 @@ export default function MasterReviewPage() {
                     <option value="downgraded-non_competitive">Non-Competitive</option>
                   </select>
                 </div>
-                {activeTab === 'system' && (
-                  <div className="relative">
-                    <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400">
-                      <FontAwesomeIcon icon={faTag} className="w-4 h-4" />
-                    </div>
-                    <select
-                      value={categoryFilter}
-                      onChange={(e) => setCategoryFilter(e.target.value)}
-                      className="pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none appearance-none cursor-pointer min-w-50"
-                    >
-                      <option value="all">All Categories</option>
-                      <option value="Completed Extension Project Paper">Completed Extension</option>
-                      <option value="Ongoing Extension Project Paper">Ongoing Extension</option>
-                    </select>
+
+                {/* Categories — shown for BOTH tabs */}
+                <div className="relative">
+                  <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400">
+                    <FontAwesomeIcon icon={faTag} className="w-4 h-4" />
                   </div>
+                  <select
+                    value={categoryFilter}
+                    onChange={(e) => setCategoryFilter(e.target.value)}
+                    className="pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none appearance-none cursor-pointer min-w-50"
+                  >
+                    <option value="all">All Categories</option>
+                    {PAPER_CATEGORIES.map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Thematic Areas — shown for BOTH tabs */}
+                <div className="relative">
+                  <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400">
+                    <FontAwesomeIcon icon={faLayerGroup} className="w-4 h-4" />
+                  </div>
+                  <select
+                    value={thematicAreaFilter}
+                    onChange={(e) => setThematicAreaFilter(e.target.value)}
+                    className="pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none appearance-none cursor-pointer min-w-60 max-w-75"
+                  >
+                    <option value="all">All Thematic Areas</option>
+                    {THEMATIC_AREAS.map((area) => (
+                      <option key={area} value={area}>{area}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Reset — appears when any filter is active */}
+                {(statusFilter !== 'all' || categoryFilter !== 'all' || thematicAreaFilter !== 'all' || searchTerm) && (
+                  <button
+                    onClick={() => {
+                      setStatusFilter('all');
+                      setCategoryFilter('all');
+                      setThematicAreaFilter('all');
+                      setSearchTerm('');
+                    }}
+                    className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold text-sm transition"
+                  >
+                    Reset
+                  </button>
                 )}
               </div>
 

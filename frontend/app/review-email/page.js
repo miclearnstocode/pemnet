@@ -1,18 +1,37 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faFilter, faSearch, faSync } from '@fortawesome/free-solid-svg-icons';
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL).replace(/\/+$/, '');
 
+// Static option lists
+const PAPER_CATEGORIES = [
+  'Completed Extension Project Paper',
+  'Ongoing Extension Project Paper',
+];
+
+const THEMATIC_AREAS = [
+  'Food Production, Agriculture, Fisheries, and Natural Resource Systems',
+  'Health, Nutrition, Wellness, and Community Care',
+  'Education, Literacy, Skills Development, and Lifelong Learning',
+  'Livelihood, Entrepreneurship, Cooperatives, MSMEs, and Local Economic Development',
+  'Environment, Climate Action, Disaster Risk Reduction, and Community Resilience',
+];
+
 export default function EmailReviewPage() {
     const [currentEvaluatorId, setCurrentEvaluatorId] = useState(null); 
-    
+
     const [submissions, setSubmissions] = useState([]);
     const [selectedSubmission, setSelectedSubmission] = useState(null);
     const [loading, setLoading] = useState(true);
     const [checking, setChecking] = useState(false);
     const [statusFilter, setStatusFilter] = useState('all');
+    const [categoryFilter, setCategoryFilter] = useState('all');           // 🔧 NEW
+    const [thematicAreaFilter, setThematicAreaFilter] = useState('all');   // 🔧 NEW
+    const [searchTerm, setSearchTerm] = useState('');                      // 🔧 NEW
     const [toast, setToast] = useState(null);
     const [syncing, setSyncing] = useState(false);
     
@@ -27,8 +46,10 @@ export default function EmailReviewPage() {
     const [newThematicArea, setNewThematicArea] = useState('');
     const [isReassignLoading, setIsReassignLoading] = useState(false);
 
-    // ADDED: Extracted Data State
+    // Extracted Data State
     const [extractedData, setExtractedData] = useState(null);
+    // 🔧 NEW: cache of extracted data keyed by submission id — powers the filters
+    const [extractedCache, setExtractedCache] = useState({});
 
     useEffect(() => {
         const userData = localStorage.getItem('pemnet_user');
@@ -47,27 +68,54 @@ export default function EmailReviewPage() {
     }, [statusFilter]);
 
     const fetchSubmissions = async () => {
-    setLoading(true);
-    try {
-        const res = await fetch(`${API_URL}/api/email-submissions?status=${statusFilter}`);
-        if (res.ok) {
-        const data = await res.json();
-        setSubmissions(data);
-        
-        // If there's a selected submission, update it
-        if (selectedSubmission) {
-            const updated = data.find(s => s.id === selectedSubmission.id);
-            if (updated) {
-            setSelectedSubmission(updated);
+        setLoading(true);
+        try {
+            const res = await fetch(`${API_URL}/api/email-submissions?status=${statusFilter}`);
+            if (res.ok) {
+                const data = await res.json();
+                setSubmissions(data);
+
+                // 🔧 NEW: pre-load extracted data for all submissions so filters work
+                await prefetchExtractedData(data);
+
+                // If there's a selected submission, update it
+                if (selectedSubmission) {
+                    const updated = data.find(s => s.id === selectedSubmission.id);
+                    if (updated) setSelectedSubmission(updated);
+                }
             }
+        } catch (error) {
+            console.error('Error fetching submissions:', error);
+            showToast('Failed to fetch submissions', 'error');
+        } finally {
+            setLoading(false);
         }
-        }
-    } catch (error) {
-        console.error('Error fetching submissions:', error);
-        showToast('Failed to fetch submissions', 'error');
-    } finally {
-        setLoading(false);
-    }
+    };
+
+    // 🔧 NEW: fetch extracted-data for every submission (parallel, best-effort)
+    const prefetchExtractedData = async (list) => {
+        if (!Array.isArray(list) || list.length === 0) return;
+
+        const results = await Promise.all(
+            list.map(async (sub) => {
+                // Skip if we already have it cached
+                if (extractedCache[sub.id]) return [sub.id, extractedCache[sub.id]];
+                try {
+                    const res = await fetch(`${API_URL}/api/email-submissions/${sub.id}/extracted-data`);
+                    if (!res.ok) return [sub.id, null];
+                    const data = await res.json();
+                    return [sub.id, data];
+                } catch {
+                    return [sub.id, null];
+                }
+            })
+        );
+
+        const nextCache = { ...extractedCache };
+        results.forEach(([id, data]) => {
+            if (data) nextCache[id] = data;
+        });
+        setExtractedCache(nextCache);
     };
 
     const fetchVotesAndDiscussions = async (submissionId) => {
@@ -83,12 +131,13 @@ export default function EmailReviewPage() {
         setDiscussions(Array.isArray(discData) ? discData : []);
     };
 
-    // ADDED: Fetch extracted data
     const fetchExtractedData = async (emailSubmissionId) => {
         const res = await fetch(`${API_URL}/api/email-submissions/${emailSubmissionId}/extracted-data`);
         if (res.ok) {
             const data = await res.json();
             setExtractedData(data);
+            // 🔧 NEW: also stash in cache
+            setExtractedCache(prev => ({ ...prev, [emailSubmissionId]: data }));
             return data;
         }
         return null;
@@ -96,10 +145,8 @@ export default function EmailReviewPage() {
 
     const selectSubmission = async (sub) => {
         setSelectedSubmission(sub);
-        setExtractedData(null); // Reset extracted data
+        setExtractedData(null);
         fetchVotesAndDiscussions(sub.id);
-
-        // Fetch extracted data
         await fetchExtractedData(sub.id);
     };
     
@@ -110,6 +157,7 @@ export default function EmailReviewPage() {
             if (res.ok) {
                 const data = await res.json();
                 showToast(`Synced ${data.processed} new email submissions`, 'success');
+                setExtractedCache({}); // 🔧 clear cache to refetch fresh data
                 fetchSubmissions();
             }
         } catch (error) {
@@ -127,6 +175,7 @@ export default function EmailReviewPage() {
             if (res.ok) {
                 const data = await res.json();
                 showToast(`Found ${data.processed} new email submissions`, 'success');
+                setExtractedCache({});
                 fetchSubmissions();
             }
         } catch (error) {
@@ -247,6 +296,57 @@ export default function EmailReviewPage() {
         }
     };
 
+    // 🔧 NEW: apply all filters client-side
+    const filteredSubmissions = useMemo(() => {
+        return submissions.filter((sub) => {
+            const extracted = extractedCache[sub.id] || {};
+
+            // Status filter — server already filters, but re-check client-side
+            if (statusFilter !== 'all') {
+                const s = (sub.evaluation_status || sub.status || '').toLowerCase();
+                if (s !== statusFilter.toLowerCase()) return false;
+            }
+
+            // Category filter
+            if (categoryFilter !== 'all') {
+                const cat = (extracted.paper_category || sub.paper_category || '').toString();
+                if (!cat.toLowerCase().includes(categoryFilter.toLowerCase())) return false;
+            }
+
+            // Thematic area filter
+            if (thematicAreaFilter !== 'all') {
+                const area = (extracted.thematic_area || sub.thematic_area || '').toString();
+                if (area !== thematicAreaFilter) return false;
+            }
+
+            // Search — subject, sender, title, project leader
+            if (searchTerm.trim()) {
+                const q = searchTerm.toLowerCase();
+                const haystack = [
+                    sub.subject,
+                    sub.sender_name,
+                    sub.sender_email,
+                    sub.project_leader_name,
+                    extracted.title,
+                    extracted.project_leader,
+                ]
+                    .filter(Boolean)
+                    .join(' ')
+                    .toLowerCase();
+                if (!haystack.includes(q)) return false;
+            }
+
+            return true;
+        });
+    }, [submissions, extractedCache, statusFilter, categoryFilter, thematicAreaFilter, searchTerm]);
+
+    const resetFilters = () => {
+        setStatusFilter('all');
+        setCategoryFilter('all');
+        setThematicAreaFilter('all');
+        setSearchTerm('');
+    };
+
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -255,13 +355,7 @@ export default function EmailReviewPage() {
         );
     }
 
-    const thematicAreas = [
-        'Food Production, Agriculture, Fisheries, and Natural Resource Systems',
-        'Health, Nutrition, Wellness, and Community Care',
-        'Education, Literacy, Skills Development, and Lifelong Learning',
-        'Livelihood, Entrepreneurship, Cooperatives, MSMEs, and Local Economic Development',
-        'Environment, Climate Action, Disaster Risk Reduction, and Community Resilience'
-    ];
+    const thematicAreas = THEMATIC_AREAS; // alias for the reassign modal
 
     return (
         <div className="min-h-screen bg-slate-50">
@@ -366,17 +460,76 @@ export default function EmailReviewPage() {
                     </div>
                 </div>
 
-                <div className="flex gap-4 mb-6">
-                    <select
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                        className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                    >
-                        <option value="all">All Status</option>
-                        <option value="pending">Pending</option>
-                        <option value="accepted">Accepted</option>
-                        <option value="rejected">Rejected</option>
-                    </select>
+                {/* 🔧 NEW: Filters row with search + status + category + thematic area */}
+                <div className="flex flex-wrap gap-3 mb-6 items-center">
+                    {/* Search */}
+                    <div className="flex-1 min-w-55 relative">
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                            <FontAwesomeIcon icon={faSearch} className="w-4 h-4" />
+                        </div>
+                        <input
+                            type="text"
+                            placeholder="Search by subject, sender, or email..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full px-4 py-2.5 pl-10 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                        />
+                    </div>
+
+                    {/* Status */}
+                    <div className="relative">
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                            <FontAwesomeIcon icon={faFilter} className="w-4 h-4" />
+                        </div>
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                            className="pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none appearance-none cursor-pointer min-w-40"
+                        >
+                            <option value="all">All Status</option>
+                            <option value="pending">Pending</option>
+                            <option value="accepted">Accepted</option>
+                            <option value="rejected">Rejected</option>
+                        </select>
+                    </div>
+
+                    {/* 🔧 NEW: Categories */}
+                    <div className="relative">
+                        <select
+                            value={categoryFilter}
+                            onChange={(e) => setCategoryFilter(e.target.value)}
+                            className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none appearance-none cursor-pointer min-w-50"
+                        >
+                            <option value="all">All Categories</option>
+                            {PAPER_CATEGORIES.map((cat) => (
+                                <option key={cat} value={cat}>{cat}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* 🔧 NEW: Thematic Areas */}
+                    <div className="relative">
+                        <select
+                            value={thematicAreaFilter}
+                            onChange={(e) => setThematicAreaFilter(e.target.value)}
+                            className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none appearance-none cursor-pointer min-w-60 max-w-75 truncate"
+                        >
+                            <option value="all">All Thematic Areas</option>
+                            {THEMATIC_AREAS.map((area) => (
+                                <option key={area} value={area}>{area}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* Reset button — only shown when any filter is active */}
+                    {(statusFilter !== 'all' || categoryFilter !== 'all' || thematicAreaFilter !== 'all' || searchTerm) && (
+                        <button
+                            onClick={resetFilters}
+                            className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold text-sm transition"
+                        >
+                            Reset
+                        </button>
+                    )}
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -392,7 +545,7 @@ export default function EmailReviewPage() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {submissions.map((sub) => (
+                                    {filteredSubmissions.map((sub) => (
                                         <tr
                                             key={sub.id}
                                             onClick={() => selectSubmission(sub)}
@@ -419,6 +572,18 @@ export default function EmailReviewPage() {
                                     ))}
                                 </tbody>
                             </table>
+
+                            {filteredSubmissions.length === 0 && (
+                                <div className="text-center py-12 text-slate-500">
+                                    <p className="text-sm">No email submissions match the current filters</p>
+                                    <button
+                                        onClick={resetFilters}
+                                        className="mt-3 text-xs font-semibold text-blue-600 hover:text-blue-700"
+                                    >
+                                        Clear filters
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
 

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/, '') || 'http://localhost:5000';
@@ -30,19 +29,19 @@ export default function AdminNewsPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  
+
   // Filters
   const [filterType, setFilterType] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('created_at');
   const [sortOrder, setSortOrder] = useState('desc');
-  
+
   // Modal state
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
-  
+
   // Form state
   const [formData, setFormData] = useState({
     type: 'NEWS',
@@ -92,7 +91,7 @@ export default function AdminNewsPage() {
         sort_by: sortBy,
         sort_order: sortOrder,
       });
-      
+
       const res = await fetch(`${API_URL}/api/admin/news-events?${params}`);
       if (res.ok) {
         const data = await res.json();
@@ -202,10 +201,10 @@ export default function AdminNewsPage() {
     e.preventDefault();
     setSaving(true);
     setError('');
-    
+
     try {
       const user = getUser();
-      
+
       const formDataToSend = new FormData();
       formDataToSend.append('type', formData.type);
       formDataToSend.append('title', formData.title);
@@ -221,20 +220,20 @@ export default function AdminNewsPage() {
       formDataToSend.append('is_published', formData.is_published.toString());
       formDataToSend.append('is_featured', formData.is_featured.toString());
       formDataToSend.append('created_by', user?.id || '');
-      
+
       if (imageFile) {
         formDataToSend.append('image', imageFile);
       }
-      
+
       const url = editingItem
         ? `${API_URL}/api/admin/news-events/${editingItem.id}`
         : `${API_URL}/api/admin/news-events`;
-      
+
       const res = await fetch(url, {
         method: editingItem ? 'PUT' : 'POST',
         body: formDataToSend,
       });
-      
+
       if (res.ok) {
         setSuccess(editingItem ? 'Item updated successfully!' : 'Item created successfully!');
         setShowModal(false);
@@ -258,7 +257,7 @@ export default function AdminNewsPage() {
       const res = await fetch(`${API_URL}/api/admin/news-events/${id}`, {
         method: 'DELETE',
       });
-      
+
       if (res.ok) {
         setSuccess('Item deleted successfully!');
         setDeleteConfirm(null);
@@ -279,7 +278,7 @@ export default function AdminNewsPage() {
       const res = await fetch(`${API_URL}/api/admin/news-events/${id}/toggle-publish`, {
         method: 'POST',
       });
-      
+
       if (res.ok) {
         const data = await res.json();
         setSuccess(data.message);
@@ -291,278 +290,277 @@ export default function AdminNewsPage() {
     }
   };
 
-  // Format date for display
-  const formatDate = (dateStr) => {
-    if (!dateStr) return '—';
-    try {
-      return new Date(dateStr).toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-      });
-    } catch {
-      return dateStr;
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-slate-100">
-      {/* Top Bar */}
-      <div className="bg-white border-b border-slate-200 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-4">
-              <Link
-                href="/"
-                className="text-slate-600 hover:text-slate-900 transition flex items-center gap-2"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <button
+          onClick={handleCreate}
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-semibold text-sm hover:bg-indigo-700 transition shadow-sm self-start sm:self-auto"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+          New Item
+        </button>
+      </div>
+
+      {/* Alerts */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-center gap-2">
+          <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+          </svg>
+          {error}
+        </div>
+      )}
+      {success && (
+        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl flex items-center gap-2">
+          <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          {success}
+        </div>
+      )}
+
+      {/* Stats Cards */}
+      {stats && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center">
+                <svg className="w-5 h-5 text-slate-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
                 </svg>
-                <span className="text-sm font-medium">Back to Site</span>
-              </Link>
-              <div className="w-px h-6 bg-slate-200" />
-              <h1 className="text-lg font-bold text-slate-900">News & Events Manager</h1>
+              </div>
             </div>
-            <button
-              onClick={handleCreate}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold text-sm hover:bg-blue-700 transition shadow-sm"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-              </svg>
-              New Item
-            </button>
+            <p className="text-3xl font-bold text-slate-900">{stats.total}</p>
+            <p className="text-sm text-slate-500 mt-1">Total Items</p>
           </div>
+
+          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
+                <svg className="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+            </div>
+            <p className="text-3xl font-bold text-emerald-600">{stats.published}</p>
+            <p className="text-sm text-slate-500 mt-1">Published</p>
+          </div>
+
+          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
+                <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+            </div>
+            <p className="text-3xl font-bold text-amber-600">{stats.drafts}</p>
+            <p className="text-sm text-slate-500 mt-1">Drafts</p>
+          </div>
+
+          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center">
+                <svg className="w-5 h-5 text-indigo-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+            </div>
+            <p className="text-3xl font-bold text-indigo-600">{stats.total_views?.toLocaleString() || 0}</p>
+            <p className="text-sm text-slate-500 mt-1">Total Views</p>
+          </div>
+        </div>
+      )}
+
+      {/* Filters */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+        <div className="flex flex-col md:flex-row gap-3">
+          <div className="flex-1 relative">
+            <input
+              type="text"
+              placeholder="Search by title, excerpt, or tag..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+            />
+            <svg className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+            </svg>
+          </div>
+
+          <select
+            value={filterType}
+            onChange={(e) => setFilterType(e.target.value)}
+            className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 cursor-pointer"
+          >
+            <option value="all">All Types</option>
+            <option value="news">News</option>
+            <option value="event">Events</option>
+            <option value="announcement">Announcements</option>
+          </select>
+
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 cursor-pointer"
+          >
+            <option value="all">All Status</option>
+            <option value="published">Published</option>
+            <option value="draft">Drafts</option>
+          </select>
+
+          <select
+            value={`${sortBy}-${sortOrder}`}
+            onChange={(e) => {
+              const [by, order] = e.target.value.split('-');
+              setSortBy(by);
+              setSortOrder(order);
+            }}
+            className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 cursor-pointer"
+          >
+            <option value="created_at-desc">Newest First</option>
+            <option value="created_at-asc">Oldest First</option>
+            <option value="title-asc">Title A-Z</option>
+            <option value="title-desc">Title Z-A</option>
+            <option value="views-desc">Most Viewed</option>
+            <option value="event_date-desc">Event Date (Newest)</option>
+            <option value="event_date-asc">Event Date (Oldest)</option>
+          </select>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Alerts */}
-        {error && (
-          <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-center gap-2">
-            <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-            </svg>
-            {error}
-          </div>
-        )}
-        {success && (
-          <div className="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl flex items-center gap-2">
-            <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            {success}
-          </div>
-        )}
-
-        {/* Stats Cards */}
-        {stats && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
-              <div className="text-sm font-medium text-slate-500 mb-1">Total Items</div>
-              <div className="text-3xl font-bold text-slate-900">{stats.total}</div>
-            </div>
-            <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
-              <div className="text-sm font-medium text-slate-500 mb-1">Published</div>
-              <div className="text-3xl font-bold text-green-600">{stats.published}</div>
-            </div>
-            <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
-              <div className="text-sm font-medium text-slate-500 mb-1">Drafts</div>
-              <div className="text-3xl font-bold text-amber-600">{stats.drafts}</div>
-            </div>
-            <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
-              <div className="text-sm font-medium text-slate-500 mb-1">Total Views</div>
-              <div className="text-3xl font-bold text-blue-600">{stats.total_views?.toLocaleString() || 0}</div>
-            </div>
-          </div>
-        )}
-
-        {/* Filters */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 mb-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 relative">
-              <input
-                type="text"
-                placeholder="Search by title, excerpt, or tag..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-              />
-              <svg className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-              </svg>
-            </div>
-            
-            <select
-              value={filterType}
-              onChange={(e) => setFilterType(e.target.value)}
-              className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-            >
-              <option value="all">All Types</option>
-              <option value="news">News</option>
-              <option value="event">Events</option>
-              <option value="announcement">Announcements</option>
-            </select>
-            
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-            >
-              <option value="all">All Status</option>
-              <option value="published">Published</option>
-              <option value="draft">Drafts</option>
-            </select>
-            
-            <select
-              value={`${sortBy}-${sortOrder}`}
-              onChange={(e) => {
-                const [by, order] = e.target.value.split('-');
-                setSortBy(by);
-                setSortOrder(order);
-              }}
-              className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-            >
-              <option value="created_at-desc">Newest First</option>
-              <option value="created_at-asc">Oldest First</option>
-              <option value="title-asc">Title A-Z</option>
-              <option value="title-desc">Title Z-A</option>
-              <option value="views-desc">Most Viewed</option>
-              <option value="event_date-desc">Event Date (Newest)</option>
-              <option value="event_date-asc">Event Date (Oldest)</option>
-            </select>
-          </div>
+      {/* Items Table */}
+      {loading ? (
+        <div className="flex items-center justify-center py-20">
+          <div className="animate-spin rounded-full h-10 w-10 border-4 border-indigo-500 border-t-transparent"></div>
         </div>
-
-        {/* Items Table/Grid */}
-        {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
-          </div>
-        ) : items.length === 0 ? (
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-12 text-center">
-            <svg className="w-16 h-16 mx-auto text-slate-300 mb-4" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+      ) : items.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-12 text-center">
+          <svg className="w-16 h-16 mx-auto text-slate-300 mb-4" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+          </svg>
+          <h3 className="text-lg font-semibold text-slate-900 mb-1">No items found</h3>
+          <p className="text-slate-500 mb-6">Get started by creating your first news or event.</p>
+          <button
+            onClick={handleCreate}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-semibold text-sm hover:bg-indigo-700 transition"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
             </svg>
-            <h3 className="text-lg font-semibold text-slate-900 mb-1">No items found</h3>
-            <p className="text-slate-500 mb-6">Get started by creating your first news or event.</p>
-            <button
-              onClick={handleCreate}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-              </svg>
-              Create First Item
-            </button>
-          </div>
-        ) : (
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200">
-                    <th className="text-left px-6 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Item</th>
-                    <th className="text-left px-6 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Type</th>
-                    <th className="text-left px-6 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Date</th>
-                    <th className="text-left px-6 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Status</th>
-                    <th className="text-left px-6 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Views</th>
-                    <th className="text-right px-6 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {items.map((item) => (
-                    <tr key={item.id} className="hover:bg-slate-50/50 transition">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-4">
-                          {item.image_url ? (
-                            <img
-                              src={item.image_url}
-                              alt={item.title}
-                              className="w-12 h-12 rounded-lg object-cover shrink-0"
-                            />
-                          ) : (
-                            <div className="w-12 h-12 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
-                              <svg className="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-                              </svg>
-                            </div>
-                          )}
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2">
-                              <p className="text-sm font-semibold text-slate-900 truncate max-w-xs">{item.title}</p>
-                              {item.is_featured && (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700">
-                                  FEATURED
-                                </span>
-                              )}
-                            </div>
-                            {item.excerpt && (
-                              <p className="text-xs text-slate-500 truncate max-w-sm mt-0.5">{item.excerpt}</p>
-                            )}
-                            {item.tag && (
-                              <span className={`inline-flex mt-1 px-2 py-0.5 rounded text-[10px] font-semibold border ${item.tag_color || 'bg-slate-50 text-slate-600 border-slate-200'}`}>
-                                {item.tag}
+            Create First Item
+          </button>
+        </div>
+      ) : (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200">
+                  <th className="text-left px-6 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Item</th>
+                  <th className="text-left px-6 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Type</th>
+                  <th className="text-left px-6 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Date</th>
+                  <th className="text-left px-6 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Status</th>
+                  <th className="text-left px-6 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Views</th>
+                  <th className="text-right px-6 py-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {items.map((item) => (
+                  <tr key={item.id} className="hover:bg-indigo-50/30 transition">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-4">
+                        {item.image_url ? (
+                          <img
+                            src={item.image_url}
+                            alt={item.title}
+                            className="w-12 h-12 rounded-lg object-cover shrink-0"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
+                            <svg className="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                            </svg>
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-semibold text-slate-900 truncate max-w-xs">{item.title}</p>
+                            {item.is_featured && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700">
+                                FEATURED
                               </span>
                             )}
                           </div>
+                          {item.excerpt && (
+                            <p className="text-xs text-slate-500 truncate max-w-sm mt-0.5">{item.excerpt}</p>
+                          )}
+                          {item.tag && (
+                            <span className={`inline-flex mt-1 px-2 py-0.5 rounded text-[10px] font-semibold border ${item.tag_color || 'bg-slate-50 text-slate-600 border-slate-200'}`}>
+                              {item.tag}
+                            </span>
+                          )}
                         </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-bold ${item.type_color || TYPE_COLORS[item.type]?.bg || 'bg-slate-100 text-slate-700'}`}>
-                          {item.type}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-sm text-slate-600">{item.date_display}</span>
-                      </td>
-                      <td className="px-6 py-4">
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-bold ${item.type_color || TYPE_COLORS[item.type]?.bg || 'bg-slate-100 text-slate-700'}`}>
+                        {item.type}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-sm text-slate-600">{item.date_display}</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <button
+                        onClick={() => handleTogglePublish(item.id)}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition ${
+                          item.is_published
+                            ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+                            : 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+                        }`}
+                      >
+                        <span className={`w-1.5 h-1.5 rounded-full ${item.is_published ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                        {item.is_published ? 'Published' : 'Draft'}
+                      </button>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-sm text-slate-600">{item.views_count || 0}</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-end gap-2">
                         <button
-                          onClick={() => handleTogglePublish(item.id)}
-                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition ${
-                            item.is_published
-                              ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                              : 'bg-amber-100 text-amber-700 hover:bg-amber-200'
-                          }`}
+                          onClick={() => handleEdit(item)}
+                          className="p-2 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition"
+                          title="Edit"
                         >
-                          <span className={`w-1.5 h-1.5 rounded-full ${item.is_published ? 'bg-green-500' : 'bg-amber-500'}`} />
-                          {item.is_published ? 'Published' : 'Draft'}
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                          </svg>
                         </button>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-sm text-slate-600">{item.views_count || 0}</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => handleEdit(item)}
-                            className="p-2 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition"
-                            title="Edit"
-                          >
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => setDeleteConfirm(item)}
-                            className="p-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
-                            title="Delete"
-                          >
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-                            </svg>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                        <button
+                          onClick={() => setDeleteConfirm(item)}
+                          className="p-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                          title="Delete"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                          </svg>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Create/Edit Modal */}
       {showModal && (
@@ -574,23 +572,26 @@ export default function AdminNewsPage() {
             />
             <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
               {/* Modal Header */}
-              <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between z-10">
-                <div>
-                  <h2 className="text-xl font-bold text-slate-900">
-                    {editingItem ? 'Edit Item' : 'Create New Item'}
-                  </h2>
-                  <p className="text-sm text-slate-500 mt-0.5">
-                    {editingItem ? `Editing: ${editingItem.title}` : 'Add a news article, event, or announcement'}
-                  </p>
+              <div className="sticky top-0 bg-white z-10 border-b border-slate-200">
+                <div className="h-1 w-full bg-linear-to-r from-indigo-400 via-blue-400 to-blue-400" />
+                <div className="px-6 py-4 flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-900">
+                      {editingItem ? 'Edit Item' : 'Create New Item'}
+                    </h2>
+                    <p className="text-sm text-slate-500 mt-0.5">
+                      {editingItem ? `Editing: ${editingItem.title}` : 'Add a news article, event, or announcement'}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => !saving && setShowModal(false)}
+                    className="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 transition"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
                 </div>
-                <button
-                  onClick={() => !saving && setShowModal(false)}
-                  className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition"
-                >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
               </div>
 
               {/* Modal Body */}
@@ -607,9 +608,9 @@ export default function AdminNewsPage() {
                           key={t}
                           type="button"
                           onClick={() => setFormData({ ...formData, type: t })}
-                          className={`flex-1 px-3 py-2 rounded-lg text-xs font-bold transition border-2 ${
+                          className={`flex-1 px-3 py-2 rounded-xl text-xs font-bold transition border-2 ${
                             formData.type === t
-                              ? 'border-blue-500 bg-blue-50 text-blue-700'
+                              ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
                               : 'border-slate-200 text-slate-600 hover:border-slate-300'
                           }`}
                         >
@@ -628,7 +629,7 @@ export default function AdminNewsPage() {
                       value={formData.date_display}
                       onChange={(e) => setFormData({ ...formData, date_display: e.target.value })}
                       placeholder="e.g., May 20, 2026 or June 15–17, 2026"
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                       required
                     />
                   </div>
@@ -644,7 +645,7 @@ export default function AdminNewsPage() {
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     placeholder="Enter the title..."
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                     required
                   />
                 </div>
@@ -659,7 +660,7 @@ export default function AdminNewsPage() {
                     onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
                     placeholder="A brief summary that appears on the card..."
                     rows={3}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-none"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 resize-none"
                   />
                 </div>
 
@@ -673,13 +674,13 @@ export default function AdminNewsPage() {
                     onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                     placeholder="Full article content (optional)..."
                     rows={5}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-none"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 resize-none"
                   />
                 </div>
 
                 {/* Event Dates (only for EVENT type) */}
                 {formData.type === 'EVENT' && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5 p-4 bg-blue-50/50 rounded-xl border border-blue-100">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5 p-4 bg-indigo-50/50 rounded-xl border border-indigo-100">
                     <div>
                       <label className="block text-sm font-semibold text-slate-700 mb-1.5">
                         Event Start Date
@@ -688,7 +689,7 @@ export default function AdminNewsPage() {
                         type="date"
                         value={formData.event_start_date}
                         onChange={(e) => setFormData({ ...formData, event_start_date: e.target.value })}
-                        className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                        className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                       />
                     </div>
                     <div>
@@ -699,7 +700,7 @@ export default function AdminNewsPage() {
                         type="date"
                         value={formData.event_end_date}
                         onChange={(e) => setFormData({ ...formData, event_end_date: e.target.value })}
-                        className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                        className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                       />
                     </div>
                   </div>
@@ -716,7 +717,7 @@ export default function AdminNewsPage() {
                       value={formData.tag}
                       onChange={(e) => setFormData({ ...formData, tag: e.target.value })}
                       placeholder="e.g., Funding, Symposium, Deadline"
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                     />
                   </div>
                   <div>
@@ -731,7 +732,7 @@ export default function AdminNewsPage() {
                           onClick={() => setFormData({ ...formData, tag_color: color.value })}
                           className={`w-9 h-9 rounded-lg border-2 transition ${color.value} ${
                             formData.tag_color === color.value
-                              ? 'ring-2 ring-blue-500 ring-offset-2'
+                              ? 'ring-2 ring-indigo-500 ring-offset-2'
                               : ''
                           }`}
                           title={color.label}
@@ -770,7 +771,7 @@ export default function AdminNewsPage() {
                       </div>
                     )}
                     <div className="flex-1">
-                      <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer hover:border-blue-400 hover:bg-blue-50/50 transition">
+                      <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/50 transition">
                         <svg className="w-8 h-8 text-slate-400 mb-2" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
                         </svg>
@@ -793,7 +794,7 @@ export default function AdminNewsPage() {
                             setImageFile(null);
                           }}
                           placeholder="Or paste an image URL..."
-                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                         />
                       </div>
                     </div>
@@ -807,7 +808,7 @@ export default function AdminNewsPage() {
                       type="checkbox"
                       checked={formData.is_published}
                       onChange={(e) => setFormData({ ...formData, is_published: e.target.checked })}
-                      className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500/20"
+                      className="w-5 h-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500/20"
                     />
                     <div>
                       <div className="text-sm font-semibold text-slate-700">Published</div>
@@ -841,11 +842,11 @@ export default function AdminNewsPage() {
                   <button
                     type="submit"
                     disabled={saving}
-                    className="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-lg font-semibold text-sm hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="inline-flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-semibold text-sm hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                   >
                     {saving ? (
                       <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
                         Saving...
                       </>
                     ) : (
@@ -871,34 +872,37 @@ export default function AdminNewsPage() {
             className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm"
             onClick={() => setDeleteConfirm(null)}
           />
-          <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-                <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-                </svg>
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
+            <div className="h-1 w-full bg-linear-to-r from-red-400 via-rose-400 to-red-400" />
+            <div className="p-6">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                  <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900">Delete Item</h3>
+                  <p className="text-sm text-slate-500">This action cannot be undone.</p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-lg font-bold text-slate-900">Delete Item</h3>
-                <p className="text-sm text-slate-500">This action cannot be undone.</p>
+              <p className="text-sm text-slate-600 mb-6">
+                Are you sure you want to delete <span className="font-semibold text-slate-900">"{deleteConfirm.title}"</span>?
+              </p>
+              <div className="flex items-center justify-end gap-3">
+                <button
+                  onClick={() => setDeleteConfirm(null)}
+                  className="px-5 py-2.5 text-sm font-semibold text-slate-600 hover:text-slate-900 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleDelete(deleteConfirm.id)}
+                  className="px-5 py-2.5 bg-red-600 text-white rounded-xl font-semibold text-sm hover:bg-red-700 transition"
+                >
+                  Delete
+                </button>
               </div>
-            </div>
-            <p className="text-sm text-slate-600 mb-6">
-              Are you sure you want to delete <span className="font-semibold text-slate-900">"{deleteConfirm.title}"</span>?
-            </p>
-            <div className="flex items-center justify-end gap-3">
-              <button
-                onClick={() => setDeleteConfirm(null)}
-                className="px-5 py-2.5 text-sm font-semibold text-slate-600 hover:text-slate-900 transition"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => handleDelete(deleteConfirm.id)}
-                className="px-5 py-2.5 bg-red-600 text-white rounded-lg font-semibold text-sm hover:bg-red-700 transition"
-              >
-                Delete
-              </button>
             </div>
           </div>
         </div>

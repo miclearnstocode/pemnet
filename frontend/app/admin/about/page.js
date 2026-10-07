@@ -6,55 +6,55 @@ import Link from 'next/link';
 const API_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/, '') || 'http://localhost:5000';
 
 const COLOR_THEMES = [
-  { value: 'blue', label: 'Blue', bg: 'bg-blue-50', text: 'text-blue-600' },
-  { value: 'green', label: 'Green', bg: 'bg-green-50', text: 'text-green-600' },
+  { value: 'blue',   label: 'Blue',   bg: 'bg-blue-50',   text: 'text-blue-600' },
+  { value: 'green',  label: 'Green',  bg: 'bg-green-50',  text: 'text-green-600' },
   { value: 'yellow', label: 'Yellow', bg: 'bg-yellow-50', text: 'text-yellow-600' },
   { value: 'purple', label: 'Purple', bg: 'bg-purple-50', text: 'text-purple-600' },
-  { value: 'red', label: 'Red', bg: 'bg-red-50', text: 'text-red-600' },
+  { value: 'red',    label: 'Red',    bg: 'bg-red-50',    text: 'text-red-600' },
   { value: 'indigo', label: 'Indigo', bg: 'bg-indigo-50', text: 'text-indigo-600' },
 ];
 
 const ICON_OPTIONS = [
-  { value: 'users', label: 'Users' },
-  { value: 'book', label: 'Book' },
-  { value: 'people', label: 'People Group' },
-  { value: 'globe', label: 'Globe' },
-  { value: 'document', label: 'Document' },
-  { value: 'academic', label: 'Academic Cap' },
+  { value: 'users',     label: 'Users' },
+  { value: 'book',      label: 'Book' },
+  { value: 'people',    label: 'People Group' },
+  { value: 'globe',     label: 'Globe' },
+  { value: 'document',  label: 'Document' },
+  { value: 'academic',  label: 'Academic Cap' },
   { value: 'megaphone', label: 'Megaphone' },
 ];
 
 const TABS = [
-  { id: 'header', label: 'Header' },
-  { id: 'what_is', label: 'What is PEMNet?' },
-  { id: 'stats', label: 'Stats' },
+  { id: 'header',         label: 'Header' },
+  { id: 'what_is',        label: 'What is PEMNet?' },
+  { id: 'stats',          label: 'Stats' },
   { id: 'mission_vision', label: 'Mission & Vision' },
-  { id: 'what_we_do', label: 'What We Do' },
+  { id: 'what_we_do',     label: 'What We Do' },
 ];
 
 export default function AdminAboutPage() {
   const [activeTab, setActiveTab] = useState('header');
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [loading, setLoading]     = useState(true);
+  const [saving, setSaving]       = useState(false);
+  const [error, setError]         = useState('');
+  const [success, setSuccess]     = useState('');
 
   const [content, setContent] = useState({
-    header: { title: '', title_highlight: '', subtitle: '' },
-    what_is: { heading: '', description: '' },
-    mission: { heading: '', description: '' },
-    vision: { heading: '', description: '' },
+    header:      { title: '', title_highlight: '', subtitle: '' },
+    what_is:     { heading: '', description: '' },
+    mission:     { heading: '', description: '' },
+    vision:      { heading: '', description: '' },
     core_values: { heading: '', values: [] },
-    what_we_do: { heading: '' },
+    what_we_do:  { heading: '' },
   });
-  const [stats, setStats] = useState([]);
+  const [stats, setStats]       = useState([]);
   const [features, setFeatures] = useState([]);
-  const [cards, setCards] = useState([]);
+  const [cards, setCards]       = useState([]);
 
-  const [editingStat, setEditingStat] = useState(null);
+  const [editingStat, setEditingStat]       = useState(null);
   const [editingFeature, setEditingFeature] = useState(null);
-  const [editingCard, setEditingCard] = useState(null);
-  const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [editingCard, setEditingCard]       = useState(null);
+  const [deleteConfirm, setDeleteConfirm]   = useState(null);
 
   const getUser = () => {
     if (typeof window === 'undefined') return null;
@@ -234,23 +234,22 @@ export default function AdminAboutPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-10 w-10 border-4 border-indigo-500 border-t-transparent"></div>
+          <p className="text-slate-500 text-sm font-medium">Loading About content...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 lg:p-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900">About Page</h1>
-          <p className="text-slate-600 mt-1">Edit the content shown on the About page.</p>
-        </div>
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <Link
           href="/about"
           target="_blank"
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-lg font-semibold text-sm hover:bg-slate-50 transition self-start sm:self-auto"
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl font-semibold text-sm hover:bg-slate-50 transition shadow-sm self-start sm:self-auto"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
@@ -261,7 +260,7 @@ export default function AdminAboutPage() {
 
       {/* Alerts */}
       {error && (
-        <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-center gap-2">
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-center gap-2">
           <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
           </svg>
@@ -269,7 +268,7 @@ export default function AdminAboutPage() {
         </div>
       )}
       {success && (
-        <div className="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl flex items-center gap-2">
+        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl flex items-center gap-2">
           <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
@@ -278,15 +277,15 @@ export default function AdminAboutPage() {
       )}
 
       {/* Tabs */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-1.5 mb-6 overflow-x-auto">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-1.5 overflow-x-auto">
         <div className="flex items-center gap-1 min-w-max">
           {TABS.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2.5 rounded-lg text-sm font-semibold transition whitespace-nowrap ${
+              className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition whitespace-nowrap ${
                 activeTab === tab.id
-                  ? 'bg-blue-50 text-blue-700'
+                  ? 'bg-indigo-50 text-indigo-700'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
               }`}
             >
@@ -298,7 +297,7 @@ export default function AdminAboutPage() {
 
       {/* HEADER TAB */}
       {activeTab === 'header' && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
           <h2 className="text-xl font-bold text-slate-900 mb-1">Page Header</h2>
           <p className="text-sm text-slate-500 mb-6">Main title and subtitle at the top of the About page.</p>
           <div className="space-y-5">
@@ -309,7 +308,7 @@ export default function AdminAboutPage() {
                   type="text"
                   value={content.header?.title || ''}
                   onChange={(e) => updateSection('header', 'title', e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                 />
               </div>
               <div>
@@ -318,7 +317,7 @@ export default function AdminAboutPage() {
                   type="text"
                   value={content.header?.title_highlight || ''}
                   onChange={(e) => updateSection('header', 'title_highlight', e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                 />
               </div>
             </div>
@@ -328,7 +327,7 @@ export default function AdminAboutPage() {
                 value={content.header?.subtitle || ''}
                 onChange={(e) => updateSection('header', 'subtitle', e.target.value)}
                 rows={4}
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-none"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 resize-none"
               />
             </div>
           </div>
@@ -336,7 +335,7 @@ export default function AdminAboutPage() {
             <button
               onClick={() => handleSaveContent(['header'])}
               disabled={saving}
-              className="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-semibold text-sm hover:bg-blue-700 transition disabled:opacity-50"
+              className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-semibold text-sm hover:bg-indigo-700 transition disabled:opacity-50 shadow-sm"
             >
               {saving ? 'Saving...' : 'Save Header'}
             </button>
@@ -347,7 +346,7 @@ export default function AdminAboutPage() {
       {/* WHAT IS TAB */}
       {activeTab === 'what_is' && (
         <div className="space-y-6">
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
             <h2 className="text-xl font-bold text-slate-900 mb-1">What is PEMNet?</h2>
             <p className="text-sm text-slate-500 mb-6">Heading and description.</p>
             <div className="space-y-5">
@@ -357,7 +356,7 @@ export default function AdminAboutPage() {
                   type="text"
                   value={content.what_is?.heading || ''}
                   onChange={(e) => updateSection('what_is', 'heading', e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                 />
               </div>
               <div>
@@ -366,7 +365,7 @@ export default function AdminAboutPage() {
                   value={content.what_is?.description || ''}
                   onChange={(e) => updateSection('what_is', 'description', e.target.value)}
                   rows={4}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-none"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 resize-none"
                 />
               </div>
             </div>
@@ -374,14 +373,14 @@ export default function AdminAboutPage() {
               <button
                 onClick={() => handleSaveContent(['what_is'])}
                 disabled={saving}
-                className="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-semibold text-sm hover:bg-blue-700 transition disabled:opacity-50"
+                className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-semibold text-sm hover:bg-indigo-700 transition disabled:opacity-50 shadow-sm"
               >
                 {saving ? 'Saving...' : 'Save Section'}
               </button>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-lg font-bold text-slate-900">Feature Bullets</h3>
@@ -389,7 +388,7 @@ export default function AdminAboutPage() {
               </div>
               <button
                 onClick={() => setEditingFeature({ text: '', is_active: true })}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold text-sm hover:bg-blue-700 transition"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl font-semibold text-sm hover:bg-indigo-700 transition shadow-sm"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -402,12 +401,12 @@ export default function AdminAboutPage() {
             ) : (
               <div className="space-y-2">
                 {features.map((f) => (
-                  <div key={f.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
-                    <svg className="w-5 h-5 text-green-600 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <div key={f.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                    <svg className="w-5 h-5 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <span className="flex-1 text-sm text-slate-700">{f.text}</span>
-                    <button onClick={() => setEditingFeature(f)} className="p-1.5 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded transition">
+                    <button onClick={() => setEditingFeature(f)} className="p-1.5 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded transition">
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
                       </svg>
@@ -427,7 +426,7 @@ export default function AdminAboutPage() {
 
       {/* STATS TAB */}
       {activeTab === 'stats' && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-xl font-bold text-slate-900">Statistics Cards</h2>
@@ -437,7 +436,7 @@ export default function AdminAboutPage() {
               onClick={() => setEditingStat({
                 value: '', label: '', sublabel: '', icon_type: 'users', color_theme: 'blue', is_active: true,
               })}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold text-sm hover:bg-blue-700 transition"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl font-semibold text-sm hover:bg-indigo-700 transition shadow-sm"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -461,7 +460,7 @@ export default function AdminAboutPage() {
                       {stat.sublabel && <div className="text-xs text-slate-500 truncate">{stat.sublabel}</div>}
                     </div>
                     <div className="flex items-center gap-1">
-                      <button onClick={() => setEditingStat(stat)} className="p-2 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition">
+                      <button onClick={() => setEditingStat(stat)} className="p-2 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition">
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
                         </svg>
@@ -484,7 +483,7 @@ export default function AdminAboutPage() {
       {activeTab === 'mission_vision' && (
         <div className="space-y-6">
           {['mission', 'vision'].map((key) => (
-            <div key={key} className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+            <div key={key} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
               <h2 className="text-xl font-bold text-slate-900 mb-1 capitalize">{key}</h2>
               <div className="space-y-5 mt-4">
                 <div>
@@ -493,7 +492,7 @@ export default function AdminAboutPage() {
                     type="text"
                     value={content[key]?.heading || ''}
                     onChange={(e) => updateSection(key, 'heading', e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                   />
                 </div>
                 <div>
@@ -502,14 +501,14 @@ export default function AdminAboutPage() {
                     value={content[key]?.description || ''}
                     onChange={(e) => updateSection(key, 'description', e.target.value)}
                     rows={3}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-none"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 resize-none"
                   />
                 </div>
               </div>
             </div>
           ))}
 
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
             <h2 className="text-xl font-bold text-slate-900 mb-1">Core Values</h2>
             <div className="space-y-5 mt-4">
               <div>
@@ -518,7 +517,7 @@ export default function AdminAboutPage() {
                   type="text"
                   value={content.core_values?.heading || ''}
                   onChange={(e) => updateSection('core_values', 'heading', e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                 />
               </div>
               <div>
@@ -529,7 +528,7 @@ export default function AdminAboutPage() {
                   onChange={(e) =>
                     updateSection('core_values', 'values', e.target.value.split(',').map((v) => v.trim()).filter(Boolean))
                   }
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                 />
                 <div className="flex flex-wrap gap-2 mt-3">
                   {(content.core_values?.values || []).map((v, i) => (
@@ -546,7 +545,7 @@ export default function AdminAboutPage() {
             <button
               onClick={() => handleSaveContent(['mission', 'vision', 'core_values'])}
               disabled={saving}
-              className="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-semibold text-sm hover:bg-blue-700 transition disabled:opacity-50"
+              className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-semibold text-sm hover:bg-indigo-700 transition disabled:opacity-50 shadow-sm"
             >
               {saving ? 'Saving...' : 'Save All'}
             </button>
@@ -557,26 +556,26 @@ export default function AdminAboutPage() {
       {/* WHAT WE DO */}
       {activeTab === 'what_we_do' && (
         <div className="space-y-6">
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
             <h2 className="text-xl font-bold text-slate-900 mb-1">Section Heading</h2>
             <input
               type="text"
               value={content.what_we_do?.heading || ''}
               onChange={(e) => updateSection('what_we_do', 'heading', e.target.value)}
-              className="w-full mt-4 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+              className="w-full mt-4 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
             />
             <div className="flex justify-end mt-6 pt-4 border-t border-slate-200">
               <button
                 onClick={() => handleSaveContent(['what_we_do'])}
                 disabled={saving}
-                className="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-semibold text-sm hover:bg-blue-700 transition disabled:opacity-50"
+                className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-semibold text-sm hover:bg-indigo-700 transition disabled:opacity-50 shadow-sm"
               >
                 {saving ? 'Saving...' : 'Save Heading'}
               </button>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-lg font-bold text-slate-900">Cards</h3>
@@ -584,7 +583,7 @@ export default function AdminAboutPage() {
               </div>
               <button
                 onClick={() => setEditingCard({ title: '', description: '', icon_type: 'document', color_theme: 'blue', is_active: true })}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold text-sm hover:bg-blue-700 transition"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl font-semibold text-sm hover:bg-indigo-700 transition shadow-sm"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -611,7 +610,7 @@ export default function AdminAboutPage() {
                           <p className="text-xs text-slate-600 mt-1 line-clamp-2">{card.description}</p>
                         </div>
                         <div className="flex flex-col gap-1">
-                          <button onClick={() => setEditingCard(card)} className="p-1.5 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded transition">
+                          <button onClick={() => setEditingCard(card)} className="p-1.5 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded transition">
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
                             </svg>
@@ -636,75 +635,88 @@ export default function AdminAboutPage() {
       {editingStat && (
         <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={() => !saving && setEditingStat(null)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-bold text-slate-900 mb-5">{editingStat.id ? 'Edit Stat' : 'New Stat'}</h3>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Value *</label>
-                  <input
-                    type="text"
-                    value={editingStat.value}
-                    onChange={(e) => setEditingStat({ ...editingStat, value: e.target.value })}
-                    placeholder="85+"
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Label *</label>
-                  <input
-                    type="text"
-                    value={editingStat.label}
-                    onChange={(e) => setEditingStat({ ...editingStat, label: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                  />
-                </div>
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div className="h-1 w-full bg-linear-to-r from-indigo-400 via-blue-400 to-blue-400" />
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-5">
+                <h3 className="text-lg font-bold text-slate-900">{editingStat.id ? 'Edit Stat' : 'New Stat'}</h3>
+                <button
+                  onClick={() => !saving && setEditingStat(null)}
+                  className="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 transition"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Sub-label</label>
-                <input
-                  type="text"
-                  value={editingStat.sublabel || ''}
-                  onChange={(e) => setEditingStat({ ...editingStat, sublabel: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Color</label>
-                <div className="flex gap-2 flex-wrap">
-                  {COLOR_THEMES.map((c) => (
-                    <button
-                      key={c.value}
-                      type="button"
-                      onClick={() => setEditingStat({ ...editingStat, color_theme: c.value })}
-                      className={`w-9 h-9 rounded-lg ${c.bg} border-2 transition ${
-                        editingStat.color_theme === c.value ? 'ring-2 ring-blue-500 ring-offset-2 border-blue-500' : 'border-slate-200'
-                      }`}
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Value *</label>
+                    <input
+                      type="text"
+                      value={editingStat.value}
+                      onChange={(e) => setEditingStat({ ...editingStat, value: e.target.value })}
+                      placeholder="85+"
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                     />
-                  ))}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Label *</label>
+                    <input
+                      type="text"
+                      value={editingStat.label}
+                      onChange={(e) => setEditingStat({ ...editingStat, label: e.target.value })}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    />
+                  </div>
                 </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Sub-label</label>
+                  <input
+                    type="text"
+                    value={editingStat.sublabel || ''}
+                    onChange={(e) => setEditingStat({ ...editingStat, sublabel: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Color</label>
+                  <div className="flex gap-2 flex-wrap">
+                    {COLOR_THEMES.map((c) => (
+                      <button
+                        key={c.value}
+                        type="button"
+                        onClick={() => setEditingStat({ ...editingStat, color_theme: c.value })}
+                        className={`w-9 h-9 rounded-lg ${c.bg} border-2 transition ${
+                          editingStat.color_theme === c.value ? 'ring-2 ring-indigo-500 ring-offset-2 border-indigo-500' : 'border-slate-200'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={editingStat.is_active}
+                    onChange={(e) => setEditingStat({ ...editingStat, is_active: e.target.checked })}
+                    className="w-5 h-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500/20"
+                  />
+                  <span className="text-sm font-semibold text-slate-700">Show on page</span>
+                </label>
               </div>
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={editingStat.is_active}
-                  onChange={(e) => setEditingStat({ ...editingStat, is_active: e.target.checked })}
-                  className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500/20"
-                />
-                <span className="text-sm font-semibold text-slate-700">Show on page</span>
-              </label>
-            </div>
-            <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-slate-200">
-              <button onClick={() => setEditingStat(null)} className="px-5 py-2.5 text-sm font-semibold text-slate-600 hover:text-slate-900">
-                Cancel
-              </button>
-              <button
-                onClick={() => saveStat(editingStat)}
-                disabled={saving || !editingStat.value || !editingStat.label}
-                className="px-5 py-2.5 bg-blue-600 text-white rounded-lg font-semibold text-sm hover:bg-blue-700 transition disabled:opacity-50"
-              >
-                {saving ? 'Saving...' : 'Save'}
-              </button>
+              <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-slate-200">
+                <button onClick={() => setEditingStat(null)} className="px-5 py-2.5 text-sm font-semibold text-slate-600 hover:text-slate-900">
+                  Cancel
+                </button>
+                <button
+                  onClick={() => saveStat(editingStat)}
+                  disabled={saving || !editingStat.value || !editingStat.label}
+                  className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-semibold text-sm hover:bg-indigo-700 transition disabled:opacity-50 shadow-sm"
+                >
+                  {saving ? 'Saving...' : 'Save'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -714,39 +726,52 @@ export default function AdminAboutPage() {
       {editingFeature && (
         <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={() => !saving && setEditingFeature(null)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6">
-            <h3 className="text-lg font-bold text-slate-900 mb-5">{editingFeature.id ? 'Edit Feature' : 'New Feature'}</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Text *</label>
-                <textarea
-                  value={editingFeature.text}
-                  onChange={(e) => setEditingFeature({ ...editingFeature, text: e.target.value })}
-                  rows={3}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-none"
-                />
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full">
+            <div className="h-1 w-full bg-linear-to-r from-indigo-400 via-blue-400 to-blue-400" />
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-5">
+                <h3 className="text-lg font-bold text-slate-900">{editingFeature.id ? 'Edit Feature' : 'New Feature'}</h3>
+                <button
+                  onClick={() => !saving && setEditingFeature(null)}
+                  className="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 transition"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={editingFeature.is_active}
-                  onChange={(e) => setEditingFeature({ ...editingFeature, is_active: e.target.checked })}
-                  className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500/20"
-                />
-                <span className="text-sm font-semibold text-slate-700">Show on page</span>
-              </label>
-            </div>
-            <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-slate-200">
-              <button onClick={() => setEditingFeature(null)} className="px-5 py-2.5 text-sm font-semibold text-slate-600 hover:text-slate-900">
-                Cancel
-              </button>
-              <button
-                onClick={() => saveFeature(editingFeature)}
-                disabled={saving || !editingFeature.text.trim()}
-                className="px-5 py-2.5 bg-blue-600 text-white rounded-lg font-semibold text-sm hover:bg-blue-700 transition disabled:opacity-50"
-              >
-                {saving ? 'Saving...' : 'Save'}
-              </button>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Text *</label>
+                  <textarea
+                    value={editingFeature.text}
+                    onChange={(e) => setEditingFeature({ ...editingFeature, text: e.target.value })}
+                    rows={3}
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 resize-none"
+                  />
+                </div>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={editingFeature.is_active}
+                    onChange={(e) => setEditingFeature({ ...editingFeature, is_active: e.target.checked })}
+                    className="w-5 h-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500/20"
+                  />
+                  <span className="text-sm font-semibold text-slate-700">Show on page</span>
+                </label>
+              </div>
+              <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-slate-200">
+                <button onClick={() => setEditingFeature(null)} className="px-5 py-2.5 text-sm font-semibold text-slate-600 hover:text-slate-900">
+                  Cancel
+                </button>
+                <button
+                  onClick={() => saveFeature(editingFeature)}
+                  disabled={saving || !editingFeature.text.trim()}
+                  className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-semibold text-sm hover:bg-indigo-700 transition disabled:opacity-50 shadow-sm"
+                >
+                  {saving ? 'Saving...' : 'Save'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -756,75 +781,88 @@ export default function AdminAboutPage() {
       {editingCard && (
         <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={() => !saving && setEditingCard(null)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-bold text-slate-900 mb-5">{editingCard.id ? 'Edit Card' : 'New Card'}</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Title *</label>
-                <input
-                  type="text"
-                  value={editingCard.title}
-                  onChange={(e) => setEditingCard({ ...editingCard, title: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Description</label>
-                <textarea
-                  value={editingCard.description || ''}
-                  onChange={(e) => setEditingCard({ ...editingCard, description: e.target.value })}
-                  rows={3}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-none"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Icon</label>
-                <select
-                  value={editingCard.icon_type}
-                  onChange={(e) => setEditingCard({ ...editingCard, icon_type: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div className="h-1 w-full bg-linear-to-r from-indigo-400 via-blue-400 to-blue-400" />
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-5">
+                <h3 className="text-lg font-bold text-slate-900">{editingCard.id ? 'Edit Card' : 'New Card'}</h3>
+                <button
+                  onClick={() => !saving && setEditingCard(null)}
+                  className="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 transition"
                 >
-                  {ICON_OPTIONS.map((i) => (
-                    <option key={i.value} value={i.value}>{i.label}</option>
-                  ))}
-                </select>
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Color</label>
-                <div className="flex gap-2 flex-wrap">
-                  {COLOR_THEMES.map((c) => (
-                    <button
-                      key={c.value}
-                      type="button"
-                      onClick={() => setEditingCard({ ...editingCard, color_theme: c.value })}
-                      className={`w-9 h-9 rounded-lg ${c.bg} border-2 transition ${
-                        editingCard.color_theme === c.value ? 'ring-2 ring-blue-500 ring-offset-2 border-blue-500' : 'border-slate-200'
-                      }`}
-                    />
-                  ))}
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Title *</label>
+                  <input
+                    type="text"
+                    value={editingCard.title}
+                    onChange={(e) => setEditingCard({ ...editingCard, title: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  />
                 </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Description</label>
+                  <textarea
+                    value={editingCard.description || ''}
+                    onChange={(e) => setEditingCard({ ...editingCard, description: e.target.value })}
+                    rows={3}
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 resize-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Icon</label>
+                  <select
+                    value={editingCard.icon_type}
+                    onChange={(e) => setEditingCard({ ...editingCard, icon_type: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  >
+                    {ICON_OPTIONS.map((i) => (
+                      <option key={i.value} value={i.value}>{i.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Color</label>
+                  <div className="flex gap-2 flex-wrap">
+                    {COLOR_THEMES.map((c) => (
+                      <button
+                        key={c.value}
+                        type="button"
+                        onClick={() => setEditingCard({ ...editingCard, color_theme: c.value })}
+                        className={`w-9 h-9 rounded-lg ${c.bg} border-2 transition ${
+                          editingCard.color_theme === c.value ? 'ring-2 ring-indigo-500 ring-offset-2 border-indigo-500' : 'border-slate-200'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={editingCard.is_active}
+                    onChange={(e) => setEditingCard({ ...editingCard, is_active: e.target.checked })}
+                    className="w-5 h-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500/20"
+                  />
+                  <span className="text-sm font-semibold text-slate-700">Show on page</span>
+                </label>
               </div>
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={editingCard.is_active}
-                  onChange={(e) => setEditingCard({ ...editingCard, is_active: e.target.checked })}
-                  className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500/20"
-                />
-                <span className="text-sm font-semibold text-slate-700">Show on page</span>
-              </label>
-            </div>
-            <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-slate-200">
-              <button onClick={() => setEditingCard(null)} className="px-5 py-2.5 text-sm font-semibold text-slate-600 hover:text-slate-900">
-                Cancel
-              </button>
-              <button
-                onClick={() => saveCard(editingCard)}
-                disabled={saving || !editingCard.title.trim()}
-                className="px-5 py-2.5 bg-blue-600 text-white rounded-lg font-semibold text-sm hover:bg-blue-700 transition disabled:opacity-50"
-              >
-                {saving ? 'Saving...' : 'Save'}
-              </button>
+              <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-slate-200">
+                <button onClick={() => setEditingCard(null)} className="px-5 py-2.5 text-sm font-semibold text-slate-600 hover:text-slate-900">
+                  Cancel
+                </button>
+                <button
+                  onClick={() => saveCard(editingCard)}
+                  disabled={saving || !editingCard.title.trim()}
+                  className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-semibold text-sm hover:bg-indigo-700 transition disabled:opacity-50 shadow-sm"
+                >
+                  {saving ? 'Saving...' : 'Save'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -834,28 +872,31 @@ export default function AdminAboutPage() {
       {deleteConfirm && (
         <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={() => setDeleteConfirm(null)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-                <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-                </svg>
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
+            <div className="h-1 w-full bg-linear-to-r from-red-400 via-rose-400 to-red-400" />
+            <div className="p-6">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                  <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900">Delete {deleteConfirm.type}</h3>
+                  <p className="text-sm text-slate-500">This action cannot be undone.</p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-lg font-bold text-slate-900">Delete {deleteConfirm.type}</h3>
-                <p className="text-sm text-slate-500">This action cannot be undone.</p>
+              <p className="text-sm text-slate-600 mb-6">
+                Are you sure you want to delete <span className="font-semibold text-slate-900">"{deleteConfirm.title}"</span>?
+              </p>
+              <div className="flex items-center justify-end gap-3">
+                <button onClick={() => setDeleteConfirm(null)} className="px-5 py-2.5 text-sm font-semibold text-slate-600 hover:text-slate-900">
+                  Cancel
+                </button>
+                <button onClick={handleDelete} className="px-5 py-2.5 bg-red-600 text-white rounded-xl font-semibold text-sm hover:bg-red-700 transition">
+                  Delete
+                </button>
               </div>
-            </div>
-            <p className="text-sm text-slate-600 mb-6">
-              Are you sure you want to delete <span className="font-semibold text-slate-900">"{deleteConfirm.title}"</span>?
-            </p>
-            <div className="flex items-center justify-end gap-3">
-              <button onClick={() => setDeleteConfirm(null)} className="px-5 py-2.5 text-sm font-semibold text-slate-600 hover:text-slate-900">
-                Cancel
-              </button>
-              <button onClick={handleDelete} className="px-5 py-2.5 bg-red-600 text-white rounded-lg font-semibold text-sm hover:bg-red-700 transition">
-                Delete
-              </button>
             </div>
           </div>
         </div>

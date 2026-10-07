@@ -3,15 +3,38 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFileAlt, faEnvelope, faUsers, faClock, faCheckCircle, faArrowDown, faSearch, faFilter, faEdit, faHistory, faTimes, faThumbsUp, faThumbsDown, faUserCircle, faSignOutAlt, faFilePdf, faExclamationTriangle, faGavel, faFolderOpen, faInbox, faSpinner, faInfoCircle,  faUser, faSchool, faTag, faCalendarAlt, faBookOpen, faLayerGroup, faFlag, faWarning } from '@fortawesome/free-solid-svg-icons';
+import {
+  faCheckCircle, faTimesCircle, faClock, faFileAlt, faEnvelope, faSearch, faFilter, faSync,
+  faUserCircle, faGavel, faInfoCircle, faFolderOpen, faInbox, faSpinner,
+  faFilePdf, faCalendarAlt, faTag, faUser, faSchool, faFlag, faExclamationTriangle,
+  faThumbsUp, faThumbsDown, faArrowDown, faUsers, faBookOpen, faLayerGroup, faEdit, faHistory,
+  faBars, faDashboard, faCog, faQuestionCircle, faBell, faLifeRing,
+  faChevronDown, faChevronUp, faEnvelopeOpen, faClipboardList
+} from '@fortawesome/free-solid-svg-icons';
 import ReassignModal from '../components/ReassignModal';
 import DowngradeModal from '../components/DowngradeModal';
 import ConfirmModal from '../components/ConfirmModal';
 import EditSubmission from '../components/EditSubmission';
 import ViewHistory from '../components/ViewHistory';
 import DiscussionSection from '../components/DiscussionSection';
+import Sidebar from '../components/master-components/Sidebar';
+import { QuickLinkCard, UnderUpdateModal } from '../components/master-components/QuickLinkCard';
+import UnderDevelopment from '../components/master-components/UnderDevelopment';
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL).replace(/\/+$/, '');
+
+const PAPER_CATEGORIES = [
+  'Completed Extension Project Paper',
+  'Ongoing Extension Project Paper',
+];
+
+const THEMATIC_AREAS = [
+  'Food Production, Agriculture, Fisheries, and Natural Resource Systems',
+  'Health, Nutrition, Wellness, and Community Care',
+  'Education, Literacy, Skills Development, and Lifelong Learning',
+  'Livelihood, Entrepreneurship, Cooperatives, MSMEs, and Local Economic Development',
+  'Environment, Climate Action, Disaster Risk Reduction, and Community Resilience',
+];
 
 // ---------- Reusable modal sub-components ----------
 function SectionTitle({ icon, color = 'slate', label }) {
@@ -64,21 +87,304 @@ function InfoCard({ label, value, span = 1, emphasis = false, mono = false, badg
   );
 }
 
+// ---------- Settings Panel Component ----------
+function SettingsPanel({ isOpen, onClose }) {
+  const [settings, setSettings] = useState({
+    emailNotifications: true,
+    autoRefresh: false,
+    refreshInterval: 30,
+    compactView: false,
+    showEmailPreview: true,
+  });
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-100 overflow-y-auto">
+      <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={onClose}></div>
+      <div className="relative min-h-full flex items-center justify-center p-4">
+        <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden">
+          <div className="bg-linear-to-r from-indigo-50 to-blue-50 px-6 py-5 border-b border-slate-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-indigo-100 border border-indigo-200 flex items-center justify-center">
+                  <FontAwesomeIcon icon={faCog} className="w-5 h-5 text-indigo-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900">Settings</h3>
+                  <p className="text-xs text-slate-500">Manage your preferences</p>
+                </div>
+              </div>
+              <button
+                onClick={onClose}
+                className="w-9 h-9 flex items-center justify-center rounded-lg bg-white hover:bg-slate-100 text-slate-500 transition"
+              >
+                <FontAwesomeIcon icon={faTimesCircle} className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          <div className="p-6 space-y-6">
+            <div>
+              <h4 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-3">Notifications</h4>
+              <div className="space-y-3">
+                <label className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-100 transition">
+                  <div className="flex items-center gap-3">
+                    <FontAwesomeIcon icon={faBell} className="w-4 h-4 text-indigo-500" />
+                    <span className="text-sm font-medium text-slate-700">Email Notifications</span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={settings.emailNotifications}
+                    onChange={(e) => setSettings({ ...settings, emailNotifications: e.target.checked })}
+                    className="w-5 h-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
+                  />
+                </label>
+                <label className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-100 transition">
+                  <div className="flex items-center gap-3">
+                    <FontAwesomeIcon icon={faSync} className="w-4 h-4 text-indigo-500" />
+                    <span className="text-sm font-medium text-slate-700">Auto Refresh</span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={settings.autoRefresh}
+                    onChange={(e) => setSettings({ ...settings, autoRefresh: e.target.checked })}
+                    className="w-5 h-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
+                  />
+                </label>
+                {settings.autoRefresh && (
+                  <div className="ml-7 flex items-center gap-3">
+                    <label className="text-xs text-slate-500">Interval (seconds):</label>
+                    <input
+                      type="number"
+                      min="10"
+                      max="300"
+                      value={settings.refreshInterval}
+                      onChange={(e) => setSettings({ ...settings, refreshInterval: parseInt(e.target.value) })}
+                      className="w-20 px-3 py-1.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 focus:outline-none"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <h4 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-3">Display</h4>
+              <div className="space-y-3">
+                <label className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-100 transition">
+                  <div className="flex items-center gap-3">
+                    <FontAwesomeIcon icon={faClipboardList} className="w-4 h-4 text-indigo-500" />
+                    <span className="text-sm font-medium text-slate-700">Compact View</span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={settings.compactView}
+                    onChange={(e) => setSettings({ ...settings, compactView: e.target.checked })}
+                    className="w-5 h-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
+                  />
+                </label>
+                <label className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-100 transition">
+                  <div className="flex items-center gap-3">
+                    <FontAwesomeIcon icon={faEnvelopeOpen} className="w-4 h-4 text-indigo-500" />
+                    <span className="text-sm font-medium text-slate-700">Show Email Preview</span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={settings.showEmailPreview}
+                    onChange={(e) => setSettings({ ...settings, showEmailPreview: e.target.checked })}
+                    className="w-5 h-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
+                  />
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-3">
+            <button
+              onClick={onClose}
+              className="px-5 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl font-semibold text-sm hover:bg-slate-100 transition"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={onClose}
+              className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-semibold text-sm hover:bg-indigo-700 transition shadow-sm hover:shadow"
+            >
+              Save Settings
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------- Help Center Panel Component ----------
+function HelpCenterPanel({ isOpen, onClose }) {
+  const [expandedFaq, setExpandedFaq] = useState(null);
+  const [underUpdateFeature, setUnderUpdateFeature] = useState(null);
+
+  const faqs = [
+    {
+      q: 'How do I endorse a submission?',
+      a: 'Open a submission by clicking on any row in the table. In the details modal, scroll to the "Cast Your Vote" section and click "Endorse for Presentation". A confirmation dialog will appear before your vote is recorded.'
+    },
+    {
+      q: 'What is the difference between Non-Competitive and Poster Only?',
+      a: 'Non-Competitive submissions are accepted for poster presentation but do not compete for awards. Poster Only submissions are similar but may have different presentation requirements. Only Completed Extension Project Papers can be downgraded to these categories.'
+    },
+    {
+      q: 'How do I edit submission details?',
+      a: 'In the submission details modal, click "Edit Details" in the toolbar. You can modify fields like title, authors, category, and thematic area. All changes are recorded in the edit history.'
+    },
+    {
+      q: 'How do I view the edit history?',
+      a: 'Click "View History" in the submission details modal toolbar. This shows all edits made to the submission, including who made them and what changed.'
+    },
+    {
+      q: 'Can I communicate with other evaluators?',
+      a: 'Yes! The Evaluator Discussion section in the submission details modal allows you to post messages that all evaluators can see. This is useful for clarifying decisions or asking for additional input.'
+    },
+    {
+      q: 'What happens after I cast my vote?',
+      a: 'Your vote is recorded and contributes to the evaluation decision. Once all evaluators have voted or the Master Approver makes a final decision, the submission status will be updated accordingly.'
+    },
+  ];
+
+  const handleUnderUpdateClick = (featureName) => {
+    setUnderUpdateFeature(featureName);
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <>
+      <div className="fixed inset-0 z-100 overflow-y-auto">
+        <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={onClose}></div>
+        <div className="relative min-h-full flex items-center justify-center p-4">
+          <div className="relative w-full max-w-3xl bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+            <div className="bg-linear-to-r from-blue-50 to-cyan-50 px-6 py-5 border-b border-slate-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-blue-100 border border-blue-200 flex items-center justify-center">
+                    <FontAwesomeIcon icon={faLifeRing} className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900">Help Center</h3>
+                    <p className="text-xs text-slate-500">Find answers and learn how to use the dashboard</p>
+                  </div>
+                </div>
+                <button
+                  onClick={onClose}
+                  className="w-9 h-9 flex items-center justify-center rounded-lg bg-white hover:bg-slate-100 text-slate-500 transition"
+                >
+                  <FontAwesomeIcon icon={faTimesCircle} className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+                <QuickLinkCard
+                  icon={faFileAlt}
+                  title="Documentation"
+                  description="Read the full guide"
+                  color="indigo"
+                  underUpdate={true}
+                  onUnderUpdateClick={handleUnderUpdateClick}
+                />
+                <QuickLinkCard
+                  icon={faEnvelope}
+                  title="Contact Support"
+                  description="Get help from our team"
+                  color="emerald"
+                  underUpdate={true}
+                  onUnderUpdateClick={handleUnderUpdateClick}
+                />
+                <QuickLinkCard
+                  icon={faHistory}
+                  title="Video Tutorials"
+                  description="Watch step-by-step guides"
+                  color="blue"
+                  underUpdate={true}
+                  onUnderUpdateClick={handleUnderUpdateClick}
+                />
+              </div>
+
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-3 flex items-center gap-2">
+                  <FontAwesomeIcon icon={faQuestionCircle} className="w-3.5 h-3.5" />
+                  Frequently Asked Questions
+                </h4>
+                <div className="space-y-2">
+                  {faqs.map((faq, idx) => (
+                    <div key={idx} className="border border-slate-200 rounded-xl overflow-hidden">
+                      <button
+                        onClick={() => setExpandedFaq(expandedFaq === idx ? null : idx)}
+                        className="w-full flex items-center justify-between p-4 text-left hover:bg-slate-50 transition"
+                      >
+                        <span className="font-semibold text-sm text-slate-800 pr-4">{faq.q}</span>
+                        <FontAwesomeIcon
+                          icon={expandedFaq === idx ? faChevronUp : faChevronDown}
+                          className="w-4 h-4 text-slate-400 shrink-0"
+                        />
+                      </button>
+                      {expandedFaq === idx && (
+                        <div className="px-4 pb-4 pt-0">
+                          <p className="text-sm text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-100">
+                            {faq.a}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center">
+              <p className="text-xs text-slate-500">
+                <FontAwesomeIcon icon={faInfoCircle} className="w-3 h-3 mr-1" />
+                Need more help? Contact support@pemnet.com
+              </p>
+              <button
+                onClick={onClose}
+                className="px-6 py-2.5 bg-blue-600 text-white rounded-xl font-semibold text-sm hover:bg-blue-700 transition shadow-sm hover:shadow"
+              >
+                Got it
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <UnderUpdateModal
+        isOpen={!!underUpdateFeature}
+        onClose={() => setUnderUpdateFeature(null)}
+        featureName={underUpdateFeature}
+      />
+    </>
+  );
+}
+
 export default function ReviewPage() {
   const [currentUser, setCurrentUser] = useState(null);
   const [currentEvaluatorId, setCurrentEvaluatorId] = useState(null);
   const [activeTab, setActiveTab] = useState('system');
   const [submissions, setSubmissions] = useState([]);
+  const [allSubmissions, setAllSubmissions] = useState([]);
   const [selectedSubmission, setSelectedSubmission] = useState(null);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
-  
+  const [thematicAreaFilter, setThematicAreaFilter] = useState('all');
+  const [extractedCache, setExtractedCache] = useState({});
+
   const [allUsers, setAllUsers] = useState([]);
   const [emailExtractedData, setEmailExtractedData] = useState(null);
 
-  const [sucList, setSucList] = useState([]); 
+  const [sucList, setSucList] = useState([]);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
@@ -89,21 +395,43 @@ export default function ReviewPage() {
 
   const [showReassignModal, setShowReassignModal] = useState(false);
   const [reassignLoading, setReassignLoading] = useState(false);
-  
+
   const [showDowngradeModal, setShowDowngradeModal] = useState(false);
   const [downgradeLoading, setDowngradeLoading] = useState(false);
-  
+
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [pendingVoteAction, setPendingVoteAction] = useState(null);
-  
+
   const [checkingEmails, setCheckingEmails] = useState(false);
   const [isModalLoading, setIsModalLoading] = useState(false);
 
   const [showDowngradeConfirm, setShowDowngradeConfirm] = useState(false);
   const [pendingDowngradeType, setPendingDowngradeType] = useState(null);
   const [downgradeConfirmLoading, setDowngradeConfirmLoading] = useState(false);
-  
+
+  // Sidebar States
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [activeNavItem, setActiveNavItem] = useState('dashboard');
+  const [showSettings, setShowSettings] = useState(false);
+  const [showHelpCenter, setShowHelpCenter] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // ===== DYNAMIC FIELD MAPPING =====
+  const FIELD_MAP = {
+    title:                    { system: 'extension_project_title',  email: 'title',                      fallbackEmail: 'subject' },
+    projectLeader:            { system: 'project_leader',           email: 'project_leader',             fallbackEmail: 'project_leader_name' },
+    authorsList:              { system: 'co_authors',               email: 'authors_list' },
+    suc:                      { system: 'suc_agencies',             email: 'sucs' },
+    correspondingAuthorName:  { system: 'corresponding_author_name', email: 'corresponding_author_name' },
+    correspondingAuthorEmail: { system: 'corresponding_author_email', email: 'corresponding_author_email', fallbackEmail: 'sender_email' },
+    correspondingAuthorPos:   { system: 'corresponding_author_position', email: 'corresponding_author_position' },
+    paperCategory:            { system: 'paper_category',           email: 'paper_category' },
+    thematicArea:             { system: 'thematic_area',            email: 'thematic_area' },
+    theme:                    { system: 'theme',                    email: 'theme' },
+  };
+
   useEffect(() => {
     const storedUser = localStorage.getItem('pemnet_user');
     if (storedUser) {
@@ -111,9 +439,14 @@ export default function ReviewPage() {
         const user = JSON.parse(storedUser);
         setCurrentUser(user);
         setCurrentEvaluatorId(user.id || 3);
+        if (user.role === 'admin' || user.role === 'master_approver') {
+          window.location.href = '/master-reviewer';
+        }
       } catch (error) {
         console.error('Error parsing user data:', error);
       }
+    } else {
+      window.location.href = '/login';
     }
 
     fetchAllUsers();
@@ -151,18 +484,65 @@ export default function ReviewPage() {
   const fetchSubmissions = async () => {
     setLoading(true);
     try {
-      let url;
-      if (activeTab === 'system') {
-        url = `${API_URL}/api/submissions`;
-      } else {
-        url = `${API_URL}/api/email-submissions?status=all`;
+      const [systemRes, emailRes] = await Promise.allSettled([
+        fetch(`${API_URL}/api/submissions`),
+        fetch(`${API_URL}/api/email-submissions?status=all`),
+      ]);
+
+      let systemData = [];
+      let emailData = [];
+
+      if (systemRes.status === 'fulfilled' && systemRes.value.ok) {
+        try {
+          const parsed = await systemRes.value.json();
+          systemData = Array.isArray(parsed) ? parsed : [];
+        } catch (err) {
+          console.error('Failed to parse system submissions JSON:', err);
+        }
       }
-      
-      const res = await fetch(url);
-      if (res.ok) {
-        const data = await res.json();
-        setSubmissions(data);
+
+      if (emailRes.status === 'fulfilled' && emailRes.value.ok) {
+        try {
+          const parsed = await emailRes.value.json();
+          emailData = Array.isArray(parsed) ? parsed : [];
+        } catch (err) {
+          console.error('Failed to parse email submissions JSON:', err);
+        }
       }
+
+      const normalizedSystem = systemData.map((sub) => ({
+        ...sub,
+        submission_id: sub.submission_id || null,
+        __source: 'system',
+      }));
+
+      const normalizedEmail = emailData.map((sub) => ({
+        ...sub,
+        submission_id: sub.submission_id || null,
+        __source: 'email',
+      }));
+
+      setAllSubmissions([...normalizedSystem, ...normalizedEmail]);
+
+      if (normalizedEmail.length > 0) {
+        const cacheEntries = await Promise.all(
+          normalizedEmail.map(async (sub) => {
+            try {
+              const res = await fetch(`${API_URL}/api/email-submissions/${sub.id}/extracted-data`);
+              if (!res.ok) return [sub.id, null];
+              const data = await res.json();
+              return [sub.id, data];
+            } catch {
+              return [sub.id, null];
+            }
+          })
+        );
+        const nextCache = {};
+        cacheEntries.forEach(([id, data]) => { if (data) nextCache[id] = data; });
+        setExtractedCache(nextCache);
+      }
+
+      setSubmissions(activeTab === 'system' ? normalizedSystem : normalizedEmail);
     } catch (error) {
       console.error('Error fetching submissions:', error);
       showToast('Failed to fetch submissions', 'error');
@@ -203,72 +583,74 @@ export default function ReviewPage() {
   };
 
   const selectSubmission = async (sub) => {
-      setSelectedSubmission(sub);
-      setEmailExtractedData(null);
+    setSelectedSubmission(sub);
+    setEmailExtractedData(null);
+    setIsModalLoading(true);
 
-      const subId = sub.submission_id || sub.id;
-      
-      console.log('Selecting submission with ID:', subId, 'Type:', typeof subId);
-      
-      try {
-          const votesRes = await fetch(`${API_URL}/api/submissions/${subId}/evaluate`);
-          if (votesRes.ok) {
-              const votesData = await votesRes.json();
-              setVotes({ 
-                  ...votesData, 
-                  evaluation_status: votesData.evaluation_status || 'pending' 
-              });
-          } else {
-              console.error('Failed to fetch votes:', await votesRes.text());
-          }
+    const subId = sub.submission_id || sub.id;
 
-          if (activeTab === 'email' && sub.id) {
-              await fetchExtractedData(sub.id);
-          }
-      } catch (error) {
-          console.error('Error selecting submission:', error);
-          showToast('Failed to load submission details', 'error');
+    try {
+      const votesRes = await fetch(`${API_URL}/api/submissions/${subId}/evaluate`);
+      if (votesRes.ok) {
+        const votesData = await votesRes.json();
+        setVotes({
+          ...votesData,
+          evaluation_status: votesData.evaluation_status || 'pending'
+        });
+      } else {
+        console.error('Failed to fetch votes:', await votesRes.text());
       }
+
+      if (activeTab === 'email' && sub.id) {
+        await fetchExtractedData(sub.id);
+      }
+    } catch (error) {
+      console.error('Error selecting submission:', error);
+      showToast('Failed to load submission details', 'error');
+    } finally {
+      setIsModalLoading(false);
+      setIsModalOpen(true);
+    }
   };
 
   const handleVote = async (vote_status) => {
-      if (!selectedSubmission) return;
+    if (!selectedSubmission) return;
 
-      const subId = selectedSubmission.submission_id || selectedSubmission.id;
+    const subId = selectedSubmission.submission_id || selectedSubmission.id;
 
-      try {
-          const res = await fetch(`${API_URL}/api/submissions/${subId}/evaluate`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                  evaluator_id: currentEvaluatorId,
-                  vote_status: vote_status,
-                  vote_notes: voteNotes
-              }),
-          });
+    try {
+      const res = await fetch(`${API_URL}/api/submissions/${subId}/evaluate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          evaluator_id: currentEvaluatorId,
+          vote_status: vote_status,
+          vote_notes: voteNotes
+        }),
+      });
 
-          if (res.ok) {
-              const data = await res.json();
-              setVotes(data);
-              showToast(`Voted: ${vote_status.replace('_', ' ')}`, 'success');
-              setVoteNotes('');
-              if (data.evaluation_status !== 'pending') fetchSubmissions();
-              return true;
-          } else {
-              const error = await res.json();
-              showToast(error.detail || 'Failed to vote', 'error');
-              return false;
-          }
-      } catch (error) {
-          showToast('Failed to vote', 'error');
-          return false;
+      if (res.ok) {
+        const data = await res.json();
+        setVotes(data);
+        showToast(`Voted: ${vote_status.replace('_', ' ')}`, 'success');
+        setVoteNotes('');
+        if (data.evaluation_status !== 'pending') fetchSubmissions();
+        return true;
+      } else {
+        const error = await res.json();
+        showToast(error.detail || 'Failed to vote', 'error');
+        return false;
       }
+    } catch (error) {
+      showToast('Failed to vote', 'error');
+      return false;
+    }
   };
 
   const handleEndorseWithConfirm = () => {
-      if (!selectedSubmission) return;
-      setPendingVoteAction('endorse');
-      setShowConfirmModal(true);
+    if (!selectedSubmission) return;
+    setPendingVoteAction('endorse');
+    setShowConfirmModal(true);
   };
 
   const confirmVote = async () => {
@@ -294,37 +676,37 @@ export default function ReviewPage() {
   };
 
   const handleDowngradeVote = async (downgradeType) => {
-      if (!selectedSubmission || !downgradeType) return;
-      setDowngradeLoading(true);
-      
-      const subId = selectedSubmission.submission_id || selectedSubmission.id;
-      
-      try {
-          const res = await fetch(`${API_URL}/api/submissions/${subId}/evaluate`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                  evaluator_id: currentEvaluatorId,
-                  vote_status: downgradeType,
-                  vote_notes: voteNotes,
-              }),
-          });
-          if (res.ok) {
-              const data = await res.json();
-              setVotes(data);
-              showToast(`Submission downgraded to ${downgradeType === 'downgraded-non_competitive' ? 'Non-Competitive' : 'Poster Only'}`, 'success');
-              setVoteNotes('');
-              setDowngradeLoading(false);
-              fetchSubmissions();
-          } else {
-              const error = await res.json();
-              showToast(error.detail || 'Failed to downgrade', 'error');
-              setDowngradeLoading(false);
-          }
-      } catch (error) {
-          showToast('Failed to downgrade', 'error');
-          setDowngradeLoading(false);
+    if (!selectedSubmission || !downgradeType) return;
+    setDowngradeLoading(true);
+
+    const subId = selectedSubmission.submission_id || selectedSubmission.id;
+
+    try {
+      const res = await fetch(`${API_URL}/api/submissions/${subId}/evaluate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          evaluator_id: currentEvaluatorId,
+          vote_status: downgradeType,
+          vote_notes: voteNotes,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setVotes(data);
+        showToast(`Submission downgraded to ${downgradeType === 'downgraded-non_competitive' ? 'Non-Competitive' : 'Poster Only'}`, 'success');
+        setVoteNotes('');
+        setDowngradeLoading(false);
+        fetchSubmissions();
+      } else {
+        const error = await res.json();
+        showToast(error.detail || 'Failed to downgrade', 'error');
+        setDowngradeLoading(false);
       }
+    } catch (error) {
+      showToast('Failed to downgrade', 'error');
+      setDowngradeLoading(false);
+    }
   };
 
   const confirmDowngradeVote = async () => {
@@ -340,121 +722,117 @@ export default function ReviewPage() {
   };
 
   const handleEditSave = async (formData) => {
-      if (!selectedSubmission) return;
-      setEditLoading(true);
-      
-      try {
-        const submissionId = selectedSubmission.submission_id || selectedSubmission.id;
-        
-        let url;
-        let payload = { ...formData };
+    if (!selectedSubmission) return;
+    setEditLoading(true);
 
-        if (activeTab === 'email' && emailExtractedData) {
-          url = `${API_URL}/api/extracted-data/${emailExtractedData.id}/edit`;
-          payload.evaluator_id = currentEvaluatorId;
-        } else {
-          url = `${API_URL}/api/submissions/${submissionId}/edit`;
-          payload.evaluator_id = currentEvaluatorId;
-        }
-        
-        const res = await fetch(url, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
+    try {
+      const submissionId = selectedSubmission.submission_id || selectedSubmission.id;
 
-        if (res.ok) {
-          const data = await res.json();
-          
-          let message = data.message || 'Submission updated successfully!';
-          if (data.drive_move && data.drive_move.moved && data.drive_move.moved.length > 0) {
-            message += ` ${data.drive_move.moved.length} file(s) moved to the new folder.`;
-            if (data.drive_move.trashed_folders && data.drive_move.trashed_folders.length > 0) {
-              message += ` ${data.drive_move.trashed_folders.length} empty folder(s) cleaned up.`;
-            }
-          } else if (data.drive_move && data.drive_move.error) {
-            message += ' (Warning: Could not move files in Google Drive)';
-          }
-          
-          showToast(message, 'success');
-          setShowEditModal(false);
-          
-          // Refresh extracted data if applicable
-          if (activeTab === 'email' && selectedSubmission.id) {
-            await fetchExtractedData(selectedSubmission.id);
-          }
-          
-          // Refresh submissions to get updated data
-          fetchSubmissions();
-          
-          // Update selected submission with new data
-          if (activeTab === 'system') {
-            setSelectedSubmission(prev => ({
-              ...prev,
-              ...formData
-            }));
-          }
-        } else {
-          const error = await res.json();
-          showToast(error.detail || 'Failed to update submission', 'error');
-        }
-      } catch (error) {
-        console.error('Error updating submission:', error);
-        showToast('Failed to update submission', 'error');
-      } finally {
-        setEditLoading(false);
+      let url;
+      let payload = { ...formData };
+
+      if (activeTab === 'email' && emailExtractedData) {
+        url = `${API_URL}/api/extracted-data/${emailExtractedData.id}/edit`;
+        payload.evaluator_id = currentEvaluatorId;
+      } else {
+        url = `${API_URL}/api/submissions/${submissionId}/edit`;
+        payload.evaluator_id = currentEvaluatorId;
       }
-    };
+
+      const res = await fetch(url, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+
+        let message = data.message || 'Submission updated successfully!';
+        if (data.drive_move && data.drive_move.moved && data.drive_move.moved.length > 0) {
+          message += ` ${data.drive_move.moved.length} file(s) moved to the new folder.`;
+          if (data.drive_move.trashed_folders && data.drive_move.trashed_folders.length > 0) {
+            message += ` ${data.drive_move.trashed_folders.length} empty folder(s) cleaned up.`;
+          }
+        } else if (data.drive_move && data.drive_move.error) {
+          message += ' (Warning: Could not move files in Google Drive)';
+        }
+
+        showToast(message, 'success');
+        setShowEditModal(false);
+
+        if (activeTab === 'email' && selectedSubmission.id) {
+          await fetchExtractedData(selectedSubmission.id);
+        }
+
+        fetchSubmissions();
+
+        if (activeTab === 'system') {
+          setSelectedSubmission(prev => ({
+            ...prev,
+            ...formData
+          }));
+        }
+      } else {
+        const error = await res.json();
+        showToast(error.detail || 'Failed to update submission', 'error');
+      }
+    } catch (error) {
+      console.error('Error updating submission:', error);
+      showToast('Failed to update submission', 'error');
+    } finally {
+      setEditLoading(false);
+    }
+  };
 
   const getEditFields = (submissionType) => {
     if (submissionType === 'email') {
       return {
-        title: { label: 'Title', icon: faFileAlt, type: 'text' },
-        project_leader: { label: 'Project Leader', icon: faUser, type: 'text' },
-        sucs: { label: 'SUC / Agency', icon: faSchool, type: 'suc' },
-        corresponding_author_name: { label: 'Corresponding Author', icon: faUserCircle, type: 'text' },
-        corresponding_author_email: { label: 'Corresponding Email', icon: faEnvelope, type: 'email' },
-        corresponding_author_position: { label: 'Corresponding Position', icon: faTag, type: 'text' },
-        authors_list: { label: 'Authors List', icon: faUsers, type: 'text' },
-        paper_category: { label: 'Paper Category', icon: faBookOpen, type: 'select', options: [
+        title: { label: 'Title', icon: faFileAlt, type: 'text', section: 'overview' },
+        project_leader: { label: 'Project Leader', icon: faUser, type: 'text', section: 'authors' },
+        sucs: { label: 'SUC / Agency', icon: faSchool, type: 'suc', section: 'authors' },
+        corresponding_author_name: { label: 'Corresponding Author', icon: faUserCircle, type: 'text', section: 'contact' },
+        corresponding_author_email: { label: 'Corresponding Email', icon: faEnvelope, type: 'email', section: 'contact' },
+        corresponding_author_position: { label: 'Corresponding Position', icon: faTag, type: 'text', section: 'contact' },
+        authors_list: { label: 'Authors List', icon: faUsers, type: 'text', section: 'authors' },
+        paper_category: { label: 'Paper Category', icon: faBookOpen, type: 'select', section: 'classification', options: [
+          'Not specified',
           'Completed Extension Project Paper',
-          'Ongoing Extension Project Paper',
-          'Not specified'
+          'Ongoing Extension Project Paper'
         ]},
-        thematic_area: { label: 'Thematic Area', icon: faLayerGroup, type: 'select', options: [
+        thematic_area: { label: 'Thematic Area', icon: faLayerGroup, type: 'select', section: 'classification', options: [
+          'Not specified',
           'Food Production, Agriculture, Fisheries, and Natural Resource Systems',
           'Health, Nutrition, Wellness, and Community Care',
           'Education, Literacy, Skills Development, and Lifelong Learning',
           'Livelihood, Entrepreneurship, Cooperatives, MSMEs, and Local Economic Development',
-          'Environment, Climate Action, Disaster Risk Reduction, and Community Resilience',
-          'Not specified'
+          'Environment, Climate Action, Disaster Risk Reduction, and Community Resilience'
         ]},
-        theme: { label: 'Theme', icon: faFlag, type: 'text' }
+        theme: { label: 'Theme', icon: faFlag, type: 'text', section: 'classification' }
       };
     }
-    
-    // System submission fields
+
     return {
-      extension_project_title: { label: 'Title', icon: faFileAlt, type: 'text' },
-      project_leader: { label: 'Project Leader', icon: faUser, type: 'text' },
-      presenter: { label: 'Presenter', icon: faUserCircle, type: 'text' },
-      suc_agencies: { label: 'SUC / Agency', icon: faSchool, type: 'suc' },
-      corresponding_author_name: { label: 'Corresponding Author', icon: faUserCircle, type: 'text' },
-      corresponding_author_email: { label: 'Corresponding Email', icon: faEnvelope, type: 'email' },
-      corresponding_author_position: { label: 'Corresponding Position', icon: faTag, type: 'text' },
-      co_authors: { label: 'Authors', icon: faUsers, type: 'text' },
-      paper_category: { label: 'Paper Category', icon: faBookOpen, type: 'select', options: [
+      extension_project_title: { label: 'Title', icon: faFileAlt, type: 'text', section: 'overview' },
+      project_leader: { label: 'Project Leader', icon: faUser, type: 'text', section: 'authors' },
+      presenter: { label: 'Presenter', icon: faUserCircle, type: 'text', section: 'authors' },
+      suc_agencies: { label: 'SUC / Agency', icon: faSchool, type: 'suc', section: 'authors' },
+      corresponding_author_name: { label: 'Corresponding Author', icon: faUserCircle, type: 'text', section: 'contact' },
+      corresponding_author_email: { label: 'Corresponding Email', icon: faEnvelope, type: 'email', section: 'contact' },
+      corresponding_author_position: { label: 'Corresponding Position', icon: faTag, type: 'text', section: 'contact' },
+      co_authors: { label: 'Co-Authors', icon: faUsers, type: 'text', section: 'authors' },
+      paper_category: { label: 'Paper Category', icon: faBookOpen, type: 'select', section: 'classification', options: [
+        'Not specified',
         'Completed Extension Project Paper',
-        'Ongoing Extension Project Paper',
-        'Not specified'
+        'Ongoing Extension Project Paper'
       ]},
-      thematic_area: { label: 'Thematic Area', icon: faLayerGroup, type: 'select', options: [
+      thematic_area: { label: 'Thematic Area', icon: faLayerGroup, type: 'select', section: 'classification', options: [
+        'Not specified',
         'Food Production, Agriculture, Fisheries, and Natural Resource Systems',
         'Health, Nutrition, Wellness, and Community Care',
         'Education, Literacy, Skills Development, and Lifelong Learning',
         'Livelihood, Entrepreneurship, Cooperatives, MSMEs, and Local Economic Development',
-        'Environment, Climate Action, Disaster Risk Reduction, and Community Resilience',
-        'Not specified'
+        'Environment, Climate Action, Disaster Risk Reduction, and Community Resilience'
       ]}
     };
   };
@@ -462,47 +840,49 @@ export default function ReviewPage() {
   const filteredSubmissions = submissions.filter(sub => {
     if (!sub) return false;
 
+    const extracted = extractedCache[sub.id] || {};
+
     const matchesStatusFilter = (() => {
       if (statusFilter === 'all') return true;
       const s = String(sub.status || '').toLowerCase();
-
-      // "downgraded" is a GROUP filter — matches all downgrade variants
       if (statusFilter === 'downgraded') {
         return s === 'downgraded' || s === 'downgrade' || s.startsWith('downgraded');
       }
-
-      // Exact match for everything else
       return s === String(statusFilter).toLowerCase();
     })();
-
     if (!matchesStatusFilter) return false;
 
-    if (activeTab === 'system') {
-      if (categoryFilter !== 'all' && sub.paper_category !== categoryFilter) return false;
-
-      if (searchTerm) {
-        const search = searchTerm.toLowerCase();
-        const title = (sub.extension_project_title || '').toLowerCase();
-        const leader = (sub.project_leader || '').toLowerCase();
-        const suc = (sub.suc_agencies || '').toLowerCase();
-        return title.includes(search) || leader.includes(search) || suc.includes(search);
-      }
-      return true;
-    } else {
-      if (searchTerm) {
-        const search = searchTerm.toLowerCase();
-        const subject = (sub.subject || '').toLowerCase();
-        const projectLeader = (sub.project_leader_name || '').toLowerCase();
-        const senderEmail = (sub.sender_email || '').toLowerCase();
-        const senderName = (sub.sender_name || '').toLowerCase();
-
-        return subject.includes(search) ||
-               projectLeader.includes(search) ||
-               senderEmail.includes(search) ||
-               senderName.includes(search);
-      }
-      return true;
+    if (categoryFilter !== 'all') {
+      const cat = (extracted.paper_category || sub.paper_category || '').toString();
+      if (!cat.toLowerCase().includes(categoryFilter.toLowerCase())) return false;
     }
+
+    if (thematicAreaFilter !== 'all') {
+      const area = (extracted.thematic_area || sub.thematic_area || '').toString();
+      if (area !== thematicAreaFilter) return false;
+    }
+
+    if (searchTerm) {
+      const q = searchTerm.toLowerCase();
+      if (activeTab === 'system') {
+        return (
+          (sub.extension_project_title && sub.extension_project_title.toLowerCase().includes(q)) ||
+          (sub.project_leader && sub.project_leader.toLowerCase().includes(q)) ||
+          (sub.suc_agencies && sub.suc_agencies.toLowerCase().includes(q))
+        );
+      } else {
+        return (
+          (sub.subject && sub.subject.toLowerCase().includes(q)) ||
+          (sub.sender_name && sub.sender_name.toLowerCase().includes(q)) ||
+          (sub.sender_email && sub.sender_email.toLowerCase().includes(q)) ||
+          (sub.project_leader_name && sub.project_leader_name.toLowerCase().includes(q)) ||
+          (extracted.title && extracted.title.toLowerCase().includes(q)) ||
+          (extracted.project_leader && extracted.project_leader.toLowerCase().includes(q))
+        );
+      }
+    }
+
+    return true;
   });
 
   const isDowngraded = (status) => {
@@ -513,8 +893,7 @@ export default function ReviewPage() {
 
   const isPending = (status) => {
     if (!status) return true;
-    const s = String(status).toLowerCase();
-    return s === 'pending';
+    return String(status).toLowerCase() === 'pending';
   };
 
   const isEndorsed = (status) => {
@@ -523,26 +902,19 @@ export default function ReviewPage() {
     return s === 'endorse' || s === 'endorsed';
   };
 
-  const matchesStatusFilter = (subStatus) => {
-    if (statusFilter === 'all') return true;
-    const s = String(subStatus || '').toLowerCase();
-    const f = String(statusFilter).toLowerCase();
-
-    // "downgraded" is a GROUP filter — matches all downgrade variants
-    if (f === 'downgraded') {
-      return s === 'downgraded' || s === 'downgrade' || s.startsWith('downgraded');
-    }
-
-    // Exact match for everything else
-    return s === f;
+  const isUncategorized = (status) => {
+    if (!status) return false;
+    return String(status).toLowerCase() === 'uncategorized';
   };
 
   // Calculate stat counts based on the current filter
   const getFilteredStats = () => {
     if (activeTab === 'system') {
       const filtered = submissions.filter(sub => {
+        const extracted = extractedCache[sub.id] || {};
         if (!matchesStatusFilter(sub.status)) return false;
-        if (categoryFilter !== 'all' && sub.paper_category !== categoryFilter) return false;
+        if (categoryFilter !== 'all' && (sub.paper_category || extracted.paper_category) !== categoryFilter) return false;
+        if (thematicAreaFilter !== 'all' && (sub.thematic_area || extracted.thematic_area) !== thematicAreaFilter) return false;
         return true;
       });
 
@@ -566,6 +938,18 @@ export default function ReviewPage() {
 
       return { total, pending, endorsed, downgraded, uncategorized };
     }
+  };
+
+  const matchesStatusFilter = (subStatus) => {
+    if (statusFilter === 'all') return true;
+    const s = String(subStatus || '').toLowerCase();
+    const f = String(statusFilter).toLowerCase();
+
+    if (f === 'downgraded') {
+      return s === 'downgraded' || s === 'downgrade' || s.startsWith('downgraded');
+    }
+
+    return s === f;
   };
 
   const stats = getFilteredStats();
@@ -593,26 +977,35 @@ export default function ReviewPage() {
     const safeStatus = status || 'pending';
     switch (safeStatus) {
       case 'endorse':
-        return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+        return 'bg-emerald-100 text-emerald-700';
+      case 'downgraded-non_competitive':
+        return 'bg-yellow-100 text-yellow-700';
+      case 'downgraded-poster_only':
+        return 'bg-orange-100 text-orange-700';
       case 'downgraded':
-        return 'bg-amber-50 text-amber-700 border-amber-200';
+        return 'bg-yellow-100 text-yellow-700';
       case 'pending':
-        return 'bg-blue-50 text-blue-700 border-blue-200';
+        return 'bg-slate-100 text-slate-700';
       case 'uncategorized':
-        return 'bg-gray-50 text-gray-700 border-gray-200';
+        return 'bg-gray-100 text-gray-700';
+      case 'return_to_sender':
+        return 'bg-red-100 text-red-700';
       default:
-        return 'bg-slate-50 text-slate-700 border-slate-200';
+        return 'bg-slate-100 text-slate-700';
     }
   };
 
   const getStatusDisplay = (status) => {
     switch (status) {
       case 'endorse': return 'Endorsed';
+      case 'downgraded-non_competitive': return 'Non-Competitive (Poster)';
+      case 'downgraded-poster_only': return 'Poster Only';
       case 'downgraded': return 'Downgraded';
-      case 'pending': return 'Pending Review';
+      case 'pending': return 'Pending';
       case 'uncategorized': return 'Uncategorized';
       case 'processed': return 'Processed';
       case 'rejected': return 'Rejected';
+      case 'return_to_sender': return 'Return to Sender';
       default: return status || 'Pending';
     }
   };
@@ -622,24 +1015,24 @@ export default function ReviewPage() {
       case 'endorse':
         return faCheckCircle;
       case 'downgraded':
-        return faExclamationTriangle;
+        return faArrowDown;
       case 'pending':
         return faClock;
       case 'uncategorized':
-        return faWarning;
+        return faExclamationTriangle;
       default:
         return faInfoCircle;
     }
   };
 
   const getCategoryColor = (category) => {
-    if (!category) return 'bg-slate-50 text-slate-700 border-slate-200';
-    if (category.includes('Natural')) return 'bg-emerald-50 text-emerald-700 border-emerald-200';
-    if (category.includes('Information')) return 'bg-blue-50 text-blue-700 border-blue-200';
-    if (category.includes('Development')) return 'bg-purple-50 text-purple-700 border-purple-200';
-    if (category.includes('Social')) return 'bg-pink-50 text-pink-700 border-pink-200';
-    if (category.includes('Food')) return 'bg-amber-50 text-amber-700 border-amber-200';
-    return 'bg-slate-50 text-slate-700 border-slate-200';
+    if (!category) return 'bg-slate-100 text-slate-700';
+    if (category.includes('Natural')) return 'bg-green-100 text-green-700';
+    if (category.includes('Information')) return 'bg-blue-100 text-blue-700';
+    if (category.includes('Development')) return 'bg-blue-100 text-blue-700';
+    if (category.includes('Social')) return 'bg-pink-100 text-pink-700';
+    if (category.includes('Food')) return 'bg-yellow-100 text-yellow-700';
+    return 'bg-slate-100 text-slate-700';
   };
 
   const extractGoogleDriveId = (url) => {
@@ -658,45 +1051,10 @@ export default function ReviewPage() {
     return null;
   };
 
-  // Paper category options
-  const paperCategoryOptions = [
-    'Completed Extension Project Paper',
-    'Ongoing Extension Project Paper',
-    'Not specified'
-  ];
-
-  // Thematic area options
-  const thematicAreaOptions = [
-    'Food Production, Agriculture, Fisheries, and Natural Resource Systems',
-    'Health, Nutrition, Wellness, and Community Care',
-    'Education, Literacy, Skills Development, and Lifelong Learning',
-    'Livelihood, Entrepreneurship, Cooperatives, MSMEs, and Local Economic Development',
-    'Environment, Climate Action, Disaster Risk Reduction, and Community Resilience',
-    'Not specified'
-  ];
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-50 to-blue-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent mx-auto mb-4"></div>
-          <p className="text-slate-600 font-medium">Loading submissions...</p>
-        </div>
-      </div>
-    );
-  }
-  
-  const FIELD_MAP = {
-    title:                    { system: 'extension_project_title',  email: 'title',                      fallbackEmail: 'subject' },
-    projectLeader:            { system: 'project_leader',           email: 'project_leader',             fallbackEmail: 'project_leader_name' },
-    authorsList:              { system: 'co_authors',               email: 'authors_list' },
-    suc:                      { system: 'suc_agencies',             email: 'sucs' },
-    correspondingAuthorName:  { system: 'corresponding_author_name', email: 'corresponding_author_name' },
-    correspondingAuthorEmail: { system: 'corresponding_author_email', email: 'corresponding_author_email', fallbackEmail: 'sender_email' },
-    correspondingAuthorPos:   { system: 'corresponding_author_position', email: 'corresponding_author_position' },
-    paperCategory:            { system: 'paper_category',           email: 'paper_category' },
-    thematicArea:             { system: 'thematic_area',            email: 'thematic_area' },
-    theme:                    { system: 'theme',                    email: 'theme' },
+  const getEvaluatorName = (id) => {
+    const userId = typeof id === 'string' ? parseInt(id) : id;
+    const user = allUsers.find(u => u.id === userId);
+    return user ? user.full_name : `Evaluator ${id}`;
   };
 
   const getField = (logicalName, fallback = 'Not specified') => {
@@ -718,7 +1076,6 @@ export default function ReviewPage() {
     return value;
   };
 
-  // Authors list needs custom JSON parsing, so it has its own function
   const getAuthorsList = () => {
     const raw = getField('authorsList', '');
     if (!raw) return 'Not specified';
@@ -731,52 +1088,708 @@ export default function ReviewPage() {
     }
   };
 
-  // ====== BACKWARDS-COMPATIBLE WRAPPERS ======
-  // Keep these so existing call sites don't break.
-  const getTitle                     = () => getField('title');
-  const getProjectLeader             = () => getField('projectLeader');
-  const getSuc                       = () => getField('suc');
-  const getThematicArea              = () => getField('thematicArea');
-  const getPaperCategory             = () => getField('paperCategory');
-  const getCorrespondingAuthorName   = () => getField('correspondingAuthorName');
-  const getCorrespondingAuthorEmail  = () => getField('correspondingAuthorEmail');
-  const getCorrespondingAuthorPosition = () => getField('correspondingAuthorPos');
-  const getTheme                     = () => getField('theme');
+  // ===== SIDEBAR NAVIGATION HANDLER =====
+  const handleNavClick = (navId) => {
+    setActiveNavItem(navId);
+    setMobileSidebarOpen(false);
 
-  const getEvaluatorName = (id) => {
-    const user = allUsers.find(u => u.id === id);
-    if (user) return user.full_name;
-    return 'Evaluator';
+    switch (navId) {
+      case 'dashboard':
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        break;
+
+      case 'system':
+        setActiveTab('system');
+        setStatusFilter('all');
+        setCategoryFilter('all');
+        setThematicAreaFilter('all');
+        setSearchTerm('');
+        break;
+
+      case 'email':
+        setActiveTab('email');
+        setStatusFilter('all');
+        setCategoryFilter('all');
+        setThematicAreaFilter('all');
+        setSearchTerm('');
+        break;
+
+      case 'settings':
+        setShowSettings(true);
+        break;
+
+      case 'help':
+        setShowHelpCenter(true);
+        break;
+
+      default:
+        break;
+    }
   };
 
+  // ── Combined totals across BOTH system + email (for sidebar) ──
+  const totalSubmissions = allSubmissions.length;
+  const pendingCount = allSubmissions.filter(s => isPending(s.status)).length;
+
+  // ── Per-source breakdown for sidebar badges ──
+  const systemPendingCount = allSubmissions
+    .filter(s => s.__source === 'system')
+    .filter(s => isPending(s.status)).length;
+
+  const emailPendingCount = allSubmissions
+    .filter(s => s.__source === 'email')
+    .filter(s => isPending(s.status)).length;
+
+  // ── Tab-scoped counts for stat cards inside the submissions view ──
+  const tabTotal = stats.total;
+  const tabPending = stats.pending;
+  const tabEndorsed = stats.endorsed;
+  const tabDowngraded = activeTab === 'system' ? stats.downgraded : stats.uncategorized;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
+          <p className="text-slate-500 text-sm font-medium">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-50 via-white to-blue-50/30">
-      {toast && (
-        <div className="fixed top-6 right-6 z-100 animate-slide-in">
-          <div className={`relative w-96 p-5 rounded-2xl border shadow-xl backdrop-blur-sm ${
-            toast.type === 'success' 
-              ? 'bg-emerald-50/90 border-emerald-200' 
-              : 'bg-red-50/90 border-red-200'
-          }`}>
-            <div className="flex items-start gap-4">
-              <div className={`shrink-0 mt-0.5 w-10 h-10 rounded-full flex items-center justify-center ${
-                toast.type === 'success' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
-              }`}>
-                <FontAwesomeIcon icon={toast.type === 'success' ? faCheckCircle : faExclamationTriangle} className="w-5 h-5" />
-              </div>
-              <div className="flex-1">
-                <p className={`font-bold text-sm ${toast.type === 'success' ? 'text-emerald-800' : 'text-red-800'}`}>
-                  {toast.type === 'success' ? 'Success!' : 'Error!'}
-                </p>
-                <p className={`text-sm ${toast.type === 'success' ? 'text-emerald-700' : 'text-red-700'}`}>{toast.message}</p>
-              </div>
-              <button onClick={() => setToast(null)} className="text-slate-400 hover:text-slate-600 transition">
-                <FontAwesomeIcon icon={faTimes} className="w-4 h-4" />
+    <div className="min-h-screen bg-slate-50 flex">
+      {/* ============ SIDEBAR ============ */}
+      <Sidebar
+        collapsed={sidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+        activeNavItem={activeNavItem}
+        onNavClick={handleNavClick}
+        currentUser={currentUser}
+        pendingCount={pendingCount}
+        systemPendingCount={systemPendingCount}
+        emailPendingCount={emailPendingCount}
+        mobileOpen={mobileSidebarOpen}
+        onMobileClose={() => setMobileSidebarOpen(false)}
+      />
+
+      {/* ============ MAIN CONTENT ============ */}
+      <main className="flex-1 min-w-0">
+        {/* Top Header Bar */}
+        <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-slate-200">
+          <div className="px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setMobileSidebarOpen(true)}
+                className="lg:hidden w-9 h-9 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-500 transition"
+              >
+                <FontAwesomeIcon icon={faBars} className="w-5 h-5" />
               </button>
+              <div>
+                <h1 className="text-lg sm:text-xl font-bold text-slate-900 flex items-center gap-2">
+                  <FontAwesomeIcon
+                    icon={
+                      activeNavItem === 'dashboard'
+                        ? faDashboard
+                        : activeTab === 'system'
+                        ? faFileAlt
+                        : faEnvelope
+                    }
+                    className="w-5 h-5 text-indigo-600 hidden sm:inline"
+                  />
+                  {activeNavItem === 'dashboard'
+                    ? 'Dashboard'
+                    : activeTab === 'system'
+                    ? 'System Submissions'
+                    : 'Email Submissions'}
+                </h1>
+                <p className="text-xs text-slate-500 hidden sm:block">
+                  {activeNavItem === 'dashboard'
+                    ? 'Overview of all submissions and pending votes'
+                    : 'Review and vote on submissions'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {/* Refresh Button */}
+              <button
+                onClick={fetchSubmissions}
+                className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-500 transition"
+                title="Refresh"
+              >
+                <FontAwesomeIcon icon={faSync} className="w-4 h-4" />
+              </button>
+
+              {/* Notifications */}
+              <UnderDevelopment
+                icon={faBell}
+                featureName="Notifications"
+                description="We're building a notification center so you can stay on top of new submissions and status updates in real time."
+                badge={pendingCount}
+              />
+            </div>
+          </div>
+        </header>
+
+        {/* Page Content */}
+        <div className="p-4 sm:p-6 lg:p-8">
+          {/* ===== DASHBOARD VIEW ===== */}
+          {activeNavItem === 'dashboard' && (
+            <div className="space-y-6">
+              {/* Welcome Banner */}
+              <div className="bg-linear-to-r from-blue-500 via-blue-500 to-blue-500 rounded-2xl p-6 sm:p-8 text-white shadow-xl shadow-blue-500/20">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-xl sm:text-2xl font-bold mb-1">
+                      Welcome back, {currentUser?.full_name?.split(' ')[0] || 'Evaluator'}! 👋
+                    </h2>
+                    <p className="text-white/80 text-sm">
+                      You have <span className="font-bold text-white">{pendingCount}</span> pending submission
+                      {pendingCount !== 1 ? 's' : ''} awaiting your review.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Stats Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <button
+                  type="button"
+                  onClick={() => handleNavClick('system')}
+                  className="text-left bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all cursor-pointer"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center">
+                      <FontAwesomeIcon icon={faFolderOpen} className="w-5 h-5 text-slate-600" />
+                    </div>
+                  </div>
+                  <p className="text-3xl font-bold text-slate-900">{totalSubmissions}</p>
+                  <p className="text-sm text-slate-500 mt-1">Total Submissions</p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleNavClick('system');
+                    setTimeout(() => handleStatCardClick('pending'), 100);
+                  }}
+                  className="text-left bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all cursor-pointer"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
+                      <FontAwesomeIcon icon={faClock} className="w-5 h-5 text-amber-600" />
+                    </div>
+                    {pendingCount > 0 && (
+                      <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-bold">
+                        Action needed
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-3xl font-bold text-amber-600">{pendingCount}</p>
+                  <p className="text-sm text-slate-500 mt-1">Pending Review</p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleNavClick('system');
+                    setTimeout(() => handleStatCardClick('endorsed'), 100);
+                  }}
+                  className="text-left bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all cursor-pointer"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
+                      <FontAwesomeIcon icon={faCheckCircle} className="w-5 h-5 text-emerald-600" />
+                    </div>
+                  </div>
+                  <p className="text-3xl font-bold text-emerald-600">
+                    {allSubmissions.filter(s => isEndorsed(s.status)).length}
+                  </p>
+                  <p className="text-sm text-slate-500 mt-1">Endorsed</p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleNavClick('system');
+                    setTimeout(() => handleStatCardClick('downgraded'), 100);
+                  }}
+                  className="text-left bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all cursor-pointer"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-yellow-50 flex items-center justify-center">
+                      <FontAwesomeIcon icon={faThumbsDown} className="w-5 h-5 text-yellow-600" />
+                    </div>
+                  </div>
+                  <p className="text-3xl font-bold text-yellow-600">
+                    {allSubmissions.filter(s => isDowngraded(s.status)).length}
+                  </p>
+                  <p className="text-sm text-slate-500 mt-1">Downgraded</p>
+                </button>
+              </div>
+
+              {/* Quick Actions */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Recent Submissions */}
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                  <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+                    <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                      <FontAwesomeIcon icon={faClock} className="w-4 h-4 text-indigo-500" />
+                      Recent Submissions
+                    </h3>
+                    <button
+                      onClick={() => handleNavClick('system')}
+                      className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 transition"
+                    >
+                      View all →
+                    </button>
+                  </div>
+                  <div className="divide-y divide-slate-100">
+                    {allSubmissions.slice(0, 5).map((sub, idx) => (
+                      <div
+                        key={sub.submission_id || sub.id || idx}
+                        onClick={() => {
+                          handleNavClick(sub.__source === 'email' ? 'email' : 'system');
+                          setTimeout(() => selectSubmission(sub), 100);
+                        }}
+                        className="px-6 py-3 hover:bg-slate-50 cursor-pointer transition flex items-center justify-between gap-3"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold text-slate-800 truncate">
+                            {sub.extension_project_title || sub.subject || 'Untitled'}
+                          </p>
+                          <p className="text-xs text-slate-500 truncate">
+                            {sub.project_leader || sub.sender_name || 'Unknown'}
+                          </p>
+                        </div>
+                        <span className={`shrink-0 px-2.5 py-1 rounded-full text-[10px] font-semibold ${getStatusColor(sub.status)}`}>
+                          {getStatusDisplay(sub.status || 'pending')}
+                        </span>
+                      </div>
+                    ))}
+                    {allSubmissions.length === 0 && (
+                      <div className="px-6 py-8 text-center text-slate-400 text-sm">
+                        <FontAwesomeIcon icon={faFolderOpen} className="w-8 h-8 mb-2 text-slate-300" />
+                        <p>No submissions yet</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Quick Tips */}
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                  <div className="px-6 py-4 border-b border-slate-200">
+                    <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                      <FontAwesomeIcon icon={faInfoCircle} className="w-4 h-4 text-blue-500" />
+                      Quick Tips
+                    </h3>
+                  </div>
+                  <div className="p-6 space-y-4">
+                    <div className="flex items-start gap-3 p-3 bg-indigo-50 rounded-xl border border-indigo-100">
+                      <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center shrink-0">
+                        <FontAwesomeIcon icon={faGavel} className="w-3.5 h-3.5 text-indigo-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-indigo-900">Cast your vote</p>
+                        <p className="text-xs text-indigo-700 mt-0.5">
+                          Click any submission to review details and cast your vote.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3 p-3 bg-emerald-50 rounded-xl border border-emerald-100">
+                      <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
+                        <FontAwesomeIcon icon={faEdit} className="w-3.5 h-3.5 text-emerald-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-emerald-900">Edit before voting</p>
+                        <p className="text-xs text-emerald-700 mt-0.5">
+                          Correct extracted data issues before casting your vote.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-xl border border-blue-100">
+                      <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
+                        <FontAwesomeIcon icon={faHistory} className="w-3.5 h-3.5 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-blue-900">Track all changes</p>
+                        <p className="text-xs text-blue-700 mt-0.5">
+                          View edit history to see who changed what and when.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ===== SUBMISSIONS VIEW ===== */}
+          {(activeNavItem === 'system' || activeNavItem === 'email') && (
+            <div className="space-y-6">
+              {/* Stat Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Total */}
+                <button
+                  type="button"
+                  onClick={() => handleStatCardClick('total')}
+                  className={`text-left bg-white rounded-xl p-5 border shadow-sm hover:shadow-md transition-all cursor-pointer ${
+                    isStatCardActive('total') ? 'border-slate-500 ring-2 ring-slate-500/20' : 'border-slate-200'
+                  }`}
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center shrink-0">
+                      <FontAwesomeIcon icon={faFolderOpen} className="w-5 h-5 text-slate-600" />
+                    </div>
+                    <p className="text-2xl font-bold text-slate-900">{tabTotal}</p>
+                  </div>
+                  <p className="text-sm text-slate-500">Total Submissions</p>
+                </button>
+
+                {/* Pending */}
+                <button
+                  type="button"
+                  onClick={() => handleStatCardClick('pending')}
+                  className={`text-left bg-white rounded-xl p-5 border shadow-sm hover:shadow-md transition-all cursor-pointer ${
+                    isStatCardActive('pending') ? 'border-yellow-500 ring-2 ring-yellow-500/20' : 'border-slate-200'
+                  }`}
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
+                      <FontAwesomeIcon icon={faClock} className="w-5 h-5 text-amber-600" />
+                    </div>
+                    <p className="text-2xl font-bold text-yellow-600">{tabPending}</p>
+                  </div>
+                  <p className="text-sm text-slate-500">Pending Review</p>
+                </button>
+
+                {/* Endorsed */}
+                <button
+                  type="button"
+                  onClick={() => handleStatCardClick('endorsed')}
+                  className={`text-left bg-white rounded-xl p-5 border shadow-sm hover:shadow-md transition-all cursor-pointer ${
+                    isStatCardActive('endorsed') ? 'border-emerald-500 ring-2 ring-emerald-500/20' : 'border-slate-200'
+                  }`}
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
+                      <FontAwesomeIcon icon={faCheckCircle} className="w-5 h-5 text-emerald-600" />
+                    </div>
+                    <p className="text-2xl font-bold text-emerald-600">{tabEndorsed}</p>
+                  </div>
+                  <p className="text-sm text-slate-500">Endorsed</p>
+                </button>
+
+                {/* Downgraded / Uncategorized */}
+                <button
+                  type="button"
+                  onClick={() => handleStatCardClick(activeTab === 'system' ? 'downgraded' : 'uncategorized')}
+                  className={`text-left bg-white rounded-xl p-5 border shadow-sm hover:shadow-md transition-all cursor-pointer ${
+                    isStatCardActive(activeTab === 'system' ? 'downgraded' : 'uncategorized')
+                      ? 'border-rose-500 ring-2 ring-rose-500/20'
+                      : 'border-slate-200'
+                  }`}
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center shrink-0">
+                      <FontAwesomeIcon
+                        icon={activeTab === 'system' ? faArrowDown : faExclamationTriangle}
+                        className="w-5 h-5 text-rose-600"
+                      />
+                    </div>
+                    <p className="text-2xl font-bold text-rose-600">{tabDowngraded}</p>
+                  </div>
+                  <p className="text-sm text-slate-500">
+                    {activeTab === 'system' ? 'Downgraded' : 'Uncategorized'}
+                  </p>
+                </button>
+              </div>
+
+              {/* Filters */}
+              <div className="flex gap-3 flex-wrap items-center">
+                {/* Search */}
+                <div className="flex-1 min-w-50 relative">
+                  <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400">
+                    <FontAwesomeIcon icon={faSearch} className="w-4 h-4" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder={activeTab === 'system' ? "Search by title, author, or SUC..." : "Search by subject, sender, or email..."}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full px-4 py-2.5 pl-10 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none"
+                  />
+                </div>
+
+                {/* Status */}
+                <div className="relative">
+                  <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400">
+                    <FontAwesomeIcon icon={faFilter} className="w-4 h-4" />
+                  </div>
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none appearance-none cursor-pointer min-w-40"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="pending">Pending</option>
+                    <option value="endorse">Endorsed</option>
+                    <option value="downgraded">Downgraded (All)</option>
+                    <option value="downgraded-non_competitive">Non-Competitive</option>
+                    {activeTab === 'email' && <option value="uncategorized">Uncategorized</option>}
+                  </select>
+                </div>
+
+                {/* Categories */}
+                <div className="relative">
+                  <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400">
+                    <FontAwesomeIcon icon={faTag} className="w-4 h-4" />
+                  </div>
+                  <select
+                    value={categoryFilter}
+                    onChange={(e) => setCategoryFilter(e.target.value)}
+                    className="pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none appearance-none cursor-pointer min-w-50"
+                  >
+                    <option value="all">All Categories</option>
+                    {PAPER_CATEGORIES.map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Thematic Areas */}
+                <div className="relative">
+                  <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400">
+                    <FontAwesomeIcon icon={faLayerGroup} className="w-4 h-4" />
+                  </div>
+                  <select
+                    value={thematicAreaFilter}
+                    onChange={(e) => setThematicAreaFilter(e.target.value)}
+                    className="pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none appearance-none cursor-pointer min-w-60 max-w-75"
+                  >
+                    <option value="all">All Thematic Areas</option>
+                    {THEMATIC_AREAS.map((area) => (
+                      <option key={area} value={area}>{area}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Reset */}
+                {(statusFilter !== 'all' || categoryFilter !== 'all' || thematicAreaFilter !== 'all' || searchTerm) && (
+                  <button
+                    onClick={() => {
+                      setStatusFilter('all');
+                      setCategoryFilter('all');
+                      setThematicAreaFilter('all');
+                      setSearchTerm('');
+                    }}
+                    className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold text-sm transition"
+                  >
+                    Reset
+                  </button>
+                )}
+
+                {/* Check Inbox for Email tab */}
+                {activeTab === 'email' && (
+                  <button
+                    onClick={checkEmails}
+                    disabled={checkingEmails}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl font-semibold text-sm hover:bg-indigo-700 transition disabled:opacity-50 shadow-sm"
+                  >
+                    {checkingEmails ? (
+                      <><FontAwesomeIcon icon={faSpinner} className="w-4 h-4 animate-spin" />Checking...</>
+                    ) : (
+                      <><FontAwesomeIcon icon={faInbox} className="w-4 h-4" />Check Inbox</>
+                    )}
+                  </button>
+                )}
+              </div>
+
+              {/* Submissions Table */}
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-200">
+                        {activeTab === 'system' ? (
+                          <>
+                            <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
+                              <div className="flex items-center gap-2">
+                                <FontAwesomeIcon icon={faFileAlt} className="w-3.5 h-3.5 text-blue-500" />
+                                Title & Author
+                              </div>
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
+                              <div className="flex items-center gap-2">
+                                <FontAwesomeIcon icon={faSchool} className="w-3.5 h-3.5 text-amber-500" />
+                                SUC / Agency
+                              </div>
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
+                              <div className="flex items-center gap-2">
+                                <FontAwesomeIcon icon={faTag} className="w-3.5 h-3.5 text-blue-500" />
+                                Category
+                              </div>
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
+                              <div className="flex items-center gap-2">
+                                <FontAwesomeIcon icon={faCalendarAlt} className="w-3.5 h-3.5 text-slate-400" />
+                                Date
+                              </div>
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
+                              <div className="flex items-center gap-2">
+                                <FontAwesomeIcon icon={faFlag} className="w-3.5 h-3.5 text-rose-500" />
+                                Status
+                              </div>
+                            </th>
+                          </>
+                        ) : (
+                          <>
+                            <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
+                              <div className="flex items-center gap-2">
+                                <FontAwesomeIcon icon={faEnvelope} className="w-3.5 h-3.5 text-blue-500" />
+                                Subject / Sender
+                              </div>
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
+                              <div className="flex items-center gap-2">
+                                <FontAwesomeIcon icon={faUser} className="w-3.5 h-3.5 text-emerald-500" />
+                                Project Leader
+                              </div>
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
+                              <div className="flex items-center gap-2">
+                                <FontAwesomeIcon icon={faCalendarAlt} className="w-3.5 h-3.5 text-slate-400" />
+                                Received
+                              </div>
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
+                              <div className="flex items-center gap-2">
+                                <FontAwesomeIcon icon={faFlag} className="w-3.5 h-3.5 text-rose-500" />
+                                Status
+                              </div>
+                            </th>
+                          </>
+                        )}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredSubmissions.map((sub) => {
+                        const displayStatus = sub.status || 'pending';
+
+                        return (
+                          <tr
+                            key={sub.submission_id || sub.id}
+                            onClick={() => selectSubmission(sub)}
+                            className="cursor-pointer border-b border-slate-100 hover:bg-indigo-50/30 transition"
+                          >
+                            {activeTab === 'system' ? (
+                              <>
+                                <td className="px-6 py-4">
+                                  <p className="text-sm font-semibold text-slate-900">{sub.extension_project_title || 'Untitled'}</p>
+                                  <p className="text-xs text-slate-500 mt-1">{sub.project_leader || 'Unknown Project Leader'}</p>
+                                </td>
+                                <td className="px-6 py-4 text-sm text-slate-600">{sub.suc_agencies || 'Not specified'}</td>
+                                <td className="px-6 py-4">
+                                  <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${getCategoryColor(sub.paper_category)}`}>
+                                    {sub.paper_category?.includes('Completed') ? 'Completed' : 'Ongoing'}
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4 text-sm text-slate-600">
+                                  {new Date(sub.created_at).toLocaleDateString('en-US', {
+                                    month: 'short',
+                                    day: '2-digit',
+                                    year: 'numeric'
+                                  })}
+                                </td>
+                                <td className="px-6 py-4">
+                                  <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(displayStatus)}`}>
+                                    {getStatusDisplay(displayStatus)}
+                                  </span>
+                                </td>
+                              </>
+                            ) : (
+                              <>
+                                <td className="px-6 py-4">
+                                  <p className="text-sm font-semibold text-slate-900">{sub.subject || 'No Subject'}</p>
+                                  <p className="text-xs text-slate-500 mt-1">{sub.sender_name} ({sub.sender_email})</p>
+                                </td>
+                                <td className="px-6 py-4 text-sm text-slate-600">{sub.project_leader_name || sub.sender_name}</td>
+                                <td className="px-6 py-4 text-sm text-slate-600">
+                                  {new Date(sub.email_received_at || sub.created_at).toLocaleDateString('en-US', {
+                                    month: 'short',
+                                    day: '2-digit',
+                                    year: 'numeric'
+                                  })}
+                                </td>
+                                <td className="px-6 py-4">
+                                  <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(displayStatus)}`}>
+                                    {getStatusDisplay(displayStatus)}
+                                  </span>
+                                  {sub.is_categorized === false && (
+                                    <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-50 text-red-600 border border-red-200">
+                                      <FontAwesomeIcon icon={faExclamationTriangle} className="w-2.5 h-2.5" />
+                                      Needs Review
+                                    </span>
+                                  )}
+                                  {sub.is_categorized === true && sub.extraction_status === 'failed' && (
+                                    <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                                      <FontAwesomeIcon icon={faExclamationTriangle} className="w-2.5 h-2.5" />
+                                      Manually Categorized
+                                    </span>
+                                  )}
+                                </td>
+                              </>
+                            )}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                  {filteredSubmissions.length === 0 && (
+                    <div className="text-center py-12 text-slate-500">
+                      <FontAwesomeIcon
+                        icon={activeTab === 'system' ? faFolderOpen : faInbox}
+                        className="w-12 h-12 text-slate-300 mb-4"
+                      />
+                      <p>No {activeTab === 'system' ? 'submissions' : 'email submissions'} found</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </main>
+
+      {/* ============ MODALS ============ */}
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed top-4 right-4 z-9999 animate-slide-in">
+          <div className={`relative w-96 p-4 rounded-xl border shadow-lg ${
+            toast.type === 'success' ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'
+          }`}>
+            <div className="flex items-start gap-3">
+              <div className={`shrink-0 mt-0.5 ${toast.type === 'success' ? 'text-emerald-700' : 'text-red-700'}`}>
+                <FontAwesomeIcon icon={toast.type === 'success' ? faCheckCircle : faTimesCircle} className="w-5 h-5" />
+              </div>
+              <div className={`flex-1 ${toast.type === 'success' ? 'text-emerald-700' : 'text-red-700'}`}>
+                <p className="font-semibold text-sm">{toast.type === 'success' ? 'Success!' : 'Error!'}</p>
+                <p className="text-sm">{toast.message}</p>
+              </div>
             </div>
           </div>
         </div>
       )}
+
+      {/* Settings Panel */}
+      <SettingsPanel isOpen={showSettings} onClose={() => setShowSettings(false)} />
+
+      {/* Help Center Panel */}
+      <HelpCenterPanel isOpen={showHelpCenter} onClose={() => setShowHelpCenter(false)} />
 
       <ReassignModal
         isOpen={showReassignModal}
@@ -784,7 +1797,6 @@ export default function ReviewPage() {
         onSubmit={async (newThematicArea) => {
           setReassignLoading(true);
           try {
-            // FIX: Use submission_id for all submissions
             const res = await fetch(`${API_URL}/api/submissions/${selectedSubmission.submission_id || selectedSubmission.id}/evaluate`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -814,7 +1826,7 @@ export default function ReviewPage() {
             setReassignLoading(false);
           }
         }}
-        currentThematicArea={getThematicArea()}
+        currentThematicArea={getField('thematicArea')}
       />
 
       <DowngradeModal
@@ -822,7 +1834,7 @@ export default function ReviewPage() {
         onClose={() => setShowDowngradeModal(false)}
         onSubmit={handleDowngradeWithConfirm}
         isLoading={downgradeLoading}
-        paperCategory={getPaperCategory()}
+        paperCategory={getField('paperCategory')}
       />
 
       <ConfirmModal
@@ -835,20 +1847,22 @@ export default function ReviewPage() {
         cancelText="No, Cancel"
         isLoading={confirmLoading}
       />
-      
+
       <ConfirmModal
         isOpen={showDowngradeConfirm}
         onClose={() => { setShowDowngradeConfirm(false); setPendingDowngradeType(null); }}
         onConfirm={confirmDowngradeVote}
         title="Confirm Downgrade"
-        message={`Are you sure you want to downgrade this submission? This will be recorded as a ${pendingDowngradeType === 'non_competitive' ? 'Non-Competitive (Poster)' : 'Poster Only'} decision.`}
+        message={`Are you sure you want to downgrade this submission? This will be recorded as a ${
+          pendingDowngradeType === 'downgraded-non_competitive' ? 'Non-Competitive (Poster)' : 'Poster Only'
+        } decision.`}
         confirmText="Yes, Downgrade"
         cancelText="No, Cancel"
         isLoading={downgradeConfirmLoading}
         type="warning"
       />
 
-      {/* MODAL: Reusable EditSubmission Component */}
+      {/* Edit Submission Modal */}
       <EditSubmission
         isOpen={showEditModal}
         onClose={() => setShowEditModal(false)}
@@ -858,10 +1872,11 @@ export default function ReviewPage() {
         currentUser={currentUser}
         isMasterApprover={false}
         title={activeTab === 'email' ? 'Edit Email Submission Details' : 'Edit Submission Details'}
+        fields={getEditFields(activeTab === 'email' ? 'email' : 'system')}
         submissionType={activeTab === 'email' ? 'email' : 'system'}
       />
 
-      {/* MODAL: Reusable ViewHistory Component */}
+      {/* View History Modal */}
       <ViewHistory
         isOpen={showHistoryModal}
         onClose={() => setShowHistoryModal(false)}
@@ -870,21 +1885,19 @@ export default function ReviewPage() {
         isMasterApprover={false}
         title="Edit History"
       />
-      
-      {selectedSubmission && (
+
+      {/* Details Modal */}
+      {isModalOpen && selectedSubmission && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
-          {/* Backdrop */}
           <div
             className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity"
-            onClick={() => setSelectedSubmission(null)}
+            onClick={() => setIsModalOpen(false)}
           ></div>
 
           <div className="relative min-h-full flex items-center justify-center p-4">
             <div className="relative w-full max-w-7xl bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden max-h-[95vh] flex flex-col">
-
-              {/* ================= HEADER ================= */}
+              {/* HEADER */}
               <div className="bg-white border-b border-slate-200 sticky top-0 z-20">
-                {/* thin accent bar */}
                 <div className="h-1 w-full bg-linear-to-r from-indigo-400 via-purple-400 to-blue-400" />
 
                 <div className="px-8 py-5 flex items-start justify-between gap-6">
@@ -902,27 +1915,33 @@ export default function ReviewPage() {
                         </span>
                         <span className="w-1 h-1 rounded-full bg-slate-300" />
                         <span className={`inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide border ${
-                          getStatusColor(votes.evaluation_status)
+                          isEndorsed(votes.evaluation_status)
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            : isPending(votes.evaluation_status)
+                            ? 'bg-amber-50 text-amber-700 border-amber-200'
+                            : 'bg-slate-100 text-slate-600 border-slate-200'
                         }`}>
                           {getStatusDisplay(votes.evaluation_status)}
                         </span>
                       </div>
                       <h3 className="text-lg font-bold text-slate-900 leading-snug line-clamp-2">
-                        {getTitle() || 'Untitled submission'}
+                        {getField('title')}
                       </h3>
                       <p className="text-sm text-slate-500 mt-0.5 truncate">
-                        {getProjectLeader()}
+                        {getField('projectLeader')}
                       </p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-3 shrink-0">
                     <button
-                      onClick={() => setSelectedSubmission(null)}
+                      onClick={() => setIsModalOpen(false)}
                       aria-label="Close"
                       className="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 transition"
                     >
-                      <FontAwesomeIcon icon={faTimes} className="w-4 h-4" />
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
                     </button>
                   </div>
                 </div>
@@ -946,51 +1965,51 @@ export default function ReviewPage() {
                   </button>
                   {activeTab === 'email' && emailExtractedData && (
                     <span className="ml-auto text-[11px] text-slate-400 italic">
-                      Use Edit to correct any extracted field before final decision
+                      Use Edit to correct any extracted field before voting
                     </span>
                   )}
                 </div>
               </div>
 
-              {/* ================= BODY ================= */}
+              {/* BODY */}
               <div className="grid grid-cols-1 lg:grid-cols-5 flex-1 overflow-hidden min-h-0">
-
-                {/* ---------- LEFT: INFO COLUMN ---------- */}
+                {/* LEFT: INFO COLUMN */}
                 <div className="lg:col-span-3 p-8 overflow-y-auto bg-white">
-
                   {/* SECTION: Paper Overview */}
                   <SectionTitle icon={faFileAlt} color="indigo" label="Paper Overview" />
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                    <InfoCard label="Full Title" value={getTitle()} span={2} emphasis />
+                    <InfoCard label="Full Title" value={getField('title')} span={2} emphasis />
                     <InfoCard
                       label="Paper Category"
                       value={
-                        getPaperCategory()?.includes('Completed') ? 'Completed Extension Project Paper'
-                        : getPaperCategory()?.includes('Ongoing') ? 'Ongoing Extension Project Paper'
-                        : getPaperCategory() || 'Not specified'
+                        getField('paperCategory')?.includes('Completed')
+                          ? 'Completed Extension Project Paper'
+                          : getField('paperCategory')?.includes('Ongoing')
+                          ? 'Ongoing Extension Project Paper'
+                          : getField('paperCategory') || 'Not specified'
                       }
-                      badgeClass={getCategoryColor(getPaperCategory())}
+                      badgeClass={getCategoryColor(getField('paperCategory'))}
                     />
-                    <InfoCard label="Theme" value={getTheme()} />
-                    <InfoCard label="Thematic Area" value={getThematicArea()} span={2} />
+                    <InfoCard label="Theme" value={getField('theme')} />
+                    <InfoCard label="Thematic Area" value={getField('thematicArea')} span={2} />
                   </div>
 
                   {/* SECTION: Authors & Affiliation */}
                   <SectionTitle icon={faUsers} color="blue" label="Authors & Affiliation" />
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                    <InfoCard label="Project Leader" value={getProjectLeader()} />
-                    <InfoCard label="SUC / Agency" value={getSuc()} />
+                    <InfoCard label="Project Leader" value={getField('projectLeader')} />
+                    <InfoCard label="SUC / Agency" value={getField('suc')} />
                     <InfoCard label="Authors / Co-Authors" value={getAuthorsList()} span={2} />
                   </div>
 
                   {/* SECTION: Corresponding Author */}
                   <SectionTitle icon={faUserCircle} color="emerald" label="Corresponding Author" />
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                    <InfoCard label="Full Name" value={getCorrespondingAuthorName()} />
-                    <InfoCard label="Position / Designation" value={getCorrespondingAuthorPosition()} />
+                    <InfoCard label="Full Name" value={getField('correspondingAuthorName')} />
+                    <InfoCard label="Position / Designation" value={getField('correspondingAuthorPos')} />
                     <InfoCard
                       label="Email Address"
-                      value={getCorrespondingAuthorEmail()}
+                      value={getField('correspondingAuthorEmail')}
                       span={2}
                       mono
                     />
@@ -1099,7 +2118,7 @@ export default function ReviewPage() {
                   </div>
                 </div>
 
-                {/* ---------- RIGHT: FILE VIEWER ---------- */}
+                {/* RIGHT: FILE VIEWER */}
                 <div className="lg:col-span-2 bg-slate-50 p-8 overflow-y-auto border-l border-slate-200">
                   <SectionTitle icon={faFolderOpen} color="slate" label="Document Preview" />
 
@@ -1215,420 +2234,25 @@ export default function ReviewPage() {
         </div>
       )}
 
-      <div className="bg-white border-b border-slate-100 px-8 py-5 shadow-sm">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
-              <FontAwesomeIcon icon={faGavel} className="w-6 h-6 text-blue-600" />
-              Abstract Review
-            </h1>
-            <p className="text-slate-500 text-sm mt-0.5 flex items-center gap-2">
-              <FontAwesomeIcon icon={faInfoCircle} className="w-3.5 h-3.5 text-slate-400" />
-              Review, vote, and collaborate with your fellow evaluators.
-            </p>
-          </div>
-          
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-3 px-4 py-2 bg-linear-to-br from-slate-50 to-white border border-slate-200 rounded-2xl shadow-sm">
-              <div className="w-9 h-9 rounded-full bg-linear-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-blue-500/25">
-                {currentUser?.full_name?.charAt(0) || 'E'}
-              </div>
-              <div className="leading-tight">
-                <p className="text-sm font-semibold text-slate-800">{currentUser?.full_name || 'Evaluator'}</p>
-                <p className="text-[10px] text-slate-500 uppercase tracking-wider font-medium">{currentUser?.role || 'User'}</p>
-              </div>
-            </div>
-            <Link href="/login" className="inline-flex items-center gap-2 text-red-600 hover:text-red-700 font-medium text-sm transition-all hover:bg-red-50 px-4 py-2 rounded-xl">
-              <FontAwesomeIcon icon={faSignOutAlt} className="w-4 h-4" />
-              Logout
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-8 py-6">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex gap-1 bg-white p-1 rounded-2xl border border-slate-200 shadow-sm">
-            <button 
-              onClick={() => { setActiveTab('system'); setStatusFilter('all'); setCategoryFilter('all'); setSearchTerm(''); }} 
-              className={`inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-sm transition-all ${
-                activeTab === 'system' 
-                  ? 'bg-linear-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25' 
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-              }`}
-            >
-              <FontAwesomeIcon icon={faFileAlt} className="w-4 h-4" />
-              System Submissions
-            </button>
-            <button 
-              onClick={() => { setActiveTab('email'); setCategoryFilter('all'); setSearchTerm(''); }} 
-              className={`inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-sm transition-all ${
-                activeTab === 'email' 
-                  ? 'bg-linear-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25' 
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-              }`}
-            >
-              <FontAwesomeIcon icon={faEnvelope} className="w-4 h-4" />
-              Email Submissions
-            </button>
-          </div>
-          {activeTab === 'email' && (
-            <button 
-              onClick={checkEmails} 
-              disabled={checkingEmails} 
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-linear-to-r from-blue-500 to-blue-600 text-white rounded-2xl font-semibold hover:from-blue-600 hover:to-blue-700 transition-all disabled:opacity-50 shadow-lg shadow-blue-500/25"
-            >
-              {checkingEmails ? (
-                <><FontAwesomeIcon icon={faSpinner} className="w-4 h-4 animate-spin" />Checking...</>
-              ) : (
-                <><FontAwesomeIcon icon={faInbox} className="w-4 h-4" />Check Inbox</>
-              )}
-            </button>
-          )}
-        </div>
-
-        {/* Stat Cards — clickable filters */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          {/* Total */}
-          <button
-            type="button"
-            onClick={() => handleStatCardClick('total')}
-            className={`text-left bg-white rounded-2xl p-6 border shadow-sm hover:shadow-md transition-all cursor-pointer ${
-              isStatCardActive('total')
-                ? 'border-blue-500 ring-2 ring-blue-500/20'
-                : 'border-slate-200'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-3xl font-bold text-slate-900">{stats.total}</p>
-                <p className="text-sm text-slate-500">
-                  {activeTab === 'system' ? 'Total Submissions' : 'Total Emails'}
-                  {isStatCardActive('total') && ' (Active)'}
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600">
-                <FontAwesomeIcon icon={faFolderOpen} className="w-6 h-6" />
-              </div>
-            </div>
-          </button>
-
-          {/* Pending */}
-          <button
-            type="button"
-            onClick={() => handleStatCardClick('pending')}
-            className={`text-left bg-white rounded-2xl p-6 border shadow-sm hover:shadow-md transition-all cursor-pointer ${
-              isStatCardActive('pending')
-                ? 'border-amber-500 ring-2 ring-amber-500/20'
-                : 'border-slate-200'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-3xl font-bold text-amber-600">{stats.pending}</p>
-                <p className="text-sm text-slate-500">
-                  {activeTab === 'system' ? 'Pending Review' : 'Pending'}
-                  {isStatCardActive('pending') && ' (Active)'}
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600">
-                <FontAwesomeIcon icon={faClock} className="w-6 h-6" />
-              </div>
-            </div>
-          </button>
-
-          {/* Endorsed */}
-          <button
-            type="button"
-            onClick={() => handleStatCardClick('endorsed')}
-            className={`text-left bg-white rounded-2xl p-6 border shadow-sm hover:shadow-md transition-all cursor-pointer ${
-              isStatCardActive('endorsed')
-                ? 'border-emerald-500 ring-2 ring-emerald-500/20'
-                : 'border-slate-200'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-3xl font-bold text-emerald-600">{stats.endorsed}</p>
-                <p className="text-sm text-slate-500">
-                  Endorsed
-                  {isStatCardActive('endorsed') && ' (Active)'}
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600">
-                <FontAwesomeIcon icon={faCheckCircle} className="w-6 h-6" />
-              </div>
-            </div>
-          </button>
-
-          {/* Downgraded (system) / Uncategorized (email) */}
-          <button
-            type="button"
-            onClick={() =>
-              handleStatCardClick(activeTab === 'system' ? 'downgraded' : 'uncategorized')
-            }
-            className={`text-left bg-white rounded-2xl p-6 border shadow-sm hover:shadow-md transition-all cursor-pointer ${
-              isStatCardActive(activeTab === 'system' ? 'downgraded' : 'uncategorized')
-                ? 'border-rose-500 ring-2 ring-rose-500/20'
-                : 'border-slate-200'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-3xl font-bold text-rose-600">
-                  {activeTab === 'system' ? stats.downgraded : stats.uncategorized}
-                </p>
-                <p className="text-sm text-slate-500">
-                  {activeTab === 'system' ? 'Downgraded' : 'Uncategorized'}
-                  {isStatCardActive(activeTab === 'system' ? 'downgraded' : 'uncategorized') && ' (Active)'}
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-600">
-                <FontAwesomeIcon icon={activeTab === 'system' ? faArrowDown : faWarning} className="w-6 h-6" />
-              </div>
-            </div>
-          </button>
-        </div>
-
-        <div className="flex gap-4 mb-6">
-          <div className="flex-1 relative">
-            <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400">
-              <FontAwesomeIcon icon={faSearch} className="w-4 h-4" />
-            </div>
-            <input 
-              type="text" 
-              placeholder={activeTab === 'system' ? "Search by title, leader, or SUC..." : "Search by subject, sender, or email..."} 
-              value={searchTerm} 
-              onChange={(e) => setSearchTerm(e.target.value)} 
-              className="w-full px-4 py-3 pl-11 bg-white border border-slate-200 rounded-2xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition-all" 
-            />
-          </div>
-          <div className="relative">
-            <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400">
-              <FontAwesomeIcon icon={faFilter} className="w-4 h-4" />
-            </div>
-            <select 
-              value={statusFilter} 
-              onChange={(e) => setStatusFilter(e.target.value)} 
-              className="pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none appearance-none cursor-pointer min-w-40"
-            >
-              <option value="all">All Status</option>
-              <option value="pending">Pending</option>
-              {activeTab === 'system' ? (
-                <>
-                  <option value="endorse">Endorsed</option>
-                  <option value="downgraded">Downgraded</option>
-                </>
-              ) : (
-                <>
-                  <option value="endorse">Endorsed</option>
-                  <option value="uncategorized">Uncategorized</option>
-                </>
-              )}
-            </select>
-          </div>
-          {activeTab === 'system' && (
-            <div className="relative">
-              <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400">
-                <FontAwesomeIcon icon={faTag} className="w-4 h-4" />
-              </div>
-              <select 
-                value={categoryFilter} 
-                onChange={(e) => setCategoryFilter(e.target.value)} 
-                className="pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none appearance-none cursor-pointer min-w-50"
-              >
-                <option value="all">All Categories</option>
-                <option value="Completed Extension Project Paper">Completed Extension</option>
-                <option value="Ongoing Extension Project Paper">Ongoing Extension</option>
-              </select>
-            </div>
-          )}
-        </div>
-
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          {/* Scrollable table container with hidden scrollbar */}
-          <div className="overflow-x-auto max-h-125 overflow-y-auto scrollbar-hide">
-            <table className="w-full">
-              <thead className="sticky top-0 z-10">
-                <tr className="bg-white from-slate-50 to-blue-50/50 border-b border-slate-200">
-                  {activeTab === 'system' ? (
-                    <>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                        <div className="flex items-center gap-2">
-                          <FontAwesomeIcon icon={faFileAlt} className="w-3.5 h-3.5 text-blue-500" />
-                          Title & Leader
-                        </div>
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                        <div className="flex items-center gap-2">
-                          <FontAwesomeIcon icon={faSchool} className="w-3.5 h-3.5 text-amber-500" />
-                          SUC / Agency
-                        </div>
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                        <div className="flex items-center gap-2">
-                          <FontAwesomeIcon icon={faTag} className="w-3.5 h-3.5 text-purple-500" />
-                          Category
-                        </div>
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                        <div className="flex items-center gap-2">
-                          <FontAwesomeIcon icon={faCalendarAlt} className="w-3.5 h-3.5 text-slate-400" />
-                          Date
-                        </div>
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                        <div className="flex items-center gap-2">
-                          <FontAwesomeIcon icon={faFlag} className="w-3.5 h-3.5 text-rose-500" />
-                          Status
-                        </div>
-                      </th>
-                    </>
-                  ) : (
-                    <>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                        <div className="flex items-center gap-2">
-                          <FontAwesomeIcon icon={faEnvelope} className="w-3.5 h-3.5 text-blue-500" />
-                          Subject / Sender
-                        </div>
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                        <div className="flex items-center gap-2">
-                          <FontAwesomeIcon icon={faUser} className="w-3.5 h-3.5 text-emerald-500" />
-                          Project Leader
-                        </div>
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                        <div className="flex items-center gap-2">
-                          <FontAwesomeIcon icon={faCalendarAlt} className="w-3.5 h-3.5 text-slate-400" />
-                          Received
-                        </div>
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                        <div className="flex items-center gap-2">
-                          <FontAwesomeIcon icon={faFlag} className="w-3.5 h-3.5 text-rose-500" />
-                          Status
-                        </div>
-                      </th>
-                    </>
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {filteredSubmissions.map((sub) => {
-                  const displayStatus = activeTab === 'system' ? (sub.status || 'pending') : (sub.status || 'pending');
-                  
-                  return (
-                    <tr 
-                      key={sub.id} 
-                          onClick={() => { selectSubmission({...sub,id: sub.id,nsubmission_id: sub.submission_id
-                          });
-                        }} 
-                      className="cursor-pointer border-b border-slate-100 hover:bg-blue-50/40 transition-all group"
-                    >
-                      {activeTab === 'system' ? (
-                        <>
-                          <td className="px-6 py-4">
-                            <p className="text-sm font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">{sub.extension_project_title}</p>
-                            <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1.5">
-                              <FontAwesomeIcon icon={faUserCircle} className="w-3 h-3 text-slate-400" />
-                              {sub.project_leader}
-                            </p>
-                          </td>
-                          <td className="px-6 py-4 text-sm text-slate-600">{sub.suc_agencies}</td>
-                          <td className="px-6 py-4">
-                            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-medium border ${getCategoryColor(sub.paper_category)}`}>
-                              <FontAwesomeIcon icon={faBookOpen} className="w-3 h-3" />
-                              {sub.paper_category?.includes('Completed') ? 'Completed' : 'Ongoing'}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-sm text-slate-600">
-                            <div className="flex items-center gap-1.5">
-                              <FontAwesomeIcon icon={faCalendarAlt} className="w-3 h-3 text-slate-400" />
-                              {new Date(sub.created_at).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-medium border ${getStatusColor(displayStatus)}`}>
-                              <FontAwesomeIcon icon={getStatusIcon(displayStatus)} className="w-3 h-3" />
-                              {getStatusDisplay(displayStatus)}
-                            </span>
-                          </td>
-                        </>
-                      ) : (
-                        <>
-                          <td className="px-6 py-4">
-                            <p className="text-sm font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">{sub.subject || 'No Subject'}</p>
-                            <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1.5">
-                              <FontAwesomeIcon icon={faEnvelope} className="w-3 h-3 text-slate-400" />
-                              {sub.sender_name || 'Unknown'} ({sub.sender_email || 'No Email'})
-                            </p>
-                          </td>
-                          <td className="px-6 py-4 text-sm text-slate-600">
-                            {sub.project_leader_name || 'Not specified'}
-                            {sub.extraction_status === 'failed' && (
-                              <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-600 border border-gray-200">
-                                <FontAwesomeIcon icon={faWarning} className="w-2.5 h-2.5" />
-                                Uncategorized
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-6 py-4 text-sm text-slate-600">
-                            <div className="flex items-center gap-1.5">
-                              <FontAwesomeIcon icon={faCalendarAlt} className="w-3 h-3 text-slate-400" />
-                              {new Date(sub.email_received_at || sub.created_at).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-medium border ${getStatusColor(displayStatus)}`}>
-                              <FontAwesomeIcon icon={getStatusIcon(displayStatus)} className="w-3 h-3" />
-                              {getStatusDisplay(displayStatus)}
-                            </span>
-                            {sub.is_categorized === false && (
-                              <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-50 text-red-600 border border-red-200">
-                                <FontAwesomeIcon icon={faExclamationTriangle} className="w-2.5 h-2.5" />
-                                Needs Review
-                              </span>
-                            )}
-                            {sub.is_categorized === true && sub.extraction_status === 'failed' && (
-                              <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200">
-                                <FontAwesomeIcon icon={faWarning} className="w-2.5 h-2.5" />
-                                Manually Categorized
-                              </span>
-                            )}
-                          </td>
-                        </>
-                      )}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-            {filteredSubmissions.length === 0 && (
-              <div className="text-center py-16 text-slate-400">
-                <FontAwesomeIcon icon={activeTab === 'system' ? faFolderOpen : faInbox} className="w-12 h-12 text-slate-300 mb-4" />
-                <p className="text-sm font-medium">No {activeTab === 'system' ? 'submissions' : 'email submissions'} found</p>
-                <p className="text-xs text-slate-400 mt-1">Try adjusting your filters or search terms</p>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
       <style jsx>{`
         @keyframes slideIn {
-          from { transform: translateX(100%); opacity: 0; }
-          to { transform: translateX(0); opacity: 1; }
+          from {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
         }
-        .animate-slide-in { animation: slideIn 0.3s ease-out; }
-
-        /* Hide scrollbar for the table container */
-        .scrollbar-hide {
-          -ms-overflow-style: none;  /* IE and Edge */
-          scrollbar-width: none;  /* Firefox */
+        .animate-slide-in {
+          animation: slideIn 0.3s ease-out;
         }
-        .scrollbar-hide::-webkit-scrollbar {
-          display: none; /* Chrome, Safari and Opera */
+        .line-clamp-2 {
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
         }
       `}</style>
     </div>

@@ -22,7 +22,7 @@ export function SidebarItem({ icon, label, isActive, onClick, collapsed, badge =
       className={`
         w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group relative
         ${isActive
-          ? 'bg-linear-to-r from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/25'
+          ? 'bg-linear-to-r from-indigo-500 to-blue-600 text-white shadow-lg shadow-indigo-500/25'
           : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
         }
         ${collapsed ? 'justify-center px-3' : ''}
@@ -122,14 +122,14 @@ export default function Sidebar({
         >
           {!collapsed && (
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-linear-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/25">
+              <div className="w-8 h-8 rounded-lg bg-linear-to-br from-indigo-500 to-blue-600 flex items-center justify-center shadow-lg shadow-indigo-500/25">
                 <FontAwesomeIcon icon={faGavel} className="w-4 h-4 text-white" />
               </div>
               <span className="font-bold text-slate-800 text-sm">PEMNet</span>
             </div>
           )}
           {collapsed && (
-            <div className="w-8 h-8 rounded-lg bg-linear-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/25">
+            <div className="w-8 h-8 rounded-lg bg-linear-to-br from-indigo-500 to-blue-600 flex items-center justify-center shadow-lg shadow-indigo-500/25">
               <FontAwesomeIcon icon={faGavel} className="w-4 h-4 text-white" />
             </div>
           )}
@@ -178,12 +178,12 @@ export default function Sidebar({
         {/* Sidebar Footer - User Info */}
         <div className={`p-3 border-t border-slate-200 ${collapsed ? 'flex justify-center' : ''}`}>
           {collapsed ? (
-            <div className="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center text-white font-bold uppercase text-sm shadow-sm cursor-pointer hover:ring-2 hover:ring-purple-300 transition">
+            <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold uppercase text-sm shadow-sm cursor-pointer hover:ring-2 hover:ring-blue-300 transition">
               {currentUser?.full_name?.charAt(0) || 'A'}
             </div>
           ) : (
             <div className="flex items-center gap-3 p-2 bg-slate-50 rounded-xl border border-slate-200">
-              <div className="w-9 h-9 rounded-full bg-purple-600 flex items-center justify-center text-white font-bold uppercase text-sm shadow-sm shrink-0">
+              <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold uppercase text-sm shadow-sm shrink-0">
                 {currentUser?.full_name?.charAt(0) || 'A'}
               </div>
               <div className="flex-1 min-w-0">

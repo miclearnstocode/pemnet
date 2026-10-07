@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faCheckCircle, faTimesCircle, faClock, faFileAlt, faEnvelope, faSearch, faFilter, faSync, 
-  faUserCircle, faSignOutAlt, faGavel, faInfoCircle, faFolderOpen, faInbox, faSpinner, 
+  faUserCircle, faGavel, faInfoCircle, faFolderOpen, faInbox, faSpinner, 
   faFilePdf, faCalendarAlt, faTag, faUser, faSchool, faFlag, faExclamationTriangle, 
   faThumbsUp, faThumbsDown, faArrowDown, faUsers, faBookOpen, faLayerGroup, faEdit, faHistory,
   faBars, faDashboard, faCog, faQuestionCircle, faBell, faLifeRing,
@@ -19,6 +18,7 @@ import ViewHistory from '../components/ViewHistory';
 import DecisionSummary from '../components/DecisionSummary';
 import Sidebar from '../components/master-components/Sidebar';
 import { QuickLinkCard, UnderUpdateModal } from '../components/master-components/QuickLinkCard';
+import UnderDevelopment from '../components/master-components/UnderDevelopment';
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL).replace(/\/+$/, '');
 
@@ -28,7 +28,7 @@ function SectionTitle({ icon, color = 'slate', label }) {
     indigo:  'text-indigo-600 bg-indigo-50 border-indigo-100',
     blue:    'text-blue-600 bg-blue-50 border-blue-100',
     emerald: 'text-emerald-600 bg-emerald-50 border-emerald-100',
-    purple:  'text-purple-600 bg-purple-50 border-purple-100',
+    blue:  'text-blue-600 bg-blue-50 border-blue-100',
     slate:   'text-slate-600 bg-slate-100 border-slate-200',
   };
   const cls = colorMap[color] || colorMap.slate;
@@ -102,11 +102,11 @@ function SettingsPanel({ isOpen, onClose }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] overflow-y-auto">
+    <div className="fixed inset-0 z-100 overflow-y-auto">
       <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={onClose}></div>
       <div className="relative min-h-full flex items-center justify-center p-4">
         <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden">
-          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 px-6 py-5 border-b border-slate-200">
+          <div className="bg-linear-to-r from-indigo-50 to-blue-50 px-6 py-5 border-b border-slate-200">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-indigo-100 border border-indigo-200 flex items-center justify-center">
@@ -263,11 +263,11 @@ function HelpCenterPanel({ isOpen, onClose }) {
 
   return (
     <>
-      <div className="fixed inset-0 z-[100] overflow-y-auto">
+      <div className="fixed inset-0 z-100 overflow-y-auto">
         <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={onClose}></div>
         <div className="relative min-h-full flex items-center justify-center p-4">
           <div className="relative w-full max-w-3xl bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
-            <div className="bg-gradient-to-r from-blue-50 to-cyan-50 px-6 py-5 border-b border-slate-200">
+            <div className="bg-linear-to-r from-blue-50 to-cyan-50 px-6 py-5 border-b border-slate-200">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-blue-100 border border-blue-200 flex items-center justify-center">
@@ -310,7 +310,7 @@ function HelpCenterPanel({ isOpen, onClose }) {
                   icon={faHistory}
                   title="Video Tutorials"
                   description="Watch step-by-step guides"
-                  color="purple"
+                  color="blue"
                   underUpdate={true}
                   onUnderUpdateClick={handleUnderUpdateClick}
                 />
@@ -425,7 +425,7 @@ export default function MasterReviewPage() {
 
   // Sidebar States
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [activeNavItem, setActiveNavItem] = useState('system');
+  const [activeNavItem, setActiveNavItem] = useState('dashboard');
   const [showSettings, setShowSettings] = useState(false);
   const [showHelpCenter, setShowHelpCenter] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -901,7 +901,7 @@ export default function MasterReviewPage() {
     if (!category) return 'bg-slate-100 text-slate-700';
     if (category.includes('Natural')) return 'bg-green-100 text-green-700';
     if (category.includes('Information')) return 'bg-blue-100 text-blue-700';
-    if (category.includes('Development')) return 'bg-purple-100 text-purple-700';
+    if (category.includes('Development')) return 'bg-blue-100 text-blue-700';
     if (category.includes('Social')) return 'bg-pink-100 text-pink-700';
     if (category.includes('Food')) return 'bg-yellow-100 text-yellow-700';
     return 'bg-slate-100 text-slate-700';
@@ -1246,20 +1246,6 @@ export default function MasterReviewPage() {
             </div>
 
             <div className="flex items-center gap-2">
-              {/* Search */}
-              <div className="hidden md:block relative">
-                <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400">
-                  <FontAwesomeIcon icon={faSearch} className="w-3.5 h-3.5" />
-                </div>
-                <input
-                  type="text"
-                  placeholder="Quick search..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-48 lg:w-64 pl-9 pr-4 py-2 bg-slate-100 border border-transparent rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-indigo-300 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition-all"
-                />
-              </div>
-
               {/* Refresh Button */}
               <button
                 onClick={fetchSubmissions}
@@ -1270,14 +1256,12 @@ export default function MasterReviewPage() {
               </button>
 
               {/* Notifications */}
-              <button className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-500 transition relative">
-                <FontAwesomeIcon icon={faBell} className="w-4 h-4" />
-                {pendingCount > 0 && (
-                  <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
-                    {pendingCount > 9 ? '9+' : pendingCount}
-                  </span>
-                )}
-              </button>
+              <UnderDevelopment
+                icon={faBell}
+                featureName="Notifications"
+                description="We're building a notification center so you can stay on top of new submissions and status updates in real time."
+                badge={pendingCount}
+              />
             </div>
           </div>
         </header>
@@ -1288,7 +1272,7 @@ export default function MasterReviewPage() {
           {activeNavItem === 'dashboard' && (
             <div className="space-y-6">
               {/* Welcome Banner */}
-              <div className="bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-500 rounded-2xl p-6 sm:p-8 text-white shadow-xl shadow-indigo-500/20">
+              <div className="bg-linear-to-r from-indigo-500 via-blue-500 to-blue-500 rounded-2xl p-6 sm:p-8 text-white shadow-xl shadow-indigo-500/20">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div>
                     <h2 className="text-xl sm:text-2xl font-bold mb-1">
@@ -1454,13 +1438,13 @@ export default function MasterReviewPage() {
                         <p className="text-xs text-emerald-700 mt-0.5">Correct extracted data issues before making your final call.</p>
                       </div>
                     </div>
-                    <div className="flex items-start gap-3 p-3 bg-purple-50 rounded-xl border border-purple-100">
-                      <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center shrink-0">
-                        <FontAwesomeIcon icon={faHistory} className="w-3.5 h-3.5 text-purple-600" />
+                    <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-xl border border-blue-100">
+                      <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
+                        <FontAwesomeIcon icon={faHistory} className="w-3.5 h-3.5 text-blue-600" />
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-purple-900">Track all changes</p>
-                        <p className="text-xs text-purple-700 mt-0.5">View edit history to see who changed what and when.</p>
+                        <p className="text-sm font-semibold text-blue-900">Track all changes</p>
+                        <p className="text-xs text-blue-700 mt-0.5">View edit history to see who changed what and when.</p>
                       </div>
                     </div>
                   </div>
@@ -1521,7 +1505,7 @@ export default function MasterReviewPage() {
 
               {/* Filters */}
               <div className="flex gap-3 flex-wrap items-center">
-                <div className="flex-1 min-w-[200px] relative">
+                <div className="flex-1 min-w-50 relative">
                   <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400">
                     <FontAwesomeIcon icon={faSearch} className="w-4 h-4" />
                   </div>
@@ -1540,7 +1524,7 @@ export default function MasterReviewPage() {
                   <select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
-                    className="pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none appearance-none cursor-pointer min-w-[160px]"
+                    className="pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none appearance-none cursor-pointer min-w-40"
                   >
                     <option value="all">All Status</option>
                     <option value="pending">Pending</option>
@@ -1557,7 +1541,7 @@ export default function MasterReviewPage() {
                     <select
                       value={categoryFilter}
                       onChange={(e) => setCategoryFilter(e.target.value)}
-                      className="pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none appearance-none cursor-pointer min-w-[200px]"
+                      className="pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none appearance-none cursor-pointer min-w-50"
                     >
                       <option value="all">All Categories</option>
                       <option value="Completed Extension Project Paper">Completed Extension</option>
@@ -1583,7 +1567,7 @@ export default function MasterReviewPage() {
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
                               <div className="flex items-center gap-2">
-                                <FontAwesomeIcon icon={faTag} className="w-3.5 h-3.5 text-purple-500" />
+                                <FontAwesomeIcon icon={faTag} className="w-3.5 h-3.5 text-blue-500" />
                                 Category
                               </div>
                             </th>
@@ -1601,7 +1585,7 @@ export default function MasterReviewPage() {
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
                               <div className="flex items-center gap-2">
-                                <FontAwesomeIcon icon={faGavel} className="w-3.5 h-3.5 text-purple-500" />
+                                <FontAwesomeIcon icon={faGavel} className="w-3.5 h-3.5 text-blue-500" />
                                 Master Status
                               </div>
                             </th>
@@ -1734,7 +1718,7 @@ export default function MasterReviewPage() {
 
       {/* Toast Notification */}
       {toast && (
-        <div className="fixed top-4 right-4 z-[9999] animate-slide-in">
+        <div className="fixed top-4 right-4 z-9999 animate-slide-in">
           <div className={`relative w-96 p-4 rounded-xl border shadow-lg ${
             toast.type === 'success' ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'
           }`}>
@@ -1850,7 +1834,7 @@ export default function MasterReviewPage() {
             <div className="relative w-full max-w-7xl bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden max-h-[95vh] flex flex-col">
               {/* HEADER */}
               <div className="bg-white border-b border-slate-200 sticky top-0 z-20">
-                <div className="h-1 w-full bg-gradient-to-r from-indigo-400 via-purple-400 to-blue-400" />
+                <div className="h-1 w-full bg-linear-to-r from-indigo-400 via-blue-400 to-blue-400" />
 
                 <div className="px-8 py-5 flex items-start justify-between gap-6">
                   <div className="flex items-start gap-4 min-w-0 flex-1">
@@ -2033,7 +2017,7 @@ export default function MasterReviewPage() {
                   {/* SECTION: Evaluator Votes */}
                   {submissionDetails?.votes && submissionDetails.votes.length > 0 && (
                     <>
-                      <SectionTitle icon={faUserCircle} color="purple" label={`Evaluator Votes (${submissionDetails.votes.length}/3)`} />
+                      <SectionTitle icon={faUserCircle} color="blue" label={`Evaluator Votes (${submissionDetails.votes.length}/3)`} />
                       <div className="space-y-3 mb-4">
                         {submissionDetails.votes.map((vote, idx) => (
                           <div
@@ -2107,16 +2091,16 @@ export default function MasterReviewPage() {
                   </div>
 
                   {/* SECTION: Master Approver Controls */}
-                  <div className="rounded-xl border border-purple-200 bg-purple-50/40 p-6">
+                  <div className="rounded-xl border border-blue-200 bg-blue-50/40 p-6">
                     <div className="flex items-center gap-3 mb-4">
-                      <div className="w-9 h-9 rounded-lg bg-purple-100 border border-purple-200 flex items-center justify-center">
-                        <FontAwesomeIcon icon={faGavel} className="w-4 h-4 text-purple-700" />
+                      <div className="w-9 h-9 rounded-lg bg-blue-100 border border-blue-200 flex items-center justify-center">
+                        <FontAwesomeIcon icon={faGavel} className="w-4 h-4 text-blue-700" />
                       </div>
                       <div>
-                        <h4 className="text-sm font-bold text-purple-900 uppercase tracking-wide">
+                        <h4 className="text-sm font-bold text-blue-900 uppercase tracking-wide">
                           Master Approver Decision
                         </h4>
-                        <p className="text-xs text-purple-700/70">
+                        <p className="text-xs text-blue-700/70">
                           This action is final and will notify the corresponding author
                         </p>
                       </div>

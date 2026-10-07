@@ -2,6 +2,7 @@
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faClock } from '@fortawesome/free-solid-svg-icons';
+import { UnderDevelopmentModal } from './UnderDevelopment';
 
 // ---------- Quick Link Card Component ----------
 export function QuickLinkCard({ 
@@ -28,12 +29,12 @@ export function QuickLinkCard({
       iconColor: 'text-emerald-600',
       titleHover: 'group-hover:text-emerald-700',
     },
-    purple: {
-      bg: 'bg-gradient-to-br from-purple-50 to-purple-100/50',
-      border: 'border-purple-200',
-      hoverBorder: 'hover:border-purple-300',
-      iconColor: 'text-purple-600',
-      titleHover: 'group-hover:text-purple-700',
+    blue: {
+      bg: 'bg-gradient-to-br from-blue-50 to-blue-100/50',
+      border: 'border-blue-200',
+      hoverBorder: 'hover:border-blue-300',
+      iconColor: 'text-blue-600',
+      titleHover: 'group-hover:text-blue-700',
     },
   };
 
@@ -86,69 +87,21 @@ export function QuickLinkCard({
   );
 }
 
-// ---------- Under Update Popup Modal ----------
+// ---------- Under Update Popup Modal (thin wrapper around UnderDevelopmentModal) ----------
+/**
+ * Kept for backwards compatibility with existing imports.
+ * Delegates to the shared `UnderDevelopmentModal` from `UnderDevelopment.js`
+ * so the popup UI stays consistent across the app.
+ */
 export function UnderUpdateModal({ isOpen, onClose, featureName }) {
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-110 overflow-y-auto">
-      <div 
-        className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" 
-        onClick={onClose}
-      ></div>
-      <div className="relative min-h-full flex items-center justify-center p-4">
-        <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden animate-scale-in">
-          {/* Header with gradient */}
-          <div className="h-1.5 w-full bg-linear-to-r from-amber-400 via-orange-400 to-amber-400" />
-
-          <div className="p-6 text-center">
-            {/* Animated icon */}
-            <div className="relative w-20 h-20 mx-auto mb-4">
-              <div className="absolute inset-0 rounded-full bg-amber-100 animate-ping opacity-30" />
-              <div className="relative w-20 h-20 rounded-full bg-linear-to-br from-amber-100 to-orange-100 border-2 border-amber-200 flex items-center justify-center">
-                <FontAwesomeIcon icon={faClock} className="w-9 h-9 text-amber-600" />
-              </div>
-            </div>
-
-            <h3 className="text-xl font-bold text-slate-900 mb-2">
-              Currently Under Update
-            </h3>
-            <p className="text-sm text-slate-600 mb-1">
-              <span className="font-semibold text-slate-800">"{featureName}"</span> is being improved.
-            </p>
-            <p className="text-xs text-slate-500 leading-relaxed">
-              This feature is temporarily unavailable while we work on enhancements. 
-              We appreciate your patience and will have it ready soon!
-            </p>
-
-            {/* Progress bar */}
-            <div className="mt-5 mb-1">
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-                  Development Progress
-                </span>
-                <span className="text-[10px] font-bold text-amber-600">
-                  In Progress
-                </span>
-              </div>
-              <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                <div className="h-full w-2/3 bg-linear-to-r from-amber-400 to-orange-500 rounded-full animate-pulse" />
-              </div>
-            </div>
-
-            {/* Button */}
-            <button
-              onClick={onClose}
-              className="mt-6 w-full px-6 py-2.5 bg-slate-900 text-white rounded-xl font-semibold text-sm hover:bg-slate-800 transition shadow-sm hover:shadow"
-            >
-              Got it, thanks!
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <UnderDevelopmentModal
+      isOpen={isOpen}
+      onClose={onClose}
+      featureName={featureName}
+      description="This feature is temporarily unavailable while we work on enhancements. We appreciate your patience and will have it ready soon!"
+    />
   );
 }
 
-// ---------- Default export (both components) ----------
 export default { QuickLinkCard, UnderUpdateModal };

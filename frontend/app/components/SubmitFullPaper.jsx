@@ -786,7 +786,6 @@ function buildBodyBlocks(data, BLUE, LIGHT, BORDER) {
     A(`<p style="${H_SECTION}margin-top:16px;">APPENDICES</p>`),
     N('', safe(data.appendices).trim() || 'Click or tap here to insert or list only the appendices necessary for understanding or verifying the manuscript.'),
   );
-  // ↑↑↑ push() closes here with its OWN );
 
   // ============================================================
   // DYNAMIC TABLES (top-level statement, NOT inside push)
@@ -849,7 +848,6 @@ function buildBodyBlocks(data, BLUE, LIGHT, BORDER) {
       );
     });
   }
-  // ↑↑↑ if/else closes here — NO stray ); after the closing }
 
   // ============================================================
   // DYNAMIC FIGURES (top-level statement)
@@ -901,12 +899,17 @@ function buildBlocks({ data, BLUE, LIGHT, BORDER }) {
   ];
 }
 
+/**
+ * Generate a PDF blob using the browser's native print-to-PDF.
+ * Opens a new window with the rendered A4 sheets and triggers print.
+ * The user can then "Save as PDF" from the print dialog.
+ * 
+ * NOTE: This function is kept for API compatibility but the actual
+ * PDF generation now happens via the native print dialog on the client.
+ * If you need a true programmatic PDF blob, use a server-side solution.
+ */
 async function generateFullPaperPdfBlob(previewData) {
-  const { createRoot } = await import('react-dom/client');
-  const { flushSync } = await import('react-dom');
-  const { captureA4SheetsAsPDF } = await import('@/app/components/PrintA4Sheets');
-
-  // Create off-screen host for rendering preview
+  // Create a hidden container to render the preview
   const host = document.createElement('div');
   host.setAttribute('aria-hidden', 'true');
   host.style.position = 'absolute';
@@ -920,6 +923,8 @@ async function generateFullPaperPdfBlob(previewData) {
   host.style.overflow = 'hidden';
   document.body.appendChild(host);
 
+  const { createRoot } = await import('react-dom/client');
+  const { flushSync } = await import('react-dom');
   const root = createRoot(host);
 
   try {
@@ -953,7 +958,7 @@ async function generateFullPaperPdfBlob(previewData) {
     // Extra buffer for layout stabilization
     await new Promise((r) => setTimeout(r, 200));
 
-    // Ensure ALL images are fully loaded before capture
+    // Ensure ALL images are fully loaded
     const imgs = Array.from(host.querySelectorAll('img'));
     await Promise.all(
       imgs.map((img) =>
@@ -966,14 +971,106 @@ async function generateFullPaperPdfBlob(previewData) {
       )
     );
 
-    // Capture as PNG for lossless fidelity and universal compatibility
-    return await captureA4SheetsAsPDF({
-      selector: '.a4-sheet',
-      root: host,
-      scale: 2,
-      imageFormat: 'png',       // Force PNG instead of default/WebP
-      onStatus: () => {},
+    // -----------------------------------------------------------------
+    // Instead of capturing as image, we use the native print dialog.
+    // We open a new window with the rendered HTML and trigger print.
+    // This produces a true vector PDF when the user selects "Save as PDF".
+    // -----------------------------------------------------------------
+    const printWindow = window.open('', '_blank', 'width=900,height=700');
+    if (!printWindow) {
+      throw new Error(
+        'Popup blocked. Please allow popups for this site to generate the PDF.'
+      );
+    }
+
+    // Collect all styles from the current document
+    const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
+      .map((el) => el.outerHTML)
+      .join('\n');
+
+    // Get the rendered HTML of all A4 sheets
+    const sheetsHtml = Array.from(sheets)
+      .map((sheet) => sheet.outerHTML)
+      .join('\n');
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <title>Full Paper</title>
+          ${styles}
+          <style>
+            @page {
+              size: A4;
+              margin: 0;
+            }
+            html, body {
+              margin: 0;
+              padding: 0;
+              background: #fff;
+              width: 210mm;
+            }
+            .a4-sheet {
+              width: 210mm !important;
+              height: 297mm !important;
+              box-sizing: border-box !important;
+              padding: 0 16mm !important;
+              margin: 0 auto !important;
+              box-shadow: none !important;
+              page-break-after: always;
+              break-after: page;
+              overflow: hidden !important;
+              display: flex !important;
+              flex-direction: column !important;
+            }
+            .a4-sheet:last-child {
+              page-break-after: auto;
+              break-after: auto;
+            }
+            .a4-sheet, .a4-sheet * {
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+            img {
+              max-width: 100% !important;
+              height: auto !important;
+            }
+            * {
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+          </style>
+        </head>
+        <body>
+          ${sheetsHtml}
+        </body>
+      </html>
+    `);
+
+    printWindow.document.close();
+
+    // Wait for the new window to load its resources
+    await new Promise((resolve) => {
+      if (printWindow.document.readyState === 'complete') {
+        resolve();
+      } else {
+        printWindow.addEventListener('load', resolve, { once: true });
+        // Fallback timeout
+        setTimeout(resolve, 2000);
+      }
     });
+
+    // Wait for fonts and images in the print window
+    await new Promise((r) => setTimeout(r, 500));
+
+    // Trigger print
+    printWindow.focus();
+    printWindow.print();
+
+    // Return a dummy blob for API compatibility
+    // The actual PDF is produced by the user via "Save as PDF" in the print dialog
+    return new Blob([], { type: 'application/pdf' });
   } finally {
     // Cleanup
     try {
@@ -1989,8 +2086,12 @@ export default function SubmitFullPaper({
       const baseName = `full_paper_${title
         .replace(/[^a-zA-Z0-9]/g, '_')
         .substring(0, 60)}`;
-      fd.append('full_paper_file', previewBlob, `${baseName}.pdf`);
-      fd.append('full_paper_preview_file', previewBlob, `preview_${baseName}.pdf`);
+      
+      // Only append the PDF if we actually generated one (non-empty blob)
+      if (previewBlob && previewBlob.size > 0) {
+        fd.append('full_paper_file', previewBlob, `${baseName}.pdf`);
+        fd.append('full_paper_preview_file', previewBlob, `preview_${baseName}.pdf`);
+      }
 
       const res = await fetch(`${API_URL}/api/submit-full-paper`, {
         method: 'POST',

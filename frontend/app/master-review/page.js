@@ -3,13 +3,22 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheckCircle, faTimesCircle, faClock, faFileAlt, faEnvelope, faSearch, faFilter, faSync, faUserCircle, faSignOutAlt, faGavel, faInfoCircle, faFolderOpen, faInbox, faSpinner, faFilePdf, faCalendarAlt, faTag, faUser, faSchool, faFlag, faExclamationTriangle, faThumbsUp, faThumbsDown, faArrowDown, faUsers, faBookOpen, faLayerGroup, faEdit,  faHistory} from '@fortawesome/free-solid-svg-icons';
+import { 
+  faCheckCircle, faTimesCircle, faClock, faFileAlt, faEnvelope, faSearch, faFilter, faSync, 
+  faUserCircle, faSignOutAlt, faGavel, faInfoCircle, faFolderOpen, faInbox, faSpinner, 
+  faFilePdf, faCalendarAlt, faTag, faUser, faSchool, faFlag, faExclamationTriangle, 
+  faThumbsUp, faThumbsDown, faArrowDown, faUsers, faBookOpen, faLayerGroup, faEdit, faHistory,
+  faBars, faDashboard, faCog, faQuestionCircle, faBell, faLifeRing,
+  faChevronDown, faChevronUp, faSlidersH, faEnvelopeOpen, faClipboardList
+} from '@fortawesome/free-solid-svg-icons';
 import ConfirmModal from '../components/ConfirmModal';
 import DowngradeModal from '../components/DowngradeModal';
 import EditSubmission from '../components/EditSubmission';
 import DiscussionSection from '../components/DiscussionSection';
 import ViewHistory from '../components/ViewHistory';
 import DecisionSummary from '../components/DecisionSummary';
+import Sidebar from '../components/master-components/Sidebar';
+import { QuickLinkCard, UnderUpdateModal } from '../components/master-components/QuickLinkCard';
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL).replace(/\/+$/, '');
 
@@ -80,10 +89,296 @@ function VoteStat({ label, value, color = 'slate' }) {
   );
 }
 
+// ---------- Settings Panel Component ----------
+function SettingsPanel({ isOpen, onClose }) {
+  const [settings, setSettings] = useState({
+    emailNotifications: true,
+    autoRefresh: false,
+    refreshInterval: 30,
+    compactView: false,
+    showEmailPreview: true,
+  });
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] overflow-y-auto">
+      <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={onClose}></div>
+      <div className="relative min-h-full flex items-center justify-center p-4">
+        <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden">
+          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 px-6 py-5 border-b border-slate-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-indigo-100 border border-indigo-200 flex items-center justify-center">
+                  <FontAwesomeIcon icon={faCog} className="w-5 h-5 text-indigo-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900">Settings</h3>
+                  <p className="text-xs text-slate-500">Manage your preferences</p>
+                </div>
+              </div>
+              <button
+                onClick={onClose}
+                className="w-9 h-9 flex items-center justify-center rounded-lg bg-white hover:bg-slate-100 text-slate-500 transition"
+              >
+                <FontAwesomeIcon icon={faTimesCircle} className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          <div className="p-6 space-y-6">
+            {/* Notification Settings */}
+            <div>
+              <h4 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-3">Notifications</h4>
+              <div className="space-y-3">
+                <label className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-100 transition">
+                  <div className="flex items-center gap-3">
+                    <FontAwesomeIcon icon={faBell} className="w-4 h-4 text-indigo-500" />
+                    <span className="text-sm font-medium text-slate-700">Email Notifications</span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={settings.emailNotifications}
+                    onChange={(e) => setSettings({ ...settings, emailNotifications: e.target.checked })}
+                    className="w-5 h-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
+                  />
+                </label>
+                <label className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-100 transition">
+                  <div className="flex items-center gap-3">
+                    <FontAwesomeIcon icon={faSync} className="w-4 h-4 text-indigo-500" />
+                    <span className="text-sm font-medium text-slate-700">Auto Refresh</span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={settings.autoRefresh}
+                    onChange={(e) => setSettings({ ...settings, autoRefresh: e.target.checked })}
+                    className="w-5 h-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
+                  />
+                </label>
+                {settings.autoRefresh && (
+                  <div className="ml-7 flex items-center gap-3">
+                    <label className="text-xs text-slate-500">Interval (seconds):</label>
+                    <input
+                      type="number"
+                      min="10"
+                      max="300"
+                      value={settings.refreshInterval}
+                      onChange={(e) => setSettings({ ...settings, refreshInterval: parseInt(e.target.value) })}
+                      className="w-20 px-3 py-1.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 focus:outline-none"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Display Settings */}
+            <div>
+              <h4 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-3">Display</h4>
+              <div className="space-y-3">
+                <label className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-100 transition">
+                  <div className="flex items-center gap-3">
+                    <FontAwesomeIcon icon={faClipboardList} className="w-4 h-4 text-indigo-500" />
+                    <span className="text-sm font-medium text-slate-700">Compact View</span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={settings.compactView}
+                    onChange={(e) => setSettings({ ...settings, compactView: e.target.checked })}
+                    className="w-5 h-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
+                  />
+                </label>
+                <label className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-100 transition">
+                  <div className="flex items-center gap-3">
+                    <FontAwesomeIcon icon={faEnvelopeOpen} className="w-4 h-4 text-indigo-500" />
+                    <span className="text-sm font-medium text-slate-700">Show Email Preview</span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={settings.showEmailPreview}
+                    onChange={(e) => setSettings({ ...settings, showEmailPreview: e.target.checked })}
+                    className="w-5 h-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
+                  />
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-3">
+            <button
+              onClick={onClose}
+              className="px-5 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl font-semibold text-sm hover:bg-slate-100 transition"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={onClose}
+              className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-semibold text-sm hover:bg-indigo-700 transition shadow-sm hover:shadow"
+            >
+              Save Settings
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------- Help Center Panel Component ----------
+function HelpCenterPanel({ isOpen, onClose }) {
+  const [expandedFaq, setExpandedFaq] = useState(null);
+  const [underUpdateFeature, setUnderUpdateFeature] = useState(null);
+
+  const faqs = [
+    {
+      q: 'How do I endorse a submission?',
+      a: 'Open a submission by clicking on any row in the table. In the details modal, scroll to the "Master Approver Decision" section and click "Endorse for Presentation". A confirmation dialog will appear where you can choose whether to send a confirmation email to the corresponding author.'
+    },
+    {
+      q: 'What is the difference between Non-Competitive and Poster Only?',
+      a: 'Non-Competitive submissions are accepted for poster presentation but do not compete for awards. Poster Only submissions are similar but may have different presentation requirements. Only Completed Extension Project Papers can be downgraded to these categories.'
+    },
+    {
+      q: 'How do I edit submission details?',
+      a: 'In the submission details modal, click "Edit Details" in the toolbar. You can modify fields like title, authors, category, and thematic area. All changes are recorded in the edit history.'
+    },
+    {
+      q: 'How do I view the edit history?',
+      a: 'Click "View History" in the submission details modal toolbar. This shows all edits made to the submission, including who made them and what changed.'
+    },
+    {
+      q: 'What happens when I return a submission to sender?',
+      a: 'Returning a submission to sender changes its status back to "Pending" and notifies the corresponding author that revisions are needed. The submission will reappear in the pending queue.'
+    },
+    {
+      q: 'Can I communicate with evaluators?',
+      a: 'Yes! The Evaluator Discussion section in the submission details modal allows you to post messages that all evaluators can see. This is useful for clarifying decisions or asking for additional input.'
+    },
+  ];
+
+  const handleUnderUpdateClick = (featureName) => {
+    setUnderUpdateFeature(featureName);
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <>
+      <div className="fixed inset-0 z-[100] overflow-y-auto">
+        <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={onClose}></div>
+        <div className="relative min-h-full flex items-center justify-center p-4">
+          <div className="relative w-full max-w-3xl bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+            <div className="bg-gradient-to-r from-blue-50 to-cyan-50 px-6 py-5 border-b border-slate-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-blue-100 border border-blue-200 flex items-center justify-center">
+                    <FontAwesomeIcon icon={faLifeRing} className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900">Help Center</h3>
+                    <p className="text-xs text-slate-500">Find answers and learn how to use the dashboard</p>
+                  </div>
+                </div>
+                <button
+                  onClick={onClose}
+                  className="w-9 h-9 flex items-center justify-center rounded-lg bg-white hover:bg-slate-100 text-slate-500 transition"
+                >
+                  <FontAwesomeIcon icon={faTimesCircle} className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6">
+              {/* Quick Links */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+                <QuickLinkCard
+                  icon={faFileAlt}
+                  title="Documentation"
+                  description="Read the full guide"
+                  color="indigo"
+                  underUpdate={true}
+                  onUnderUpdateClick={handleUnderUpdateClick}
+                />
+                <QuickLinkCard
+                  icon={faEnvelope}
+                  title="Contact Support"
+                  description="Get help from our team"
+                  color="emerald"
+                  underUpdate={true}
+                  onUnderUpdateClick={handleUnderUpdateClick}
+                />
+                <QuickLinkCard
+                  icon={faHistory}
+                  title="Video Tutorials"
+                  description="Watch step-by-step guides"
+                  color="purple"
+                  underUpdate={true}
+                  onUnderUpdateClick={handleUnderUpdateClick}
+                />
+              </div>
+
+              {/* FAQ Section */}
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-3 flex items-center gap-2">
+                  <FontAwesomeIcon icon={faQuestionCircle} className="w-3.5 h-3.5" />
+                  Frequently Asked Questions
+                </h4>
+                <div className="space-y-2">
+                  {faqs.map((faq, idx) => (
+                    <div key={idx} className="border border-slate-200 rounded-xl overflow-hidden">
+                      <button
+                        onClick={() => setExpandedFaq(expandedFaq === idx ? null : idx)}
+                        className="w-full flex items-center justify-between p-4 text-left hover:bg-slate-50 transition"
+                      >
+                        <span className="font-semibold text-sm text-slate-800 pr-4">{faq.q}</span>
+                        <FontAwesomeIcon
+                          icon={expandedFaq === idx ? faChevronUp : faChevronDown}
+                          className="w-4 h-4 text-slate-400 shrink-0"
+                        />
+                      </button>
+                      {expandedFaq === idx && (
+                        <div className="px-4 pb-4 pt-0">
+                          <p className="text-sm text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-100">
+                            {faq.a}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center">
+              <p className="text-xs text-slate-500">
+                <FontAwesomeIcon icon={faInfoCircle} className="w-3 h-3 mr-1" />
+                Need more help? Contact support@pemnet.com
+              </p>
+              <button
+                onClick={onClose}
+                className="px-6 py-2.5 bg-blue-600 text-white rounded-xl font-semibold text-sm hover:bg-blue-700 transition shadow-sm hover:shadow"
+              >
+                Got it
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Under Update Popup */}
+      <UnderUpdateModal
+        isOpen={!!underUpdateFeature}
+        onClose={() => setUnderUpdateFeature(null)}
+        featureName={underUpdateFeature}
+      />
+    </>
+  );
+}
+
 export default function MasterReviewPage() {
   const [currentUser, setCurrentUser] = useState(null);
   const [activeTab, setActiveTab] = useState('system');
   const [submissions, setSubmissions] = useState([]);
+  const [allSubmissions, setAllSubmissions] = useState([]);
   const [selectedSubmission, setSelectedSubmission] = useState(null);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -127,6 +422,13 @@ export default function MasterReviewPage() {
   const [showDowngradeConfirm, setShowDowngradeConfirm] = useState(false);
   const [pendingDowngradeType, setPendingDowngradeType] = useState(null);
   const [downgradeConfirmLoading, setDowngradeConfirmLoading] = useState(false);
+
+  // Sidebar States
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [activeNavItem, setActiveNavItem] = useState('system');
+  const [showSettings, setShowSettings] = useState(false);
+  const [showHelpCenter, setShowHelpCenter] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   // ===== DYNAMIC FIELD MAPPING =====
   const FIELD_MAP = {
@@ -177,29 +479,73 @@ export default function MasterReviewPage() {
   const fetchSubmissions = async () => {
     setLoading(true);
     try {
-      let url;
-      if (activeTab === 'system') {
-        url = `${API_URL}/api/submissions`;
+      // ── Fetch BOTH datasets in parallel ─────────────────────────
+      const [systemRes, emailRes] = await Promise.allSettled([
+        fetch(`${API_URL}/api/submissions`),
+        fetch(`${API_URL}/api/email-submissions?status=all`),
+      ]);
+
+      let systemData = [];
+      let emailData  = [];
+
+      // ── Parse system response ──
+      if (systemRes.status === 'fulfilled' && systemRes.value.ok) {
+        try {
+          const parsed = await systemRes.value.json();
+          systemData = Array.isArray(parsed) ? parsed : [];
+        } catch (err) {
+          console.error('Failed to parse system submissions JSON:', err);
+        }
       } else {
-        url = `${API_URL}/api/email-submissions?status=all`;
+        console.error(
+          'System submissions fetch failed:',
+          systemRes.status === 'fulfilled' ? systemRes.value.status : systemRes.reason
+        );
       }
 
-      const res = await fetch(url);
-      if (res.ok) {
-        const data = await res.json();
-        const processedData = data.map(sub => {
-          return {
-            ...sub,
-            submission_id: sub.submission_id || null
-          };
-        });
-        setSubmissions(processedData);
+      // ── Parse email response ──
+      if (emailRes.status === 'fulfilled' && emailRes.value.ok) {
+        try {
+          const parsed = await emailRes.value.json();
+          emailData = Array.isArray(parsed) ? parsed : [];
+        } catch (err) {
+          console.error('Failed to parse email submissions JSON:', err);
+        }
+      } else {
+        console.error(
+          'Email submissions fetch failed:',
+          emailRes.status === 'fulfilled' ? emailRes.value.status : emailRes.reason
+        );
       }
 
-      const statsRes = await fetch(`${API_URL}/api/master-approver/status-summary`);
-      if (statsRes.ok) {
-        const statsData = await statsRes.json();
-        setStats(statsData);
+      // ── Tag origins explicitly ──
+      const normalizedSystem = systemData.map((sub) => ({
+        ...sub,
+        submission_id: sub.submission_id || null,
+        __source: 'system',
+      }));
+
+      const normalizedEmail = emailData.map((sub) => ({
+        ...sub,
+        submission_id: sub.submission_id || null,
+        __source: 'email',
+      }));
+
+      // ── Merged list for global stats & sidebar badges ──
+      setAllSubmissions([...normalizedSystem, ...normalizedEmail]);
+
+      // ── Table data strictly depends on activeTab ──
+      setSubmissions(activeTab === 'system' ? normalizedSystem : normalizedEmail);
+
+      // ── Global summary endpoint ──
+      try {
+        const statsRes = await fetch(`${API_URL}/api/master-approver/status-summary`);
+        if (statsRes.ok) {
+          const statsData = await statsRes.json();
+          setStats(statsData);
+        }
+      } catch (err) {
+        console.error('Failed to fetch status summary:', err);
       }
     } catch (error) {
       console.error('Error fetching submissions:', error);
@@ -258,10 +604,8 @@ export default function MasterReviewPage() {
       return;
     }
 
-    // Fetch email logs for this submission
     await fetchEmailLogs(submissionId);
 
-    // For email submissions, get the status from extracted_abstract_data
     if (activeTab === 'email' && sub.id) {
       const extractedData = await fetchExtractedData(sub.id);
       if (extractedData) {
@@ -296,7 +640,6 @@ export default function MasterReviewPage() {
     }
   };
 
-  // ===== DYNAMIC GETTER =====
   const getField = (logicalName, fallback = 'Not specified') => {
     const mapping = FIELD_MAP[logicalName];
     if (!mapping) return fallback;
@@ -317,7 +660,6 @@ export default function MasterReviewPage() {
     return value;
   };
 
-  // Authors list needs custom JSON parsing
   const getAuthorsList = () => {
     const raw = getField('authorsList', '');
     if (!raw) return 'Not specified';
@@ -330,17 +672,10 @@ export default function MasterReviewPage() {
     }
   };
 
-  // ===== BUILD NORMALIZED EDIT DATA =====
-  // Returns an object whose keys match exactly the field names in EditSubmission.
-  // For system → uses the system field names directly from selectedSubmission.
-  // For email  → uses the email field names, built from getField() so missing
-  //              values become '' (so the edit form shows the placeholder).
   const getEditData = () => {
     if (activeTab === 'system') {
-      // System fields already match the systemFields config in EditSubmission
       return selectedSubmission || {};
     }
-    // Email fields — build normalized object
     return {
       id: emailExtractedData?.id,
       title: getField('title', ''),
@@ -368,8 +703,6 @@ export default function MasterReviewPage() {
         ? `${API_URL}/api/extracted-data/${emailExtractedData.id}/edit`
         : `${API_URL}/api/submissions/${submissionId}/edit`;
 
-      // For email submissions, the form uses email-field names already (title, sucs, etc.)
-      // so no remapping is needed. Pass payload as-is.
       const payload = { ...formData };
 
       const res = await fetch(url, {
@@ -397,7 +730,6 @@ export default function MasterReviewPage() {
         showToast(message, 'success');
         setShowEditModal(false);
 
-        // Refresh extracted data if applicable
         if (activeTab === 'email' && selectedSubmission.id) {
           await fetchExtractedData(selectedSubmission.id);
         }
@@ -451,6 +783,15 @@ export default function MasterReviewPage() {
         }
 
         setSubmissions(prev =>
+          prev.map(sub => {
+            if (sub.submission_id === submissionId) {
+              return { ...sub, status: status };
+            }
+            return sub;
+          })
+        );
+
+        setAllSubmissions(prev =>
           prev.map(sub => {
             if (sub.submission_id === submissionId) {
               return { ...sub, status: status };
@@ -598,7 +939,6 @@ export default function MasterReviewPage() {
   };
 
   const filteredSubmissions = submissions.filter(sub => {
-    // Group-match: "downgraded" matches all downgrade variants
     const matchesStatusFilter = (() => {
       if (statusFilter === 'all') return true;
       const s = String(sub.status || '').toLowerCase();
@@ -671,14 +1011,39 @@ export default function MasterReviewPage() {
     return s === 'endorse' || s === 'endorsed';
   };
 
-  const totalSubmissions = submissions.length;
-  const pendingCount = submissions.filter(s => isPending(s.status)).length;
-  const endorsedCount = submissions.filter(s => isEndorsed(s.status)).length;
-  const nonCompetitiveCount = submissions.filter(s =>
-
+  // ── Combined totals across BOTH system + email (for Dashboard + sidebar) ──
+  const totalSubmissions     = allSubmissions.length;
+  const pendingCount         = allSubmissions.filter(s => isPending(s.status)).length;
+  const endorsedCount        = allSubmissions.filter(s => isEndorsed(s.status)).length;
+  const nonCompetitiveCount  = allSubmissions.filter(s =>
     isNonCompetitive(s.status) || isNonCompetitive(s.evaluation_status)
   ).length;
-  const posterOnlyCount = submissions.filter(s =>
+  const posterOnlyCount      = allSubmissions.filter(s =>
+    isPosterOnly(s.status) || isPosterOnly(s.evaluation_status)
+  ).length;
+
+  // ── Per-source breakdown for sidebar badges ──
+  const systemPendingCount = allSubmissions
+    .filter(s => s.__source === 'system')
+    .filter(s => isPending(s.status)).length;
+
+  const emailPendingCount = allSubmissions
+    .filter(s => s.__source === 'email')
+    .filter(s => isPending(s.status)).length;
+
+  // ── Per-source totals (for sidebar counts if needed) ──
+  const systemTotalCount = allSubmissions.filter(s => s.__source === 'system').length;
+  const emailTotalCount  = allSubmissions.filter(s => s.__source === 'email').length;
+
+  // ── Tab-scoped counts for stat cards inside the submissions view ──
+  const tabSubmissions    = submissions;
+  const tabTotal          = tabSubmissions.length;
+  const tabPending        = tabSubmissions.filter(s => isPending(s.status)).length;
+  const tabEndorsed       = tabSubmissions.filter(s => isEndorsed(s.status)).length;
+  const tabNonCompetitive = tabSubmissions.filter(s =>
+    isNonCompetitive(s.status) || isNonCompetitive(s.evaluation_status)
+  ).length;
+  const tabPosterOnly     = tabSubmissions.filter(s =>
     isPosterOnly(s.status) || isPosterOnly(s.evaluation_status)
   ).length;
 
@@ -689,23 +1054,22 @@ export default function MasterReviewPage() {
   };
 
   const STAT_FILTERS = {
-      total: 'all',
-      pending: 'pending',
-      endorsed: 'endorse',
-      non_competitive: 'downgraded-non_competitive',
-      poster_only: 'downgraded-poster_only',
-    };
+    total: 'all',
+    pending: 'pending',
+    endorsed: 'endorse',
+    non_competitive: 'downgraded-non_competitive',
+    poster_only: 'downgraded-poster_only',
+  };
 
-    const handleStatCardClick = (cardKey) => {
-      const targetFilter = STAT_FILTERS[cardKey] ?? 'all';
-      // Toggle: click the same card again to clear the filter
-      setStatusFilter(prev => (prev === targetFilter && targetFilter !== 'all' ? 'all' : targetFilter));
-    };
+  const handleStatCardClick = (cardKey) => {
+    const targetFilter = STAT_FILTERS[cardKey] ?? 'all';
+    setStatusFilter(prev => (prev === targetFilter && targetFilter !== 'all' ? 'all' : targetFilter));
+  };
 
-    const isStatCardActive = (cardKey) => {
-      const targetFilter = STAT_FILTERS[cardKey] ?? 'all';
-      return statusFilter === targetFilter;
-    };
+  const isStatCardActive = (cardKey) => {
+    const targetFilter = STAT_FILTERS[cardKey] ?? 'all';
+    return statusFilter === targetFilter;
+  };
 
   const getEmailStatusBadge = () => {
     const status = getEmailStatus();
@@ -727,7 +1091,6 @@ export default function MasterReviewPage() {
     );
   };
 
-  // Field configuration for EditSubmission
   const getEditFields = (submissionType) => {
     if (submissionType === 'email') {
       return {
@@ -780,19 +1143,598 @@ export default function MasterReviewPage() {
     };
   };
 
+  // ===== SIDEBAR NAVIGATION HANDLER =====
+  const handleNavClick = (navId) => {
+    setActiveNavItem(navId);
+    setMobileSidebarOpen(false);
+
+    switch (navId) {
+      case 'dashboard':
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        break;
+
+      case 'system':
+        setActiveTab('system');
+        setStatusFilter('all');
+        setCategoryFilter('all');
+        setSearchTerm('');
+        break;
+
+      case 'email':
+        setActiveTab('email');
+        setStatusFilter('all');
+        setCategoryFilter('all');
+        setSearchTerm('');
+        break;
+
+      case 'settings':
+        setShowSettings(true);
+        break;
+
+      case 'help':
+        setShowHelpCenter(true);
+        break;
+
+      default:
+        break;
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent"></div>
+          <p className="text-slate-500 text-sm font-medium">Loading dashboard...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 flex">
+      {/* ============ SIDEBAR (extracted component) ============ */}
+      <Sidebar
+        collapsed={sidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+        activeNavItem={activeNavItem}
+        onNavClick={handleNavClick}
+        currentUser={currentUser}
+        pendingCount={pendingCount}
+        systemPendingCount={systemPendingCount}
+        emailPendingCount={emailPendingCount}
+        mobileOpen={mobileSidebarOpen}
+        onMobileClose={() => setMobileSidebarOpen(false)}
+      />
+
+      {/* ============ MAIN CONTENT ============ */}
+      <main className="flex-1 min-w-0">
+        {/* Top Header Bar */}
+        <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-slate-200">
+          <div className="px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setMobileSidebarOpen(true)}
+                className="lg:hidden w-9 h-9 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-500 transition"
+              >
+                <FontAwesomeIcon icon={faBars} className="w-5 h-5" />
+              </button>
+              <div>
+                <h1 className="text-lg sm:text-xl font-bold text-slate-900 flex items-center gap-2">
+                  <FontAwesomeIcon
+                    icon={
+                      activeNavItem === 'dashboard'
+                        ? faDashboard
+                        : activeTab === 'system'
+                        ? faFileAlt
+                        : faEnvelope
+                    }
+                    className="w-5 h-5 text-indigo-600 hidden sm:inline"
+                  />
+                  {activeNavItem === 'dashboard'
+                    ? 'Dashboard'
+                    : activeTab === 'system'
+                    ? 'System Submissions'
+                    : 'Email Submissions'}
+                </h1>
+                <p className="text-xs text-slate-500 hidden sm:block">
+                  {activeNavItem === 'dashboard'
+                    ? 'Overview of all submissions and pending actions'
+                    : 'Review and make final decisions on submissions'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {/* Search */}
+              <div className="hidden md:block relative">
+                <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400">
+                  <FontAwesomeIcon icon={faSearch} className="w-3.5 h-3.5" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Quick search..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-48 lg:w-64 pl-9 pr-4 py-2 bg-slate-100 border border-transparent rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-indigo-300 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition-all"
+                />
+              </div>
+
+              {/* Refresh Button */}
+              <button
+                onClick={fetchSubmissions}
+                className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-500 transition"
+                title="Refresh"
+              >
+                <FontAwesomeIcon icon={faSync} className="w-4 h-4" />
+              </button>
+
+              {/* Notifications */}
+              <button className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-500 transition relative">
+                <FontAwesomeIcon icon={faBell} className="w-4 h-4" />
+                {pendingCount > 0 && (
+                  <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
+                    {pendingCount > 9 ? '9+' : pendingCount}
+                  </span>
+                )}
+              </button>
+            </div>
+          </div>
+        </header>
+
+        {/* Page Content */}
+        <div className="p-4 sm:p-6 lg:p-8">
+          {/* ===== DASHBOARD VIEW ===== */}
+          {activeNavItem === 'dashboard' && (
+            <div className="space-y-6">
+              {/* Welcome Banner */}
+              <div className="bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-500 rounded-2xl p-6 sm:p-8 text-white shadow-xl shadow-indigo-500/20">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-xl sm:text-2xl font-bold mb-1">
+                      Welcome back, {currentUser?.full_name?.split(' ')[0] || 'Master Approver'}! 👋
+                    </h2>
+                    <p className="text-white/80 text-sm">
+                      You have <span className="font-bold text-white">{pendingCount}</span> pending submission
+                      {pendingCount !== 1 ? 's' : ''} awaiting your decision.
+                    </p>
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => handleNavClick('system')}
+                      className="px-4 py-2.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-xl font-semibold text-sm transition flex items-center gap-2"
+                    >
+                      <FontAwesomeIcon icon={faFileAlt} className="w-4 h-4" />
+                      System
+                    </button>
+                    <button
+                      onClick={() => handleNavClick('email')}
+                      className="px-4 py-2.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-xl font-semibold text-sm transition flex items-center gap-2"
+                    >
+                      <FontAwesomeIcon icon={faEnvelope} className="w-4 h-4" />
+                      Email
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Stats Grid (combined totals) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <button
+                  type="button"
+                  onClick={() => { handleNavClick('system'); }}
+                  className="text-left bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all cursor-pointer"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center">
+                      <FontAwesomeIcon icon={faFolderOpen} className="w-5 h-5 text-slate-600" />
+                    </div>
+                  </div>
+                  <p className="text-3xl font-bold text-slate-900">{totalSubmissions}</p>
+                  <p className="text-sm text-slate-500 mt-1">Total Submissions</p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => { handleNavClick('system'); handleStatCardClick('pending'); }}
+                  className="text-left bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all cursor-pointer"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
+                      <FontAwesomeIcon icon={faClock} className="w-5 h-5 text-amber-600" />
+                    </div>
+                    {pendingCount > 0 && (
+                      <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-bold">
+                        Action needed
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-3xl font-bold text-amber-600">{pendingCount}</p>
+                  <p className="text-sm text-slate-500 mt-1">Pending Review</p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => { handleNavClick('system'); handleStatCardClick('endorsed'); }}
+                  className="text-left bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all cursor-pointer"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
+                      <FontAwesomeIcon icon={faCheckCircle} className="w-5 h-5 text-emerald-600" />
+                    </div>
+                  </div>
+                  <p className="text-3xl font-bold text-emerald-600">{endorsedCount}</p>
+                  <p className="text-sm text-slate-500 mt-1">Endorsed</p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => { handleNavClick('system'); handleStatCardClick('non_competitive'); }}
+                  className="text-left bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all cursor-pointer"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-yellow-50 flex items-center justify-center">
+                      <FontAwesomeIcon icon={faThumbsDown} className="w-5 h-5 text-yellow-600" />
+                    </div>
+                  </div>
+                  <p className="text-3xl font-bold text-yellow-600">{nonCompetitiveCount}</p>
+                  <p className="text-sm text-slate-500 mt-1">Non-Competitive</p>
+                </button>
+              </div>
+
+              {/* Quick Actions */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Recent Submissions */}
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                  <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+                    <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                      <FontAwesomeIcon icon={faClock} className="w-4 h-4 text-indigo-500" />
+                      Recent Submissions
+                    </h3>
+                    <button
+                      onClick={() => handleNavClick('system')}
+                      className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 transition"
+                    >
+                      View all →
+                    </button>
+                  </div>
+                  <div className="divide-y divide-slate-100">
+                    {allSubmissions.slice(0, 5).map((sub, idx) => (
+                      <div
+                        key={sub.submission_id || sub.id || idx}
+                        onClick={() => selectSubmission(sub)}
+                        className="px-6 py-3 hover:bg-slate-50 cursor-pointer transition flex items-center justify-between gap-3"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold text-slate-800 truncate">
+                            {sub.extension_project_title || sub.subject || 'Untitled'}
+                          </p>
+                          <p className="text-xs text-slate-500 truncate">
+                            {sub.project_leader || sub.sender_name || 'Unknown'}
+                          </p>
+                        </div>
+                        <span className={`shrink-0 px-2.5 py-1 rounded-full text-[10px] font-semibold ${getStatusColor(sub.status)}`}>
+                          {getStatusDisplay(sub.status || 'pending')}
+                        </span>
+                      </div>
+                    ))}
+                    {allSubmissions.length === 0 && (
+                      <div className="px-6 py-8 text-center text-slate-400 text-sm">
+                        <FontAwesomeIcon icon={faFolderOpen} className="w-8 h-8 mb-2 text-slate-300" />
+                        <p>No submissions yet</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Quick Tips */}
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                  <div className="px-6 py-4 border-b border-slate-200">
+                    <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                      <FontAwesomeIcon icon={faInfoCircle} className="w-4 h-4 text-blue-500" />
+                      Quick Tips
+                    </h3>
+                  </div>
+                  <div className="p-6 space-y-4">
+                    <div className="flex items-start gap-3 p-3 bg-indigo-50 rounded-xl border border-indigo-100">
+                      <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center shrink-0">
+                        <FontAwesomeIcon icon={faGavel} className="w-3.5 h-3.5 text-indigo-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-indigo-900">Make final decisions</p>
+                        <p className="text-xs text-indigo-700 mt-0.5">Click any submission to review details and endorse or downgrade.</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3 p-3 bg-emerald-50 rounded-xl border border-emerald-100">
+                      <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
+                        <FontAwesomeIcon icon={faEdit} className="w-3.5 h-3.5 text-emerald-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-emerald-900">Edit before deciding</p>
+                        <p className="text-xs text-emerald-700 mt-0.5">Correct extracted data issues before making your final call.</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3 p-3 bg-purple-50 rounded-xl border border-purple-100">
+                      <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center shrink-0">
+                        <FontAwesomeIcon icon={faHistory} className="w-3.5 h-3.5 text-purple-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-purple-900">Track all changes</p>
+                        <p className="text-xs text-purple-700 mt-0.5">View edit history to see who changed what and when.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ===== SUBMISSIONS VIEW ===== */}
+          {(activeNavItem === 'system' || activeNavItem === 'email') && (
+            <div className="space-y-6">
+              {/* Stat Cards — tab-scoped so System vs Email show correct counts */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <button
+                  type="button"
+                  onClick={() => handleStatCardClick('total')}
+                  className={`text-left bg-white rounded-xl p-5 border shadow-sm hover:shadow-md transition-all cursor-pointer ${
+                    isStatCardActive('total') ? 'border-slate-500 ring-2 ring-slate-500/20' : 'border-slate-200'
+                  }`}
+                >
+                  <p className="text-2xl font-bold text-slate-900">{tabTotal}</p>
+                  <p className="text-sm text-slate-500">Total Submissions</p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleStatCardClick('pending')}
+                  className={`text-left bg-white rounded-xl p-5 border shadow-sm hover:shadow-md transition-all cursor-pointer ${
+                    isStatCardActive('pending') ? 'border-yellow-500 ring-2 ring-yellow-500/20' : 'border-slate-200'
+                  }`}
+                >
+                  <p className="text-2xl font-bold text-yellow-600">{tabPending}</p>
+                  <p className="text-sm text-slate-500">Pending Review</p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleStatCardClick('endorsed')}
+                  className={`text-left bg-white rounded-xl p-5 border shadow-sm hover:shadow-md transition-all cursor-pointer ${
+                    isStatCardActive('endorsed') ? 'border-emerald-500 ring-2 ring-emerald-500/20' : 'border-slate-200'
+                  }`}
+                >
+                  <p className="text-2xl font-bold text-emerald-600">{tabEndorsed}</p>
+                  <p className="text-sm text-slate-500">Endorsed</p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleStatCardClick('non_competitive')}
+                  className={`text-left bg-white rounded-xl p-5 border shadow-sm hover:shadow-md transition-all cursor-pointer ${
+                    isStatCardActive('non_competitive') ? 'border-yellow-500 ring-2 ring-yellow-500/20' : 'border-slate-200'
+                  }`}
+                >
+                  <p className="text-2xl font-bold text-yellow-600">{tabNonCompetitive}</p>
+                  <p className="text-sm text-slate-500">Non-Competitive</p>
+                </button>
+              </div>
+
+              {/* Filters */}
+              <div className="flex gap-3 flex-wrap items-center">
+                <div className="flex-1 min-w-[200px] relative">
+                  <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400">
+                    <FontAwesomeIcon icon={faSearch} className="w-4 h-4" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder={activeTab === 'system' ? "Search by title, author, or SUC..." : "Search by subject, sender, or email..."}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full px-4 py-2.5 pl-10 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none"
+                  />
+                </div>
+                <div className="relative">
+                  <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400">
+                    <FontAwesomeIcon icon={faFilter} className="w-4 h-4" />
+                  </div>
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none appearance-none cursor-pointer min-w-[160px]"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="pending">Pending</option>
+                    <option value="endorse">Endorsed</option>
+                    <option value="downgraded">Downgraded (All)</option>
+                    <option value="downgraded-non_competitive">Non-Competitive</option>
+                  </select>
+                </div>
+                {activeTab === 'system' && (
+                  <div className="relative">
+                    <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400">
+                      <FontAwesomeIcon icon={faTag} className="w-4 h-4" />
+                    </div>
+                    <select
+                      value={categoryFilter}
+                      onChange={(e) => setCategoryFilter(e.target.value)}
+                      className="pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none appearance-none cursor-pointer min-w-[200px]"
+                    >
+                      <option value="all">All Categories</option>
+                      <option value="Completed Extension Project Paper">Completed Extension</option>
+                      <option value="Ongoing Extension Project Paper">Ongoing Extension</option>
+                    </select>
+                  </div>
+                )}
+              </div>
+
+              {/* Submissions Table */}
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-200">
+                        {activeTab === 'system' ? (
+                          <>
+                            <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
+                              <div className="flex items-center gap-2">
+                                <FontAwesomeIcon icon={faFileAlt} className="w-3.5 h-3.5 text-blue-500" />
+                                Title & Author
+                              </div>
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
+                              <div className="flex items-center gap-2">
+                                <FontAwesomeIcon icon={faTag} className="w-3.5 h-3.5 text-purple-500" />
+                                Category
+                              </div>
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
+                              <div className="flex items-center gap-2">
+                                <FontAwesomeIcon icon={faCalendarAlt} className="w-3.5 h-3.5 text-slate-400" />
+                                Date
+                              </div>
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
+                              <div className="flex items-center gap-2">
+                                <FontAwesomeIcon icon={faUserCircle} className="w-3.5 h-3.5 text-blue-400" />
+                                Evaluator Decision
+                              </div>
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
+                              <div className="flex items-center gap-2">
+                                <FontAwesomeIcon icon={faGavel} className="w-3.5 h-3.5 text-purple-500" />
+                                Master Status
+                              </div>
+                            </th>
+                          </>
+                        ) : (
+                          <>
+                            <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
+                              <div className="flex items-center gap-2">
+                                <FontAwesomeIcon icon={faEnvelope} className="w-3.5 h-3.5 text-blue-500" />
+                                Subject / Sender
+                              </div>
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
+                              <div className="flex items-center gap-2">
+                                <FontAwesomeIcon icon={faUser} className="w-3.5 h-3.5 text-emerald-500" />
+                                Project Leader
+                              </div>
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
+                              <div className="flex items-center gap-2">
+                                <FontAwesomeIcon icon={faCalendarAlt} className="w-3.5 h-3.5 text-slate-400" />
+                                Received
+                              </div>
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
+                              <div className="flex items-center gap-2">
+                                <FontAwesomeIcon icon={faFlag} className="w-3.5 h-3.5 text-rose-500" />
+                                Status
+                              </div>
+                            </th>
+                          </>
+                        )}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredSubmissions.map((sub) => {
+                        const evaluatorStatus = sub.evaluation_status || 'pending';
+                        const masterStatus = sub.status || 'pending';
+
+                        return (
+                          <tr
+                            key={sub.submission_id || sub.id}
+                            onClick={() => selectSubmission(sub)}
+                            className="cursor-pointer border-b border-slate-100 hover:bg-indigo-50/30 transition"
+                          >
+                            {activeTab === 'system' ? (
+                              <>
+                                <td className="px-6 py-4">
+                                  <p className="text-sm font-semibold text-slate-900">{sub.extension_project_title || 'Untitled'}</p>
+                                  <p className="text-xs text-slate-500 mt-1">{sub.project_leader || 'Unknown Project Leader'}</p>
+                                </td>
+                                <td className="px-6 py-4">
+                                  <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${getCategoryColor(sub.paper_category)}`}>
+                                    {sub.paper_category?.includes('Completed') ? 'Completed' : 'Ongoing'}
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4 text-sm text-slate-600">
+                                  {new Date(sub.created_at).toLocaleDateString('en-US', {
+                                    month: 'short',
+                                    day: '2-digit',
+                                    year: 'numeric'
+                                  })}
+                                </td>
+                                <td className="px-6 py-4">
+                                  <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(evaluatorStatus)}`}>
+                                    {getStatusDisplay(evaluatorStatus)}
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4">
+                                  <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(masterStatus)}`}>
+                                    {getStatusDisplay(masterStatus)}
+                                  </span>
+                                </td>
+                              </>
+                            ) : (
+                              <>
+                                <td className="px-6 py-4">
+                                  <p className="text-sm font-semibold text-slate-900">{sub.subject || 'No Subject'}</p>
+                                  <p className="text-xs text-slate-500 mt-1">{sub.sender_name} ({sub.sender_email})</p>
+                                </td>
+                                <td className="px-6 py-4 text-sm text-slate-600">{sub.project_leader_name || sub.sender_name}</td>
+                                <td className="px-6 py-4 text-sm text-slate-600">
+                                  {new Date(sub.email_received_at || sub.created_at).toLocaleDateString('en-US', {
+                                    month: 'short',
+                                    day: '2-digit',
+                                    year: 'numeric'
+                                  })}
+                                </td>
+                                <td className="px-6 py-4">
+                                  <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(masterStatus)}`}>
+                                    {getStatusDisplay(masterStatus)}
+                                  </span>
+                                  {sub.is_categorized === false && (
+                                    <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-50 text-red-600 border border-red-200">
+                                      <FontAwesomeIcon icon={faExclamationTriangle} className="w-2.5 h-2.5" />
+                                      Needs Review
+                                    </span>
+                                  )}
+                                  {sub.is_categorized === true && sub.extraction_status === 'failed' && (
+                                    <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                                      <FontAwesomeIcon icon={faExclamationTriangle} className="w-2.5 h-2.5" />
+                                      Manually Categorized
+                                    </span>
+                                  )}
+                                </td>
+                              </>
+                            )}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                  {filteredSubmissions.length === 0 && (
+                    <div className="text-center py-12 text-slate-500">
+                      <FontAwesomeIcon
+                        icon={activeTab === 'system' ? faFolderOpen : faInbox}
+                        className="w-12 h-12 text-slate-300 mb-4"
+                      />
+                      <p>No {activeTab === 'system' ? 'submissions' : 'email submissions'} found</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </main>
+
+      {/* ============ MODALS ============ */}
+
       {/* Toast Notification */}
       {toast && (
-        <div className="fixed top-4 right-4 z-9999 animate-slide-in">
+        <div className="fixed top-4 right-4 z-[9999] animate-slide-in">
           <div className={`relative w-96 p-4 rounded-xl border shadow-lg ${
             toast.type === 'success' ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'
           }`}>
@@ -809,6 +1751,12 @@ export default function MasterReviewPage() {
         </div>
       )}
 
+      {/* Settings Panel */}
+      <SettingsPanel isOpen={showSettings} onClose={() => setShowSettings(false)} />
+
+      {/* Help Center Panel */}
+      <HelpCenterPanel isOpen={showHelpCenter} onClose={() => setShowHelpCenter(false)} />
+
       {/* Endorse Confirmation Modal */}
       <ConfirmModal
         isOpen={showConfirmModal}
@@ -820,12 +1768,17 @@ export default function MasterReviewPage() {
             handleSetStatus(pendingStatusAction);
           }
         }}
-        title={pendingStatusAction === 'return_to_sender' ? 'Return to Sender' :
-              pendingStatusAction === 'endorse' ? 'Accept Abstract for Paper Presentation' :
-              'Confirm Status Change'}
-        message={pendingStatusAction === 'return_to_sender'
-          ? 'Are you sure you want to return this submission to the sender for revisions?'
-          : pendingStatusAction === 'endorse'
+        title={
+          pendingStatusAction === 'return_to_sender'
+            ? 'Return to Sender'
+            : pendingStatusAction === 'endorse'
+            ? 'Accept Abstract for Paper Presentation'
+            : 'Confirm Status Change'
+        }
+        message={
+          pendingStatusAction === 'return_to_sender'
+            ? 'Are you sure you want to return this submission to the sender for revisions?'
+            : pendingStatusAction === 'endorse'
             ? 'Are you sure you want to accept this abstract for paper presentation?'
             : `Are you sure you want to change the status to <strong>${getStatusDisplay(pendingStatusAction)}</strong>?`
         }
@@ -852,14 +1805,16 @@ export default function MasterReviewPage() {
         onClose={() => { setShowDowngradeConfirm(false); setPendingDowngradeType(null); }}
         onConfirm={confirmDowngradeVote}
         title="Confirm Downgrade"
-        message={`Are you sure you want to downgrade this submission? This will be recorded as a ${pendingDowngradeType === 'downgraded-non_competitive' ? 'Non-Competitive (Poster)' : 'Poster Only'} decision.`}
+        message={`Are you sure you want to downgrade this submission? This will be recorded as a ${
+          pendingDowngradeType === 'downgraded-non_competitive' ? 'Non-Competitive (Poster)' : 'Poster Only'
+        } decision.`}
         confirmText="Yes, Downgrade"
         cancelText="No, Cancel"
         isLoading={downgradeConfirmLoading}
         type="warning"
       />
 
-      {/* Edit Submission Modal — data built dynamically via getEditData() */}
+      {/* Edit Submission Modal */}
       <EditSubmission
         isOpen={showEditModal}
         onClose={() => setShowEditModal(false)}
@@ -886,7 +1841,6 @@ export default function MasterReviewPage() {
       {/* Details Modal */}
       {isModalOpen && selectedSubmission && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
-          {/* Backdrop */}
           <div
             className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity"
             onClick={() => setIsModalOpen(false)}
@@ -894,11 +1848,9 @@ export default function MasterReviewPage() {
 
           <div className="relative min-h-full flex items-center justify-center p-4">
             <div className="relative w-full max-w-7xl bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden max-h-[95vh] flex flex-col">
-
-              {/* ================= HEADER ================= */}
+              {/* HEADER */}
               <div className="bg-white border-b border-slate-200 sticky top-0 z-20">
-                {/* thin accent bar */}
-                <div className="h-1 w-full bg-linear-to-r from-indigo-400 via-purple-400 to-blue-400" />
+                <div className="h-1 w-full bg-gradient-to-r from-indigo-400 via-purple-400 to-blue-400" />
 
                 <div className="px-8 py-5 flex items-start justify-between gap-6">
                   <div className="flex items-start gap-4 min-w-0 flex-1">
@@ -918,8 +1870,8 @@ export default function MasterReviewPage() {
                           isEndorsed(selectedSubmission.status)
                             ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                             : isPending(selectedSubmission.status)
-                              ? 'bg-amber-50 text-amber-700 border-amber-200'
-                              : 'bg-slate-100 text-slate-600 border-slate-200'
+                            ? 'bg-amber-50 text-amber-700 border-amber-200'
+                            : 'bg-slate-100 text-slate-600 border-slate-200'
                         }`}>
                           {getStatusDisplay(selectedSubmission.status || 'pending')}
                         </span>
@@ -972,12 +1924,10 @@ export default function MasterReviewPage() {
                 </div>
               </div>
 
-              {/* ================= BODY ================= */}
+              {/* BODY */}
               <div className="grid grid-cols-1 lg:grid-cols-5 flex-1 overflow-hidden min-h-0">
-
-                {/* ---------- LEFT: INFO COLUMN ---------- */}
+                {/* LEFT: INFO COLUMN */}
                 <div className="lg:col-span-3 p-8 overflow-y-auto bg-white">
-
                   {/* SECTION: Paper Overview */}
                   <SectionTitle icon={faFileAlt} color="indigo" label="Paper Overview" />
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
@@ -985,9 +1935,11 @@ export default function MasterReviewPage() {
                     <InfoCard
                       label="Paper Category"
                       value={
-                        getField('paperCategory')?.includes('Completed') ? 'Completed Extension Project Paper'
-                        : getField('paperCategory')?.includes('Ongoing') ? 'Ongoing Extension Project Paper'
-                        : getField('paperCategory') || 'Not specified'
+                        getField('paperCategory')?.includes('Completed')
+                          ? 'Completed Extension Project Paper'
+                          : getField('paperCategory')?.includes('Ongoing')
+                          ? 'Ongoing Extension Project Paper'
+                          : getField('paperCategory') || 'Not specified'
                       }
                       badgeClass={getCategoryColor(getField('paperCategory'))}
                     />
@@ -1043,12 +1995,20 @@ export default function MasterReviewPage() {
                               className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200 text-sm"
                             >
                               <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold ${
-                                log.status === 'sent' ? 'bg-emerald-100 text-emerald-700'
-                                : log.status === 'failed' ? 'bg-red-100 text-red-700'
-                                : 'bg-amber-100 text-amber-700'
+                                log.status === 'sent'
+                                  ? 'bg-emerald-100 text-emerald-700'
+                                  : log.status === 'failed'
+                                  ? 'bg-red-100 text-red-700'
+                                  : 'bg-amber-100 text-amber-700'
                               }`}>
                                 <FontAwesomeIcon
-                                  icon={log.status === 'sent' ? faCheckCircle : log.status === 'failed' ? faTimesCircle : faClock}
+                                  icon={
+                                    log.status === 'sent'
+                                      ? faCheckCircle
+                                      : log.status === 'failed'
+                                      ? faTimesCircle
+                                      : faClock
+                                  }
                                   className="w-3 h-3"
                                 />
                                 {log.status === 'sent' ? 'Sent' : log.status === 'failed' ? 'Failed' : 'Pending'}
@@ -1203,7 +2163,7 @@ export default function MasterReviewPage() {
                   </div>
                 </div>
 
-                {/* ---------- RIGHT: FILE VIEWER ---------- */}
+                {/* RIGHT: FILE VIEWER */}
                 <div className="lg:col-span-2 bg-slate-50 p-8 overflow-y-auto border-l border-slate-200">
                   <SectionTitle icon={faFolderOpen} color="slate" label="Document Preview" />
 
@@ -1326,337 +2286,6 @@ export default function MasterReviewPage() {
         </div>
       )}
 
-      {/* Header */}
-      <div className="bg-white border-b border-slate-200 px-8 py-6">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
-              <FontAwesomeIcon icon={faGavel} className="w-6 h-6 text-blue-600" />
-              Master Approver Dashboard
-            </h1>
-            <p className="text-slate-500 text-sm mt-0.5 flex items-center gap-2">
-              <FontAwesomeIcon icon={faInfoCircle} className="w-3.5 h-3.5 text-slate-400" />
-              Final decision authority for all abstract submissions
-            </p>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2.5 px-3 py-1.5 bg-slate-100 border border-slate-200 rounded-full">
-              <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-white font-bold uppercase text-sm shadow-sm">
-                {currentUser?.full_name?.charAt(0) || 'A'}
-              </div>
-              <div className="leading-tight">
-                <p className="text-sm font-semibold text-slate-800">{currentUser?.full_name || 'Master Approver'}</p>
-                <p className="text-[10px] text-slate-500 uppercase tracking-wider font-medium">Master Approver</p>
-              </div>
-            </div>
-            <Link href="/login" className="inline-flex items-center gap-2 text-red-600 hover:text-red-700 font-medium text-sm transition-all hover:bg-red-50 px-4 py-2 rounded-xl">
-              <FontAwesomeIcon icon={faSignOutAlt} className="w-4 h-4" />
-              Logout
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-8 py-6">
-        {/* Stats Cards — clickable filters */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          {/* Total */}
-          <button
-            type="button"
-            onClick={() => handleStatCardClick('total')}
-            className={`text-left bg-white rounded-xl p-6 border shadow-sm hover:shadow-md transition-all cursor-pointer ${
-              isStatCardActive('total')
-                ? 'border-slate-500 ring-2 ring-slate-500/20'
-                : 'border-slate-200'
-            }`}
-          >
-            <p className="text-2xl font-bold text-slate-900">{totalSubmissions}</p>
-            <p className="text-sm text-slate-500">Total Submissions</p>
-          </button>
-
-          {/* Pending */}
-          <button
-            type="button"
-            onClick={() => handleStatCardClick('pending')}
-            className={`text-left bg-white rounded-xl p-6 border shadow-sm hover:shadow-md transition-all cursor-pointer ${
-              isStatCardActive('pending')
-                ? 'border-yellow-500 ring-2 ring-yellow-500/20'
-                : 'border-slate-200'
-            }`}
-          >
-            <p className="text-2xl font-bold text-yellow-600">{pendingCount}</p>
-            <p className="text-sm text-slate-500">Pending Review</p>
-          </button>
-
-          {/* Endorsed */}
-          <button
-            type="button"
-            onClick={() => handleStatCardClick('endorsed')}
-            className={`text-left bg-white rounded-xl p-6 border shadow-sm hover:shadow-md transition-all cursor-pointer ${
-              isStatCardActive('endorsed')
-                ? 'border-emerald-500 ring-2 ring-emerald-500/20'
-                : 'border-slate-200'
-            }`}
-          >
-            <p className="text-2xl font-bold text-emerald-600">{endorsedCount}</p>
-            <p className="text-sm text-slate-500">Endorsed</p>
-          </button>
-
-          {/* Non-Competitive */}
-          <button
-            type="button"
-            onClick={() => handleStatCardClick('non_competitive')}
-            className={`text-left bg-white rounded-xl p-6 border shadow-sm hover:shadow-md transition-all cursor-pointer ${
-              isStatCardActive('non_competitive')
-                ? 'border-yellow-500 ring-2 ring-yellow-500/20'
-                : 'border-slate-200'
-            }`}
-          >
-            <p className="text-2xl font-bold text-yellow-600">{nonCompetitiveCount}</p>
-            <p className="text-sm text-slate-500">Non-Competitive</p>
-          </button>
-        </div>
-
-
-        {/* Tabs */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex gap-1 bg-slate-100 p-1 rounded-xl">
-            <button
-              onClick={() => { setActiveTab('system'); setStatusFilter('all'); setCategoryFilter('all'); setSearchTerm(''); }}
-              className={`px-6 py-2.5 rounded-lg font-semibold text-sm transition ${activeTab === 'system' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-600 hover:text-slate-900'}`}
-            >
-              <FontAwesomeIcon icon={faFileAlt} className="w-4 h-4 mr-2" />
-              System Submissions
-            </button>
-            <button
-              onClick={() => { setActiveTab('email'); setCategoryFilter('all'); setSearchTerm(''); }}
-              className={`px-6 py-2.5 rounded-lg font-semibold text-sm transition ${activeTab === 'email' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-600 hover:text-slate-900'}`}
-            >
-              <FontAwesomeIcon icon={faEnvelope} className="w-4 h-4 mr-2" />
-              Email Submissions
-            </button>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={fetchSubmissions}
-              className="px-4 py-2.5 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition flex items-center gap-2"
-            >
-              <FontAwesomeIcon icon={faSync} className="w-5 h-5" />
-              Refresh
-            </button>
-          </div>  
-        </div>
-
-        {/* Filters */}
-        <div className="flex gap-4 mb-6 flex-wrap">
-          <div className="flex-1 min-w-50 relative">
-            <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400">
-              <FontAwesomeIcon icon={faSearch} className="w-4 h-4" />
-            </div>
-            <input
-              type="text"
-              placeholder={activeTab === 'system' ? "Search by title, author, or SUC..." : "Search by subject, sender, or email..."}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-4 py-2.5 pl-10 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-            />
-          </div>
-          <div className="relative">
-            <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400">
-              <FontAwesomeIcon icon={faFilter} className="w-4 h-4" />
-            </div>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none appearance-none cursor-pointer min-w-40"
-            >
-              <option value="all">All Status</option>
-              <option value="pending">Pending</option>
-              <option value="endorse">Endorsed</option>
-              <option value="downgraded">Downgraded (All)</option>
-              <option value="downgraded-non_competitive">Non-Competitive</option>
-            </select>
-          </div>
-          {activeTab === 'system' && (
-            <div className="relative">
-              <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400">
-                <FontAwesomeIcon icon={faTag} className="w-4 h-4" />
-              </div>
-              <select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-                className="pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none appearance-none cursor-pointer min-w-50"
-              >
-                <option value="all">All Categories</option>
-                <option value="Completed Extension Project Paper">Completed Extension</option>
-                <option value="Ongoing Extension Project Paper">Ongoing Extension</option>
-              </select>
-            </div>
-          )}
-        </div>
-
-        {/* Submissions Table */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200">
-                  {activeTab === 'system' ? (
-                    <>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
-                        <div className="flex items-center gap-2">
-                          <FontAwesomeIcon icon={faFileAlt} className="w-3.5 h-3.5 text-blue-500" />
-                          Title & Author
-                        </div>
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
-                        <div className="flex items-center gap-2">
-                          <FontAwesomeIcon icon={faTag} className="w-3.5 h-3.5 text-purple-500" />
-                          Category
-                        </div>
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
-                        <div className="flex items-center gap-2">
-                          <FontAwesomeIcon icon={faCalendarAlt} className="w-3.5 h-3.5 text-slate-400" />
-                          Date
-                        </div>
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
-                        <div className="flex items-center gap-2">
-                          <FontAwesomeIcon icon={faUserCircle} className="w-3.5 h-3.5 text-blue-400" />
-                          Evaluator Decision
-                        </div>
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
-                        <div className="flex items-center gap-2">
-                          <FontAwesomeIcon icon={faGavel} className="w-3.5 h-3.5 text-purple-500" />
-                          Master Status
-                        </div>
-                      </th>
-                    </>
-                  ) : (
-                    <>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
-                        <div className="flex items-center gap-2">
-                          <FontAwesomeIcon icon={faEnvelope} className="w-3.5 h-3.5 text-blue-500" />
-                          Subject / Sender
-                        </div>
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
-                        <div className="flex items-center gap-2">
-                          <FontAwesomeIcon icon={faUser} className="w-3.5 h-3.5 text-emerald-500" />
-                          Project Leader
-                        </div>
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
-                        <div className="flex items-center gap-2">
-                          <FontAwesomeIcon icon={faCalendarAlt} className="w-3.5 h-3.5 text-slate-400" />
-                          Received
-                        </div>
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
-                        <div className="flex items-center gap-2">
-                          <FontAwesomeIcon icon={faFlag} className="w-3.5 h-3.5 text-rose-500" />
-                          Status
-                        </div>
-                      </th>
-                    </>
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {filteredSubmissions.map((sub) => {
-                  const evaluatorStatus = sub.evaluation_status || 'pending';
-                  const masterStatus = sub.status || 'pending';
-
-                  return (
-                    <tr
-                      key={sub.submission_id || sub.id}
-                      onClick={() => selectSubmission(sub)}
-                      className="cursor-pointer border-b border-slate-100 hover:bg-purple-50/50 transition"
-                    >
-                      {activeTab === 'system' ? (
-                        <>
-                          <td className="px-6 py-4">
-                            <p className="text-sm font-semibold text-slate-900">{sub.extension_project_title || 'Untitled'}</p>
-                            <p className="text-xs text-slate-500 mt-1">{sub.project_leader || 'Unknown Project Leader'}</p>
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${getCategoryColor(sub.paper_category)}`}>
-                              {sub.paper_category?.includes('Completed') ? 'Completed' : 'Ongoing'}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-sm text-slate-600">
-                            {new Date(sub.created_at).toLocaleDateString('en-US', {
-                              month: 'short',
-                              day: '2-digit',
-                              year: 'numeric'
-                            })}
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(evaluatorStatus)}`}>
-                              {getStatusDisplay(evaluatorStatus)}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(masterStatus)}`}>
-                              {getStatusDisplay(masterStatus)}
-                            </span>
-                          </td>
-                        </>
-                      ) : (
-                        <>
-                          <td className="px-6 py-4">
-                            <p className="text-sm font-semibold text-slate-900">{sub.subject || 'No Subject'}</p>
-                            <p className="text-xs text-slate-500 mt-1">{sub.sender_name} ({sub.sender_email})</p>
-                          </td>
-                          <td className="px-6 py-4 text-sm text-slate-600">{sub.project_leader_name || sub.sender_name}</td>
-                          <td className="px-6 py-4 text-sm text-slate-600">
-                            {new Date(sub.email_received_at || sub.created_at).toLocaleDateString('en-US', {
-                              month: 'short',
-                              day: '2-digit',
-                              year: 'numeric'
-                            })}
-                          </td>
-                          <td className="px-6 py-4">
-                            {/* Status badge based on the display status from backend */}
-                            <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(masterStatus)}`}>
-                              {getStatusDisplay(masterStatus)}
-                            </span>
-
-                            {/* Show "Uncategorized" ONLY if actually uncategorized (no paper category AND no thematic area) */}
-                            {sub.is_categorized === false && (
-                              <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-50 text-red-600 border border-red-200">
-                                <FontAwesomeIcon icon={faExclamationTriangle} className="w-2.5 h-2.5" />
-                                Needs Review
-                              </span>
-                            )}
-
-                            {/* If categorized but extraction failed, still nudge the admin but as informational */}
-                            {sub.is_categorized === true && sub.extraction_status === 'failed' && (
-                              <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200">
-                                <FontAwesomeIcon icon={faExclamationTriangle} className="w-2.5 h-2.5" />
-                                Manually Categorized
-                              </span>
-                            )}
-                          </td>
-                        </>
-                      )}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-            {filteredSubmissions.length === 0 && (
-              <div className="text-center py-12 text-slate-500">
-                <FontAwesomeIcon icon={activeTab === 'system' ? faFolderOpen : faInbox} className="w-12 h-12 text-slate-300 mb-4" />
-                <p>No {activeTab === 'system' ? 'submissions' : 'email submissions'} found</p>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
       <style jsx>{`
         @keyframes slideIn {
           from {
@@ -1670,6 +2299,12 @@ export default function MasterReviewPage() {
         }
         .animate-slide-in {
           animation: slideIn 0.3s ease-out;
+        }
+        .line-clamp-2 {
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
         }
       `}</style>
     </div>

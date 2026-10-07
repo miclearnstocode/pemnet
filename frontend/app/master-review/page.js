@@ -19,6 +19,8 @@ import DecisionSummary from '../components/DecisionSummary';
 import Sidebar from '../components/master-components/Sidebar';
 import { QuickLinkCard, UnderUpdateModal } from '../components/master-components/QuickLinkCard';
 import UnderDevelopment from '../components/master-components/UnderDevelopment';
+import Dashboard from '../components/master-components/Dashboard';
+
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL).replace(/\/+$/, '');
 
@@ -1306,187 +1308,17 @@ export default function MasterReviewPage() {
         <div className="p-4 sm:p-6 lg:p-8">
           {/* ===== DASHBOARD VIEW ===== */}
           {activeNavItem === 'dashboard' && (
-            <div className="space-y-6">
-              {/* Welcome Banner */}
-              <div className="bg-linear-to-r from-blue-500 via-blue-500 to-blue-500 rounded-2xl p-6 sm:p-8 text-white shadow-xl shadow-blue-500/20">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                  <div>
-                    <h2 className="text-xl sm:text-2xl font-bold mb-1">
-                      Welcome back, {currentUser?.full_name?.split(' ')[0] || 'Master Approver'}! 👋
-                    </h2>
-                    <p className="text-white/80 text-sm">
-                      You have <span className="font-bold text-white">{pendingCount}</span> pending submission
-                      {pendingCount !== 1 ? 's' : ''} awaiting your decision.
-                    </p>
-                  </div>
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => handleNavClick('system')}
-                      className="px-4 py-2.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-xl font-semibold text-sm transition flex items-center gap-2"
-                    >
-                      <FontAwesomeIcon icon={faFileAlt} className="w-4 h-4" />
-                      System
-                    </button>
-                    <button
-                      onClick={() => handleNavClick('email')}
-                      className="px-4 py-2.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-xl font-semibold text-sm transition flex items-center gap-2"
-                    >
-                      <FontAwesomeIcon icon={faEnvelope} className="w-4 h-4" />
-                      Email
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Stats Grid (combined totals) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <button
-                  type="button"
-                  onClick={() => { handleNavClick('system'); }}
-                  className="text-left bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all cursor-pointer"
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center">
-                      <FontAwesomeIcon icon={faFolderOpen} className="w-5 h-5 text-slate-600" />
-                    </div>
-                  </div>
-                  <p className="text-3xl font-bold text-slate-900">{totalSubmissions}</p>
-                  <p className="text-sm text-slate-500 mt-1">Total Submissions</p>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => { handleNavClick('system'); handleStatCardClick('pending'); }}
-                  className="text-left bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all cursor-pointer"
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
-                      <FontAwesomeIcon icon={faClock} className="w-5 h-5 text-amber-600" />
-                    </div>
-                    {pendingCount > 0 && (
-                      <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-bold">
-                        Action needed
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-3xl font-bold text-amber-600">{pendingCount}</p>
-                  <p className="text-sm text-slate-500 mt-1">Pending Review</p>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => { handleNavClick('system'); handleStatCardClick('endorsed'); }}
-                  className="text-left bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all cursor-pointer"
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
-                      <FontAwesomeIcon icon={faCheckCircle} className="w-5 h-5 text-emerald-600" />
-                    </div>
-                  </div>
-                  <p className="text-3xl font-bold text-emerald-600">{endorsedCount}</p>
-                  <p className="text-sm text-slate-500 mt-1">Endorsed</p>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => { handleNavClick('system'); handleStatCardClick('non_competitive'); }}
-                  className="text-left bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all cursor-pointer"
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="w-10 h-10 rounded-xl bg-yellow-50 flex items-center justify-center">
-                      <FontAwesomeIcon icon={faThumbsDown} className="w-5 h-5 text-yellow-600" />
-                    </div>
-                  </div>
-                  <p className="text-3xl font-bold text-yellow-600">{nonCompetitiveCount}</p>
-                  <p className="text-sm text-slate-500 mt-1">Non-Competitive</p>
-                </button>
-              </div>
-
-              {/* Quick Actions */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Recent Submissions */}
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                  <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-                    <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                      <FontAwesomeIcon icon={faClock} className="w-4 h-4 text-indigo-500" />
-                      Recent Submissions
-                    </h3>
-                    <button
-                      onClick={() => handleNavClick('system')}
-                      className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 transition"
-                    >
-                      View all →
-                    </button>
-                  </div>
-                  <div className="divide-y divide-slate-100">
-                    {allSubmissions.slice(0, 5).map((sub, idx) => (
-                      <div
-                        key={sub.submission_id || sub.id || idx}
-                        onClick={() => selectSubmission(sub)}
-                        className="px-6 py-3 hover:bg-slate-50 cursor-pointer transition flex items-center justify-between gap-3"
-                      >
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-semibold text-slate-800 truncate">
-                            {sub.extension_project_title || sub.subject || 'Untitled'}
-                          </p>
-                          <p className="text-xs text-slate-500 truncate">
-                            {sub.project_leader || sub.sender_name || 'Unknown'}
-                          </p>
-                        </div>
-                        <span className={`shrink-0 px-2.5 py-1 rounded-full text-[10px] font-semibold ${getStatusColor(sub.status)}`}>
-                          {getStatusDisplay(sub.status || 'pending')}
-                        </span>
-                      </div>
-                    ))}
-                    {allSubmissions.length === 0 && (
-                      <div className="px-6 py-8 text-center text-slate-400 text-sm">
-                        <FontAwesomeIcon icon={faFolderOpen} className="w-8 h-8 mb-2 text-slate-300" />
-                        <p>No submissions yet</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Quick Tips */}
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                  <div className="px-6 py-4 border-b border-slate-200">
-                    <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                      <FontAwesomeIcon icon={faInfoCircle} className="w-4 h-4 text-blue-500" />
-                      Quick Tips
-                    </h3>
-                  </div>
-                  <div className="p-6 space-y-4">
-                    <div className="flex items-start gap-3 p-3 bg-indigo-50 rounded-xl border border-indigo-100">
-                      <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center shrink-0">
-                        <FontAwesomeIcon icon={faGavel} className="w-3.5 h-3.5 text-indigo-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-indigo-900">Make final decisions</p>
-                        <p className="text-xs text-indigo-700 mt-0.5">Click any submission to review details and endorse or downgrade.</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3 p-3 bg-emerald-50 rounded-xl border border-emerald-100">
-                      <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
-                        <FontAwesomeIcon icon={faEdit} className="w-3.5 h-3.5 text-emerald-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-emerald-900">Edit before deciding</p>
-                        <p className="text-xs text-emerald-700 mt-0.5">Correct extracted data issues before making your final call.</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-xl border border-blue-100">
-                      <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
-                        <FontAwesomeIcon icon={faHistory} className="w-3.5 h-3.5 text-blue-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-blue-900">Track all changes</p>
-                        <p className="text-xs text-blue-700 mt-0.5">View edit history to see who changed what and when.</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <Dashboard
+              currentUser={currentUser}
+              allSubmissions={allSubmissions}
+              totalSubmissions={totalSubmissions}
+              pendingCount={pendingCount}
+              endorsedCount={endorsedCount}
+              nonCompetitiveCount={nonCompetitiveCount}
+              onNavigate={handleNavClick}
+              onStatCardClick={handleStatCardClick}
+              onSelectSubmission={selectSubmission}
+            />
           )}
 
           {/* ===== SUBMISSIONS VIEW ===== */}

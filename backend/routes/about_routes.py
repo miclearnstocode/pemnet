@@ -1,9 +1,9 @@
-from flask import jsonify, request
-from models import db, AboutContent, AboutStat, AboutCard, AboutFeature, User
+from flask import jsonify, request, Response
+from models import db, AboutContent, AboutStat, AboutCard, AboutFeature, User, AboutMember
 from functools import wraps
 import json
 import traceback
-from datetime import datetime
+from image_cache import get_cached_logo, clear_cache, cache_stats
 
 
 def admin_required(f):
@@ -124,34 +124,21 @@ def register_about_routes(app):
             return jsonify({})
         
         try:
-            # Fetch all JSON content sections
             content_rows = AboutContent.query.all()
             content_map = {}
             for row in content_rows:
                 content_map[row.section_key] = json.loads(row.content) if row.content else {}
             
-            # Merge with defaults for any missing keys
             for key, default_val in DEFAULT_ABOUT_CONTENT.items():
                 if key not in content_map:
                     content_map[key] = default_val
             
-            # Fetch stats (ordered)
             stats = AboutStat.query.filter_by(is_active=True).order_by(AboutStat.display_order).all()
-            
-            # Fetch features (ordered)
-            features = AboutFeature.query.filter_by(
-                is_active=True, section='what_is'
-            ).order_by(AboutFeature.display_order).all()
-            
-            # Fetch cards (ordered)
+            features = AboutFeature.query.filter_by(is_active=True, section='what_is').order_by(AboutFeature.display_order).all()
             cards = AboutCard.query.filter_by(is_active=True).order_by(AboutCard.display_order).all()
+            members = AboutMember.query.filter_by(is_active=True).order_by(AboutMember.display_order).all()
             
-            return jsonify({
-                'content': content_map,
-                'stats': [s.to_dict() for s in stats],
-                'features': [f.to_dict() for f in features],
-                'cards': [c.to_dict() for c in cards]
-            }), 200
+            return jsonify({'content': content_map,'stats': [s.to_dict() for s in stats],'features': [f.to_dict() for f in features],'cards': [c.to_dict() for c in cards],'members': [m.to_dict() for m in members]}), 200
             
         except Exception as e:
             print(f"Error fetching about content: {e}")
@@ -182,13 +169,9 @@ def register_about_routes(app):
             stats = AboutStat.query.order_by(AboutStat.display_order).all()
             features = AboutFeature.query.order_by(AboutFeature.display_order).all()
             cards = AboutCard.query.order_by(AboutCard.display_order).all()
+            members = AboutMember.query.order_by(AboutMember.display_order).all()
             
-            return jsonify({
-                'content': content_map,
-                'stats': [s.to_dict() for s in stats],
-                'features': [f.to_dict() for f in features],
-                'cards': [c.to_dict() for c in cards]
-            }), 200
+            return jsonify({'content': content_map,'stats': [s.to_dict() for s in stats],'features': [f.to_dict() for f in features],'cards': [c.to_dict() for c in cards],'members': [m.to_dict() for m in members]}), 200
             
         except Exception as e:
             print(f"Error fetching admin about content: {e}")
@@ -557,7 +540,180 @@ def register_about_routes(app):
             print(f"Error deleting card: {e}")
             return jsonify({"detail": str(e)}), 500
     
+    @app.route('/api/admin/about/members', methods=['POST', 'OPTIONS'])
+    def admin_create_member():
+        if request.method == 'OPTIONS':
+            return jsonify({})
+        
+        try:
+            data = request.get_json()
+            
+            if not data.get('acronym') or not data.get('full_name'):
+                return jsonify({"detail": "Acronym and full name are required"}), 400
+            
+            max_order = db.session.query(db.func.max(AboutMember.display_order)).scalar() or 0
+            
+            member = AboutMember(
+                acronym=data['acronym'].strip().upper(),
+                full_name=data['full_name'].strip(),
+                logo_file_id=data.get('logo_file_id'),
+                logo_view_url=data.get('logo_view_url'),
+                position_angle=data.get('position_angle', 0),
+                position_radius=data.get('position_radius', 100),
+                node_size=data.get('node_size', 'md'),
+                color_theme=data.get('color_theme', 'blue'),
+                display_order=data.get('display_order', max_order + 1),
+                is_active=data.get('is_active', True),
+                updated_by=data.get('_user_id')
+            )
+            
+            db.session.add(member)
+            db.session.commit()
+            
+            return jsonify({
+                "message": "Member created successfully",
+                "member": member.to_dict()
+            }), 201
+            
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error creating member: {e}")
+            traceback.print_exc()
+            return jsonify({"detail": str(e)}), 500
     
+    @app.route('/api/admin/about/members/<int:member_id>', methods=['PUT', 'OPTIONS'])
+    def admin_update_member(member_id):
+        if request.method == 'OPTIONS':
+            return jsonify({})
+        
+        try:
+            member = AboutMember.query.get(member_id)
+            if not member:
+                return jsonify({"detail": "Member not found"}), 404
+            
+            data = request.get_json()
+            
+            if 'acronym' in data and data['acronym'].strip():
+                member.acronym = data['acronym'].strip().upper()
+            
+            if 'full_name' in data and data['full_name'].strip():
+                member.full_name = data['full_name'].strip()
+            
+            if 'logo_file_id' in data:
+                member.logo_file_id = data['logo_file_id']
+            
+            if 'logo_view_url' in data:
+                member.logo_view_url = data['logo_view_url']
+            
+            if 'position_angle' in data:
+                member.position_angle = data['position_angle']
+            
+            if 'position_radius' in data:
+                member.position_radius = data['position_radius']
+            
+            if 'node_size' in data:
+                member.node_size = data['node_size']
+            
+            if 'color_theme' in data:
+                member.color_theme = data['color_theme']
+            
+            if 'display_order' in data:
+                member.display_order = data['display_order']
+            
+            if 'is_active' in data:
+                member.is_active = bool(data['is_active'])
+            
+            if '_user_id' in data:
+                member.updated_by = data['_user_id']
+            
+            db.session.commit()
+            
+            return jsonify({
+                "message": "Member updated successfully",
+                "member": member.to_dict()
+            }), 200
+            
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error updating member: {e}")
+            return jsonify({"detail": str(e)}), 500
+    
+    @app.route('/api/admin/about/members/<int:member_id>', methods=['DELETE', 'OPTIONS'])
+    def admin_delete_member(member_id):
+        if request.method == 'OPTIONS':
+            return jsonify({})
+        
+        try:
+            member = AboutMember.query.get(member_id)
+            if not member:
+                return jsonify({"detail": "Member not found"}), 404
+            
+            acronym = member.acronym
+            
+            if member.logo_file_id:
+                try:
+                    from google_drive import trash_file
+                    trash_file(member.logo_file_id)
+                except Exception as drive_err:
+                    print(f"⚠️ Could not trash logo from Drive: {drive_err}")
+                try:
+                    clear_cache(member.logo_file_id)
+                except Exception as cache_err:
+                    print(f"⚠️ Could not clear logo cache: {cache_err}")
+            
+            db.session.delete(member)
+            db.session.commit()
+            
+            return jsonify({"message": f"Member '{acronym}' deleted successfully"}), 200
+            
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error deleting member: {e}")
+            return jsonify({"detail": str(e)}), 500
+    
+    @app.route('/api/admin/about/members/upload-logo', methods=['POST', 'OPTIONS'])
+    def admin_upload_member_logo():
+        """Upload a member logo to Google Drive"""
+        if request.method == 'OPTIONS':
+            return jsonify({})
+        
+        try:
+            if 'file' not in request.files:
+                return jsonify({"detail": "No file provided"}), 400
+            
+            file = request.files['file']
+            if not file.filename:
+                return jsonify({"detail": "No file selected"}), 400
+            
+            acronym = request.form.get('acronym', '').strip()
+            
+            import tempfile
+            import os
+            from google_drive import upload_member_logo
+            
+            ext = os.path.splitext(file.filename)[1] or '.png'
+            with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp:
+                file.save(tmp.name)
+                tmp_path = tmp.name
+            
+            try:
+                result = upload_member_logo(tmp_path, file.filename, acronym)
+                return jsonify({
+                    "message": "Logo uploaded successfully",
+                    "file_id": result['file_id'],
+                    "view_url": result['view_url']
+                }), 200
+            finally:
+                try:
+                    os.unlink(tmp_path)
+                except:
+                    pass
+            
+        except Exception as e:
+            print(f"Error uploading member logo: {e}")
+            traceback.print_exc()
+            return jsonify({"detail": str(e)}), 500
+        
     # -------------------- BULK REORDER --------------------
     
     @app.route('/api/admin/about/reorder', methods=['POST', 'OPTIONS'])
@@ -578,6 +734,7 @@ def register_about_routes(app):
                 'stats': AboutStat,
                 'features': AboutFeature,
                 'cards': AboutCard,
+                'members': AboutMember,
             }
             
             model = model_map.get(item_type)
@@ -608,11 +765,11 @@ def register_about_routes(app):
             return jsonify({})
         
         try:
-            # Delete everything
             AboutContent.query.delete()
             AboutStat.query.delete()
             AboutFeature.query.delete()
             AboutCard.query.delete()
+            AboutMember.query.delete()
             db.session.commit()
             
             # Re-seed
@@ -626,4 +783,46 @@ def register_about_routes(app):
             return jsonify({"detail": str(e)}), 500
     
     
-    print("✅ About page routes registered")
+    @app.route('/api/member-logo/<file_id>', methods=['GET', 'OPTIONS'])
+    def serve_member_logo(file_id):
+        """
+        Serve a member logo through our cache.
+        First request fetches from Drive; every later request is served
+        from memory (~0ms) or disk (~1-5ms).
+        """
+        if request.method == 'OPTIONS':
+            return jsonify({})
+
+        try:
+            data, mime = get_cached_logo(file_id)
+            resp = Response(data, mimetype=mime)
+            # Browser caches it for a week too
+            resp.headers['Cache-Control'] = 'public, max-age=604800, immutable'
+            resp.headers['Content-Length'] = str(len(data))
+            return resp
+        except Exception as e:
+            print(f"Error serving logo {file_id}: {e}")
+            return jsonify({"detail": str(e)}), 404
+
+
+    @app.route('/api/admin/about/cache/stats', methods=['GET', 'OPTIONS'])
+    def admin_cache_stats():
+        """Quick debug endpoint to see how the image cache is doing."""
+        if request.method == 'OPTIONS':
+            return jsonify({})
+        return jsonify(cache_stats()), 200
+
+
+    @app.route('/api/admin/about/cache/clear', methods=['POST', 'OPTIONS'])
+    def admin_clear_cache():
+        """
+        Clear the image cache. Body: { "file_id": "..." } to clear one,
+        or {} to clear everything.
+        """
+        if request.method == 'OPTIONS':
+            return jsonify({})
+
+        data = request.get_json(silent=True) or {}
+        file_id = data.get('file_id')
+        clear_cache(file_id)
+        return jsonify({"message": "Cache cleared"}), 200

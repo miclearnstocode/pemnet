@@ -848,3 +848,56 @@ def trash_news_item_folder(item_type, title, item_id=None):
                 print(f"⚠️ Could not trash folder {f['id']}: {e}")
     except Exception as e:
         print(f"⚠️ trash_news_item_folder failed: {e}")
+        
+def get_or_create_about_folder(service):
+    about_folder_id = get_or_create_folder(service, "About", ROOT_FOLDER_ID)
+    logos_folder_id = get_or_create_folder(service, "MemberLogos", about_folder_id)
+    return logos_folder_id
+
+
+def upload_member_logo(file_path, filename, acronym=None):
+    if not file_path or not os.path.exists(file_path):
+        raise Exception(f"File not found: {file_path}")
+
+    if not filename or not isinstance(filename, str):
+        filename = "logo.png"
+
+    if acronym:
+        base, ext = os.path.splitext(filename)
+        filename = f"{sanitize_folder_name(acronym)}_{sanitize_folder_name(base)}{ext}"
+    else:
+        filename = sanitize_folder_name(filename)
+
+    service = get_drive_service()
+    logos_folder_id = get_or_create_about_folder(service)
+
+    ext = os.path.splitext(filename)[1].lower()
+    mime_map = {
+        '.png':  'image/png',
+        '.jpg':  'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.webp': 'image/webp',
+        '.gif':  'image/gif',
+        '.svg':  'image/svg+xml',
+        '.bmp':  'image/bmp',
+    }
+    mimetype = mime_map.get(ext, 'application/octet-stream')
+
+    metadata = {'name': filename, 'parents': [logos_folder_id]}
+    media = MediaFileUpload(file_path, mimetype=mimetype, resumable=True)
+    created = service.files().create(body=metadata, media_body=media,fields='id, name', supportsAllDrives=True,).execute()
+
+    file_id = created.get('id')
+    if not file_id:
+        raise Exception("No file ID returned from Drive")
+
+    try:
+        service.permissions().create(fileId=file_id,body={'role': 'reader', 'type': 'anyone'},supportsAllDrives=True,).execute()
+        print(f"🔓 Logo {file_id} is now public")
+    except HttpError as perm_err:
+        print(f"⚠️ Could not set permission on {file_id}: {perm_err}")
+
+    return {
+        'file_id': file_id,
+        'view_url': f"https://drive.google.com/file/d/{file_id}/view",
+    }

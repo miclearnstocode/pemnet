@@ -1056,7 +1056,7 @@ export default function AdminNewsPage() {
 
       {/* Image Preview Modal */}
       {previewImage && (
-        <div className="fixed inset-0 z-[60] overflow-y-auto">
+        <div className="fixed inset-0 z-60 overflow-y-auto">
           <div
             className="fixed inset-0 bg-black/80 backdrop-blur-sm"
             onClick={() => setPreviewImage(null)}

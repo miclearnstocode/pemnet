@@ -1,4 +1,6 @@
 import os
+import time
+import threading
 import traceback
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request
@@ -9,26 +11,41 @@ from models import db
 from gmail_service import GmailService
 from email_service import gmail_service as _default_gmail_service 
 from cpanel_email_service import CPanelEmailService
-
-# Route blueprints
-from routes import (
-    auth_bp,
-    submission_bp,
-    full_paper_bp,
-    email_submission_bp,
-    evaluator_bp,
-    master_approver_bp,
-    payment_bp,
-    password_reset_bp,
-    register_news_routes,
-    register_about_routes,
-)
+from routes import ( auth_bp, submission_bp, full_paper_bp, email_submission_bp, evaluator_bp, master_approver_bp, payment_bp,  password_reset_bp, register_news_routes, register_about_routes,)
 from routes import auth_routes, password_reset_routes
 
+def _prune_image_cache_loop():
+    try:
+        from image_cache import CACHE_DIR, CACHE_TTL
+    except Exception as e:
+        print(f"⚠️  image_cache not available, skipping cleanup thread: {e}")
+        return
 
-# ---------------------------------------------------------------------------
-# Application factory
-# ---------------------------------------------------------------------------
+    while True:
+        time.sleep(3600)  # run every hour
+        try:
+            now = time.time()
+            removed = 0
+            for p in CACHE_DIR.glob("*"):
+                try:
+                    if now - p.stat().st_mtime > CACHE_TTL:
+                        p.unlink()
+                        removed += 1
+                except OSError:
+                    pass
+            if removed:
+                print(f"🧹 Image cache: pruned {removed} expired file(s)")
+        except Exception as e:
+            print(f"⚠️  Image cache prune error: {e}")
+
+
+def _start_background_tasks():
+    """Start all daemon background tasks. Safe to call once at startup."""
+    t = threading.Thread(target=_prune_image_cache_loop, daemon=True)
+    t.start()
+    print("✅ Background image-cache cleanup thread started")
+
+
 def create_app() -> Flask:
     load_dotenv()
 
@@ -37,11 +54,8 @@ def create_app() -> Flask:
     _configure_app(app)
     _configure_extensions(app)
     _configure_cors(app)
-
-    # Register blueprints
     _register_blueprints(app)
 
-    # Initialize the database
     with app.app_context():
         try:
             db.create_all()
@@ -50,18 +64,12 @@ def create_app() -> Flask:
             db.session.rollback()
             print(f"Database unavailable; start-up will continue: {database_error}")
 
-    # Register global error handlers
     _register_error_handlers(app)
-
-    # Wire up shared dependencies for password reset
     _wire_password_reset(app)
 
     return app
 
 
-# ---------------------------------------------------------------------------
-# Configuration helpers
-# ---------------------------------------------------------------------------
 def _configure_app(app: Flask) -> None:
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your_super_secret_key_here')
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
@@ -137,11 +145,6 @@ def _register_blueprints(app: Flask) -> None:
 def _register_error_handlers(app: Flask) -> None:
     @app.errorhandler(Exception)
     def handle_exception(e):
-        print("=" * 50)
-        print("ERROR OCCURRED:")
-        print(f"Type: {type(e).__name__}")
-        print(f"Message: {str(e)}")
-        print("Traceback:")
         traceback.print_exc()
         print("=" * 50)
 
@@ -155,11 +158,6 @@ def _register_error_handlers(app: Flask) -> None:
 
     @app.errorhandler(422)
     def handle_unprocessable_entity(e):
-        print("=" * 50)
-        print("422 UNPROCESSABLE ENTITY ERROR:")
-        print(f"Description: {e.description}")
-        print("=" * 50)
-
         if e.description and 'form' in str(e.description).lower():
             return jsonify({
                 "detail": (
@@ -213,7 +211,11 @@ def _register_app_routes(app: Flask) -> None:
 
 app = create_app()
 _register_app_routes(app)
+_start_background_tasks()
 
 
 if __name__ == '__main__':
-    app.run(debug=False, port=5000, host='0.0.0.0')
+    if os.environ.get('WERKZEUG_RUN_MAIN') == 'true' or not app.debug:
+        app.run(debug=False, port=5000, host='0.0.0.0')
+    else:
+        app.run(debug=False, port=5000, host='0.0.0.0')

@@ -30,7 +30,31 @@ const TABS = [
   { id: 'stats',          label: 'Stats' },
   { id: 'mission_vision', label: 'Mission & Vision' },
   { id: 'what_we_do',     label: 'What We Do' },
+  { id: 'members',        label: 'Members' },
 ];
+
+// Section keys that map to AboutContent rows
+const CONTENT_SECTIONS = ['header', 'what_is', 'mission', 'vision', 'core_values', 'what_we_do'];
+
+// Helper to safely read a section field (returns '' if missing)
+const readSection = (content, section, field, fallback = '') => {
+  const val = content?.[section]?.[field];
+  return val === undefined || val === null ? fallback : val;
+};
+
+function getLogoImageUrl(member) {
+  if (!member) return null;
+
+  let fileId = member.logo_file_id;
+  if (!fileId && member.logo_view_url) {
+    const match = member.logo_view_url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if (match) fileId = match[1];
+  }
+  if (!fileId) return null;
+
+  // Point at our cached proxy — NOT Drive directly
+  return `${API_URL}/api/member-logo/${fileId}`;
+}
 
 export default function AdminAboutPage() {
   const [activeTab, setActiveTab] = useState('header');
@@ -39,21 +63,18 @@ export default function AdminAboutPage() {
   const [error, setError]         = useState('');
   const [success, setSuccess]     = useState('');
 
-  const [content, setContent] = useState({
-    header:      { title: '', title_highlight: '', subtitle: '' },
-    what_is:     { heading: '', description: '' },
-    mission:     { heading: '', description: '' },
-    vision:      { heading: '', description: '' },
-    core_values: { heading: '', values: [] },
-    what_we_do:  { heading: '' },
-  });
+  // Content comes entirely from the DB — no hardcoded shapes.
+  const [content, setContent]   = useState({});
   const [stats, setStats]       = useState([]);
   const [features, setFeatures] = useState([]);
   const [cards, setCards]       = useState([]);
+  const [members, setMembers]   = useState([]);
 
   const [editingStat, setEditingStat]       = useState(null);
   const [editingFeature, setEditingFeature] = useState(null);
   const [editingCard, setEditingCard]       = useState(null);
+  const [editingMember, setEditingMember]   = useState(null);
+  const [uploadingLogo, setUploadingLogo]   = useState(false);
   const [deleteConfirm, setDeleteConfirm]   = useState(null);
 
   const getUser = () => {
@@ -76,6 +97,7 @@ export default function AdminAboutPage() {
         setStats(data.stats || []);
         setFeatures(data.features || []);
         setCards(data.cards || []);
+        setMembers(data.members || []);
       } else {
         setError('Failed to fetch About content');
       }
@@ -104,8 +126,12 @@ export default function AdminAboutPage() {
     }
   }, [error]);
 
+  // Update a field inside a section — creates the section if missing
   const updateSection = (key, field, value) => {
-    setContent((prev) => ({ ...prev, [key]: { ...prev[key], [field]: value } }));
+    setContent((prev) => ({
+      ...prev,
+      [key]: { ...(prev[key] || {}), [field]: value },
+    }));
   };
 
   const handleSaveContent = async (keys) => {
@@ -113,7 +139,9 @@ export default function AdminAboutPage() {
     try {
       const user = getUser();
       const payload = { _user_id: user?.id };
-      keys.forEach((k) => (payload[k] = content[k]));
+      keys.forEach((k) => {
+        payload[k] = content[k] || {};
+      });
       const res = await fetch(`${API_URL}/api/admin/about/content`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -209,6 +237,62 @@ export default function AdminAboutPage() {
     }
   };
 
+  const saveMember = async (data) => {
+    setSaving(true);
+    try {
+      const user = getUser();
+      const isEdit = !!data.id;
+      const url = isEdit
+        ? `${API_URL}/api/admin/about/members/${data.id}`
+        : `${API_URL}/api/admin/about/members`;
+      const res = await fetch(url, {
+        method: isEdit ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...data, _user_id: user?.id }),
+      });
+      if (res.ok) {
+        setSuccess(isEdit ? 'Member updated!' : 'Member created!');
+        setEditingMember(null);
+        fetchData();
+      } else {
+        const d = await res.json().catch(() => ({}));
+        setError(d.detail || 'Failed');
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const uploadLogo = async (file) => {
+    if (!file) return;
+    setUploadingLogo(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('acronym', editingMember?.acronym || '');
+      const res = await fetch(`${API_URL}/api/admin/about/members/upload-logo`, {
+        method: 'POST',
+        body: formData,
+      });
+      if (res.ok) {
+        const d = await res.json();
+        setEditingMember((prev) => ({
+          ...prev,
+          logo_file_id: d.file_id,
+          logo_view_url: d.view_url,
+        }));
+        setSuccess('Logo uploaded!');
+      } else {
+        const d = await res.json().catch(() => ({}));
+        setError(d.detail || 'Upload failed');
+      }
+    } catch {
+      setError('Upload error');
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
+
   const handleDelete = async () => {
     if (!deleteConfirm) return;
     try {
@@ -217,6 +301,8 @@ export default function AdminAboutPage() {
           ? `${API_URL}/api/admin/about/stats/${deleteConfirm.id}`
           : deleteConfirm.type === 'feature'
           ? `${API_URL}/api/admin/about/features/${deleteConfirm.id}`
+          : deleteConfirm.type === 'member'
+          ? `${API_URL}/api/admin/about/members/${deleteConfirm.id}`
           : `${API_URL}/api/admin/about/cards/${deleteConfirm.id}`;
       const res = await fetch(url, { method: 'DELETE' });
       if (res.ok) {
@@ -306,7 +392,7 @@ export default function AdminAboutPage() {
                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">Title</label>
                 <input
                   type="text"
-                  value={content.header?.title || ''}
+                  value={readSection(content, 'header', 'title')}
                   onChange={(e) => updateSection('header', 'title', e.target.value)}
                   className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                 />
@@ -315,7 +401,7 @@ export default function AdminAboutPage() {
                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">Title Highlight (blue)</label>
                 <input
                   type="text"
-                  value={content.header?.title_highlight || ''}
+                  value={readSection(content, 'header', 'title_highlight')}
                   onChange={(e) => updateSection('header', 'title_highlight', e.target.value)}
                   className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                 />
@@ -324,7 +410,7 @@ export default function AdminAboutPage() {
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1.5">Subtitle / Intro</label>
               <textarea
-                value={content.header?.subtitle || ''}
+                value={readSection(content, 'header', 'subtitle')}
                 onChange={(e) => updateSection('header', 'subtitle', e.target.value)}
                 rows={4}
                 className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 resize-none"
@@ -354,7 +440,7 @@ export default function AdminAboutPage() {
                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">Heading</label>
                 <input
                   type="text"
-                  value={content.what_is?.heading || ''}
+                  value={readSection(content, 'what_is', 'heading')}
                   onChange={(e) => updateSection('what_is', 'heading', e.target.value)}
                   className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                 />
@@ -362,7 +448,7 @@ export default function AdminAboutPage() {
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">Description</label>
                 <textarea
-                  value={content.what_is?.description || ''}
+                  value={readSection(content, 'what_is', 'description')}
                   onChange={(e) => updateSection('what_is', 'description', e.target.value)}
                   rows={4}
                   className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 resize-none"
@@ -490,7 +576,7 @@ export default function AdminAboutPage() {
                   <label className="block text-sm font-semibold text-slate-700 mb-1.5">Heading</label>
                   <input
                     type="text"
-                    value={content[key]?.heading || ''}
+                    value={readSection(content, key, 'heading')}
                     onChange={(e) => updateSection(key, 'heading', e.target.value)}
                     className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                   />
@@ -498,7 +584,7 @@ export default function AdminAboutPage() {
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1.5">Description</label>
                   <textarea
-                    value={content[key]?.description || ''}
+                    value={readSection(content, key, 'description')}
                     onChange={(e) => updateSection(key, 'description', e.target.value)}
                     rows={3}
                     className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 resize-none"
@@ -515,7 +601,7 @@ export default function AdminAboutPage() {
                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">Heading</label>
                 <input
                   type="text"
-                  value={content.core_values?.heading || ''}
+                  value={readSection(content, 'core_values', 'heading')}
                   onChange={(e) => updateSection('core_values', 'heading', e.target.value)}
                   className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                 />
@@ -524,14 +610,14 @@ export default function AdminAboutPage() {
                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">Values (comma-separated)</label>
                 <input
                   type="text"
-                  value={(content.core_values?.values || []).join(', ')}
+                  value={(content?.core_values?.values || []).join(', ')}
                   onChange={(e) =>
                     updateSection('core_values', 'values', e.target.value.split(',').map((v) => v.trim()).filter(Boolean))
                   }
                   className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                 />
                 <div className="flex flex-wrap gap-2 mt-3">
-                  {(content.core_values?.values || []).map((v, i) => (
+                  {(content?.core_values?.values || []).map((v, i) => (
                     <span key={i} className="px-3 py-1 rounded-full border border-green-200 bg-green-50 text-green-700 text-xs font-semibold">
                       {v}
                     </span>
@@ -560,7 +646,7 @@ export default function AdminAboutPage() {
             <h2 className="text-xl font-bold text-slate-900 mb-1">Section Heading</h2>
             <input
               type="text"
-              value={content.what_we_do?.heading || ''}
+              value={readSection(content, 'what_we_do', 'heading')}
               onChange={(e) => updateSection('what_we_do', 'heading', e.target.value)}
               className="w-full mt-4 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
             />
@@ -602,7 +688,7 @@ export default function AdminAboutPage() {
                       <div className="flex items-start gap-4">
                         <div className={`w-12 h-12 rounded-xl ${c.bg} flex items-center justify-center shrink-0`}>
                           <svg className={`w-6 h-6 ${c.text}`} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
                           </svg>
                         </div>
                         <div className="flex-1 min-w-0">
@@ -628,6 +714,80 @@ export default function AdminAboutPage() {
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* MEMBERS TAB */}
+      {activeTab === 'members' && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-xl font-bold text-slate-900">Member Institutions</h2>
+              <p className="text-sm text-slate-500 mt-0.5">
+                Shown as avatar nodes around the network hub on the About page. Only the acronym is displayed — the full name appears on hover.
+              </p>
+            </div>
+            <button
+              onClick={() => setEditingMember({
+                acronym: '', full_name: '', logo_view_url: null, logo_file_id: null,
+                position_angle: 0, position_radius: 100, node_size: 'md',
+                color_theme: 'blue', is_active: true,
+              })}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl font-semibold text-sm hover:bg-indigo-700 transition shadow-sm"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
+              Add Member
+            </button>
+          </div>
+
+          {members.length === 0 ? (
+            <p className="text-center text-slate-500 py-8 text-sm">No members yet. Click "Add Member" to start.</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {members.map((m) => {
+                const c = getColor(m.color_theme);
+                const logoUrl = getLogoImageUrl(m);
+                return (
+                  <div key={m.id} className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-200">
+                    <div className={`w-12 h-12 rounded-full ${logoUrl ? 'bg-white' : c.bg} border border-slate-200 flex items-center justify-center shrink-0 overflow-hidden`}>
+                      {logoUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={logoUrl}
+                          alt={m.acronym}
+                          className="w-full h-full object-contain p-1"
+                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                        />
+                      ) : (
+                        <span className={`text-xs font-bold ${c.text}`}>{m.acronym}</span>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-bold text-slate-900 truncate">{m.acronym}</div>
+                      <div className="text-xs text-slate-500 truncate">{m.full_name}</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">
+                        Angle {m.position_angle}° · Radius {m.position_radius}% · {m.node_size}
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <button onClick={() => setEditingMember(m)} className="p-1.5 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded transition">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+                        </svg>
+                      </button>
+                      <button onClick={() => setDeleteConfirm({ type: 'member', id: m.id, title: m.acronym })} className="p-1.5 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded transition">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
@@ -858,6 +1018,176 @@ export default function AdminAboutPage() {
                 <button
                   onClick={() => saveCard(editingCard)}
                   disabled={saving || !editingCard.title.trim()}
+                  className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-semibold text-sm hover:bg-indigo-700 transition disabled:opacity-50 shadow-sm"
+                >
+                  {saving ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MEMBER MODAL */}
+      {editingMember && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={() => !saving && !uploadingLogo && setEditingMember(null)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div className="h-1 w-full bg-linear-to-r from-indigo-400 via-blue-400 to-blue-400" />
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-5">
+                <h3 className="text-lg font-bold text-slate-900">{editingMember.id ? 'Edit Member' : 'New Member'}</h3>
+                <button
+                  onClick={() => !saving && !uploadingLogo && setEditingMember(null)}
+                  className="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 transition"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {/* Logo uploader */}
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Logo</label>
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center overflow-hidden shrink-0">
+                      {getLogoImageUrl(editingMember) ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={getLogoImageUrl(editingMember)}
+                          alt="Logo"
+                          className="w-full h-full object-contain p-1"
+                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                        />
+                      ) : (
+                        <span className="text-xs text-slate-400">No logo</span>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        id="member-logo-input"
+                        className="hidden"
+                        onChange={(e) => uploadLogo(e.target.files?.[0])}
+                      />
+                      <label
+                        htmlFor="member-logo-input"
+                        className={`inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl font-semibold text-sm hover:bg-slate-50 transition shadow-sm cursor-pointer ${uploadingLogo ? 'opacity-50 pointer-events-none' : ''}`}
+                      >
+                        {uploadingLogo ? 'Uploading...' : 'Upload Logo'}
+                      </label>
+                      {editingMember.logo_view_url && (
+                        <button
+                          type="button"
+                          onClick={() => setEditingMember({ ...editingMember, logo_view_url: null, logo_file_id: null })}
+                          className="ml-2 text-xs text-red-600 hover:text-red-700 font-semibold"
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Acronym *</label>
+                    <input
+                      type="text"
+                      value={editingMember.acronym}
+                      onChange={(e) => setEditingMember({ ...editingMember, acronym: e.target.value.toUpperCase() })}
+                      placeholder="WVSU"
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Color</label>
+                    <div className="flex gap-2 flex-wrap">
+                      {COLOR_THEMES.map((c) => (
+                        <button
+                          key={c.value}
+                          type="button"
+                          onClick={() => setEditingMember({ ...editingMember, color_theme: c.value })}
+                          className={`w-8 h-8 rounded-lg ${c.bg} border-2 transition ${
+                            editingMember.color_theme === c.value ? 'ring-2 ring-indigo-500 ring-offset-2 border-indigo-500' : 'border-slate-200'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Full Name *</label>
+                  <input
+                    type="text"
+                    value={editingMember.full_name}
+                    onChange={(e) => setEditingMember({ ...editingMember, full_name: e.target.value })}
+                    placeholder="West Visayas State University"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  />
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Angle (°)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="360"
+                      value={editingMember.position_angle}
+                      onChange={(e) => setEditingMember({ ...editingMember, position_angle: parseInt(e.target.value) || 0 })}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    />
+                    <p className="text-[10px] text-slate-400 mt-1">0 = top, 90 = right</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Radius (%)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={editingMember.position_radius}
+                      onChange={(e) => setEditingMember({ ...editingMember, position_radius: parseInt(e.target.value) || 0 })}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    />
+                    <p className="text-[10px] text-slate-400 mt-1">100 = outer edge</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Size</label>
+                    <select
+                      value={editingMember.node_size}
+                      onChange={(e) => setEditingMember({ ...editingMember, node_size: e.target.value })}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    >
+                      <option value="sm">Small</option>
+                      <option value="md">Medium</option>
+                      <option value="lg">Large</option>
+                    </select>
+                  </div>
+                </div>
+
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={editingMember.is_active}
+                    onChange={(e) => setEditingMember({ ...editingMember, is_active: e.target.checked })}
+                    className="w-5 h-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500/20"
+                  />
+                  <span className="text-sm font-semibold text-slate-700">Show on page</span>
+                </label>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-slate-200">
+                <button onClick={() => setEditingMember(null)} className="px-5 py-2.5 text-sm font-semibold text-slate-600 hover:text-slate-900">
+                  Cancel
+                </button>
+                <button
+                  onClick={() => saveMember(editingMember)}
+                  disabled={saving || uploadingLogo || !editingMember.acronym.trim() || !editingMember.full_name.trim()}
                   className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-semibold text-sm hover:bg-indigo-700 transition disabled:opacity-50 shadow-sm"
                 >
                   {saving ? 'Saving...' : 'Save'}

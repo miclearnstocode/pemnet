@@ -898,6 +898,56 @@ class NewsEvent(db.Model):
         }
 
 
+class AboutMember(db.Model):
+    """Member institutions shown in the network illustration on the About page"""
+    __tablename__ = 'about_members'
+    id = db.Column(db.Integer, primary_key=True)
+
+    # Member info
+    acronym = db.Column(db.String(20), nullable=False)  # e.g., "WVSU"
+    full_name = db.Column(db.String(255), nullable=False)  # e.g., "West Visayas State University"
+
+    # Logo stored on Google Drive
+    logo_file_id = db.Column(db.String(191), nullable=True)
+    logo_view_url = db.Column(db.String(500), nullable=True)
+
+    # Positioning on the network illustration (0-360 degrees, or custom position)
+    position_angle = db.Column(db.Integer, default=0)  # angle in degrees from top
+    position_radius = db.Column(db.Integer, default=100)  # 0-100 (percentage of container radius)
+    node_size = db.Column(db.String(20), default='md')  # 'sm', 'md', 'lg'
+
+    # Styling
+    color_theme = db.Column(db.String(50), nullable=False, default='blue')  # blue, green, yellow, purple, red, indigo
+
+    # Ordering & visibility
+    display_order = db.Column(db.Integer, default=0)
+    is_active = db.Column(db.Boolean, default=True)
+
+    # Metadata
+    updated_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    created_at = db.Column(db.DateTime, default=utcnow)
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
+
+    updater = db.relationship('User', foreign_keys=[updated_by])
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'acronym': self.acronym,
+            'full_name': self.full_name,
+            'logo_file_id': self.logo_file_id,
+            'logo_view_url': self.logo_view_url,
+            'position_angle': self.position_angle,
+            'position_radius': self.position_radius,
+            'node_size': self.node_size,
+            'color_theme': self.color_theme,
+            'display_order': self.display_order,
+            'is_active': self.is_active,
+            'updated_by': self.updated_by,
+            'created_at': iso_utc(self.created_at),
+            'updated_at': iso_utc(self.updated_at),
+        }
+        
 class AboutContent(db.Model):
     __tablename__ = 'about_content'
     id = db.Column(db.Integer, primary_key=True)

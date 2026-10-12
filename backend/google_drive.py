@@ -1,5 +1,6 @@
 import os
 import re
+from datetime import datetime
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
@@ -296,7 +297,6 @@ def test_drive_connection():
         print(f"❌ Failed: {e}")
         return False
 
-
 def extract_file_id_from_url(url):
     if not url:
         return None
@@ -319,16 +319,27 @@ def extract_file_id_from_url(url):
 
     return None
 
+def extract_drive_entry_from_url(url):
+    """
+    Given any Google Drive URL (or a bare file id), return:
+        { 'file_id': ..., 'view_url': 'https://drive.google.com/file/d/<id>/view' }
+    Returns None if no id can be extracted.
+    """
+    if not url or not isinstance(url, str):
+        return None
+    fid = extract_file_id_from_url(url)
+    if not fid:
+        return None
+    return {
+        'file_id': fid,
+        'view_url': f"https://drive.google.com/file/d/{fid}/view",
+    }
+    
 def get_file_parent_folder_id(service, file_id):
-    """Return the ID of the first parent folder of a Drive file."""
     if not file_id:
         return None
     try:
-        f = service.files().get(
-            fileId=file_id,
-            fields='id, parents',
-            supportsAllDrives=True,
-        ).execute()
+        f = service.files().get(fileId=file_id,fields='id, parents',supportsAllDrives=True,).execute()
         parents = f.get('parents', [])
         return parents[0] if parents else None
     except HttpError as e:
@@ -337,29 +348,16 @@ def get_file_parent_folder_id(service, file_id):
     
 def move_file_to_folder(service, file_id, new_parent_folder_id):
     try:
-        file = service.files().get(
-            fileId=file_id,
-            fields='id, name, parents',
-            supportsAllDrives=True
-        ).execute()
+        file = service.files().get(fileId=file_id,fields='id, name, parents',supportsAllDrives=True).execute()
 
         current_parents = file.get('parents', [])
 
         if new_parent_folder_id in current_parents:
-            print(f"📁 File already in target folder, skipping move")
             return file
 
         old_parents_str = ','.join(current_parents) if current_parents else ''
+        updated_file = service.files().update(fileId=file_id,addParents=new_parent_folder_id,removeParents=old_parents_str,fields='id, name, parents, webViewLink',supportsAllDrives=True).execute()
 
-        updated_file = service.files().update(
-            fileId=file_id,
-            addParents=new_parent_folder_id,
-            removeParents=old_parents_str,
-            fields='id, name, parents, webViewLink',
-            supportsAllDrives=True
-        ).execute()
-
-        print(f"✅ Moved file '{file.get('name')}' to new folder")
         return updated_file
 
     except HttpError as e:
@@ -369,43 +367,23 @@ def move_file_to_folder(service, file_id, new_parent_folder_id):
 
 def get_folder_path_for_submission(service, paper_category, thematic_area, sender_name):
     # Step 1: Event folder
-    event_folder_id = get_or_create_folder(
-        service,
-        EVENT_NAME,
-        ROOT_FOLDER_ID
-    )
+    event_folder_id = get_or_create_folder(service,EVENT_NAME,ROOT_FOLDER_ID)
 
     # Step 2: Paper Category folder
     category_folder_name = get_paper_category_folder_name(paper_category)
-    category_folder_id = get_or_create_folder(
-        service,
-        category_folder_name,
-        event_folder_id
-    )
+    category_folder_id = get_or_create_folder(service,category_folder_name,event_folder_id)
 
     # Step 3: Thematic Area folder
     thematic_folder_name = get_thematic_area_folder_name(thematic_area)
-    thematic_folder_id = get_or_create_folder(
-        service,
-        thematic_folder_name,
-        category_folder_id
-    )
+    thematic_folder_id = get_or_create_folder(service,thematic_folder_name,category_folder_id)
 
-    # Step 4: Sender folder
+
     if sender_name:
         safe_sender_name = sanitize_folder_name(sender_name)
-        sender_folder_id = get_or_create_folder(
-            service,
-            safe_sender_name,
-            thematic_folder_id
-        )
+        sender_folder_id = get_or_create_folder(service,safe_sender_name,thematic_folder_id)
         return sender_folder_id
     else:
-        default_folder_id = get_or_create_folder(
-            service,
-            "Unidentified Sender",
-            thematic_folder_id
-        )
+        default_folder_id = get_or_create_folder(service, "Unidentified Sender", thematic_folder_id)
         return default_folder_id
 
 
@@ -418,7 +396,6 @@ def move_submission_files(file_urls, paper_category, thematic_area, sender_name)
     }
 
     if not file_urls:
-        print("⚠️ No files to move")
         return result
 
     try:
@@ -435,67 +412,37 @@ def move_submission_files(file_urls, paper_category, thematic_area, sender_name)
 
             file_id = extract_file_id_from_url(url)
             if not file_id:
-                print(f"⚠️ Could not extract file ID from URL: {url}")
                 result['failed'].append(url)
                 continue
 
             try:
-                file_before = service.files().get(
-                    fileId=file_id,
-                    fields='id, name, parents',
-                    supportsAllDrives=True
-                ).execute()
+                file_before = service.files().get(fileId=file_id,fields='id, name, parents',supportsAllDrives=True).execute()
                 current_parents = file_before.get('parents', [])
 
                 for parent_id in current_parents:
                     old_parent_ids.add(parent_id)
 
                 updated_file = move_file_to_folder(service, file_id, target_folder_id)
-
                 new_view_url = f"https://drive.google.com/file/d/{file_id}/view"
                 new_download_url = f"https://drive.google.com/uc?export=download&id={file_id}"
-
-                result['moved'].append({
-                    'file_id': file_id,
-                    'name': updated_file.get('name'),
-                    'old_url': url,
-                    'new_view_url': new_view_url,
-                    'new_download_url': new_download_url
-                })
-
-                result['url_mapping'][url] = {
-                    'view_url': new_view_url,
-                    'download_url': new_download_url
-                }
+                result['moved'].append({'file_id': file_id,'name': updated_file.get('name'),'old_url': url,'new_view_url': new_view_url,'new_download_url': new_download_url})
+                result['url_mapping'][url] = {'view_url': new_view_url,'download_url': new_download_url}
 
             except Exception as e:
                 print(f"❌ Failed to move file {file_id}: {e}")
                 result['failed'].append(url)
-
-        print(f"✅ Moved {len(result['moved'])} files, {len(result['failed'])} failed")
-
+                
         if old_parent_ids:
-            event_folder_id = get_or_create_folder(
-                service,
-                EVENT_NAME,
-                ROOT_FOLDER_ID
-            )
-
+            event_folder_id = get_or_create_folder(service,EVENT_NAME,ROOT_FOLDER_ID)
             all_trashed = []
             for old_parent_id in old_parent_ids:
                 if old_parent_id == target_folder_id:
                     continue
 
-                trashed = cleanup_empty_folders_from_parent(
-                    service,
-                    old_parent_id,
-                    stop_at_folder_id=event_folder_id
-                )
+                trashed = cleanup_empty_folders_from_parent(service,old_parent_id,stop_at_folder_id=event_folder_id)
                 all_trashed.extend(trashed)
 
             result['trashed_folders'] = all_trashed
-
-        print("=" * 50)
 
     except Exception as e:
         print(f"❌ Error in move operation: {e}")
@@ -506,11 +453,7 @@ def move_submission_files(file_urls, paper_category, thematic_area, sender_name)
 
 def get_folder_parent(service, folder_id):
     try:
-        folder = service.files().get(
-            fileId=folder_id,
-            fields='id, name, parents',
-            supportsAllDrives=True
-        ).execute()
+        folder = service.files().get(fileId=folder_id,fields='id, name, parents',supportsAllDrives=True).execute()
         parents = folder.get('parents', [])
         return parents[0] if parents else None
     except HttpError as e:
@@ -520,11 +463,7 @@ def get_folder_parent(service, folder_id):
 
 def get_folder_name(service, folder_id):
     try:
-        folder = service.files().get(
-            fileId=folder_id,
-            fields='id, name',
-            supportsAllDrives=True
-        ).execute()
+        folder = service.files().get(fileId=folder_id, fields='id, name', supportsAllDrives=True).execute()
         return folder.get('name')
     except HttpError as e:
         print(f"⚠️ Could not get name of folder {folder_id}: {e}")
@@ -533,13 +472,7 @@ def get_folder_name(service, folder_id):
 
 def is_folder_empty(service, folder_id):
     try:
-        response = service.files().list(
-            q=f"'{folder_id}' in parents and trashed=false",
-            fields='files(id, name)',
-            supportsAllDrives=True,
-            includeItemsFromAllDrives=True,
-            pageSize=1
-        ).execute()
+        response = service.files().list(q=f"'{folder_id}' in parents and trashed=false", fields='files(id, name)', supportsAllDrives=True, includeItemsFromAllDrives=True, pageSize=1).execute()
         files = response.get('files', [])
         return len(files) == 0
     except HttpError as e:
@@ -549,11 +482,7 @@ def is_folder_empty(service, folder_id):
 
 def delete_folder(service, folder_id):
     try:
-        service.files().update(
-            fileId=folder_id,
-            body={'trashed': True},
-            supportsAllDrives=True
-        ).execute()
+        service.files().update(fileId=folder_id,body={'trashed': True},supportsAllDrives=True).execute()
         return True
     except HttpError as e:
         print(f"⚠️ Could not trash folder {folder_id}: {e}")
@@ -562,12 +491,10 @@ def delete_folder(service, folder_id):
 
 def cleanup_empty_folders(service, file_id, stop_at_folder_id=None):
     trashed_folders = []
-
     try:
         pass
     except Exception as e:
         print(f"⚠️ Error in cleanup_empty_folders: {e}")
-
     return trashed_folders
 
 
@@ -616,24 +543,14 @@ def mark_folder_as_new(service, folder_id):
     if not folder_id:
         return None
     try:
-        folder = service.files().get(
-            fileId=folder_id,
-            fields='id, name',
-            supportsAllDrives=True
-        ).execute()
+        folder = service.files().get(fileId=folder_id,fields='id, name',supportsAllDrives=True).execute()
 
         current_name = folder.get('name', '') or ''
         if current_name.startswith(NEW_PREFIX):
-            print(f"📁 Folder already marked [NEW]: {current_name}")
             return current_name
 
         new_name = f"{NEW_PREFIX}{current_name}"[:100]  # Drive name cap
-        service.files().update(
-            fileId=folder_id,
-            body={'name': new_name},
-            supportsAllDrives=True
-        ).execute()
-        print(f"🆕 Marked folder as NEW: {new_name}")
+        service.files().update(fileId=folder_id, body={'name': new_name}, supportsAllDrives=True).execute()
         return new_name
     except HttpError as e:
         print(f"⚠️ Could not mark folder as NEW: {e}")
@@ -644,22 +561,13 @@ def unmark_folder_as_new(service, folder_id):
     if not folder_id:
         return None
     try:
-        folder = service.files().get(
-            fileId=folder_id,
-            fields='id, name',
-            supportsAllDrives=True
-        ).execute()
+        folder = service.files().get(fileId=folder_id, fields='id, name', supportsAllDrives=True).execute()
         current_name = folder.get('name', '') or ''
         if not current_name.startswith(NEW_PREFIX):
             return current_name
 
         new_name = current_name[len(NEW_PREFIX):]
-        service.files().update(
-            fileId=folder_id,
-            body={'name': new_name},
-            supportsAllDrives=True
-        ).execute()
-        print(f"🧹 Removed [NEW] from folder: {new_name}")
+        service.files().update(fileId=folder_id, body={'name': new_name}, supportsAllDrives=True ).execute()
         return new_name
     except HttpError as e:
         print(f"⚠️ Could not unmark folder: {e}")
@@ -670,11 +578,7 @@ def get_sender_folder_id_from_file(service, file_id):
     if not file_id:
         return None
     try:
-        f = service.files().get(
-            fileId=file_id,
-            fields='id, parents',
-            supportsAllDrives=True
-        ).execute()
+        f = service.files().get(fileId=file_id, fields='id, parents', supportsAllDrives=True).execute()
         parents = f.get('parents', [])
         return parents[0] if parents else None
     except HttpError as e:
@@ -704,11 +608,7 @@ def mark_file_parent_as_new(file_url):
         print(f"⚠️ mark_file_parent_as_new failed (non-fatal): {e}")
         return None
     
-def _get_or_create_abstract_full_paper_folder(
-    service, abstract_file_id=None, abstract_view_url=None,
-    paper_category=None, thematic_area=None, sender_name=None,
-):
-    """Locate (or fall back to) the folder that holds this abstract's full paper."""
+def _get_or_create_abstract_full_paper_folder(service, abstract_file_id=None, abstract_view_url=None, paper_category=None, thematic_area=None, sender_name=None,):
     parent_folder_id = None
     if abstract_file_id:
         parent_folder_id = get_file_parent_folder_id(service, abstract_file_id)
@@ -722,33 +622,13 @@ def _get_or_create_abstract_full_paper_folder(
 
     # Fallback hierarchy
     event_folder_id = get_or_create_folder(service, EVENT_NAME, ROOT_FOLDER_ID)
-    category_id = get_or_create_folder(
-        service, get_paper_category_folder_name(paper_category), event_folder_id,
-    )
-    thematic_id = get_or_create_folder(
-        service, get_thematic_area_folder_name(thematic_area), category_id,
-    )
-    sender_id = get_or_create_folder(
-        service, sanitize_folder_name(sender_name) if sender_name else "Unidentified Sender",
-        thematic_id,
-    )
+    category_id = get_or_create_folder(service, get_paper_category_folder_name(paper_category), event_folder_id,)
+    thematic_id = get_or_create_folder(service, get_thematic_area_folder_name(thematic_area), category_id,)
+    sender_id = get_or_create_folder(service, sanitize_folder_name(sender_name) if sender_name else "Unidentified Sender",thematic_id,)
     return get_or_create_folder(service, "Full Paper", sender_id)
 
 
-def upload_image_to_full_paper(
-    file_path,
-    filename,
-    abstract_file_id=None,
-    abstract_view_url=None,
-    paper_category=None,
-    thematic_area=None,
-    sender_name=None,
-    subfolder="Figures",
-):
-    """
-    Upload an image into <AbstractFolder>/Full Paper/<subfolder>/.
-    Returns (file_id, view_url, download_url, folder_id).
-    """
+def upload_image_to_full_paper(file_path, filename, abstract_file_id=None, abstract_view_url=None, paper_category=None, thematic_area=None, sender_name=None, subfolder="Figures",):
     if not file_path or not os.path.exists(file_path):
         raise Exception(f"File not found: {file_path}")
 
@@ -757,10 +637,7 @@ def upload_image_to_full_paper(
     filename = sanitize_folder_name(filename)
 
     service = get_drive_service()
-    fp_folder_id = _get_or_create_abstract_full_paper_folder(
-        service, abstract_file_id, abstract_view_url,
-        paper_category, thematic_area, sender_name,
-    )
+    fp_folder_id = _get_or_create_abstract_full_paper_folder(service, abstract_file_id, abstract_view_url, paper_category, thematic_area, sender_name,)
     target_folder_id = get_or_create_folder(service, subfolder, fp_folder_id)
 
     ext = os.path.splitext(filename)[1].lower()
@@ -777,10 +654,7 @@ def upload_image_to_full_paper(
     metadata = {'name': filename, 'parents': [target_folder_id]}
     media = MediaFileUpload(file_path, mimetype=mimetype, resumable=True)
 
-    created = service.files().create(
-        body=metadata, media_body=media,
-        fields='id, name', supportsAllDrives=True,
-    ).execute()
+    created = service.files().create(body=metadata, media_body=media, fields='id, name', supportsAllDrives=True,).execute()
 
     file_id = created.get('id')
     if not file_id:
@@ -798,8 +672,6 @@ def upload_full_paper_pdf(file_path, filename, abstract_file_id=None, abstract_v
     if not filename or not isinstance(filename, str):
         filename = "full_paper.pdf"
 
-    # Strip any legacy 'full_paper_' / 'preview_' prefixes so we never store
-    # 'full_paper_full_paper_...' in Drive
     base = filename
     while True:
         if base.startswith('full_paper_'):
@@ -811,18 +683,12 @@ def upload_full_paper_pdf(file_path, filename, abstract_file_id=None, abstract_v
     filename = sanitize_folder_name(base or filename)
 
     service = get_drive_service()
-    fp_folder_id = _get_or_create_abstract_full_paper_folder(
-        service, abstract_file_id, abstract_view_url,
-        paper_category, thematic_area, sender_name,
-    )
+    fp_folder_id = _get_or_create_abstract_full_paper_folder(service, abstract_file_id, abstract_view_url, paper_category, thematic_area, sender_name,)
 
     metadata = {'name': filename, 'parents': [fp_folder_id]}
     media = MediaFileUpload(file_path, mimetype='application/pdf', resumable=True)
 
-    created = service.files().create(
-        body=metadata, media_body=media,
-        fields='id, name', supportsAllDrives=True,
-    ).execute()
+    created = service.files().create(body=metadata, media_body=media, fields='id, name', supportsAllDrives=True,).execute()
 
     file_id = created.get('id')
     if not file_id:
@@ -833,24 +699,15 @@ def upload_full_paper_pdf(file_path, filename, abstract_file_id=None, abstract_v
     return file_id, view_url, download_url, fp_folder_id
 
 def trash_file(file_id):
-    """
-    Move a Drive file to trash by ID.
-    Returns True on success (or if already trashed / not found),
-    False only on unexpected API errors.
-    """
     if not file_id:
         return True
     try:
         service = get_drive_service()
-        service.files().update(
-            fileId=file_id,
-            body={'trashed': True},
-            supportsAllDrives=True,
-        ).execute()
+        service.files().update(fileId=file_id, body={'trashed': True}, supportsAllDrives=True,).execute()
         print(f"🗑️  Trashed file {file_id}")
         return True
     except HttpError as e:
-        # 404 = already gone; treat as success
+
         status = getattr(e, 'resp', None)
         code = getattr(status, 'status', None) if status else None
         if code == 404:
@@ -864,10 +721,6 @@ def trash_file(file_id):
 
 
 def trash_files(file_ids):
-    """
-    Trash multiple Drive files. Ignores falsy IDs.
-    Returns (trashed, failed) counts.
-    """
     trashed = 0
     failed = 0
     for fid in file_ids:
@@ -878,3 +731,120 @@ def trash_files(file_ids):
         else:
             failed += 1
     return trashed, failed
+
+def slugify_filename(name, max_len=80):
+    """Turn a title into a filesystem/Drive-safe slug."""
+    if not name or not isinstance(name, str):
+        return "untitled"
+
+    slug = re.sub(r'[^a-zA-Z0-9]+', '-', name.strip().lower())
+    slug = re.sub(r'-{2,}', '-', slug).strip('-')
+    if not slug:
+        slug = "untitled"
+
+    if len(slug) > max_len:
+        slug = slug[:max_len].rstrip('-')
+    return slug
+
+
+def get_or_create_news_item_folder(service, item_type, title, date_display=None, item_id=None,):
+
+    news_root_id = get_or_create_folder(service, "NewsEvents", ROOT_FOLDER_ID)
+    type_folder_id = get_or_create_folder(service, (item_type or "NEWS").upper(), news_root_id,)
+    base_slug = slugify_filename(title or "untitled")
+    item_slug = f"{base_slug}-{item_id}" if item_id else base_slug
+    item_folder_id = get_or_create_folder(service, item_slug, type_folder_id)
+    images_folder_id = get_or_create_folder(service, "Images", item_folder_id)
+
+    return item_folder_id, images_folder_id
+
+
+def upload_news_event_image(file_path, filename, item_type='NEWS', title=None, item_id=None):
+    if not file_path or not os.path.exists(file_path):
+        raise Exception(f"File not found: {file_path}")
+
+    if not filename or not isinstance(filename, str):
+        filename = "image.png"
+    filename = sanitize_folder_name(filename)
+
+    service = get_drive_service()
+
+    _, images_folder_id = get_or_create_news_item_folder(service, item_type=item_type, title=title, item_id=item_id,)
+
+    ext = os.path.splitext(filename)[1].lower()
+    mime_map = {
+        '.png':  'image/png',
+        '.jpg':  'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.webp': 'image/webp',
+        '.gif':  'image/gif',
+        '.bmp':  'image/bmp',
+    }
+    mimetype = mime_map.get(ext, 'application/octet-stream')
+
+    metadata = {'name': filename, 'parents': [images_folder_id]}
+    media = MediaFileUpload(file_path, mimetype=mimetype, resumable=True)
+    created = service.files().create(
+        body=metadata, media_body=media,
+        fields='id, name', supportsAllDrives=True,
+    ).execute()
+
+    file_id = created.get('id')
+    if not file_id:
+        raise Exception("No file ID returned from Drive")
+
+    # ── Make the file viewable by anyone with the link ──
+    try:
+        service.permissions().create(
+            fileId=file_id,
+            body={'role': 'reader', 'type': 'anyone'},
+            supportsAllDrives=True,
+        ).execute()
+        print(f"🔓 File {file_id} is now public")
+    except HttpError as perm_err:
+        # Non-fatal — file just won't preview, but the record still saves
+        print(f"⚠️ Could not set permission on {file_id}: {perm_err}")
+
+    return {
+        'file_id': file_id,
+        'view_url': f"https://drive.google.com/file/d/{file_id}/view",
+    }
+
+def move_news_images_to_item_folder(image_entries, item_type, title, item_id=None,):
+    if not image_entries:
+        return []
+
+    service = get_drive_service()
+    _, images_folder_id = get_or_create_news_item_folder(service, item_type=item_type, title=title, item_id=item_id,)
+
+    for entry in image_entries:
+        fid = entry.get('file_id') if isinstance(entry, dict) else None
+        if not fid:
+            continue
+        try:
+            move_file_to_folder(service, fid, images_folder_id)
+        except Exception as e:
+            print(f"⚠️ Could not move image {fid}: {e}")
+
+    return image_entries
+
+
+def trash_news_item_folder(item_type, title, item_id=None):
+    try:
+        service = get_drive_service()
+        news_root_id = get_or_create_folder(service, "NewsEvents", ROOT_FOLDER_ID)
+        type_folder_id = get_or_create_folder(service, (item_type or "NEWS").upper(), news_root_id,)
+        base_slug = slugify_filename(title or "untitled")
+        item_slug = f"{base_slug}-{item_id}" if item_id else base_slug
+        query = (f"name='{item_slug}' and "
+            f"mimeType='application/vnd.google-apps.folder' and " f"'{type_folder_id}' in parents and trashed=false")
+        response = service.files().list(q=query, fields='files(id, name)', supportsAllDrives=True, includeItemsFromAllDrives=True,).execute()
+
+        for f in response.get('files', []):
+            try:
+                service.files().update(fileId=f['id'], body={'trashed': True}, supportsAllDrives=True,).execute()
+                print(f"🗑️  Trashed news item folder: {f['name']} ({f['id']})")
+            except Exception as e:
+                print(f"⚠️ Could not trash folder {f['id']}: {e}")
+    except Exception as e:
+        print(f"⚠️ trash_news_item_folder failed: {e}")

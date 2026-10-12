@@ -66,8 +66,6 @@ class GmailService:
             # Save the credentials for the next run
             with open(self.token_file, 'wb') as token:
                 pickle.dump(creds, token)
-            
-            print(f"Authentication successful for: {creds.id_token.get('email') if hasattr(creds, 'id_token') else 'User'}")
         
         return build('gmail', 'v1', credentials=creds)
     

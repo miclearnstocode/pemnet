@@ -21,6 +21,56 @@ const TAG_COLOR_OPTIONS = [
   { value: 'bg-gray-50 text-gray-700 border-gray-200', label: 'Gray' },
 ];
 
+// ---------- Google Drive helpers ----------
+function extractDriveId(url) {
+  if (!url || typeof url !== 'string') return null;
+  const patterns = [
+    /\/file\/d\/([a-zA-Z0-9_-]+)/,
+    /[?&]id=([a-zA-Z0-9_-]+)/,
+    /\/d\/([a-zA-Z0-9_-]+)/,
+    /open\?id=([a-zA-Z0-9_-]+)/,
+  ];
+  for (const p of patterns) {
+    const m = url.match(p);
+    if (m && m[1]) return m[1].split('?')[0].split('&')[0];
+  }
+  return null;
+}
+
+// For <img> tags — works with public Drive files
+function getThumbnailUrl(entry, size = 400) {
+  let fileId = null;
+  let rawUrl = null;
+
+  if (typeof entry === 'string') {
+    rawUrl = entry;
+    fileId = extractDriveId(entry);
+  } else if (entry && typeof entry === 'object') {
+    fileId = entry.file_id || extractDriveId(entry.view_url);
+    rawUrl = entry.view_url;
+  }
+
+  if (fileId) return `https://drive.google.com/thumbnail?id=${fileId}&sz=w${size}`;
+  return rawUrl; // fallback for non-Drive URLs (e.g. Unsplash)
+}
+
+// For <iframe> previews — full embedded viewer
+function getPreviewUrl(entry) {
+  let fileId = null;
+  let rawUrl = null;
+
+  if (typeof entry === 'string') {
+    rawUrl = entry;
+    fileId = extractDriveId(entry);
+  } else if (entry && typeof entry === 'object') {
+    fileId = entry.file_id || extractDriveId(entry.view_url);
+    rawUrl = entry.view_url;
+  }
+
+  if (fileId) return `https://drive.google.com/file/d/${fileId}/preview`;
+  return rawUrl;
+}
+
 export default function AdminNewsPage() {
   const router = useRouter();
   const [items, setItems] = useState([]);
@@ -41,6 +91,7 @@ export default function AdminNewsPage() {
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [previewImage, setPreviewImage] = useState(null); // { view_url, file_id }
 
   // Form state
   const [formData, setFormData] = useState({
@@ -54,12 +105,12 @@ export default function AdminNewsPage() {
     tag: '',
     tag_color: TAG_COLOR_OPTIONS[1].value,
     type_color: '',
-    image_url: '',
+    image_urls: [],
     is_published: true,
     is_featured: false,
   });
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState('');
+  const [imageFiles, setImageFiles] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
 
   // Get user from localStorage
   const getUser = () => {
@@ -139,7 +190,6 @@ export default function AdminNewsPage() {
     }
   }, [error]);
 
-  // Open modal for create
   const handleCreate = () => {
     setEditingItem(null);
     setFormData({
@@ -153,50 +203,96 @@ export default function AdminNewsPage() {
       tag: '',
       tag_color: TAG_COLOR_OPTIONS[1].value,
       type_color: '',
-      image_url: '',
+      image_urls: [],
       is_published: true,
       is_featured: false,
     });
-    setImageFile(null);
-    setImagePreview('');
+    setImageFiles([]);
+    setImagePreviews([]);
     setShowModal(true);
   };
 
-  // Open modal for edit
   const handleEdit = (item) => {
     setEditingItem(item);
+    const existingImages =
+      item.image_urls?.length > 0
+        ? item.image_urls
+        : item.image_url
+          ? [{ file_id: null, view_url: item.image_url }]
+          : [];
+
+    const toDateInput = (v) => {
+      if (!v) return '';
+      const s = String(v).trim();
+      const m = s.match(/^(\d{4}-\d{2}-\d{2})/);
+      return m ? m[1] : '';
+    };
+
     setFormData({
       type: item.type,
       title: item.title || '',
       excerpt: item.excerpt || '',
       content: item.content || '',
       date_display: item.date_display || '',
-      event_start_date: item.event_start_date ? item.event_start_date.split(' ')[0] : '',
-      event_end_date: item.event_end_date ? item.event_end_date.split(' ')[0] : '',
+      event_start_date: toDateInput(item.event_start_date),
+      event_end_date: toDateInput(item.event_end_date),
       tag: item.tag || '',
       tag_color: item.tag_color || TAG_COLOR_OPTIONS[1].value,
       type_color: item.type_color || '',
-      image_url: item.image_url || '',
+      image_urls: existingImages,
       is_published: item.is_published,
       is_featured: item.is_featured,
     });
-    setImageFile(null);
-    setImagePreview(item.image_url || '');
+    setImageFiles([]);
+    setImagePreviews([]);
     setShowModal(true);
   };
 
-  // Handle image change
+  // Handle multiple file selection
   const handleImageChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setImageFile(file);
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    setImageFiles((prev) => [...prev, ...files]);
+
+    files.forEach((file) => {
       const reader = new FileReader();
-      reader.onloadend = () => setImagePreview(reader.result);
+      reader.onloadend = () => {
+        setImagePreviews((prev) => [...prev, reader.result]);
+      };
       reader.readAsDataURL(file);
-    }
+    });
+
+    e.target.value = '';
   };
 
-  // Submit form
+  const removeImagePreview = (index) => {
+    setImageFiles((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const removeImageUrl = (entry) => {
+    setFormData((prev) => ({
+      ...prev,
+      image_urls: prev.image_urls.filter((e) => e !== entry),
+    }));
+  };
+
+  const addImageUrl = (url) => {
+    const trimmed = url.trim();
+    if (!trimmed) return;
+
+    const fid = extractDriveId(trimmed);
+    const entry = fid
+      ? { file_id: fid, view_url: `https://drive.google.com/file/d/${fid}/view` }
+      : { file_id: null, view_url: trimmed };
+
+    setFormData((prev) => ({
+      ...prev,
+      image_urls: [...prev.image_urls, entry],
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -211,19 +307,29 @@ export default function AdminNewsPage() {
       formDataToSend.append('excerpt', formData.excerpt || '');
       formDataToSend.append('content', formData.content || '');
       formDataToSend.append('date_display', formData.date_display);
-      formDataToSend.append('event_start_date', formData.event_start_date || '');
-      formDataToSend.append('event_end_date', formData.event_end_date || '');
+      if (formData.type === 'EVENT') {
+        formDataToSend.append('event_start_date', formData.event_start_date || '');
+        formDataToSend.append('event_end_date', formData.event_end_date || '');
+      }
       formDataToSend.append('tag', formData.tag || '');
       formDataToSend.append('tag_color', formData.tag_color || '');
       formDataToSend.append('type_color', formData.type_color || '');
-      formDataToSend.append('image_url', formData.image_url || '');
       formDataToSend.append('is_published', formData.is_published.toString());
       formDataToSend.append('is_featured', formData.is_featured.toString());
       formDataToSend.append('created_by', user?.id || '');
 
-      if (imageFile) {
-        formDataToSend.append('image', imageFile);
+      formData.image_urls.forEach((entry) => {
+        const payload = typeof entry === 'string' ? { view_url: entry } : entry;
+        formDataToSend.append('image_urls', JSON.stringify(payload));
+      });
+
+      if (editingItem) {
+        formDataToSend.append('keep_existing_images', 'true');
       }
+
+      imageFiles.forEach((file) => {
+        formDataToSend.append('images', file);
+      });
 
       const url = editingItem
         ? `${API_URL}/api/admin/news-events/${editingItem.id}`
@@ -251,7 +357,6 @@ export default function AdminNewsPage() {
     }
   };
 
-  // Delete item
   const handleDelete = async (id) => {
     try {
       const res = await fetch(`${API_URL}/api/admin/news-events/${id}`, {
@@ -272,7 +377,6 @@ export default function AdminNewsPage() {
     }
   };
 
-  // Toggle publish
   const handleTogglePublish = async (id) => {
     try {
       const res = await fetch(`${API_URL}/api/admin/news-events/${id}/toggle-publish`, {
@@ -475,12 +579,43 @@ export default function AdminNewsPage() {
                   <tr key={item.id} className="hover:bg-indigo-50/30 transition">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-4">
-                        {item.image_url ? (
-                          <img
-                            src={item.image_url}
-                            alt={item.title}
-                            className="w-12 h-12 rounded-lg object-cover shrink-0"
-                          />
+                        {item.image_urls && item.image_urls.length > 0 ? (
+                          <button
+                            type="button"
+                            onClick={() => setPreviewImage(item.image_urls[0])}
+                            className="relative w-12 h-12 shrink-0 rounded-lg overflow-hidden bg-slate-100 hover:ring-2 hover:ring-indigo-400 transition"
+                            title="Click to preview"
+                          >
+                            <iframe
+                              src={`https://drive.google.com/file/d/${item.image_urls[0].file_id}/preview`}
+                              className="w-300 h-300 border-0 pointer-events-none origin-top-left"
+                              style={{ transform: 'scale(0.04)' }}
+                              tabIndex={-1}
+                              title={item.title}
+                              loading="lazy"
+                            />
+                            {item.image_urls.length > 1 && (
+                              <span className="absolute -top-1 -right-1 px-1.5 py-0.5 bg-indigo-600 text-white text-[9px] font-bold rounded-full z-10">
+                                +{item.image_urls.length - 1}
+                              </span>
+                            )}
+                          </button>
+                        ) : item.image_url ? (
+                          <button
+                            type="button"
+                            onClick={() => setPreviewImage({ view_url: item.image_url })}
+                            className="relative w-12 h-12 shrink-0 rounded-lg overflow-hidden bg-slate-100 hover:ring-2 hover:ring-indigo-400 transition"
+                            title="Click to preview"
+                          >
+                            <iframe
+                              src={`https://drive.google.com/file/d/${extractDriveId(item.image_url)}/preview`}
+                              className="w-300 h-300 border-0 pointer-events-none origin-top-left"
+                              style={{ transform: 'scale(0.04)' }}
+                              tabIndex={-1}
+                              title={item.title}
+                              loading="lazy"
+                            />
+                          </button>
                         ) : (
                           <div className="w-12 h-12 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
                             <svg className="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -678,7 +813,7 @@ export default function AdminNewsPage() {
                   />
                 </div>
 
-                {/* Event Dates (only for EVENT type) */}
+                {/* Event Dates */}
                 {formData.type === 'EVENT' && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5 p-4 bg-indigo-50/50 rounded-xl border border-indigo-100">
                     <div>
@@ -742,62 +877,116 @@ export default function AdminNewsPage() {
                   </div>
                 </div>
 
-                {/* Image Upload */}
+                {/* Featured Images */}
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                    Featured Image
+                    Featured Images
+                    <span className="ml-2 text-xs font-normal text-slate-500">
+                      (add one or more)
+                    </span>
                   </label>
-                  <div className="flex items-start gap-4">
-                    {(imagePreview || formData.image_url) && (
-                      <div className="relative w-32 h-32 rounded-xl overflow-hidden border border-slate-200 shrink-0">
-                        <img
-                          src={imagePreview || formData.image_url}
-                          alt="Preview"
-                          className="w-full h-full object-cover"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setImageFile(null);
-                            setImagePreview('');
-                            setFormData({ ...formData, image_url: '' });
-                          }}
-                          className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition"
+
+                  {(formData.image_urls.length > 0 || imagePreviews.length > 0) && (
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mb-3">
+                      {/* Existing URLs (already saved) */}
+                      {formData.image_urls.map((entry, idx) => {
+                        const thumbUrl = getThumbnailUrl(entry, 400);
+                        if (!thumbUrl) return null;
+                        return (
+                          <div
+                            key={`url-${idx}`}
+                            className="relative aspect-square rounded-xl overflow-hidden border border-slate-200 group bg-slate-100"
+                          >
+                            <img
+                              src={thumbUrl}
+                              alt={`Existing ${idx + 1}`}
+                              className="w-full h-full object-cover cursor-pointer"
+                              onClick={() => setPreviewImage(entry)}
+                              onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeImageUrl(entry)}
+                              className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 hover:bg-red-600 transition"
+                              title="Remove"
+                            >
+                              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
+                        );
+                      })}
+
+                      {/* New previews (not yet uploaded) */}
+                      {imagePreviews.map((preview, idx) => (
+                        <div
+                          key={`preview-${idx}`}
+                          className="relative aspect-square rounded-xl overflow-hidden border border-indigo-300 group"
                         >
-                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </div>
-                    )}
-                    <div className="flex-1">
-                      <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/50 transition">
-                        <svg className="w-8 h-8 text-slate-400 mb-2" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-                        </svg>
-                        <span className="text-xs text-slate-500">Click to upload image</span>
-                        <span className="text-[10px] text-slate-400 mt-1">JPG, PNG, GIF, WEBP (max 64MB)</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleImageChange}
-                          className="hidden"
-                        />
-                      </label>
-                      <div className="mt-2">
-                        <input
-                          type="text"
-                          value={formData.image_url}
-                          onChange={(e) => {
-                            setFormData({ ...formData, image_url: e.target.value });
-                            setImagePreview(e.target.value);
-                            setImageFile(null);
-                          }}
-                          placeholder="Or paste an image URL..."
-                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                        />
-                      </div>
+                          <img src={preview} alt={`New ${idx + 1}`} className="w-full h-full object-cover" />
+                          <span className="absolute bottom-1 left-1 px-1.5 py-0.5 bg-indigo-600 text-white text-[9px] font-bold rounded">
+                            NEW
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => removeImagePreview(idx)}
+                            className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 hover:bg-red-600 transition"
+                            title="Remove"
+                          >
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                      ))}
                     </div>
+                  )}
+
+                  {/* Upload zone */}
+                  <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/50 transition">
+                    <svg className="w-8 h-8 text-slate-400 mb-2" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                    </svg>
+                    <span className="text-xs text-slate-500">Click to upload image(s)</span>
+                    <span className="text-[10px] text-slate-400 mt-1">JPG, PNG, GIF, WEBP (max 64MB each) — multiple allowed</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleImageChange}
+                      className="hidden"
+                    />
+                  </label>
+
+                  {/* Paste-URL input */}
+                  <div className="mt-2 flex gap-2">
+                    <input
+                      type="text"
+                      id="imageUrlInput"
+                      placeholder="Or paste an image URL and press Enter..."
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          addImageUrl(e.currentTarget.value);
+                          e.currentTarget.value = '';
+                        }
+                      }}
+                      className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const input = document.getElementById('imageUrlInput');
+                        if (input?.value) {
+                          addImageUrl(input.value);
+                          input.value = '';
+                        }
+                      }}
+                      className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition"
+                    >
+                      Add URL
+                    </button>
                   </div>
                 </div>
 
@@ -860,6 +1049,40 @@ export default function AdminNewsPage() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Image Preview Modal */}
+      {previewImage && (
+        <div className="fixed inset-0 z-[60] overflow-y-auto">
+          <div
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm"
+            onClick={() => setPreviewImage(null)}
+          />
+          <div className="relative min-h-full flex items-center justify-center p-4">
+            <div className="relative bg-white rounded-2xl shadow-2xl max-w-4xl w-full overflow-hidden">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+                <h3 className="font-bold text-slate-900">Image Preview</h3>
+                <button
+                  onClick={() => setPreviewImage(null)}
+                  className="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 transition"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div className="p-4 bg-slate-50">
+                <iframe
+                  src={getPreviewUrl(previewImage)}
+                  className="w-full bg-white rounded-xl"
+                  style={{ height: '70vh' }}
+                  allow="autoplay"
+                  title="Image Preview"
+                />
+              </div>
             </div>
           </div>
         </div>

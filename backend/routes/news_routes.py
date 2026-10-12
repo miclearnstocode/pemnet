@@ -1,7 +1,7 @@
 from flask import jsonify, request
 from models import db, NewsEvent, User
 from werkzeug.utils import secure_filename
-from google_drive import upload_file_to_drive
+from google_drive import (move_news_images_to_item_folder, upload_news_event_image, extract_drive_entry_from_url, trash_file, trash_news_item_folder)
 from functools import wraps
 import os
 import tempfile
@@ -18,9 +18,7 @@ def admin_required(f):
             auth_header = request.headers.get('Authorization')
             if not auth_header or not auth_header.startswith('Bearer '):
                 return jsonify({"detail": "Authorization required"}), 401
-            
-            # For now, we'll trust the user_id passed in the request
-            # In production, verify the token properly
+
             return f(*args, **kwargs)
         except Exception as e:
             return jsonify({"detail": str(e)}), 401
@@ -28,28 +26,25 @@ def admin_required(f):
 
 
 def register_news_routes(app):
-    """Register all news/event routes with the Flask app"""
-    
-    # ==================== PUBLIC ROUTES ====================
+
     
     @app.route('/api/news-events', methods=['GET', 'OPTIONS'])
     def get_public_news_events():
-        """Public endpoint to fetch published news and events"""
         if request.method == 'OPTIONS':
             return jsonify({})
-        
+
         try:
-            # Query parameters
             item_type = request.args.get('type', 'all')
             search = request.args.get('search', '')
             limit = request.args.get('limit', type=int)
             featured_only = request.args.get('featured', 'false').lower() == 'true'
-            
-            query = NewsEvent.query.filter_by(is_published=True)
-            
+
+            # Strict: only published items
+            query = NewsEvent.query.filter(NewsEvent.is_published.is_(True))
+
             if item_type and item_type.lower() != 'all':
                 query = query.filter(NewsEvent.type == item_type.upper())
-            
+
             if search:
                 search_pattern = f'%{search}%'
                 query = query.filter(
@@ -58,22 +53,20 @@ def register_news_routes(app):
                         NewsEvent.excerpt.ilike(search_pattern)
                     )
                 )
-            
+
             if featured_only:
-                query = query.filter_by(is_featured=True)
-            
-            # Order by event date (newest first), fallback to created_at
+                query = query.filter(NewsEvent.is_featured.is_(True))
+
             query = query.order_by(
                 db.desc(db.func.coalesce(NewsEvent.event_start_date, NewsEvent.created_at))
             )
-            
+
             if limit:
                 query = query.limit(limit)
-            
+
             items = query.all()
-            
             return jsonify([item.to_dict() for item in items]), 200
-            
+
         except Exception as e:
             print(f"Error fetching news/events: {e}")
             traceback.print_exc()
@@ -185,101 +178,61 @@ def register_news_routes(app):
 
     @app.route('/api/admin/news-events', methods=['POST', 'OPTIONS'])
     def admin_create_news_event():
-        """Admin endpoint to create a new news/event"""
+        """Admin endpoint to create a new news/event with multiple images"""
         if request.method == 'OPTIONS':
             return jsonify({})
-        
+
         temp_files = []
         temp_dir = None
-        
+
         try:
-            # Check if it's multipart form data (with image) or JSON
             if request.content_type and 'multipart/form-data' in request.content_type:
                 data = request.form.to_dict()
-                image_file = request.files.get('image')
+                image_files = request.files.getlist('images')
+                image_urls_input = request.form.getlist('image_urls')
             else:
                 data = request.get_json() or {}
-                image_file = None
-            
-            # Validate required fields
+                image_files = []
+                image_urls_input = data.get('image_urls', [])
+
             title = data.get('title', '').strip()
             item_type = data.get('type', 'NEWS').upper()
             date_display = data.get('date_display', '').strip()
-            
+
             if not title:
                 return jsonify({"detail": "Title is required"}), 400
-            
             if item_type not in ['NEWS', 'EVENT', 'ANNOUNCEMENT']:
                 return jsonify({"detail": "Invalid type. Must be NEWS, EVENT, or ANNOUNCEMENT"}), 400
-            
             if not date_display:
                 return jsonify({"detail": "Display date is required"}), 400
-            
-            # Get color defaults based on type
+
             default_colors = {
                 'NEWS': {'type_color': 'bg-yellow-100 text-yellow-800', 'tag_color': 'bg-yellow-50 text-yellow-700 border-yellow-200'},
                 'EVENT': {'type_color': 'bg-blue-100 text-blue-800', 'tag_color': 'bg-blue-50 text-blue-700 border-blue-200'},
                 'ANNOUNCEMENT': {'type_color': 'bg-green-100 text-green-800', 'tag_color': 'bg-green-50 text-green-700 border-green-200'}
             }
-            
-            # Handle image upload to Google Drive
-            image_url = data.get('image_url', '').strip() or None
-            
-            if image_file and image_file.filename:
-                # Validate file type
-                allowed_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'}
-                file_ext = os.path.splitext(image_file.filename)[1].lower()
-                
-                if file_ext not in allowed_extensions:
-                    return jsonify({"detail": "Invalid image format. Allowed: JPG, PNG, GIF, WEBP, BMP"}), 400
-                
-                # Sanitize filename
-                safe_filename = secure_filename(image_file.filename.replace(' ', '_'))
-                
-                # Create temp directory
-                temp_dir = tempfile.mkdtemp()
-                file_path = os.path.join(temp_dir, safe_filename)
-                image_file.save(file_path)
-                temp_files.append(file_path)
-                
-                # Upload to Google Drive (in a News/Events folder)
-                try:
-                    view_url, _ = upload_file_to_drive(
-                        file_path,
-                        f"news_event_{safe_filename}",
-                        project_title=f"NewsEvents/{item_type}",
-                        sender_name="Admin"
-                    )
-                    image_url = view_url
-                    print(f"✅ Image uploaded to Drive: {image_url}")
-                except Exception as drive_error:
-                    print(f"⚠️ Drive upload failed: {drive_error}")
-                    # Continue without image if upload fails
-                    image_url = data.get('image_url', '').strip() or None
-            
-            # Parse event dates if provided
+
+            # ── Parse event dates ──
             event_start_date = None
             event_end_date = None
-            
             if data.get('event_start_date'):
                 try:
                     event_start_date = datetime.fromisoformat(data['event_start_date'].replace('Z', '+00:00'))
-                except:
+                except Exception:
                     try:
                         event_start_date = datetime.strptime(data['event_start_date'], '%Y-%m-%d')
-                    except:
+                    except Exception:
                         pass
-            
             if data.get('event_end_date'):
                 try:
                     event_end_date = datetime.fromisoformat(data['event_end_date'].replace('Z', '+00:00'))
-                except:
+                except Exception:
                     try:
                         event_end_date = datetime.strptime(data['event_end_date'], '%Y-%m-%d')
-                    except:
+                    except Exception:
                         pass
-            
-            # Create the news/event
+
+            # 1️⃣ Persist the row (no images yet) so we can get an id for the folder
             new_item = NewsEvent(
                 type=item_type,
                 title=title,
@@ -291,228 +244,297 @@ def register_news_routes(app):
                 tag=data.get('tag', '').strip() or None,
                 tag_color=data.get('tag_color', '').strip() or default_colors[item_type]['tag_color'],
                 type_color=data.get('type_color', '').strip() or default_colors[item_type]['type_color'],
-                image_url=image_url,
+                image_urls=None,
                 is_published=data.get('is_published', 'true').lower() == 'true' if isinstance(data.get('is_published'), str) else bool(data.get('is_published', True)),
                 is_featured=data.get('is_featured', 'false').lower() == 'true' if isinstance(data.get('is_featured'), str) else bool(data.get('is_featured', False)),
-                created_by=data.get('created_by')
+                created_by=data.get('created_by'),
             )
-            
             db.session.add(new_item)
-            db.session.commit()
-            
-            print(f"✅ Created news/event: {title} (ID: {new_item.id})")
-            
-            return jsonify({
-                "message": "News/Event created successfully",
-                "item": new_item.to_dict()
-            }), 201
-            
-        except Exception as e:
-            db.session.rollback()
-            print(f"Error creating news/event: {e}")
-            traceback.print_exc()
-            
-            # Cleanup temp files
-            for f in temp_files:
-                try:
-                    if os.path.exists(f):
-                        os.remove(f)
-                except:
-                    pass
-            if temp_dir and os.path.exists(temp_dir):
-                try:
-                    os.rmdir(temp_dir)
-                except:
-                    pass
-            
-            return jsonify({"detail": str(e)}), 500
-        finally:
-            # Cleanup temp files
-            for f in temp_files:
-                try:
-                    if os.path.exists(f):
-                        os.remove(f)
-                except:
-                    pass
-            if temp_dir and os.path.exists(temp_dir):
-                try:
-                    os.rmdir(temp_dir)
-                except:
-                    pass
+            db.session.flush()   # ← assigns new_item.id without committing
 
-    @app.route('/api/admin/news-events/<int:item_id>', methods=['PUT', 'OPTIONS'])
-    def admin_update_news_event(item_id):
-        """Admin endpoint to update a news/event"""
-        if request.method == 'OPTIONS':
-            return jsonify({})
-        
-        temp_files = []
-        temp_dir = None
-        
-        try:
-            item = NewsEvent.query.get(item_id)
-            if not item:
-                return jsonify({"detail": "News/Event not found"}), 404
-            
-            # Check if it's multipart form data (with image) or JSON
-            if request.content_type and 'multipart/form-data' in request.content_type:
-                data = request.form.to_dict()
-                image_file = request.files.get('image')
-            else:
-                data = request.get_json() or {}
-                image_file = None
-            
-            changes = {}
-            
-            # Update fields if provided
-            if 'title' in data:
-                new_title = data['title'].strip()
-                if new_title and new_title != item.title:
-                    changes['title'] = {'old': item.title, 'new': new_title}
-                    item.title = new_title
-            
-            if 'type' in data:
-                new_type = data['type'].upper()
-                if new_type in ['NEWS', 'EVENT', 'ANNOUNCEMENT'] and new_type != item.type:
-                    changes['type'] = {'old': item.type, 'new': new_type}
-                    item.type = new_type
-                    # Update colors if type changed and no custom colors provided
-                    if 'type_color' not in data:
-                        default_type_colors = {
-                            'NEWS': 'bg-yellow-100 text-yellow-800',
-                            'EVENT': 'bg-blue-100 text-blue-800',
-                            'ANNOUNCEMENT': 'bg-green-100 text-green-800'
-                        }
-                        item.type_color = default_type_colors.get(new_type, item.type_color)
-            
-            if 'excerpt' in data:
-                new_excerpt = data['excerpt'].strip() if data['excerpt'] else None
-                if new_excerpt != item.excerpt:
-                    changes['excerpt'] = {'old': item.excerpt, 'new': new_excerpt}
-                    item.excerpt = new_excerpt
-            
-            if 'content' in data:
-                new_content = data['content'].strip() if data['content'] else None
-                if new_content != item.content:
-                    changes['content'] = {'old': item.content, 'new': new_content}
-                    item.content = new_content
-            
-            if 'date_display' in data:
-                new_date = data['date_display'].strip()
-                if new_date and new_date != item.date_display:
-                    changes['date_display'] = {'old': item.date_display, 'new': new_date}
-                    item.date_display = new_date
-            
-            if 'event_start_date' in data:
-                try:
-                    new_start = datetime.fromisoformat(data['event_start_date'].replace('Z', '+00:00')) if data['event_start_date'] else None
-                except:
-                    try:
-                        new_start = datetime.strptime(data['event_start_date'], '%Y-%m-%d') if data['event_start_date'] else None
-                    except:
-                        new_start = None
-                
-                if new_start != item.event_start_date:
-                    changes['event_start_date'] = {
-                        'old': item.event_start_date.strftime('%Y-%m-%d') if item.event_start_date else None,
-                        'new': new_start.strftime('%Y-%m-%d') if new_start else None
-                    }
-                    item.event_start_date = new_start
-            
-            if 'event_end_date' in data:
-                try:
-                    new_end = datetime.fromisoformat(data['event_end_date'].replace('Z', '+00:00')) if data['event_end_date'] else None
-                except:
-                    try:
-                        new_end = datetime.strptime(data['event_end_date'], '%Y-%m-%d') if data['event_end_date'] else None
-                    except:
-                        new_end = None
-                
-                if new_end != item.event_end_date:
-                    changes['event_end_date'] = {
-                        'old': item.event_end_date.strftime('%Y-%m-%d') if item.event_end_date else None,
-                        'new': new_end.strftime('%Y-%m-%d') if new_end else None
-                    }
-                    item.event_end_date = new_end
-            
-            if 'tag' in data:
-                new_tag = data['tag'].strip() if data['tag'] else None
-                if new_tag != item.tag:
-                    changes['tag'] = {'old': item.tag, 'new': new_tag}
-                    item.tag = new_tag
-            
-            if 'tag_color' in data:
-                new_tag_color = data['tag_color'].strip() if data['tag_color'] else None
-                if new_tag_color != item.tag_color:
-                    changes['tag_color'] = {'old': item.tag_color, 'new': new_tag_color}
-                    item.tag_color = new_tag_color
-            
-            if 'type_color' in data:
-                new_type_color = data['type_color'].strip() if data['type_color'] else None
-                if new_type_color != item.type_color:
-                    changes['type_color'] = {'old': item.type_color, 'new': new_type_color}
-                    item.type_color = new_type_color
-            
-            if 'is_published' in data:
-                new_published = data['is_published'].lower() == 'true' if isinstance(data['is_published'], str) else bool(data['is_published'])
-                if new_published != item.is_published:
-                    changes['is_published'] = {'old': item.is_published, 'new': new_published}
-                    item.is_published = new_published
-            
-            if 'is_featured' in data:
-                new_featured = data['is_featured'].lower() == 'true' if isinstance(data['is_featured'], str) else bool(data['is_featured'])
-                if new_featured != item.is_featured:
-                    changes['is_featured'] = {'old': item.is_featured, 'new': new_featured}
-                    item.is_featured = new_featured
-            
-            # Handle new image upload
-            if image_file and image_file.filename:
-                allowed_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'}
+            # 2️⃣ Upload images into NewsEvents/<TYPE>/<slug>-<id>/Images
+            image_entries = []
+            allowed_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'}
+
+            for image_file in image_files:
+                if not image_file or not image_file.filename:
+                    continue
                 file_ext = os.path.splitext(image_file.filename)[1].lower()
-                
                 if file_ext not in allowed_extensions:
-                    return jsonify({"detail": "Invalid image format. Allowed: JPG, PNG, GIF, WEBP, BMP"}), 400
-                
+                    db.session.rollback()
+                    return jsonify({"detail": f"Invalid image format for {image_file.filename}. Allowed: JPG, PNG, GIF, WEBP, BMP"}), 400
+
                 safe_filename = secure_filename(image_file.filename.replace(' ', '_'))
                 temp_dir = tempfile.mkdtemp()
                 file_path = os.path.join(temp_dir, safe_filename)
                 image_file.save(file_path)
                 temp_files.append(file_path)
-                
+
                 try:
-                    view_url, _ = upload_file_to_drive(
+                    entry = upload_news_event_image(
                         file_path,
-                        f"news_event_{safe_filename}",
-                        project_title=f"NewsEvents/{item.type}",
-                        sender_name="Admin"
+                        f"news_{safe_filename}",
+                        item_type=new_item.type,
+                        title=new_item.title,
+                        item_id=new_item.id,
                     )
-                    changes['image_url'] = {'old': item.image_url, 'new': view_url}
-                    item.image_url = view_url
-                    print(f"✅ New image uploaded: {view_url}")
+                    image_entries.append(entry)
+                    print(f"✅ Image uploaded: {entry['view_url']}")
+                except Exception as drive_error:
+                    print(f"⚠️ Drive upload failed for {safe_filename}: {drive_error}")
+
+            # Pasted URLs → normalize
+            for url in image_urls_input:
+                if not url or not str(url).strip():
+                    continue
+                entry = extract_drive_entry_from_url(str(url).strip())
+                if entry:
+                    image_entries.append(entry)
+
+            # Legacy singular image_url (in case an old client sends it)
+            legacy_url = (data.get('image_url') or '').strip()
+            if legacy_url:
+                entry = extract_drive_entry_from_url(legacy_url)
+                if entry:
+                    image_entries.append(entry)
+
+            # 3️⃣ Attach image entries and commit
+            new_item.image_urls = image_entries or None
+            db.session.commit()
+
+            print(f"✅ Created news/event: {new_item.title} (ID: {new_item.id}) with {len(image_entries)} image(s)")
+            return jsonify({"message": "News/Event created successfully", "item": new_item.to_dict()}), 201
+
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error creating news/event: {e}")
+            traceback.print_exc()
+            return jsonify({"detail": str(e)}), 500
+        finally:
+            for f in temp_files:
+                try:
+                    if os.path.exists(f):
+                        os.remove(f)
+                except Exception:
+                    pass
+            if temp_dir and os.path.exists(temp_dir):
+                try:
+                    os.rmdir(temp_dir)
+                except Exception:
+                    pass
+
+    @app.route('/api/admin/news-events/<int:item_id>', methods=['PUT', 'OPTIONS'])
+    def admin_update_news_event(item_id):
+        """Admin endpoint to update a news/event (supports multiple images)"""
+        if request.method == 'OPTIONS':
+            return jsonify({})
+
+        temp_files = []
+        temp_dir = None
+
+        try:
+            item = NewsEvent.query.get(item_id)
+            if not item:
+                return jsonify({"detail": "News/Event not found"}), 404
+
+            if request.content_type and 'multipart/form-data' in request.content_type:
+                data = request.form.to_dict()
+                image_files = request.files.getlist('images')
+                image_urls_input = request.form.getlist('image_urls')
+                keep_existing = request.form.get('keep_existing_images', 'true').lower() == 'true'
+            else:
+                data = request.get_json() or {}
+                image_files = []
+                image_urls_input = data.get('image_urls', [])
+                keep_existing = data.get('keep_existing_images', True)
+
+            changes = {}
+
+            # ── Simple field updates ──
+            if 'title' in data:
+                new_title = data['title'].strip()
+                if new_title and new_title != item.title:
+                    changes['title'] = {'old': item.title, 'new': new_title}
+                    item.title = new_title
+
+            if 'type' in data:
+                new_type = data['type'].upper()
+                if new_type in ['NEWS', 'EVENT', 'ANNOUNCEMENT'] and new_type != item.type:
+                    changes['type'] = {'old': item.type, 'new': new_type}
+                    item.type = new_type
+                    if 'type_color' not in data:
+                        default_type_colors = {
+                            'NEWS': 'bg-yellow-100 text-yellow-800',
+                            'EVENT': 'bg-blue-100 text-blue-800',
+                            'ANNOUNCEMENT': 'bg-green-100 text-green-800',
+                        }
+                        item.type_color = default_type_colors.get(new_type, item.type_color)
+
+            if 'excerpt' in data:
+                new_excerpt = data['excerpt'].strip() if data['excerpt'] else None
+                if new_excerpt != item.excerpt:
+                    changes['excerpt'] = {'old': item.excerpt, 'new': new_excerpt}
+                    item.excerpt = new_excerpt
+
+            if 'content' in data:
+                new_content = data['content'].strip() if data['content'] else None
+                if new_content != item.content:
+                    changes['content'] = {'old': item.content, 'new': new_content}
+                    item.content = new_content
+
+            if 'date_display' in data:
+                new_date = data['date_display'].strip()
+                if new_date and new_date != item.date_display:
+                    changes['date_display'] = {'old': item.date_display, 'new': new_date}
+                    item.date_display = new_date
+
+            if 'event_start_date' in data:
+                try:
+                    new_start = datetime.fromisoformat(data['event_start_date'].replace('Z', '+00:00')) if data['event_start_date'] else None
+                except Exception:
+                    try:
+                        new_start = datetime.strptime(data['event_start_date'], '%Y-%m-%d') if data['event_start_date'] else None
+                    except Exception:
+                        new_start = None
+                if new_start != item.event_start_date:
+                    changes['event_start_date'] = {
+                        'old': item.event_start_date.isoformat() if item.event_start_date else None,
+                        'new': new_start.isoformat() if new_start else None,
+                    }
+                    item.event_start_date = new_start
+
+            if 'event_end_date' in data:
+                try:
+                    new_end = datetime.fromisoformat(data['event_end_date'].replace('Z', '+00:00')) if data['event_end_date'] else None
+                except Exception:
+                    try:
+                        new_end = datetime.strptime(data['event_end_date'], '%Y-%m-%d') if data['event_end_date'] else None
+                    except Exception:
+                        new_end = None
+                if new_end != item.event_end_date:
+                    changes['event_end_date'] = {
+                        'old': item.event_end_date.isoformat() if item.event_end_date else None,
+                        'new': new_end.isoformat() if new_end else None,
+                    }
+                    item.event_end_date = new_end
+
+            if 'tag' in data:
+                new_tag = data['tag'].strip() if data['tag'] else None
+                if new_tag != item.tag:
+                    item.tag = new_tag
+
+            if 'tag_color' in data:
+                new_tag_color = data['tag_color'].strip() if data['tag_color'] else None
+                if new_tag_color != item.tag_color:
+                    item.tag_color = new_tag_color
+
+            if 'type_color' in data:
+                new_type_color = data['type_color'].strip() if data['type_color'] else None
+                if new_type_color != item.type_color:
+                    item.type_color = new_type_color
+
+            if 'is_published' in data:
+                new_published = data['is_published'].lower() == 'true' if isinstance(data['is_published'], str) else bool(data['is_published'])
+                if new_published != item.is_published:
+                    item.is_published = new_published
+
+            if 'is_featured' in data:
+                new_featured = data['is_featured'].lower() == 'true' if isinstance(data['is_featured'], str) else bool(data['is_featured'])
+                if new_featured != item.is_featured:
+                    item.is_featured = new_featured
+
+            existing = item.image_urls or []
+            new_entries = []
+            if keep_existing:
+                for e in existing:
+                    if isinstance(e, dict) and e.get('view_url'):
+                        new_entries.append({'file_id': e.get('file_id'), 'view_url': e.get('view_url')})
+                    elif isinstance(e, str):
+                        entry = extract_drive_entry_from_url(e)
+                        if entry:
+                            new_entries.append(entry)
+
+            # Upload new files
+            allowed_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'}
+            for image_file in image_files:
+                if not image_file or not image_file.filename:
+                    continue
+
+                file_ext = os.path.splitext(image_file.filename)[1].lower()
+                if file_ext not in allowed_extensions:
+                    return jsonify({"detail": f"Invalid image format for {image_file.filename}"}), 400
+
+                safe_filename = secure_filename(image_file.filename.replace(' ', '_'))
+                temp_dir = tempfile.mkdtemp()
+                file_path = os.path.join(temp_dir, safe_filename)
+                image_file.save(file_path)
+                temp_files.append(file_path)
+
+                try:
+                    entry = upload_news_event_image(file_path, f"news_{safe_filename}", item.type)
+                    new_entries.append(entry)
+                    print(f"✅ New image uploaded: {entry['view_url']}")
                 except Exception as drive_error:
                     print(f"⚠️ Drive upload failed: {drive_error}")
-            
-            elif 'image_url' in data:
-                new_image_url = data['image_url'].strip() if data['image_url'] else None
-                if new_image_url != item.image_url:
-                    changes['image_url'] = {'old': item.image_url, 'new': new_image_url}
-                    item.image_url = new_image_url
-            
+
+            # Pasted URLs → normalize
+            for url in image_urls_input:
+                if not url or not str(url).strip():
+                    continue
+                entry = extract_drive_entry_from_url(str(url).strip())
+                if entry and entry not in new_entries:
+                    new_entries.append(entry)
+
+            # Detect which entries were removed (to trash them)
+            old_view_urls = set()
+            for e in existing:
+                if isinstance(e, dict) and e.get('view_url'):
+                    old_view_urls.add(e['view_url'])
+                elif isinstance(e, str):
+                    old_view_urls.add(e)
+
+            new_view_urls = {e['view_url'] for e in new_entries}
+            removed_urls = old_view_urls - new_view_urls
+
+            # Trash the removed Drive files
+            for removed_url in removed_urls:
+                entry = extract_drive_entry_from_url(removed_url)
+                if entry and entry.get('file_id'):
+                    try:
+                        trash_file(entry['file_id'])
+                        print(f"🗑️  Trashed removed image: {entry['file_id']}")
+                    except Exception as trash_err:
+                        print(f"⚠️ Could not trash {entry['file_id']}: {trash_err}")
+
+            # Commit image changes
+            if new_entries != existing:
+                changes['image_urls'] = {'old': existing, 'new': new_entries}
+                item.image_urls = new_entries if new_entries else None
+
+            title_changed = changes.get('title') is not None
+            type_changed = changes.get('type') is not None
+
+            if (title_changed or type_changed) and item.image_urls:
+                try:
+                    move_news_images_to_item_folder(
+                        image_entries=item.image_urls,
+                        item_type=item.type,
+                        title=item.title,
+                        item_id=item.id,
+                    )
+                    print(f"📁 Moved images to new folder for: {item.title}")
+                except Exception as move_err:
+                    print(f"⚠️ Could not move images: {move_err}")
             if changes:
                 db.session.commit()
-                print(f"✅ Updated news/event {item_id}: {list(changes.keys())}")
-                
                 return jsonify({
                     "message": "News/Event updated successfully",
                     "changes": changes,
                     "item": item.to_dict()
                 }), 200
             else:
-                return jsonify({
-                    "message": "No changes made",
-                    "item": item.to_dict()
-                }), 200
-            
+                return jsonify({"message": "No changes made", "item": item.to_dict()}), 200
+
         except Exception as e:
             db.session.rollback()
             print(f"Error updating news/event: {e}")
@@ -523,44 +545,54 @@ def register_news_routes(app):
                 try:
                     if os.path.exists(f):
                         os.remove(f)
-                except:
+                except Exception:
                     pass
             if temp_dir and os.path.exists(temp_dir):
                 try:
                     os.rmdir(temp_dir)
-                except:
+                except Exception:
                     pass
-
+    
     @app.route('/api/admin/news-events/<int:item_id>', methods=['DELETE', 'OPTIONS'])
     def admin_delete_news_event(item_id):
-        """Admin endpoint to delete a news/event"""
+        """Admin endpoint to delete a news/event and its Drive folder"""
         if request.method == 'OPTIONS':
             return jsonify({})
-        
+
         try:
             item = NewsEvent.query.get(item_id)
             if not item:
                 return jsonify({"detail": "News/Event not found"}), 404
-            
-            title = item.title  # Save for response
-            
+
+            saved_title = item.title
+            saved_type = item.type
+
+            # Trash the per-item Drive folder (Images included)
+            try:
+                trash_news_item_folder(
+                    item_type=saved_type,
+                    title=saved_title,
+                    item_id=item_id,
+                )
+            except Exception as drive_err:
+                print(f"⚠️ Drive folder trash failed (continuing): {drive_err}")
+
             db.session.delete(item)
             db.session.commit()
-            
-            print(f"✅ Deleted news/event: {title} (ID: {item_id})")
-            
+
+            print(f"✅ Deleted news/event: {saved_title} (ID: {item_id})")
             return jsonify({
                 "message": "News/Event deleted successfully",
                 "deleted_id": item_id,
-                "deleted_title": title
+                "deleted_title": saved_title,
             }), 200
-            
+
         except Exception as e:
             db.session.rollback()
             print(f"Error deleting news/event: {e}")
             traceback.print_exc()
             return jsonify({"detail": str(e)}), 500
-
+    
     @app.route('/api/admin/news-events/bulk-delete', methods=['POST', 'OPTIONS'])
     def admin_bulk_delete_news_events():
         """Admin endpoint to delete multiple news/events"""

@@ -1,7 +1,20 @@
 from flask_sqlalchemy import SQLAlchemy
 import json
+from datetime import datetime, timezone
 
 db = SQLAlchemy()
+
+def utcnow():
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
+def iso_utc(dt):
+    if not dt:
+        return None
+    if dt.tzinfo is None:
+        return dt.isoformat() + 'Z'
+    return dt.astimezone(timezone.utc).isoformat().replace('+00:00', 'Z')
+
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -11,8 +24,8 @@ class User(db.Model):
     hashed_password = db.Column(db.String(191), nullable=False)
     is_active = db.Column(db.Boolean, default=True)
     role = db.Column(db.Enum('user', 'staff', 'evaluator', 'admin', 'master_approver', 'treasurer'), nullable=False, default='user')
-    created_at = db.Column(db.DateTime, server_default=db.func.now())
-    updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
+    created_at = db.Column(db.DateTime, default=utcnow)
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
 
     def to_dict(self):
         return {
@@ -21,8 +34,9 @@ class User(db.Model):
             'email': self.email,
             'role': self.role,
             'is_active': self.is_active,
-            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None
+            'created_at': iso_utc(self.created_at),
         }
+
 
 class Submission(db.Model):
     __tablename__ = 'submissions'
@@ -63,7 +77,7 @@ class Submission(db.Model):
     compextproj_drive_view_url = db.Column(db.String(500), nullable=True)
     status = db.Column(db.Enum('pending', 'endorse', 'downgraded-non_competitive', 'downgraded-poster_only'), nullable=False, default='pending')
     evaluation_status = db.Column(db.Enum('pending', 'endorse', 'downgraded-non_competitive', 'downgraded-poster_only'), nullable=False, default='pending')
-    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    created_at = db.Column(db.DateTime, default=utcnow)
     revisions = db.relationship( 'SubmissionRevision', foreign_keys='SubmissionRevision.submission_id', primaryjoin='Submission.submission_id == SubmissionRevision.submission_id', backref='submission_ref',)
     has_full_paper = db.Column(db.Boolean, nullable=False, default=False, server_default='0')
     full_paper_submitted_at = db.Column(db.DateTime, nullable=True)
@@ -104,14 +118,12 @@ class Submission(db.Model):
 
             'status': self.status,
             'evaluation_status': self.evaluation_status,
-            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None,
+            'created_at': iso_utc(self.created_at),
             'has_full_paper': bool(self.has_full_paper),
-            'full_paper_submitted_at': (
-                self.full_paper_submitted_at.strftime('%Y-%m-%d %H:%M:%S')
-                if self.full_paper_submitted_at else None
-            ),
+            'full_paper_submitted_at': iso_utc(self.full_paper_submitted_at),
         }
-        
+
+
 class FullPaper(db.Model):
     __tablename__ = 'full_papers'
     id = db.Column(db.Integer, primary_key=True)
@@ -206,10 +218,8 @@ class FullPaper(db.Model):
         nullable=False,
         default='submitted',
     )
-    submitted_at = db.Column(db.DateTime, server_default=db.func.now())
-    updated_at = db.Column(
-        db.DateTime, server_default=db.func.now(), onupdate=db.func.now()
-    )
+    submitted_at = db.Column(db.DateTime, default=utcnow)
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
 
     # Relationships
     submission = db.relationship(
@@ -237,7 +247,7 @@ class FullPaper(db.Model):
         cascade='all, delete-orphan',
         order_by='FullPaperTable.display_order',
     )
-    
+
     def to_dict(self, include_children=True):
         data = {
             'id': self.id,
@@ -311,8 +321,8 @@ class FullPaper(db.Model):
             'drive_folder_id': self.drive_folder_id,
 
             'status': self.status,
-            'submitted_at': self.submitted_at.strftime('%Y-%m-%d %H:%M:%S') if self.submitted_at else None,
-            'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S') if self.updated_at else None,
+            'submitted_at': iso_utc(self.submitted_at),
+            'updated_at': iso_utc(self.updated_at),
         }
 
         if include_children:
@@ -323,6 +333,7 @@ class FullPaper(db.Model):
             data['tables'] = [t.to_dict() for t in self.tables]
 
         return data
+
 
 class FullPaperFigure(db.Model):
     __tablename__ = 'full_paper_figures'
@@ -360,7 +371,8 @@ class FullPaperFigure(db.Model):
             'file_size': self.file_size,
             'display_order': self.display_order,
         }
-        
+
+
 class FullPaperProjectDesign(db.Model):
     __tablename__ = 'full_paper_project_designs'
     id = db.Column(db.Integer, primary_key=True)
@@ -389,7 +401,8 @@ class FullPaperProjectDesign(db.Model):
             'mime_type': self.mime_type,
             'file_size': self.file_size,
         }
-        
+
+
 class FullPaperTable(db.Model):
     __tablename__ = 'full_paper_tables'
     id = db.Column(db.Integer, primary_key=True)
@@ -416,23 +429,24 @@ class FullPaperTable(db.Model):
             'rows': json.loads(self.rows_json) if self.rows_json else [],
             'display_order': self.display_order,
         }
-        
+
+
 class SupportingDocument(db.Model):
     __tablename__ = 'supporting_documents'
     id = db.Column(db.Integer, primary_key=True)
     submission_id = db.Column(db.String(50), nullable=False, index=True)
-    file_id = db.Column(db.String(191), nullable=True) 
+    file_id = db.Column(db.String(191), nullable=True)
     file_name = db.Column(db.String(500), nullable=True)
     view_url = db.Column(db.String(500), nullable=True)
     download_url = db.Column(db.String(500), nullable=True)
-    file_size = db.Column(db.Integer, nullable=True) 
+    file_size = db.Column(db.Integer, nullable=True)
     mime_type = db.Column(db.String(100), nullable=True)
-    
+
     # Folder info in Drive
-    folder_id = db.Column(db.String(191), nullable=True) 
-    parent_folder_id = db.Column(db.String(191), nullable=True) 
-    
-    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    folder_id = db.Column(db.String(191), nullable=True)
+    parent_folder_id = db.Column(db.String(191), nullable=True)
+
+    created_at = db.Column(db.DateTime, default=utcnow)
 
     def to_dict(self):
         return {
@@ -444,9 +458,10 @@ class SupportingDocument(db.Model):
             'download_url': self.download_url,
             'file_size': self.file_size,
             'mime_type': self.mime_type,
-            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None
+            'created_at': iso_utc(self.created_at),
         }
-        
+
+
 class EmailSubmission(db.Model):
     __tablename__ = 'email_submissions'
     id = db.Column(db.Integer, primary_key=True)
@@ -462,11 +477,11 @@ class EmailSubmission(db.Model):
     status = db.Column(db.Enum('pending', 'endorse', 'downgraded-non_competitive', 'downgraded-poster_only'), nullable=False, default='pending')
     processed_submission_id = db.Column(db.Integer, db.ForeignKey('submissions.id'), nullable=True)
     email_received_at = db.Column(db.DateTime, nullable=False)
-    created_at = db.Column(db.DateTime, server_default=db.func.now())
-    updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
+    created_at = db.Column(db.DateTime, default=utcnow)
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
 
     submission = db.relationship('Submission', foreign_keys=[processed_submission_id], backref='email_submissions')
-    
+
     def to_dict(self):
         return {
             'id': self.id,
@@ -480,13 +495,14 @@ class EmailSubmission(db.Model):
             'attachment_download_url': self.attachment_download_url,
             'status': self.status,
             'processed_submission_id': self.processed_submission_id,
-            'email_received_at': self.email_received_at.strftime('%Y-%m-%d %H:%M:%S') if self.email_received_at else None
+            'email_received_at': iso_utc(self.email_received_at),
         }
+
 
 class ExtractedAbstractData(db.Model):
     __tablename__ = 'extracted_abstract_data'
     id = db.Column(db.Integer, primary_key=True)
-    submission_id = db.Column(db.String(50), unique=True, nullable=True, index=True) 
+    submission_id = db.Column(db.String(50), unique=True, nullable=True, index=True)
     email_submission_id = db.Column(db.Integer, db.ForeignKey('email_submissions.id'), nullable=False, index=True)
     title = db.Column(db.String(500), nullable=True)
     authors = db.Column(db.Text, nullable=True)
@@ -502,16 +518,17 @@ class ExtractedAbstractData(db.Model):
     evaluation_status = db.Column(db.Enum('pending', 'endorse', 'downgraded-non_competitive', 'downgraded-poster_only'), nullable=False, default='pending')
     extraction_status = db.Column(db.Enum('pending', 'extracted', 'failed'), nullable=False, default='pending')
     extraction_error = db.Column(db.Text, nullable=True)
-    extracted_at = db.Column(db.DateTime, server_default=db.func.now())
-    
+    extracted_at = db.Column(db.DateTime, default=utcnow)
+
     email_submission = db.relationship('EmailSubmission', foreign_keys=[email_submission_id], backref='extracted_data')
-    
+
+
 class ExtractedDataRevision(db.Model):
     __tablename__ = 'extracted_data_revisions'
     id = db.Column(db.Integer, primary_key=True)
     extracted_data_id = db.Column(db.Integer, db.ForeignKey('extracted_abstract_data.id'), nullable=False, index=True)
     edited_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    
+
     # Fields tracked (only storing what was changed)
     changes = db.Column(db.Text, nullable=True)  # JSON string of changed fields
     title = db.Column(db.String(500), nullable=True)
@@ -525,21 +542,22 @@ class ExtractedDataRevision(db.Model):
     paper_category = db.Column(db.String(191), nullable=True)
     thematic_area = db.Column(db.String(191), nullable=True)
     theme = db.Column(db.String(500), nullable=True)
-    
-    created_at = db.Column(db.DateTime, server_default=db.func.now())
+
+    created_at = db.Column(db.DateTime, default=utcnow)
 
     # Relationships
     extracted_data = db.relationship('ExtractedAbstractData', foreign_keys=[extracted_data_id], backref='revisions')
     editor = db.relationship('User', foreign_keys=[edited_by])
-    
+
+
 class SUC(db.Model):
     __tablename__ = 'sucs'
     id = db.Column(db.Integer, primary_key=True)
     region = db.Column(db.String(100), nullable=False)
     name = db.Column(db.String(191), nullable=False, unique=True)
     is_active = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, server_default=db.func.now())
-    updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
+    created_at = db.Column(db.DateTime, default=utcnow)
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
 
     def to_dict(self):
         return {
@@ -547,9 +565,10 @@ class SUC(db.Model):
             'region': self.region,
             'name': self.name,
             'is_active': self.is_active,
-            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None,
-            'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S') if self.updated_at else None
+            'created_at': iso_utc(self.created_at),
+            'updated_at': iso_utc(self.updated_at),
         }
+
 
 class SubmissionVote(db.Model):
     __tablename__ = 'submission_votes'
@@ -560,10 +579,11 @@ class SubmissionVote(db.Model):
     vote_notes = db.Column(db.Text, nullable=True)
     vote_reassign_to = db.Column(db.String(191), nullable=True)
     vote_downgrade_to = db.Column(db.String(191), nullable=True)
-    created_at = db.Column(db.DateTime, server_default=db.func.now())
-    updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
+    created_at = db.Column(db.DateTime, default=utcnow)
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
 
     evaluator = db.relationship('User', foreign_keys=[evaluator_id])
+
 
 class EvaluatorDiscussion(db.Model):
     __tablename__ = 'evaluator_discussions'
@@ -571,10 +591,11 @@ class EvaluatorDiscussion(db.Model):
     submission_id = db.Column(db.String(50), nullable=False, index=True)
     evaluator_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     message = db.Column(db.Text, nullable=False)
-    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    created_at = db.Column(db.DateTime, default=utcnow)
 
     evaluator = db.relationship('User', foreign_keys=[evaluator_id], backref='discussions')
-    
+
+
 class Payment(db.Model):
     __tablename__ = 'payments'
     id = db.Column(db.Integer, primary_key=True)
@@ -589,8 +610,8 @@ class Payment(db.Model):
     verified_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     verified_at = db.Column(db.DateTime, nullable=True)
     rejection_reason = db.Column(db.Text, nullable=True)
-    created_at = db.Column(db.DateTime, server_default=db.func.now())
-    updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
+    created_at = db.Column(db.DateTime, default=utcnow)
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
 
     # Relationships
     user = db.relationship('User', foreign_keys=[user_id])
@@ -605,14 +626,15 @@ class Payment(db.Model):
             'payment_proof_download_url': self.payment_proof_download_url,
             'payment_status': self.payment_status,
             'payment_amount': float(self.payment_amount) if self.payment_amount else None,
-            'payment_date': self.payment_date.strftime('%Y-%m-%d %H:%M:%S') if self.payment_date else None,
+            'payment_date': iso_utc(self.payment_date),
             'reference_number': self.reference_number,
             'verified_by': self.verified_by,
-            'verified_at': self.verified_at.strftime('%Y-%m-%d %H:%M:%S') if self.verified_at else None,
+            'verified_at': iso_utc(self.verified_at),
             'rejection_reason': self.rejection_reason,
-            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None,
-            'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S') if self.updated_at else None
+            'created_at': iso_utc(self.created_at),
+            'updated_at': iso_utc(self.updated_at),
         }
+
 
 class EmailNotificationLog(db.Model):
     __tablename__ = 'email_notification_logs'
@@ -627,11 +649,11 @@ class EmailNotificationLog(db.Model):
     action_performed = db.Column(db.Enum('endorse', 'downgraded-non_competitive', 'downgraded-poster_only', 'pending'), nullable=False)
     error_message = db.Column(db.Text, nullable=True)
     sent_at = db.Column(db.DateTime, nullable=True)
-    created_at = db.Column(db.DateTime, server_default=db.func.now())
-    
+    created_at = db.Column(db.DateTime, default=utcnow)
+
     # For tracking who sent the email
     master_approver_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
-    
+
     # Relationships
     master_approver = db.relationship('User', foreign_keys=[master_approver_id])
 
@@ -647,10 +669,11 @@ class EmailNotificationLog(db.Model):
             'body_preview': self.body_preview,
             'action_performed': self.action_performed,
             'error_message': self.error_message,
-            'sent_at': self.sent_at.strftime('%Y-%m-%d %H:%M:%S') if self.sent_at else None,
-            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None,
-            'master_approver_id': self.master_approver_id
+            'sent_at': iso_utc(self.sent_at),
+            'created_at': iso_utc(self.created_at),
+            'master_approver_id': self.master_approver_id,
         }
+
 
 class SubmissionRevision(db.Model):
     __tablename__ = 'submission_revisions'
@@ -660,7 +683,7 @@ class SubmissionRevision(db.Model):
     edited_by_name = db.Column(db.String(100), nullable=True)
     is_master_approver = db.Column(db.Boolean, default=False)
     changes = db.Column(db.Text, nullable=True)  # JSON string of changed fields
-    
+
     # Snapshot of the data AFTER the edit
     extension_project_title = db.Column(db.String(191), nullable=True)
     thematic_area = db.Column(db.String(191), nullable=True)
@@ -672,11 +695,11 @@ class SubmissionRevision(db.Model):
     corresponding_author_email = db.Column(db.String(191), nullable=True)
     corresponding_author_position = db.Column(db.String(191), nullable=True)
     co_authors = db.Column(db.Text, nullable=True)
-    
-    created_at = db.Column(db.DateTime, server_default=db.func.now())
-    
+
+    created_at = db.Column(db.DateTime, default=utcnow)
+
     editor = db.relationship('User', foreign_keys=[edited_by])
-    
+
     def to_dict(self):
         return {
             'id': self.id,
@@ -695,53 +718,54 @@ class SubmissionRevision(db.Model):
                 'corresponding_author_name': self.corresponding_author_name,
                 'corresponding_author_email': self.corresponding_author_email,
                 'corresponding_author_position': self.corresponding_author_position,
-                'co_authors': self.co_authors
+                'co_authors': self.co_authors,
             },
-            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None
+            'created_at': iso_utc(self.created_at),
         }
-        
+
+
 class FileMoveLog(db.Model):
     __tablename__ = 'file_move_logs'
     id = db.Column(db.Integer, primary_key=True)
-    
+
     # What was moved
     submission_id = db.Column(db.String(50), nullable=False, index=True)
     submission_type = db.Column(db.Enum('system', 'email'), nullable=False, default='system')
     file_id = db.Column(db.String(191), nullable=True, index=True)  # Google Drive file ID
     file_name = db.Column(db.String(500), nullable=True)
     file_type = db.Column(db.String(50), nullable=True)  # 'abstract', 'endorsement', 'compextproj'
-    
+
     # Where it moved from and to
     old_paper_category = db.Column(db.String(191), nullable=True)
     old_thematic_area = db.Column(db.String(191), nullable=True)
     old_sender_name = db.Column(db.String(191), nullable=True)  # Old project leader name
     old_folder_id = db.Column(db.String(191), nullable=True)
     old_folder_path = db.Column(db.Text, nullable=True)  # Full path for readability
-    
+
     new_paper_category = db.Column(db.String(191), nullable=True)
     new_thematic_area = db.Column(db.String(191), nullable=True)
     new_sender_name = db.Column(db.String(191), nullable=True)
     new_folder_id = db.Column(db.String(191), nullable=True)
     new_folder_path = db.Column(db.Text, nullable=True)
-    
+
     # Status tracking
     status = db.Column(db.Enum('success', 'failed', 'partial'), nullable=False, default='success')
     error_message = db.Column(db.Text, nullable=True)
-    
+
     # What triggered the move
     trigger_field = db.Column(db.String(50), nullable=True)  # 'paper_category', 'thematic_area', 'project_leader', 'multiple'
     triggered_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     triggered_by_name = db.Column(db.String(100), nullable=True)
-    
+
     # Folder cleanup info
     trashed_folders = db.Column(db.Text, nullable=True)  # JSON list of trashed folder names
-    
+
     # Timestamps
-    created_at = db.Column(db.DateTime, server_default=db.func.now(), index=True)
-    
+    created_at = db.Column(db.DateTime, default=utcnow, index=True)
+
     # Relationships
     triggered_by = db.relationship('User', foreign_keys=[triggered_by_user_id])
-    
+
     def to_dict(self):
         return {
             'id': self.id,
@@ -766,9 +790,10 @@ class FileMoveLog(db.Model):
             'triggered_by_user_id': self.triggered_by_user_id,
             'triggered_by_name': self.triggered_by_name,
             'trashed_folders': json.loads(self.trashed_folders) if self.trashed_folders else [],
-            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None
+            'created_at': iso_utc(self.created_at),
         }
-        
+
+
 class PasswordReset(db.Model):
     __tablename__ = 'password_resets'
     id = db.Column(db.Integer, primary_key=True)
@@ -782,7 +807,7 @@ class PasswordReset(db.Model):
     verified = db.Column(db.Boolean, nullable=False, default=False)
     used = db.Column(db.Boolean, nullable=False, default=False)
     expires_at = db.Column(db.DateTime, nullable=False, index=True)
-    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    created_at = db.Column(db.DateTime, default=utcnow)
     verified_at = db.Column(db.DateTime, nullable=True)
     ip_address = db.Column(db.String(64), nullable=True)
     user_agent = db.Column(db.String(255), nullable=True)
@@ -797,34 +822,60 @@ class PasswordReset(db.Model):
             'verified': self.verified,
             'used': self.used,
             'attempts': self.attempts,
-            'expires_at': self.expires_at.strftime('%Y-%m-%d %H:%M:%S') if self.expires_at else None,
-            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None,
+            'expires_at': iso_utc(self.expires_at),
+            'created_at': iso_utc(self.created_at),
         }
-    
+
+
 class NewsEvent(db.Model):
     __tablename__ = 'news_events'
+
     id = db.Column(db.Integer, primary_key=True)
-    type = db.Column(db.Enum('NEWS', 'EVENT', 'ANNOUNCEMENT'), nullable=False, default='NEWS')
-    title = db.Column(db.String(500), nullable=False)
-    excerpt = db.Column(db.Text, nullable=True)
-    content = db.Column(db.Text, nullable=True)
-    date_display = db.Column(db.String(100), nullable=False)  # Display date like "May 20, 2026"
-    event_start_date = db.Column(db.DateTime, nullable=True)  # Actual date for sorting
-    event_end_date = db.Column(db.DateTime, nullable=True)
-    tag = db.Column(db.String(100), nullable=True)
-    tag_color = db.Column(db.String(100), nullable=True, default='bg-blue-50 text-blue-700 border-blue-200')
-    type_color = db.Column(db.String(100), nullable=True, default='bg-yellow-100 text-yellow-800')
-    image_url = db.Column(db.String(500), nullable=True)
+    type = db.Column(db.String(20), nullable=False)
+    title = db.Column(db.String(255), nullable=False)
+    excerpt = db.Column(db.Text)
+    content = db.Column(db.Text)
+    date_display = db.Column(db.String(100), nullable=False)
+    event_start_date = db.Column(db.DateTime)
+    event_end_date = db.Column(db.DateTime)
+    tag = db.Column(db.String(50))
+    tag_color = db.Column(db.String(100))
+    type_color = db.Column(db.String(100))
+    image_urls = db.Column(db.JSON)
     is_published = db.Column(db.Boolean, default=True)
     is_featured = db.Column(db.Boolean, default=False)
     views_count = db.Column(db.Integer, default=0)
-    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
-    created_at = db.Column(db.DateTime, server_default=db.func.now())
-    updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
-
-    creator = db.relationship('User', foreign_keys=[created_by])
+    created_at = db.Column(db.DateTime, default=utcnow)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
 
     def to_dict(self):
+        # Normalize image_urls to a list of { file_id, view_url }
+        raw = self.image_urls or []
+        normalized = []
+        for entry in raw:
+            if isinstance(entry, dict):
+                fid = entry.get('file_id')
+                url = entry.get('view_url')
+            elif isinstance(entry, str):
+                fid = None
+                url = entry
+            else:
+                continue
+            if url:
+                normalized.append({'file_id': fid, 'view_url': url})
+
+        # Coerce booleans safely — handles True/False, 1/0, "1"/"0", "true"/"false", None
+        def to_bool(v, default=False):
+            if v is None:
+                return default
+            if isinstance(v, bool):
+                return v
+            if isinstance(v, (int, float)):
+                return v == 1
+            if isinstance(v, str):
+                return v.strip().lower() in ('true', '1', 'yes', 'y')
+            return bool(v)
+
         return {
             'id': self.id,
             'type': self.type,
@@ -832,39 +883,40 @@ class NewsEvent(db.Model):
             'excerpt': self.excerpt,
             'content': self.content,
             'date_display': self.date_display,
-            'event_start_date': self.event_start_date.strftime('%Y-%m-%d %H:%M:%S') if self.event_start_date else None,
-            'event_end_date': self.event_end_date.strftime('%Y-%m-%d %H:%M:%S') if self.event_end_date else None,
+            'event_start_date': iso_utc(self.event_start_date),
+            'event_end_date': iso_utc(self.event_end_date),
             'tag': self.tag,
             'tag_color': self.tag_color,
             'type_color': self.type_color,
-            'image_url': self.image_url,
-            'is_published': self.is_published,
-            'is_featured': self.is_featured,
-            'views_count': self.views_count,
+            'image_urls': normalized,
+            'image_url': normalized[0]['view_url'] if normalized else None,
+            'is_published': to_bool(self.is_published, default=True),
+            'is_featured': to_bool(self.is_featured, default=False),
+            'views_count': self.views_count or 0,
+            'created_at': iso_utc(self.created_at),
             'created_by': self.created_by,
-            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None,
-            'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S') if self.updated_at else None
         }
-        
+
+
 class AboutContent(db.Model):
     __tablename__ = 'about_content'
     id = db.Column(db.Integer, primary_key=True)
     section_key = db.Column(db.String(100), unique=True, nullable=False, index=True)
     content = db.Column(db.Text, nullable=True)
     updated_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
-    created_at = db.Column(db.DateTime, server_default=db.func.now())
-    updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
-    
+    created_at = db.Column(db.DateTime, default=utcnow)
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
+
     updater = db.relationship('User', foreign_keys=[updated_by])
-    
+
     def to_dict(self):
         return {
             'id': self.id,
             'section_key': self.section_key,
             'content': json.loads(self.content) if self.content else {},
             'updated_by': self.updated_by,
-            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None,
-            'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S') if self.updated_at else None
+            'created_at': iso_utc(self.created_at),
+            'updated_at': iso_utc(self.updated_at),
         }
 
 
@@ -872,27 +924,27 @@ class AboutStat(db.Model):
     """Individual stats cards on the About page"""
     __tablename__ = 'about_stats'
     id = db.Column(db.Integer, primary_key=True)
-    
+
     # Stat info
     value = db.Column(db.String(50), nullable=False)  # e.g., "85+"
     label = db.Column(db.String(200), nullable=False)  # e.g., "Member Institutions"
     sublabel = db.Column(db.String(200), nullable=True)  # e.g., "Across the Philippines"
-    
+
     # Styling
     icon_type = db.Column(db.String(50), nullable=False, default='users')  # icon identifier
     color_theme = db.Column(db.String(50), nullable=False, default='blue')  # blue, green, yellow, purple
-    
+
     # Ordering
     display_order = db.Column(db.Integer, default=0)
     is_active = db.Column(db.Boolean, default=True)
-    
+
     # Metadata
     updated_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
-    created_at = db.Column(db.DateTime, server_default=db.func.now())
-    updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
-    
+    created_at = db.Column(db.DateTime, default=utcnow)
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
+
     updater = db.relationship('User', foreign_keys=[updated_by])
-    
+
     def to_dict(self):
         return {
             'id': self.id,
@@ -904,8 +956,8 @@ class AboutStat(db.Model):
             'display_order': self.display_order,
             'is_active': self.is_active,
             'updated_by': self.updated_by,
-            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None,
-            'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S') if self.updated_at else None
+            'created_at': iso_utc(self.created_at),
+            'updated_at': iso_utc(self.updated_at),
         }
 
 
@@ -913,25 +965,25 @@ class AboutCard(db.Model):
     """Cards for the "What We Do" section"""
     __tablename__ = 'about_cards'
     id = db.Column(db.Integer, primary_key=True)
-    
+
     title = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text, nullable=True)
-    
+
     # Styling
     icon_type = db.Column(db.String(50), nullable=False, default='document')
     color_theme = db.Column(db.String(50), nullable=False, default='blue')
-    
+
     # Ordering
     display_order = db.Column(db.Integer, default=0)
     is_active = db.Column(db.Boolean, default=True)
-    
+
     # Metadata
     updated_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
-    created_at = db.Column(db.DateTime, server_default=db.func.now())
-    updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
-    
+    created_at = db.Column(db.DateTime, default=utcnow)
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
+
     updater = db.relationship('User', foreign_keys=[updated_by])
-    
+
     def to_dict(self):
         return {
             'id': self.id,
@@ -942,8 +994,8 @@ class AboutCard(db.Model):
             'display_order': self.display_order,
             'is_active': self.is_active,
             'updated_by': self.updated_by,
-            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None,
-            'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S') if self.updated_at else None
+            'created_at': iso_utc(self.created_at),
+            'updated_at': iso_utc(self.updated_at),
         }
 
 
@@ -951,20 +1003,20 @@ class AboutFeature(db.Model):
     """Features/bullet points (e.g., the checkmarked list under "What is PEMNet?")"""
     __tablename__ = 'about_features'
     id = db.Column(db.Integer, primary_key=True)
-    
+
     text = db.Column(db.Text, nullable=False)
     section = db.Column(db.String(50), nullable=False, default='what_is')  # which section it belongs to
-    
+
     display_order = db.Column(db.Integer, default=0)
     is_active = db.Column(db.Boolean, default=True)
-    
+
     # Metadata
     updated_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
-    created_at = db.Column(db.DateTime, server_default=db.func.now())
-    updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
-    
+    created_at = db.Column(db.DateTime, default=utcnow)
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
+
     updater = db.relationship('User', foreign_keys=[updated_by])
-    
+
     def to_dict(self):
         return {
             'id': self.id,
@@ -973,6 +1025,6 @@ class AboutFeature(db.Model):
             'display_order': self.display_order,
             'is_active': self.is_active,
             'updated_by': self.updated_by,
-            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None,
-            'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S') if self.updated_at else None
+            'created_at': iso_utc(self.created_at),
+            'updated_at': iso_utc(self.updated_at),
         }

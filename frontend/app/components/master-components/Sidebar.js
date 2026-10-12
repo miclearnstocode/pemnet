@@ -88,6 +88,7 @@ export default function Sidebar({
   mobileOpen = false,
   onMobileClose,
 }) {
+  // Main navigation — shown at the top
   const navItems = [
     {
       id: 'dashboard',
@@ -109,6 +110,7 @@ export default function Sidebar({
     },
   ];
 
+  // Secondary navigation — moved to the bottom, above user info
   const secondaryItems = [
     {
       id: 'settings',
@@ -168,7 +170,7 @@ export default function Sidebar({
           </button>
         </div>
 
-        {/* Navigation Items */}
+        {/* Main Navigation Items (top) */}
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
           {navItems.map((item) => (
             <SidebarItem
@@ -181,9 +183,10 @@ export default function Sidebar({
               badge={item.badge}
             />
           ))}
+        </nav>
 
-          <div className={`my-3 border-t border-slate-200 ${collapsed ? 'mx-2' : ''}`} />
-
+        {/* Secondary Navigation — Settings & Help Center (now at the bottom) */}
+        <div className="p-3 pt-2 space-y-1 border-t border-slate-200">
           {secondaryItems.map((item) => (
             <SidebarItem
               key={item.id}
@@ -194,7 +197,7 @@ export default function Sidebar({
               collapsed={collapsed}
             />
           ))}
-        </nav>
+        </div>
 
         {/* Sidebar Footer - User Info */}
         <div className={`p-3 border-t border-slate-200 ${collapsed ? 'flex justify-center' : ''}`}>
@@ -211,7 +214,6 @@ export default function Sidebar({
                 <p className="text-sm font-semibold text-slate-800 truncate">
                   {currentUser?.full_name || 'User'}
                 </p>
-                {/* ✅ Dynamic role text instead of hardcoded "Master Approver" */}
                 <p className="text-[10px] text-slate-500 uppercase tracking-wider font-medium">
                   {displayRole}
                 </p>

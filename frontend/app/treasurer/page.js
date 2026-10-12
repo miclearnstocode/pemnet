@@ -409,14 +409,6 @@ function TreasurerSidebar({ collapsed, onToggleCollapse, activeNavItem, onNavCli
               {!collapsed && <span>{item.label}</span>}
             </button>
           ))}
-          <button
-            onClick={onLogout}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-rose-600 hover:bg-rose-50 transition ${collapsed ? 'justify-center' : ''}`}
-            title={collapsed ? 'Logout' : ''}
-          >
-            <FontAwesomeIcon icon={faSignOutAlt} className="w-4 h-4 shrink-0" />
-            {!collapsed && <span>Logout</span>}
-          </button>
         </div>
       </aside>
     </>

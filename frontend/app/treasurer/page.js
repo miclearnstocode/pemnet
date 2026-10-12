@@ -3,12 +3,10 @@
 import { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faCheckCircle, faTimesCircle, faClock, faFileAlt, faSearch, faFilter, faSync,
-  faUserCircle, faInfoCircle, faFolderOpen, faSpinner, faCalendarAlt, faTag,
-  faThumbsUp, faThumbsDown, faUsers, faEdit, faHistory, faBars, faDashboard,
+  faCheckCircle, faTimesCircle, faClock, faSearch, faFilter, faSync,
+  faInfoCircle, faFolderOpen, faSpinner, faBars, faDashboard, faChevronRight, faChevronLeft,
   faCog, faQuestionCircle, faBell, faLifeRing, faChevronDown, faChevronUp,
-  faClipboardList, faMoneyBillWave, faCreditCard, faReceipt, faUniversity,
-  faArrowLeft, faSignOutAlt, faShieldAlt, faDownload, faEye, faPrint
+  faClipboardList, faMoneyBillWave, faReceipt, faUniversity, faSignOutAlt, faDownload, faEye
 } from '@fortawesome/free-solid-svg-icons';
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL).replace(/\/+$/, '');
@@ -313,7 +311,6 @@ function HelpCenterPanel({ isOpen, onClose, onGotIt }) {
   );
 }
 
-// ---------- Treasurer Sidebar ----------
 function TreasurerSidebar({ collapsed, onToggleCollapse, activeNavItem, onNavClick, currentUser, pendingCount, verifiedCount, rejectedCount, mobileOpen, onMobileClose, onLogout }) {
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: faDashboard },
@@ -332,8 +329,8 @@ function TreasurerSidebar({ collapsed, onToggleCollapse, activeNavItem, onNavCli
     <>
       {mobileOpen && <div className="fixed inset-0 bg-slate-900/50 z-40 lg:hidden" onClick={onMobileClose} />}
       <aside className={`fixed lg:sticky top-0 left-0 z-50 h-screen bg-white border-r border-slate-200 flex flex-col transition-all duration-300 ${collapsed ? 'w-20' : 'w-64'} ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
-        {/* Logo */}
-        <div className="h-16 px-4 border-b border-slate-200 flex items-center justify-between">
+        {/* Logo — top */}
+        <div className="h-16 px-4 border-b border-slate-200 flex items-center justify-between shrink-0">
           <div className={`flex items-center gap-3 ${collapsed ? 'justify-center w-full' : ''}`}>
             <div className="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center shrink-0">
               <FontAwesomeIcon icon={faUniversity} className="w-4 h-4 text-white" />
@@ -345,31 +342,21 @@ function TreasurerSidebar({ collapsed, onToggleCollapse, activeNavItem, onNavCli
               </div>
             )}
           </div>
-          <button onClick={onToggleCollapse} className="hidden lg:flex w-7 h-7 items-center justify-center rounded-lg hover:bg-slate-100 text-slate-400 transition">
-            <FontAwesomeIcon icon={faBars} className="w-3.5 h-3.5" />
+          <button
+            onClick={onToggleCollapse}
+            className={`hidden lg:flex w-8 h-8 items-center justify-center rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition ${
+              collapsed ? 'absolute -right-4 bg-white border border-slate-200 shadow-sm' : ''
+            }`}
+            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            <FontAwesomeIcon
+              icon={collapsed ? faChevronRight : faChevronLeft}
+              className="w-4 h-4"
+            />
           </button>
         </div>
 
-        {/* User Info */}
-        <div className={`p-4 border-b border-slate-200 ${collapsed ? 'flex justify-center' : ''}`}>
-          {collapsed ? (
-            <div className="w-10 h-10 rounded-full bg-emerald-600 flex items-center justify-center text-white font-bold text-sm">
-              {currentUser?.full_name?.charAt(0) || 'T'}
-            </div>
-          ) : (
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-emerald-600 flex items-center justify-center text-white font-bold text-sm shrink-0">
-                {currentUser?.full_name?.charAt(0) || 'T'}
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-slate-800 truncate">{currentUser?.full_name || 'Treasurer'}</p>
-                <p className="text-[10px] text-slate-500 uppercase tracking-wider">Treasurer</p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Nav */}
+        {/* Main Nav — takes remaining space, pushes bottom items down */}
         <nav className="flex-1 overflow-y-auto p-3 space-y-1">
           {navItems.map((item) => {
             const isActive = activeNavItem === item.id;
@@ -396,8 +383,8 @@ function TreasurerSidebar({ collapsed, onToggleCollapse, activeNavItem, onNavCli
           })}
         </nav>
 
-        {/* Bottom */}
-        <div className="p-3 border-t border-slate-200 space-y-1">
+        {/* Bottom cluster: Settings + Help Center + Treasurer Info */}
+        <div className="p-3 border-t border-slate-200 space-y-1 shrink-0">
           {bottomItems.map((item) => (
             <button
               key={item.id}
@@ -409,6 +396,36 @@ function TreasurerSidebar({ collapsed, onToggleCollapse, activeNavItem, onNavCli
               {!collapsed && <span>{item.label}</span>}
             </button>
           ))}
+
+          {/* Treasurer Info — below Help Center */}
+          <div className={`pt-2 mt-1 border-t border-slate-200 ${collapsed ? 'flex justify-center' : ''}`}>
+            {collapsed ? (
+              <button
+                onClick={onLogout}
+                title="Logout"
+                className="w-10 h-10 rounded-full bg-emerald-600 flex items-center justify-center text-white font-bold text-sm hover:ring-2 hover:ring-emerald-300 transition"
+              >
+                {currentUser?.full_name?.charAt(0) || 'T'}
+              </button>
+            ) : (
+              <div className="flex items-center gap-3 p-2 bg-slate-50 rounded-xl border border-slate-200">
+                <div className="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center text-white font-bold text-sm shrink-0">
+                  {currentUser?.full_name?.charAt(0) || 'T'}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-slate-800 truncate">{currentUser?.full_name || 'Treasurer'}</p>
+                  <p className="text-[10px] text-slate-500 uppercase tracking-wider">Treasurer</p>
+                </div>
+                <button
+                  onClick={onLogout}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg text-rose-500 hover:bg-rose-50 transition shrink-0"
+                  title="Logout"
+                >
+                  <FontAwesomeIcon icon={faSignOutAlt} className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </aside>
     </>
@@ -735,10 +752,6 @@ export default function TreasurerPage() {
             <div className="flex items-center gap-2">
               <button onClick={fetchPayments} className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-500 transition" title="Refresh">
                 <FontAwesomeIcon icon={faSync} className="w-4 h-4" />
-              </button>
-              <button onClick={handleLogout} className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 text-sm font-semibold transition">
-                <FontAwesomeIcon icon={faSignOutAlt} className="w-3.5 h-3.5" />
-                Logout
               </button>
             </div>
           </div>

@@ -1,4 +1,5 @@
-from flask import jsonify, request
+from flask import jsonify, request, Response
+from image_cache import get_cached_image, cache_stats, clear_cache
 from models import db, NewsEvent, User
 from werkzeug.utils import secure_filename
 from google_drive import (move_news_images_to_item_folder, upload_news_event_image, extract_drive_entry_from_url, trash_file, trash_news_item_folder)
@@ -97,6 +98,32 @@ def register_news_routes(app):
             print(f"Error fetching news/event: {e}")
             return jsonify({"detail": str(e)}), 500
 
+    @app.route('/api/news-image/<file_id>', methods=['GET', 'OPTIONS'])
+    def serve_news_image(file_id):
+        """
+        Serve a news/event image through the cache.
+        Uses a larger thumbnail size (w1600) since news cards show bigger images.
+        """
+        if request.method == 'OPTIONS':
+            return jsonify({})
+
+        try:
+            size = request.args.get('size', 'w1600')
+            data, mime = get_cached_image(file_id, size=size)
+            resp = Response(data, mimetype=mime)
+            resp.headers['Cache-Control'] = 'public, max-age=604800, immutable'
+            resp.headers['Content-Length'] = str(len(data))
+            return resp
+        except Exception as e:
+            print(f"Error serving news image {file_id}: {e}")
+            return jsonify({"detail": str(e)}), 404
+        
+    @app.route('/api/admin/news-events/cache/stats', methods=['GET', 'OPTIONS'])
+    def admin_news_cache_stats():
+        if request.method == 'OPTIONS':
+            return jsonify({})
+        return jsonify(cache_stats()), 200
+    
     # ==================== ADMIN ROUTES ====================
     
     @app.route('/api/admin/news-events', methods=['GET', 'OPTIONS'])
@@ -505,6 +532,10 @@ def register_news_routes(app):
                         print(f"🗑️  Trashed removed image: {entry['file_id']}")
                     except Exception as trash_err:
                         print(f"⚠️ Could not trash {entry['file_id']}: {trash_err}")
+                    try:
+                        clear_cache(entry['file_id'])
+                    except Exception as cache_err:
+                        print(f"⚠️ Could not clear cache for {entry['file_id']}: {cache_err}")
 
             # Commit image changes
             if new_entries != existing:
@@ -566,6 +597,21 @@ def register_news_routes(app):
 
             saved_title = item.title
             saved_type = item.type
+
+            # ── Clear cached images for this item (any size variants) ──
+            try:
+                for entry in (item.image_urls or []):
+                    fid = None
+                    if isinstance(entry, dict):
+                        fid = entry.get('file_id')
+                    elif isinstance(entry, str):
+                        parsed = extract_drive_entry_from_url(entry)
+                        fid = parsed.get('file_id') if parsed else None
+                    if fid:
+                        clear_cache(fid)
+                print(f"🧹 Cleared image cache for news/event: {saved_title}")
+            except Exception as cache_err:
+                print(f"⚠️ Cache clear failed (continuing): {cache_err}")
 
             # Trash the per-item Drive folder (Images included)
             try:

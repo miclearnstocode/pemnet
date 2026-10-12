@@ -46,7 +46,6 @@ function getAllImageFileIds(item) {
   return ids;
 }
 
-// ---------- Image carousel ----------
 function ImageCarousel({ fileIds, title, interval = 4000, fullSize = false }) {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -74,6 +73,9 @@ function ImageCarousel({ fileIds, title, interval = 4000, fullSize = false }) {
     );
   }
 
+  // Bigger images in the full-size modal, smaller ones in the card grid
+  const size = fullSize ? 'w1600' : 'w800';
+
   return (
     <div
       className="relative w-full h-full overflow-hidden bg-slate-100"
@@ -93,31 +95,18 @@ function ImageCarousel({ fileIds, title, interval = 4000, fullSize = false }) {
             className="relative shrink-0 h-full overflow-hidden"
             style={{ width: `${100 / fileIds.length}%` }}
           >
-            {fullSize ? (
-              <iframe
-                src={`https://drive.google.com/file/d/${fid}/preview`}
-                className="w-full h-full border-0"
-                allow="autoplay"
-                title={`${title} — image ${idx + 1}`}
-                loading="lazy"
-              />
-            ) : (
-              <iframe
-                src={`https://drive.google.com/file/d/${fid}/preview`}
-                className="absolute border-0 pointer-events-none"
-                style={{
-                  width: '1200px',
-                  height: '675px',
-                  top: '50%',
-                  left: '50%',
-                  transform: 'translate(-50%, -50%) scale(0.4)',
-                  transformOrigin: 'center center',
-                }}
-                tabIndex={-1}
-                title={`${title} — image ${idx + 1}`}
-                loading="lazy"
-              />
-            )}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={`${API_URL}/api/news-image/${fid}?size=${size}`}
+              alt={`${title} — image ${idx + 1}`}
+              loading="lazy"
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                // Fall back to the Drive thumbnail directly if the proxy fails
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = `https://drive.google.com/thumbnail?id=${fid}&sz=${size}`;
+              }}
+            />
           </div>
         ))}
       </div>
@@ -135,8 +124,8 @@ function ImageCarousel({ fileIds, title, interval = 4000, fullSize = false }) {
               }}
               className={
                 idx === index
-                  ? `h-2 w-6 rounded-full bg-white shadow-md transition-all duration-300 ${fullSize ? 'h-2.5 w-8' : ''}`
-                  : `h-2 w-2 rounded-full bg-white/60 hover:bg-white/80 transition-all duration-300 ${fullSize ? 'h-2.5 w-2.5' : ''}`
+                  ? `rounded-full bg-white shadow-md transition-all duration-300 ${fullSize ? 'h-2.5 w-8' : 'h-2 w-6'}`
+                  : `rounded-full bg-white/60 hover:bg-white/80 transition-all duration-300 ${fullSize ? 'h-2.5 w-2.5' : 'h-2 w-2'}`
               }
               aria-label={`Go to image ${idx + 1}`}
             />

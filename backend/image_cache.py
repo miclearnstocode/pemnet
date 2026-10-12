@@ -114,21 +114,60 @@ def get_cached_logo(file_id, force_refresh=False):
     _memory_set(file_id, data, mime)
     return data, mime
 
+def get_cached_image(file_id, force_refresh=False, size="w1600"):
+    """
+    Same as get_cached_logo, but lets you pick the Drive thumbnail size.
+    Useful for news images that want larger resolution than logos.
+    """
+    if not file_id:
+        raise ValueError("file_id is required")
+
+    # Different sizes → separate cache keys so we don't overwrite a small logo
+    # with a huge news image
+    cache_key = f"{file_id}__{size}"
+
+    if not force_refresh:
+        hit = _memory_get(cache_key)
+        if hit:
+            return hit
+
+        hit = _disk_get(cache_key)
+        if hit:
+            data, mime = hit
+            _memory_set(cache_key, data, mime)
+            return hit
+
+    url = f"https://drive.google.com/thumbnail?id={file_id}&sz={size}"
+    resp = requests.get(url, timeout=10, allow_redirects=True)
+    if resp.status_code != 200:
+        raise Exception(f"Drive returned {resp.status_code} for {file_id}")
+
+    data = resp.content
+    mime = resp.headers.get("Content-Type", "image/jpeg")
+    if not mime.startswith("image/"):
+        raise Exception(f"Drive returned non-image content-type: {mime}")
+
+    _disk_set(cache_key, data, mime)
+    _memory_set(cache_key, data, mime)
+    return data, mime
 
 def clear_cache(file_id=None):
     """Clear a specific file, or the entire cache if file_id is None."""
     global _memory_cache
     with _memory_lock:
         if file_id:
-            _memory_cache.pop(file_id, None)
+            # Remove the plain key and any size-suffixed variants
+            for k in list(_memory_cache.keys()):
+                if k == file_id or k.startswith(f"{file_id}__"):
+                    _memory_cache.pop(k, None)
         else:
             _memory_cache = {}
 
     if file_id:
-        for p in (_disk_path(file_id), _disk_meta_path(file_id)):
+        # Remove disk files matching this id (any size suffix)
+        for p in CACHE_DIR.glob(f"{file_id}*"):
             try:
-                if p.exists():
-                    p.unlink()
+                p.unlink()
             except OSError:
                 pass
     else:
@@ -137,7 +176,6 @@ def clear_cache(file_id=None):
                 p.unlink()
             except OSError:
                 pass
-
 
 def cache_stats():
     """Simple stats for a debug endpoint."""

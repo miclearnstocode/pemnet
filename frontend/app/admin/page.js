@@ -18,6 +18,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/, '') || 'http://
 
 export default function AdminDashboard() {
   const [newsStats, setNewsStats] = useState(null);
+  const [paymentStats, setPaymentStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
 
@@ -29,8 +30,26 @@ export default function AdminDashboard() {
 
     const fetchStats = async () => {
       try {
-        const res = await fetch(`${API_URL}/api/admin/news-events/stats`);
-        if (res.ok) setNewsStats(await res.json());
+        const token = localStorage.getItem('pemnet_token');
+
+        // Fetch news stats
+        const newsRes = await fetch(`${API_URL}/api/admin/news-events/stats`);
+        if (newsRes.ok) setNewsStats(await newsRes.json());
+
+        // Fetch payment stats (verified / pending / rejected counts)
+        const payRes = await fetch(`${API_URL}/api/payments/all`, {
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+        });
+        if (payRes.ok) {
+          const payments = await payRes.json();
+          const list = Array.isArray(payments) ? payments : [];
+          setPaymentStats({
+            total: list.length,
+            verified: list.filter(p => p.payment_status === 'verified').length,
+            pending: list.filter(p => p.payment_status === 'pending').length,
+            rejected: list.filter(p => p.payment_status === 'rejected').length,
+          });
+        }
       } catch (err) {
         console.error(err);
       } finally {
@@ -155,7 +174,7 @@ export default function AdminDashboard() {
           </p>
         </Link>
 
-        {/* Payments */}
+        {/* Verified Payments */}
         <Link
           href="/admin/payments"
           className="group bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition"
@@ -169,10 +188,26 @@ export default function AdminDashboard() {
               className="w-4 h-4 text-slate-400 group-hover:text-purple-600 group-hover:translate-x-1 transition"
             />
           </div>
-          <h3 className="text-lg font-bold text-slate-900 mb-1">Payments</h3>
-          <p className="text-sm text-slate-500">
-            Verify uploaded payment proofs from submitters.
+          <h3 className="text-lg font-bold text-slate-900 mb-1">Verified Payments</h3>
+          <p className="text-sm text-slate-500 mb-4">
+            View all accepted and verified payment proofs.
           </p>
+          {!loading && paymentStats && (
+            <div className="flex items-center gap-4 pt-4 border-t border-slate-100 text-xs">
+              <div>
+                <div className="font-bold text-emerald-600">{paymentStats.verified}</div>
+                <div className="text-slate-500">Verified</div>
+              </div>
+              <div>
+                <div className="font-bold text-amber-600">{paymentStats.pending}</div>
+                <div className="text-slate-500">Pending</div>
+              </div>
+              <div>
+                <div className="font-bold text-rose-600">{paymentStats.rejected}</div>
+                <div className="text-slate-500">Rejected</div>
+              </div>
+            </div>
+          )}
         </Link>
       </div>
     </div>

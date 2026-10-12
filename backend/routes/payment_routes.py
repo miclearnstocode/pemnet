@@ -12,6 +12,7 @@ from models import db, Payment, User, Submission
 from google_drive import upload_file_to_drive
 
 payment_bp = Blueprint('payments', __name__)
+AUTHORIZED_VERIFIER_EMAIL = 'jolegaspi@gmail.com'
 
 
 @payment_bp.route('/api/payments/upload', methods=['POST', 'OPTIONS'])
@@ -149,10 +150,14 @@ def verify_payment(payment_id):
         if not payment:
             return jsonify({"detail": "Payment not found"}), 404
 
+        # ── Only jolegaspi@gmail.com may verify or reject payments ──
         verifier = User.query.get(verifier_id)
-        if not verifier or verifier.role not in ['admin', 'master_approver']:
+        if not verifier:
+            return jsonify({"detail": "Verifier not found"}), 404
+
+        if (verifier.email or '').strip().lower() != AUTHORIZED_VERIFIER_EMAIL:
             return jsonify({
-                "detail": "Unauthorized. Only admins and master approvers can verify payments"
+                "detail": "Unauthorized. Only the designated treasurer account can verify or reject payments."
             }), 403
 
         if action == 'verify':

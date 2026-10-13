@@ -16,6 +16,7 @@ import {
   faArrowUpRightFromSquare,
   faBars,
   faQuestionCircle,
+  faUsers,
 } from '@fortawesome/free-solid-svg-icons';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/, '') || 'http://localhost:5000';
@@ -26,6 +27,7 @@ const NAV_ITEMS = [
   { href: '/admin/about',       label: 'About Page',    icon: faInfoCircle },
   { href: '/admin/payments',    label: 'Payments',      icon: faCreditCard },
   { href: '/admin/help-center', label: 'Help Center',   icon: faQuestionCircle },
+  { href: '/admin/users',       label: 'User Management', icon: faUsers },
 ];
 // ---------- Sidebar Navigation Item ----------
 function SidebarItem({ icon, label, isActive, onClick, collapsed }) {

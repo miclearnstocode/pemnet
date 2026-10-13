@@ -11,8 +11,8 @@ from models import db
 from gmail_service import GmailService
 from email_service import gmail_service as _default_gmail_service 
 from cpanel_email_service import CPanelEmailService
-from routes import ( auth_bp, submission_bp, full_paper_bp, email_submission_bp, evaluator_bp, master_approver_bp, payment_bp,  password_reset_bp, register_news_routes, register_about_routes, register_help_routes)
-from routes import auth_routes, password_reset_routes
+from routes import ( auth_bp, submission_bp, full_paper_bp, email_submission_bp, evaluator_bp, master_approver_bp, payment_bp,  password_reset_bp, register_news_routes, register_about_routes, register_help_routes, register_user_management_routes)
+from routes import auth_routes, password_reset_routes, user_management_routes
 
 def _prune_image_cache_loop():
     try:
@@ -94,16 +94,15 @@ def _configure_app(app: Flask) -> None:
 def _configure_extensions(app: Flask) -> None:
     db.init_app(app)
 
-    # Bcrypt needs to be shared with auth_routes and password_reset_routes
+    # Bcrypt needs to be shared with auth_routes, password_reset_routes, user_management_routes
     bcrypt = Bcrypt(app)
     auth_routes.bcrypt = bcrypt
+    user_management_routes.init_user_management(bcrypt)
     app.extensions['bcrypt'] = bcrypt
 
 
 def _configure_cors(app: Flask) -> None:
     default_origins = [
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
         "http://localhost:3001",
         "http://127.0.0.1:3001",
         "https://pemnet.capsu.edu.ph",
@@ -122,7 +121,14 @@ def _configure_cors(app: Flask) -> None:
         app,
         origins=allowed_origins,
         supports_credentials=True,
-        allow_headers=["Content-Type", "Authorization", "Accept", "X-Requested-With"],
+        allow_headers=[
+            "Content-Type",
+            "Authorization",
+            "Accept",
+            "X-Requested-With",
+            "X-User-Role",   # ← allow the admin role header
+            "X-User-Id",     # ← allow the admin id header
+        ],
         expose_headers=["Content-Type", "Authorization"],
         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         max_age=3600,
@@ -141,6 +147,7 @@ def _register_blueprints(app: Flask) -> None:
     register_news_routes(app)
     register_about_routes(app)
     register_help_routes(app)
+    register_user_management_routes(app)
 
 
 def _register_error_handlers(app: Flask) -> None:

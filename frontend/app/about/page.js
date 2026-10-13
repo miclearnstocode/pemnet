@@ -270,7 +270,7 @@ export default function AboutPEMNetPage() {
                       >
                         <div
                           className={`${size.wrapper} rounded-full ${logoUrl ? 'bg-white' : theme.node} border-2 border-white shadow-md flex items-center justify-center animate-avatar-sequence overflow-hidden`}
-                          style={{ animationDelay: `${idx * 3}s` }}
+                          style={{ animationDelay: `${idx * 0.15}s` }}
                         >
                           {logoUrl ? (
                             // eslint-disable-next-line @next/next/no-img-element
@@ -296,14 +296,14 @@ export default function AboutPEMNetPage() {
                   })}
 
                   {/* Floating icon badges — decorative */}
-                  <div className="absolute top-1/3 left-8 w-8 h-8 z-20">
+                  <div className="absolute top-1/3 left-2 w-8 h-8 z-20">
                     <div className="w-full h-full bg-white rounded-xl border border-slate-200 shadow-sm flex items-center justify-center text-green-600 animate-float-slow" style={{ animationDelay: '0.3s' }}>
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" />
                       </svg>
                     </div>
                   </div>
-                  <div className="absolute top-1/2 right-8 w-8 h-8 z-20">
+                  <div className="absolute top-1/2 right-12 w-8 h-8 z-20">
                     <div className="w-full h-full bg-white rounded-xl border border-slate-200 shadow-sm flex items-center justify-center text-blue-600 animate-float-slow" style={{ animationDelay: '1.1s' }}>
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375" />

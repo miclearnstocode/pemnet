@@ -15,17 +15,18 @@ import {
   faCreditCard,
   faArrowUpRightFromSquare,
   faBars,
+  faQuestionCircle,
 } from '@fortawesome/free-solid-svg-icons';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/, '') || 'http://localhost:5000';
 
 const NAV_ITEMS = [
-  { href: '/admin',            label: 'Dashboard',     icon: faDashboard },
-  { href: '/admin/news',       label: 'News & Events', icon: faNewspaper },
-  { href: '/admin/about',      label: 'About Page',    icon: faInfoCircle },
-  { href: '/admin/payments',   label: 'Payments',      icon: faCreditCard },
+  { href: '/admin',             label: 'Dashboard',     icon: faDashboard },
+  { href: '/admin/news',        label: 'News & Events', icon: faNewspaper },
+  { href: '/admin/about',       label: 'About Page',    icon: faInfoCircle },
+  { href: '/admin/payments',    label: 'Payments',      icon: faCreditCard },
+  { href: '/admin/help-center', label: 'Help Center',   icon: faQuestionCircle },
 ];
-
 // ---------- Sidebar Navigation Item ----------
 function SidebarItem({ icon, label, isActive, onClick, collapsed }) {
   return (

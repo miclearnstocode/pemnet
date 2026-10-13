@@ -1078,3 +1078,209 @@ class AboutFeature(db.Model):
             'created_at': iso_utc(self.created_at),
             'updated_at': iso_utc(self.updated_at),
         }
+        
+class HelpTopic(db.Model):
+    """Help Center topics/categories for user browsing"""
+    __tablename__ = 'help_topics'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    
+    # Core info
+    title = db.Column(db.String(200), nullable=False)
+    slug = db.Column(db.String(200), unique=True, nullable=False, index=True)
+    description = db.Column(db.Text, nullable=True)
+    
+    # Icon/styling
+    icon_type = db.Column(db.String(50), nullable=False, default='document')  # document, play, question, file, user, wrench, etc.
+    color_theme = db.Column(db.String(50), nullable=False, default='blue')  # blue, green, yellow, purple, red, indigo
+    
+    # Article content
+    content = db.Column(db.Text, nullable=True)  # Rich text / markdown content
+    article_count = db.Column(db.Integer, default=0)  # Computed or manual
+    view_count = db.Column(db.Integer, default=0)
+    
+    # Ordering & visibility
+    display_order = db.Column(db.Integer, default=0)
+    is_active = db.Column(db.Boolean, default=True)
+    is_featured = db.Column(db.Boolean, default=False)  # Show in popular/recommended
+    
+    # SEO
+    meta_title = db.Column(db.String(200), nullable=True)
+    meta_description = db.Column(db.Text, nullable=True)
+    
+    # Metadata
+    updated_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    created_at = db.Column(db.DateTime, default=utcnow)
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
+    
+    updater = db.relationship('User', foreign_keys=[updated_by])
+    articles = db.relationship(
+        'HelpArticle',
+        backref='topic',
+        cascade='all, delete-orphan',
+        order_by='HelpArticle.display_order',
+    )
+    
+    def to_dict(self, include_articles=False):
+        data = {
+            'id': self.id,
+            'title': self.title,
+            'slug': self.slug,
+            'description': self.description,
+            'icon_type': self.icon_type,
+            'color_theme': self.color_theme,
+            'content': self.content,
+            'article_count': len(self.articles) if self.articles else (self.article_count or 0),
+            'view_count': self.view_count or 0,
+            'display_order': self.display_order,
+            'is_active': self.is_active,
+            'is_featured': self.is_featured,
+            'meta_title': self.meta_title,
+            'meta_description': self.meta_description,
+            'updated_by': self.updated_by,
+            'created_at': iso_utc(self.created_at),
+            'updated_at': iso_utc(self.updated_at),
+        }
+        if include_articles:
+            data['articles'] = [a.to_dict() for a in self.articles]
+        return data
+
+
+class HelpArticle(db.Model):
+    """Individual help articles within a topic"""
+    __tablename__ = 'help_articles'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    
+    topic_id = db.Column(
+        db.Integer,
+        db.ForeignKey('help_topics.id', ondelete='CASCADE'),
+        nullable=False,
+        index=True,
+    )
+    
+    # Core info
+    title = db.Column(db.String(300), nullable=False)
+    slug = db.Column(db.String(300), nullable=False, index=True)
+    excerpt = db.Column(db.Text, nullable=True)  # Short summary for listings
+    content = db.Column(db.Text, nullable=True)  # Full article content (markdown/HTML)
+    
+    # Article metadata
+    reading_time = db.Column(db.Integer, default=5)  # estimated minutes
+    view_count = db.Column(db.Integer, default=0)
+    helpful_count = db.Column(db.Integer, default=0)
+    not_helpful_count = db.Column(db.Integer, default=0)
+    
+    # Ordering & visibility
+    display_order = db.Column(db.Integer, default=0)
+    is_published = db.Column(db.Boolean, default=True)
+    is_featured = db.Column(db.Boolean, default=False)  # Show in Popular Articles
+    
+    # SEO
+    meta_title = db.Column(db.String(200), nullable=True)
+    meta_description = db.Column(db.Text, nullable=True)
+    
+    # Metadata
+    updated_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    created_at = db.Column(db.DateTime, default=utcnow)
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
+    
+    updater = db.relationship('User', foreign_keys=[updated_by])
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'topic_id': self.topic_id,
+            'title': self.title,
+            'slug': self.slug,
+            'excerpt': self.excerpt,
+            'content': self.content,
+            'reading_time': self.reading_time,
+            'view_count': self.view_count or 0,
+            'helpful_count': self.helpful_count or 0,
+            'not_helpful_count': self.not_helpful_count or 0,
+            'display_order': self.display_order,
+            'is_published': self.is_published,
+            'is_featured': self.is_featured,
+            'meta_title': self.meta_title,
+            'meta_description': self.meta_description,
+            'updated_by': self.updated_by,
+            'created_at': iso_utc(self.created_at),
+            'updated_at': iso_utc(self.updated_at),
+        }
+
+
+class HelpWorkflowStep(db.Model):
+    """The 'How It Works' workflow steps shown on help center"""
+    __tablename__ = 'help_workflow_steps'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    
+    step_number = db.Column(db.Integer, nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    icon_type = db.Column(db.String(50), nullable=False, default='document')
+    color_theme = db.Column(db.String(50), nullable=False, default='blue')
+    
+    display_order = db.Column(db.Integer, default=0)
+    is_active = db.Column(db.Boolean, default=True)
+    
+    updated_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    created_at = db.Column(db.DateTime, default=utcnow)
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
+    
+    updater = db.relationship('User', foreign_keys=[updated_by])
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'step_number': self.step_number,
+            'title': self.title,
+            'description': self.description,
+            'icon_type': self.icon_type,
+            'color_theme': self.color_theme,
+            'display_order': self.display_order,
+            'is_active': self.is_active,
+            'updated_by': self.updated_by,
+            'created_at': iso_utc(self.created_at),
+            'updated_at': iso_utc(self.updated_at),
+        }
+
+
+class HelpFaq(db.Model):
+    """FAQ items for the help center"""
+    __tablename__ = 'help_faqs'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    
+    question = db.Column(db.String(500), nullable=False)
+    answer = db.Column(db.Text, nullable=True)
+    
+    category = db.Column(db.String(100), nullable=True)  # e.g., 'submission', 'account', 'payment'
+    
+    display_order = db.Column(db.Integer, default=0)
+    is_active = db.Column(db.Boolean, default=True)
+    is_featured = db.Column(db.Boolean, default=False)
+    
+    view_count = db.Column(db.Integer, default=0)
+    
+    updated_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    created_at = db.Column(db.DateTime, default=utcnow)
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
+    
+    updater = db.relationship('User', foreign_keys=[updated_by])
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'question': self.question,
+            'answer': self.answer,
+            'category': self.category,
+            'display_order': self.display_order,
+            'is_active': self.is_active,
+            'is_featured': self.is_featured,
+            'view_count': self.view_count or 0,
+            'updated_by': self.updated_by,
+            'created_at': iso_utc(self.created_at),
+            'updated_at': iso_utc(self.updated_at),
+        }

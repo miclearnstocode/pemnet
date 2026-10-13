@@ -11,7 +11,7 @@ from models import db
 from gmail_service import GmailService
 from email_service import gmail_service as _default_gmail_service 
 from cpanel_email_service import CPanelEmailService
-from routes import ( auth_bp, submission_bp, full_paper_bp, email_submission_bp, evaluator_bp, master_approver_bp, payment_bp,  password_reset_bp, register_news_routes, register_about_routes,)
+from routes import ( auth_bp, submission_bp, full_paper_bp, email_submission_bp, evaluator_bp, master_approver_bp, payment_bp,  password_reset_bp, register_news_routes, register_about_routes, register_help_routes)
 from routes import auth_routes, password_reset_routes
 
 def _prune_image_cache_loop():
@@ -140,6 +140,7 @@ def _register_blueprints(app: Flask) -> None:
     app.register_blueprint(password_reset_bp)
     register_news_routes(app)
     register_about_routes(app)
+    register_help_routes(app)
 
 
 def _register_error_handlers(app: Flask) -> None:

@@ -8,6 +8,7 @@ from .password_reset_routes import password_reset_bp
 from .news_routes import register_news_routes
 from .about_routes import register_about_routes
 from .full_paper_routes import full_paper_bp
+from .help_routes import register_help_routes
 
 __all__ = [
     'auth_bp',
@@ -20,4 +21,5 @@ __all__ = [
     'password_reset_bp',
     'register_news_routes',
     'register_about_routes',
+    'register_help_routes',
 ]

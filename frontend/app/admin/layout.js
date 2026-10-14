@@ -18,6 +18,7 @@ import {
   faQuestionCircle,
   faUsers,
 } from '@fortawesome/free-solid-svg-icons';
+import ConfirmModal from '../components/ConfirmModal';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/, '') || 'http://localhost:5000';
 
@@ -29,7 +30,7 @@ const NAV_ITEMS = [
   { href: '/admin/help-center', label: 'Help Center',   icon: faQuestionCircle },
   { href: '/admin/users',       label: 'User Management', icon: faUsers },
 ];
-// ---------- Sidebar Navigation Item ----------
+
 function SidebarItem({ icon, label, isActive, onClick, collapsed }) {
   return (
     <Link
@@ -54,7 +55,6 @@ function SidebarItem({ icon, label, isActive, onClick, collapsed }) {
   );
 }
 
-// ---------- Helper to format role for display ----------
 function formatRole(role) {
   if (!role) return 'User';
   switch (role.toLowerCase()) {
@@ -74,10 +74,12 @@ export default function AdminLayout({ children }) {
   const pathname = usePathname();
   const router   = useRouter();
 
-  const [collapsed, setCollapsed]     = useState(false);
-  const [mobileOpen, setMobileOpen]   = useState(false);
-  const [user, setUser]               = useState(null);
-  const [checked, setChecked]         = useState(false);
+  const [collapsed, setCollapsed]       = useState(false);
+  const [mobileOpen, setMobileOpen]     = useState(false);
+  const [user, setUser]                 = useState(null);
+  const [checked, setChecked]           = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [loggingOut, setLoggingOut]     = useState(false);
 
   useEffect(() => {
     try {
@@ -97,9 +99,15 @@ export default function AdminLayout({ children }) {
   }, [router]);
 
   const handleLogout = () => {
+    setLoggingOut(true);
     localStorage.removeItem('pemnet_token');
     localStorage.removeItem('pemnet_user');
     router.push('/login');
+  };
+
+  const closeLogoutModal = () => {
+    setShowLogoutModal(false);
+    setLoggingOut(false);
   };
 
   if (!checked) {
@@ -180,7 +188,6 @@ export default function AdminLayout({ children }) {
 
           <div className={`my-3 border-t border-slate-200 ${collapsed ? 'mx-2' : ''}`} />
 
-          {/* Back to site */}
           <Link
             href="/"
             className={`
@@ -201,9 +208,13 @@ export default function AdminLayout({ children }) {
         {/* Sidebar Footer - User Info */}
         <div className={`p-3 border-t border-slate-200 ${collapsed ? 'flex justify-center' : ''}`}>
           {collapsed ? (
-            <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold uppercase text-sm shadow-sm cursor-pointer hover:ring-2 hover:ring-blue-300 transition">
+            <button
+              onClick={() => setShowLogoutModal(true)}
+              className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold uppercase text-sm shadow-sm cursor-pointer hover:ring-2 hover:ring-blue-300 transition"
+              title="Logout"
+            >
               {user?.full_name?.charAt(0) || 'A'}
-            </div>
+            </button>
           ) : (
             <div className="flex items-center gap-3 p-2 bg-slate-50 rounded-xl border border-slate-200">
               <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold uppercase text-sm shadow-sm shrink-0">
@@ -218,7 +229,7 @@ export default function AdminLayout({ children }) {
                 </p>
               </div>
               <button
-                onClick={handleLogout}
+                onClick={() => setShowLogoutModal(true)}
                 className="w-8 h-8 flex items-center justify-center rounded-lg text-red-500 hover:bg-red-50 transition shrink-0"
                 title="Logout"
               >
@@ -231,7 +242,6 @@ export default function AdminLayout({ children }) {
 
       {/* ============ MAIN CONTENT ============ */}
       <main className="flex-1 min-w-0">
-        {/* Top Header Bar */}
         <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-slate-200">
           <div className="px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -265,6 +275,19 @@ export default function AdminLayout({ children }) {
           onClick={() => setMobileOpen(false)}
         />
       )}
+
+      {/* Logout Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showLogoutModal}
+        onClose={closeLogoutModal}
+        onConfirm={handleLogout}
+        title="Logout?"
+        message="Are you sure you want to log out of your admin account?"
+        confirmText="Yes, Logout"
+        cancelText="Cancel"
+        isLoading={loggingOut}
+        type="danger"
+      />
     </div>
   );
 }

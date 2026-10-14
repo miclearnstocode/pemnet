@@ -3,16 +3,7 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-  faNewspaper,
-  faInfoCircle,
-  faCreditCard,
-  faArrowRight,
-  faFolderOpen,
-  faCheckCircle,
-  faClock,
-  faEye,
-} from '@fortawesome/free-solid-svg-icons';
+import {faNewspaper, faInfoCircle, faCreditCard, faArrowRight, faFolderOpen, faCheckCircle, faClock, faEye,} from '@fortawesome/free-solid-svg-icons';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/, '') || 'http://localhost:5000';
 

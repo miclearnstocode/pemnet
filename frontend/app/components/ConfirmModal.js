@@ -9,7 +9,7 @@ export default function ConfirmModal({
   confirmText = 'Yes',
   cancelText = 'No',
   isLoading = false,
-  type = 'success', // 'success', 'warning', or 'info'
+  type = 'success',
   showEmailCheckbox = false,
   emailChecked = true,
   onEmailToggle = null
@@ -17,9 +17,17 @@ export default function ConfirmModal({
   if (!isOpen) return null;
 
   const isWarning = type === 'warning';
-  const isInfo = type === 'info';
+  const isInfo    = type === 'info';
+  const isDanger  = type === 'danger';
 
   const getIcon = () => {
+    if (isDanger) {
+      return (
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-red-600">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+        </svg>
+      );
+    }
     if (isWarning) {
       return (
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-yellow-600">
@@ -42,19 +50,21 @@ export default function ConfirmModal({
   };
 
   const getBgColor = () => {
+    if (isDanger)  return 'bg-red-100';
     if (isWarning) return 'bg-yellow-100';
-    if (isInfo) return 'bg-blue-100';
+    if (isInfo)    return 'bg-blue-100';
     return 'bg-emerald-100';
   };
 
   const getButtonColor = () => {
+    if (isDanger)  return 'bg-red-600 hover:bg-red-700';
     if (isWarning) return 'bg-yellow-600 hover:bg-yellow-700';
-    if (isInfo) return 'bg-blue-600 hover:bg-blue-700';
+    if (isInfo)    return 'bg-blue-600 hover:bg-blue-700';
     return 'bg-emerald-600 hover:bg-emerald-700';
   };
 
   return (
-    <div className="fixed inset-0 z-60 overflow-y-auto">
+    <div className="fixed inset-0 z-[100] overflow-y-auto">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose}></div>
       <div className="relative min-h-full flex items-center justify-center p-4">
         <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">

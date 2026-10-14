@@ -1,6 +1,8 @@
 "use client";
 
 import Link from 'next/link';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faGavel,
@@ -13,6 +15,7 @@ import {
   faCog,
   faQuestionCircle,
 } from '@fortawesome/free-solid-svg-icons';
+import ConfirmModal from './../ConfirmModal';
 
 // ---------- Helper to format role for display ----------
 function formatRole(role) {
@@ -88,6 +91,10 @@ export default function Sidebar({
   mobileOpen = false,
   onMobileClose,
 }) {
+  const router = useRouter();
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+
   // Main navigation — shown at the top
   const navItems = [
     {
@@ -124,8 +131,19 @@ export default function Sidebar({
     },
   ];
 
-  // ✅ Dynamic role display based on current user
   const displayRole = formatRole(currentUser?.role);
+
+  const handleLogout = () => {
+    setLoggingOut(true);
+    localStorage.removeItem('pemnet_token');
+    localStorage.removeItem('pemnet_user');
+    router.push('/login');
+  };
+
+  const closeLogoutModal = () => {
+    setShowLogoutModal(false);
+    setLoggingOut(false);
+  };
 
   return (
     <>
@@ -185,7 +203,7 @@ export default function Sidebar({
           ))}
         </nav>
 
-        {/* Secondary Navigation — Settings & Help Center (now at the bottom) */}
+        {/* Secondary Navigation — Settings & Help Center */}
         <div className="p-3 pt-2 space-y-1 border-t border-slate-200">
           {secondaryItems.map((item) => (
             <SidebarItem
@@ -202,9 +220,13 @@ export default function Sidebar({
         {/* Sidebar Footer - User Info */}
         <div className={`p-3 border-t border-slate-200 ${collapsed ? 'flex justify-center' : ''}`}>
           {collapsed ? (
-            <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold uppercase text-sm shadow-sm cursor-pointer hover:ring-2 hover:ring-blue-300 transition">
+            <button
+              onClick={() => setShowLogoutModal(true)}
+              className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold uppercase text-sm shadow-sm cursor-pointer hover:ring-2 hover:ring-blue-300 transition"
+              title="Logout"
+            >
               {currentUser?.full_name?.charAt(0) || 'U'}
-            </div>
+            </button>
           ) : (
             <div className="flex items-center gap-3 p-2 bg-slate-50 rounded-xl border border-slate-200">
               <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold uppercase text-sm shadow-sm shrink-0">
@@ -218,13 +240,13 @@ export default function Sidebar({
                   {displayRole}
                 </p>
               </div>
-              <Link
-                href="/login"
+              <button
+                onClick={() => setShowLogoutModal(true)}
                 className="w-8 h-8 flex items-center justify-center rounded-lg text-red-500 hover:bg-red-50 transition shrink-0"
                 title="Logout"
               >
                 <FontAwesomeIcon icon={faSignOutAlt} className="w-4 h-4" />
-              </Link>
+              </button>
             </div>
           )}
         </div>
@@ -237,6 +259,19 @@ export default function Sidebar({
           onClick={onMobileClose}
         />
       )}
+
+      {/* Logout Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showLogoutModal}
+        onClose={closeLogoutModal}
+        onConfirm={handleLogout}
+        title="Logout?"
+        message="Are you sure you want to log out of your account?"
+        confirmText="Yes, Logout"
+        cancelText="Cancel"
+        isLoading={loggingOut}
+        type="danger"
+      />
     </>
   );
 }

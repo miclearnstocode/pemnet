@@ -1336,7 +1336,7 @@ export default function ReviewPage() {
                   <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
                     <h3 className="font-bold text-slate-800 flex items-center gap-2">
                       <FontAwesomeIcon icon={faClock} className="w-4 h-4 text-indigo-500" />
-                      Recent Submissions
+                      Submission
                     </h3>
                     <button
                       onClick={() => handleNavClick('system')}
@@ -1635,7 +1635,7 @@ export default function ReviewPage() {
                             <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
                               <div className="flex items-center gap-2">
                                 <FontAwesomeIcon icon={faCalendarAlt} className="w-3.5 h-3.5 text-slate-400" />
-                                Date
+                                Date Submitted
                               </div>
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">

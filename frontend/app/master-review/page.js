@@ -8,8 +8,7 @@ import {
   faFilePdf, faCalendarAlt, faTag, faUser, faSchool, faFlag, faExclamationTriangle, 
   faThumbsUp, faThumbsDown, faArrowDown, faUsers, faBookOpen, faLayerGroup, faEdit, faHistory,
   faBars, faDashboard, faCog, faQuestionCircle, faBell, faLifeRing,
-  faChevronDown, faChevronUp, faEnvelopeOpen, faClipboardList
-} from '@fortawesome/free-solid-svg-icons';
+  faChevronDown, faChevronUp, faEnvelopeOpen, faClipboardList, faCommentDots, } from '@fortawesome/free-solid-svg-icons';
 import ConfirmModal from '../components/ConfirmModal';
 import DowngradeModal from '../components/DowngradeModal';
 import EditSubmission from '../components/EditSubmission';
@@ -389,6 +388,59 @@ function HelpCenterPanel({ isOpen, onClose }) {
   );
 }
 
+function CollapsibleSection({
+  icon,
+  color = 'slate',
+  label,
+  isOpen,
+  onToggle,
+  badge = null,
+  children,
+}) {
+  const colorMap = {
+    indigo:  'text-indigo-600 bg-indigo-50 border-indigo-100',
+    blue:    'text-blue-600 bg-blue-50 border-blue-100',
+    emerald: 'text-emerald-600 bg-emerald-50 border-emerald-100',
+    purple:  'text-purple-600 bg-purple-50 border-purple-100',
+    slate:   'text-slate-600 bg-slate-100 border-slate-200',
+  };
+  const cls = colorMap[color] || colorMap.slate;
+
+  return (
+    <div className="mb-8">
+      {/* Clickable header */}
+      <button
+        type="button"
+        onClick={onToggle}
+        className="w-full flex items-center gap-2.5 mb-4 group"
+      >
+        <span className={`w-8 h-8 rounded-lg flex items-center justify-center border ${cls}`}>
+          <FontAwesomeIcon icon={icon} className="w-3.5 h-3.5" />
+        </span>
+        <h4 className="text-xs font-bold uppercase tracking-widest text-slate-600">
+          {label}
+        </h4>
+        {badge && (
+          <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+            {badge}
+          </span>
+        )}
+        <span className="flex-1 h-px bg-slate-200" />
+        <span className="text-[11px] font-semibold text-slate-500 group-hover:text-slate-700 transition-colors">
+          {isOpen ? 'Hide' : 'Show'}
+        </span>
+        <FontAwesomeIcon
+          icon={isOpen ? faChevronUp : faChevronDown}
+          className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 transition-colors"
+        />
+      </button>
+
+      {/* Collapsible content */}
+      {isOpen && children}
+    </div>
+  );
+}
+
 export default function MasterReviewPage() {
   const [currentUser, setCurrentUser] = useState(null);
   const [activeTab, setActiveTab] = useState('system');
@@ -413,12 +465,16 @@ export default function MasterReviewPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [emailLogs, setEmailLogs] = useState([]);
   const [loadingEmailLogs, setLoadingEmailLogs] = useState(false);
+  const [showDiscussionModal, setShowDiscussionModal] = useState(false);
 
   // Email sending preference
   const [sendEmailConfirmation, setSendEmailConfirmation] = useState(true);
 
   // Collapsible sections
   const [showEndorsement, setShowEndorsement] = useState(false);
+  const [showAuthors, setShowAuthors] = useState(false);
+  const [showCorresponding, setShowCorresponding] = useState(false);
+  const [showEvaluatorVotes, setShowEvaluatorVotes] = useState(false);
 
   // Edit Modal States
   const [showEditModal, setShowEditModal] = useState(false);
@@ -653,6 +709,9 @@ export default function MasterReviewPage() {
 
     setSelectedStatus(sub.status || 'pending');
     setShowEndorsement(false);
+    setShowAuthors(false);            
+    setShowCorresponding(false);        
+    setShowEvaluatorVotes(false);    
     setSendEmailConfirmation(true);
     setIsModalOpen(true);
 
@@ -1828,6 +1887,22 @@ export default function MasterReviewPage() {
                     <FontAwesomeIcon icon={faEdit} className="w-3.5 h-3.5" />
                     Edit Details
                   </button>
+
+                  <div className="ml-auto">
+                    {/* Messenger icon for Evaluator Discussion */}
+                    <button
+                      onClick={() => setShowDiscussionModal(true)}
+                      disabled={!selectedSubmission}
+                      title="Open Evaluator Discussion"
+                      className="relative inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-100 transition disabled:opacity-50"
+                    >
+                      <FontAwesomeIcon icon={faCommentDots} className="w-3.5 h-3.5" />
+                      Discussion
+                      {/* Optional: notification dot */}
+                      <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-purple-500 ring-2 ring-white" />
+                    </button>
+                  </div>
+
                   {activeTab === 'email' && emailExtractedData && (
                     <span className="ml-auto text-[11px] text-slate-400 italic">
                       Use Edit to correct any extracted field before final decision
@@ -1859,93 +1934,50 @@ export default function MasterReviewPage() {
                     <InfoCard label="Thematic Area" value={getField('thematicArea')} span={2} />
                   </div>
 
-                  {/* SECTION: Authors & Affiliation */}
-                  <SectionTitle icon={faUsers} color="blue" label="Authors & Affiliation" />
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                    <InfoCard label="Project Leader" value={getField('projectLeader')} />
-                    <InfoCard label="SUC / Agency" value={getField('suc')} />
-                    <InfoCard label="Authors / Co-Authors" value={getAuthorsList()} span={2} />
-                  </div>
-
-                  {/* SECTION: Corresponding Author */}
-                  <SectionTitle icon={faUserCircle} color="emerald" label="Corresponding Author" />
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                    <InfoCard label="Full Name" value={getField('correspondingAuthorName')} />
-                    <InfoCard label="Position / Designation" value={getField('correspondingAuthorPos')} />
-                    <InfoCard
-                      label="Email Address"
-                      value={getField('correspondingAuthorEmail')}
-                      span={2}
-                      mono
-                    />
-                  </div>
-
-                  {/* SECTION: Submission Metadata */}
-                  <SectionTitle icon={faInfoCircle} color="slate" label="Submission Metadata" />
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                    <InfoCard
-                      label="Source"
-                      value={activeTab === 'email' ? 'Email Submission' : 'System Submission'}
-                    />
-                    <InfoCard
-                      label="Master Approver Status"
-                      value={getStatusDisplay(selectedSubmission.status || 'pending')}
-                      badgeClass={getStatusColor(selectedSubmission.status || 'pending')}
-                    />
-                    <div className="md:col-span-2">
-                      <Label>Email Notification Log</Label>
-                      {loadingEmailLogs ? (
-                        <div className="flex items-center gap-2 text-sm text-slate-500 py-3 px-4 bg-slate-50 border border-slate-200 rounded-xl">
-                          <FontAwesomeIcon icon={faSpinner} className="w-4 h-4 animate-spin text-indigo-500" />
-                          Loading email history…
-                        </div>
-                      ) : emailLogs.length > 0 ? (
-                        <div className="space-y-2">
-                          {emailLogs.map((log) => (
-                            <div
-                              key={log.id}
-                              className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200 text-sm"
-                            >
-                              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold ${
-                                log.status === 'sent'
-                                  ? 'bg-emerald-100 text-emerald-700'
-                                  : log.status === 'failed'
-                                  ? 'bg-red-100 text-red-700'
-                                  : 'bg-amber-100 text-amber-700'
-                              }`}>
-                                <FontAwesomeIcon
-                                  icon={
-                                    log.status === 'sent'
-                                      ? faCheckCircle
-                                      : log.status === 'failed'
-                                      ? faTimesCircle
-                                      : faClock
-                                  }
-                                  className="w-3 h-3"
-                                />
-                                {log.status === 'sent' ? 'Sent' : log.status === 'failed' ? 'Failed' : 'Pending'}
-                              </span>
-                              <span className="text-xs text-slate-600 truncate flex-1 font-medium">
-                                {log.recipient_email}
-                              </span>
-                              <span className="text-[11px] text-slate-400 whitespace-nowrap">
-                                {log.sent_at ? new Date(log.sent_at).toLocaleString() : 'Not sent'}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-sm text-slate-400 py-3 px-4 bg-slate-50 border border-dashed border-slate-200 rounded-xl italic">
-                          No confirmation email has been sent yet.
-                        </p>
-                      )}
+                  {/* SECTION: Authors & Affiliation (collapsible) */}
+                  <CollapsibleSection
+                    icon={faUsers}
+                    color="blue"
+                    label="Authors & Affiliation"
+                    isOpen={showAuthors}
+                    onToggle={() => setShowAuthors(v => !v)}
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <InfoCard label="Project Leader" value={getField('projectLeader')} />
+                      <InfoCard label="SUC / Agency" value={getField('suc')} />
+                      <InfoCard label="Authors / Co-Authors" value={getAuthorsList()} span={2} />
                     </div>
-                  </div>
+                  </CollapsibleSection>
 
-                  {/* SECTION: Evaluator Votes */}
+                  {/* SECTION: Corresponding Author (collapsible) */}
+                  <CollapsibleSection
+                    icon={faUserCircle}
+                    color="emerald"
+                    label="Corresponding Author"
+                    isOpen={showCorresponding}
+                    onToggle={() => setShowCorresponding(v => !v)}
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <InfoCard label="Full Name" value={getField('correspondingAuthorName')} />
+                      <InfoCard label="Position / Designation" value={getField('correspondingAuthorPos')} />
+                      <InfoCard
+                        label="Email Address"
+                        value={getField('correspondingAuthorEmail')}
+                        span={2}
+                        mono
+                      />
+                    </div>
+                  </CollapsibleSection>
+
                   {submissionDetails?.votes && submissionDetails.votes.length > 0 && (
-                    <>
-                      <SectionTitle icon={faUserCircle} color="blue" label={`Evaluator Votes (${submissionDetails.votes.length}/3)`} />
+                    <CollapsibleSection
+                      icon={faUserCircle}
+                      color="blue"
+                      label="Evaluator Votes"
+                      badge={`${submissionDetails.votes.length}/3`}
+                      isOpen={showEvaluatorVotes}
+                      onToggle={() => setShowEvaluatorVotes(v => !v)}
+                    >
                       <div className="space-y-3 mb-4">
                         {submissionDetails.votes.map((vote, idx) => (
                           <div
@@ -1984,39 +2016,13 @@ export default function MasterReviewPage() {
                           </div>
                         ))}
                       </div>
-                      <div className="grid grid-cols-3 gap-3 mb-8">
-                        <VoteStat label="Endorse" value={submissionDetails.vote_stats?.endorse || 0} color="emerald" />
-                        <VoteStat label="Downgrade" value={submissionDetails.vote_stats?.downgrade || 0} color="orange" />
-                        <VoteStat label="Reassign" value={submissionDetails.vote_stats?.reassign || 0} color="blue" />
+                      <div className="grid grid-cols-3 gap-3">
+                        <VoteStat label="Endorsed" value={submissionDetails.vote_stats?.endorse || 0} color="emerald" />
+                        <VoteStat label="Downgraded" value={submissionDetails.vote_stats?.downgrade || 0} color="orange" />
+                        <VoteStat label="Reassigned" value={submissionDetails.vote_stats?.reassign || 0} color="blue" />
                       </div>
-                    </>
+                    </CollapsibleSection>
                   )}
-
-                  {/* SECTION: Discussion */}
-                  <SectionTitle icon={faUsers} color="indigo" label="Evaluator Discussion" />
-                  <div className="mb-8 bg-slate-50 rounded-xl border border-slate-200 p-4">
-                    <DiscussionSection
-                      submissionId={selectedSubmission?.submission_id}
-                      currentUserId={currentUser?.id}
-                      currentUserName={currentUser?.full_name}
-                      isMasterApprover={true}
-                      title=""
-                      maxHeight="240px"
-                    />
-                  </div>
-
-                  {/* SECTION: Decision Summary */}
-                  <SectionTitle icon={faGavel} color="blue" label="Decision Summary" />
-                  <div className="mb-8 bg-slate-50 rounded-xl border border-slate-200 p-4">
-                    <DecisionSummary
-                      submissionStatus={selectedSubmission.status || 'pending'}
-                      evaluationStatus={selectedSubmission.evaluation_status || 'pending'}
-                      votes={submissionDetails?.votes || []}
-                      voteStats={submissionDetails?.vote_stats || null}
-                      evaluators={allUsers}
-                      showEvaluators={true}
-                    />
-                  </div>
 
                   {/* SECTION: Master Approver Controls */}
                   <div className="rounded-xl border border-blue-200 bg-blue-50/40 p-6">
@@ -2198,6 +2204,53 @@ export default function MasterReviewPage() {
         </div>
       )}
 
+      {/* ============ MESSENGER-STYLE DISCUSSION MODAL ============ */}
+      {showDiscussionModal && selectedSubmission && (
+        <div className="fixed inset-0 z-70 overflow-y-auto">
+          <div
+            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+            onClick={() => setShowDiscussionModal(false)}
+          />
+          <div className="relative min-h-full flex items-center justify-center p-4">
+            <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden max-h-[85vh] flex flex-col">
+
+              {/* Header — messenger style */}
+              <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-200 bg-gradient-to-r from-purple-50 to-indigo-50">
+                <div className="w-10 h-10 rounded-full bg-purple-100 border border-purple-200 flex items-center justify-center shrink-0">
+                  <FontAwesomeIcon icon={faCommentDots} className="w-5 h-5 text-purple-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-bold text-slate-900 truncate">
+                    Evaluator Discussion
+                  </h3>
+                  <p className="text-[11px] text-slate-500 truncate">
+                    {getField('title')}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowDiscussionModal(false)}
+                  aria-label="Close discussion"
+                  className="w-9 h-9 flex items-center justify-center rounded-lg bg-white hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition shrink-0"
+                >
+                  <FontAwesomeIcon icon={faTimesCircle} className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Body — messenger conversation */}
+              <div className="flex-1 overflow-hidden bg-slate-50">
+                <DiscussionSection
+                  submissionId={selectedSubmission?.submission_id}
+                  currentUserId={currentUser?.id}
+                  currentUserName={currentUser?.full_name}
+                  isMasterApprover={true}
+                  title=""
+                  maxHeight="60vh"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       <style jsx>{`
         @keyframes slideIn {
           from {

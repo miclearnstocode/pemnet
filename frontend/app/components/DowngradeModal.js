@@ -8,7 +8,7 @@ export default function DowngradeModal({
   onClose, 
   onSubmit, 
   isLoading,
-  paperCategory = '',   // <-- NEW: pass the submission's paper_category
+  paperCategory = '',  
 }) {
   const [selectedOption, setSelectedOption] = useState('');
 

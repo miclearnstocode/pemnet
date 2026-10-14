@@ -224,6 +224,6 @@ _start_background_tasks()
 
 if __name__ == '__main__':
     if os.environ.get('WERKZEUG_RUN_MAIN') == 'true' or not app.debug:
-        app.run(debug=False, port=5000, host='0.0.0.0')
+        app.run(debug=False, port=5120, host='0.0.0.0')
     else:
-        app.run(debug=False, port=5000, host='0.0.0.0')
+        app.run(debug=False, port=5120, host='0.0.0.0')

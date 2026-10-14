@@ -1,0 +1,31 @@
+services:
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    ports:
+      - "5120:5120"
+    volumes:
+      - ./backend/credentials.json:/app/backend/credentials.json:ro
+      - ./backend/rdesystem-secret.json:/app/backend/rdesystem-secret.json:ro
+      - ./backend/token_pemnet26_gmail_com.pickle:/app/backend/token_pemnet26_gmail_com.pickle
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:5000
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

@@ -1,0 +1,24 @@
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.venv
+venv
+env
+.git
+.gitignore
+.env
+.env.*
+Dockerfile
+dockerfile
+.dockerignore
+*.md
+*.log
+
+# Secrets — mount these as volumes instead
+credentials.json
+rdesystem-secret.json
+token_pemnet26_gmail_com.pickle

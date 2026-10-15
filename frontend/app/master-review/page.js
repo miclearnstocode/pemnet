@@ -497,6 +497,13 @@ export default function MasterReviewPage() {
   const [showSettings, setShowSettings] = useState(false);
   const [showHelpCenter, setShowHelpCenter] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  // ---- Document Preview state ----
+  const [showSupportingList, setShowSupportingList] = useState(false);  
+  const [showFullPaper, setShowFullPaper] = useState(false);        
+  const [openDocPreview, setOpenDocPreview] = useState(null);          
+  const [loadingSupporting, setLoadingSupporting] = useState(false);
+  const [supportingDocs, setSupportingDocs] = useState([]);
+  const [fullPaperDetails, setFullPaperDetails] = useState(null);
 
   // ===== DYNAMIC FIELD MAPPING =====
   const FIELD_MAP = {
@@ -642,6 +649,24 @@ export default function MasterReviewPage() {
     }
   };
 
+  const fetchSupportingDocuments = async (submissionId) => {
+    if (!submissionId) return;
+    setLoadingSupporting(true);
+    try {
+      const res = await fetch(`${API_URL}/api/submissions/${submissionId}/supporting-documents`);
+      if (res.ok) {
+        const data = await res.json();
+        setSupportingDocs(Array.isArray(data) ? data : []);
+      } else {
+        setSupportingDocs([]);
+      }
+    } catch (err) {
+      console.error('Error fetching supporting documents:', err);
+      setSupportingDocs([]);
+    } finally {
+      setLoadingSupporting(false);
+    }
+  };
   const showToast = (message, type) => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 5000);
@@ -692,6 +717,7 @@ export default function MasterReviewPage() {
     }
 
     await fetchEmailLogs(submissionId);
+    await fetchSupportingDocuments(submissionId);
 
     if (activeTab === 'email' && sub.id) {
       const extractedData = await fetchExtractedData(sub.id);
@@ -714,6 +740,11 @@ export default function MasterReviewPage() {
     setShowCorresponding(false);        
     setShowEvaluatorVotes(false);    
     setShowCommunicationModal(false);
+    setShowSupportingList(false);
+    setShowFullPaper(false);
+    setSupportingDocs([]);
+    setFullPaperDetails(null);
+    setOpenDocPreview(null);
     setIsModalOpen(true);
 
     try {
@@ -729,6 +760,18 @@ export default function MasterReviewPage() {
       showToast('Failed to fetch submission details', 'error');
     }
   };
+
+  useEffect(() => {
+    if (!submissionDetails) {
+      setSupportingDocs([]);
+      return;
+    }
+    setSupportingDocs(
+      Array.isArray(submissionDetails.supporting_documents)
+        ? submissionDetails.supporting_documents
+        : []
+    );
+  }, [submissionDetails]);
 
   // Re-fetch details so the Discussion dot reflects messages posted while the chat was open
   const closeDiscussionModal = async () => {
@@ -768,13 +811,20 @@ export default function MasterReviewPage() {
   const getAuthorsList = () => {
     const raw = getField('authorsList', '');
     if (!raw) return 'Not specified';
+
+    // If it's a JSON array, join it
     try {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) return parsed.join(', ');
-      return raw;
+      if (Array.isArray(parsed)) {
+        return parsed.filter(Boolean).join(', ') || 'Not specified';
+      }
     } catch {
-      return raw;
+      // Not JSON — fall through
     }
+
+    // Plain string: trim and clean up
+    const cleaned = String(raw).trim();
+    return cleaned || 'Not specified';
   };
 
   const getEditData = () => {
@@ -835,12 +885,51 @@ export default function MasterReviewPage() {
         showToast(message, 'success');
         setShowEditModal(false);
 
-        if (activeTab === 'email' && selectedSubmission.id) {
-          await fetchExtractedData(selectedSubmission.id);
+        const currentId = selectedSubmission.submission_id;
+
+        const patch = {};
+        Object.entries(formData).forEach(([key, value]) => {
+          if (key === 'master_notes') return;
+          patch[key] = value;
+        });
+
+        setSubmissions(prev =>
+          prev.map(s =>
+            s.submission_id === currentId ? { ...s, ...patch } : s
+          )
+        );
+        setAllSubmissions(prev =>
+          prev.map(s =>
+            s.submission_id === currentId ? { ...s, ...patch } : s
+          )
+        );
+
+        try {
+          const fresh = await fetch(`${API_URL}/api/submissions/${currentId}/master-details`);
+          if (fresh.ok) {
+            const freshData = await fresh.json();
+            setSubmissionDetails(freshData);
+
+            if (freshData?.submission) {
+              setSelectedSubmission(prev => ({
+                ...prev,
+                ...freshData.submission,
+                __source: prev?.__source,
+              }));
+            }
+
+            if (Array.isArray(freshData?.supporting_documents)) {
+              setSupportingDocs(freshData.supporting_documents);
+            }
+          }
+        } catch (err) {
+          console.error('Failed to refresh submission details after edit:', err);
         }
 
-        await fetchSubmissions();
-        await selectSubmission(selectedSubmission);
+        try {
+          const statsRes = await fetch(`${API_URL}/api/master-approver/status-summary`);
+          if (statsRes.ok) setStats(await statsRes.json());
+        } catch { /* ignore */ }
       } else {
         const error = await res.json();
         showToast(error.detail || 'Failed to update submission', 'error');
@@ -1574,7 +1663,7 @@ export default function MasterReviewPage() {
                             <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
                               <div className="flex items-center gap-2">
                                 <FontAwesomeIcon icon={faCalendarAlt} className="w-3.5 h-3.5 text-slate-400" />
-                                Date
+                                Date Submitted
                               </div>
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
@@ -1941,23 +2030,45 @@ export default function MasterReviewPage() {
               <div className="grid grid-cols-1 lg:grid-cols-5 flex-1 overflow-hidden min-h-0">
                 {/* LEFT: INFO COLUMN */}
                 <div className="lg:col-span-3 p-8 overflow-y-auto bg-white">
-                  {/* SECTION: Paper Overview */}
+                  {/* SECTION: Paper Overview — as a list */}
                   <SectionTitle icon={faFileAlt} color="indigo" label="Paper Overview" />
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                    <InfoCard label="Full Title" value={getField('title')} span={2} emphasis />
-                    <InfoCard
-                      label="Paper Category"
-                      value={
-                        getField('paperCategory')?.includes('Completed')
-                          ? 'Completed Extension Project Paper'
-                          : getField('paperCategory')?.includes('Ongoing')
-                          ? 'Ongoing Extension Project Paper'
-                          : getField('paperCategory') || 'Not specified'
-                      }
-                      badgeClass={getCategoryColor(getField('paperCategory'))}
-                    />
-                    <InfoCard label="Theme" value={getField('theme')} />
-                    <InfoCard label="Thematic Area" value={getField('thematicArea')} span={2} />
+                  <div className="rounded-xl border border-slate-200 bg-white overflow-hidden mb-8">
+                    <dl className="divide-y divide-slate-100">
+                      <div className="px-5 py-3 sm:grid sm:grid-cols-3 sm:gap-4">
+                        <dt className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 sm:pt-0.5">
+                          Full Title
+                        </dt>
+                        <dd className="mt-1 sm:mt-0 sm:col-span-2 text-sm font-bold text-slate-900 leading-relaxed">
+                          {getField('title')}
+                        </dd>
+                      </div>
+                      <div className="px-5 py-3 sm:grid sm:grid-cols-3 sm:gap-4">
+                        <dt className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 sm:pt-0.5">
+                          Paper Category
+                        </dt>
+                        <dd className="mt-1 sm:mt-0 sm:col-span-2">
+                          <span
+                            className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${
+                              getCategoryColor(getField('paperCategory'))
+                            }`}
+                          >
+                            {getField('paperCategory')?.includes('Completed')
+                              ? 'Completed Extension Project Paper'
+                              : getField('paperCategory')?.includes('Ongoing')
+                              ? 'Ongoing Extension Project Paper'
+                              : getField('paperCategory') || 'Not specified'}
+                          </span>
+                        </dd>
+                      </div>
+                      <div className="px-5 py-3 sm:grid sm:grid-cols-3 sm:gap-4">
+                        <dt className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 sm:pt-0.5">
+                          Thematic Area
+                        </dt>
+                        <dd className="mt-1 sm:mt-0 sm:col-span-2 text-sm font-semibold text-slate-700 leading-relaxed">
+                          {getField('thematicArea')}
+                        </dd>
+                      </div>
+                    </dl>
                   </div>
 
                   {/* SECTION: Authors & Affiliation (collapsible) */}
@@ -1968,10 +2079,33 @@ export default function MasterReviewPage() {
                     isOpen={showAuthors}
                     onToggle={() => setShowAuthors(v => !v)}
                   >
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <InfoCard label="Project Leader" value={getField('projectLeader')} />
-                      <InfoCard label="SUC / Agency" value={getField('suc')} />
-                      <InfoCard label="Authors / Co-Authors" value={getAuthorsList()} span={2} />
+                    <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+                      <dl className="divide-y divide-slate-100">
+                        <div className="px-5 py-3 sm:grid sm:grid-cols-3 sm:gap-4">
+                          <dt className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 sm:pt-0.5">
+                            Project Leader
+                          </dt>
+                          <dd className="mt-1 sm:mt-0 sm:col-span-2 text-sm font-semibold text-slate-700 leading-relaxed">
+                            {getField('projectLeader')}
+                          </dd>
+                        </div>
+                        <div className="px-5 py-3 sm:grid sm:grid-cols-3 sm:gap-4">
+                          <dt className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 sm:pt-0.5">
+                            SUC / Agency
+                          </dt>
+                          <dd className="mt-1 sm:mt-0 sm:col-span-2 text-sm font-semibold text-slate-700 leading-relaxed">
+                            {getField('suc')}
+                          </dd>
+                        </div>
+                        <div className="px-5 py-3 sm:grid sm:grid-cols-3 sm:gap-4">
+                          <dt className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 sm:pt-0.5">
+                            Authors / Co-Authors
+                          </dt>
+                          <dd className="mt-1 sm:mt-0 sm:col-span-2 text-sm font-semibold text-slate-700 leading-relaxed">
+                            {getAuthorsList()}
+                          </dd>
+                        </div>
+                      </dl>
                     </div>
                   </CollapsibleSection>
 
@@ -1983,15 +2117,33 @@ export default function MasterReviewPage() {
                     isOpen={showCorresponding}
                     onToggle={() => setShowCorresponding(v => !v)}
                   >
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <InfoCard label="Full Name" value={getField('correspondingAuthorName')} />
-                      <InfoCard label="Position / Designation" value={getField('correspondingAuthorPos')} />
-                      <InfoCard
-                        label="Email Address"
-                        value={getField('correspondingAuthorEmail')}
-                        span={2}
-                        mono
-                      />
+                    <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+                      <dl className="divide-y divide-slate-100">
+                        <div className="px-5 py-3 sm:grid sm:grid-cols-3 sm:gap-4">
+                          <dt className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 sm:pt-0.5">
+                            Full Name
+                          </dt>
+                          <dd className="mt-1 sm:mt-0 sm:col-span-2 text-sm font-semibold text-slate-700 leading-relaxed">
+                            {getField('correspondingAuthorName')}
+                          </dd>
+                        </div>
+                        <div className="px-5 py-3 sm:grid sm:grid-cols-3 sm:gap-4">
+                          <dt className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 sm:pt-0.5">
+                            Position / Designation
+                          </dt>
+                          <dd className="mt-1 sm:mt-0 sm:col-span-2 text-sm font-semibold text-slate-700 leading-relaxed">
+                            {getField('correspondingAuthorPos')}
+                          </dd>
+                        </div>
+                        <div className="px-5 py-3 sm:grid sm:grid-cols-3 sm:gap-4">
+                          <dt className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 sm:pt-0.5">
+                            Email Address
+                          </dt>
+                          <dd className="mt-1 sm:mt-0 sm:col-span-2 font-mono text-[13px] text-slate-700 break-all leading-relaxed">
+                            {getField('correspondingAuthorEmail')}
+                          </dd>
+                        </div>
+                      </dl>
                     </div>
                   </CollapsibleSection>
 
@@ -2130,7 +2282,11 @@ export default function MasterReviewPage() {
                   <SectionTitle icon={faFolderOpen} color="slate" label="Document Preview" />
 
                   {activeTab === 'system' ? (
-                    <div className="space-y-6">
+                    <div className="space-y-4">
+
+                      {/* ==============================
+                          1) ABSTRACT PDF — always open
+                        ============================== */}
                       <div>
                         <div className="flex items-center justify-between mb-3">
                           <p className="text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-2">
@@ -2149,12 +2305,29 @@ export default function MasterReviewPage() {
                           )}
                         </div>
                         {selectedSubmission.abstract_view_url ? (
-                          <div className="border border-slate-200 rounded-xl bg-white overflow-hidden shadow-sm" style={{ height: '480px' }}>
-                            <iframe
-                              src={`https://drive.google.com/file/d/${extractGoogleDriveId(selectedSubmission.abstract_view_url)}/preview?embedded=true`}
-                              className="w-full h-full"
-                              allow="autoplay"
-                            />
+                          <div
+                            className="border border-slate-200 rounded-xl bg-white overflow-hidden shadow-sm cursor-pointer hover:border-indigo-300 transition group"
+                            style={{ height: '420px' }}
+                            onClick={() =>
+                              setOpenDocPreview({
+                                label: 'Abstract PDF',
+                                url: selectedSubmission.abstract_view_url,
+                              })
+                            }
+                            title="Click to enlarge"
+                          >
+                            <div className="relative w-full h-full">
+                              <iframe
+                                src={`https://drive.google.com/file/d/${extractGoogleDriveId(selectedSubmission.abstract_view_url)}/preview?embedded=true`}
+                                className="w-full h-full pointer-events-none"
+                                allow="autoplay"
+                              />
+                              <div className="absolute inset-0 flex items-center justify-center bg-slate-900/0 group-hover:bg-slate-900/5 transition">
+                                <span className="opacity-0 group-hover:opacity-100 transition bg-white/95 border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-700 shadow">
+                                  Click to enlarge
+                                </span>
+                              </div>
+                            </div>
                           </div>
                         ) : (
                           <div className="text-center py-16 text-slate-500 bg-white rounded-xl border border-dashed border-slate-300 text-sm italic">
@@ -2163,6 +2336,9 @@ export default function MasterReviewPage() {
                         )}
                       </div>
 
+                      {/* ==============================
+                          2) ENDORSEMENT PDF — collapsible
+                        ============================== */}
                       {selectedSubmission.endorsement_view_url && (
                         <div>
                           <button
@@ -2191,19 +2367,201 @@ export default function MasterReviewPage() {
                           </button>
 
                           {showEndorsement && (
-                            <div className="mt-3 border border-slate-200 rounded-xl bg-white overflow-hidden shadow-sm" style={{ height: '380px' }}>
-                              <iframe
-                                src={`https://drive.google.com/file/d/${extractGoogleDriveId(selectedSubmission.endorsement_view_url)}/preview?embedded=true`}
-                                className="w-full h-full"
-                                allow="autoplay"
-                              />
+                            <div
+                              className="mt-3 border border-slate-200 rounded-xl bg-white overflow-hidden shadow-sm cursor-pointer hover:border-indigo-300 transition group"
+                              style={{ height: '380px' }}
+                              onClick={() =>
+                                setOpenDocPreview({
+                                  label: 'Endorsement PDF',
+                                  url: selectedSubmission.endorsement_view_url,
+                                })
+                              }
+                              title="Click to enlarge"
+                            >
+                              <div className="relative w-full h-full">
+                                <iframe
+                                  src={`https://drive.google.com/file/d/${extractGoogleDriveId(selectedSubmission.endorsement_view_url)}/preview?embedded=true`}
+                                  className="w-full h-full pointer-events-none"
+                                  allow="autoplay"
+                                />
+                                <div className="absolute inset-0 flex items-center justify-center bg-slate-900/0 group-hover:bg-slate-900/5 transition">
+                                  <span className="opacity-0 group-hover:opacity-100 transition bg-white/95 border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-700 shadow">
+                                    Click to enlarge
+                                  </span>
+                                </div>
+                              </div>
                             </div>
                           )}
                         </div>
                       )}
+
+                      {/* ==============================
+                          3) SUPPORTING DOCUMENTS — list + modal
+                        ============================== */}
+                      <div>
+                        <button
+                          onClick={() => setShowSupportingList(!showSupportingList)}
+                          className="w-full flex items-center justify-between p-4 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition shadow-sm"
+                        >
+                          <span className="text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-2">
+                            <FontAwesomeIcon icon={faLayerGroup} className="w-3.5 h-3.5 text-blue-500" />
+                            Supporting Documents
+                            {supportingDocs.length > 0 && (
+                              <span className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 text-[10px] font-bold rounded-full bg-blue-100 text-blue-700">
+                                {supportingDocs.length}
+                              </span>
+                            )}
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[11px] text-slate-500 font-medium">
+                              {showSupportingList ? 'Hide' : 'Show'}
+                            </span>
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              strokeWidth={2.5}
+                              stroke="currentColor"
+                              className={`w-4 h-4 text-slate-500 transition-transform duration-200 ${showSupportingList ? 'rotate-180' : ''}`}
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                            </svg>
+                          </div>
+                        </button>
+
+                        {showSupportingList && (
+                          <div className="mt-3 bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                            {loadingSupporting ? (
+                              <div className="p-6 text-center text-sm text-slate-500 flex items-center justify-center gap-2">
+                                <FontAwesomeIcon icon={faSpinner} className="w-4 h-4 animate-spin text-slate-400" />
+                                Loading supporting documents…
+                              </div>
+                            ) : supportingDocs.length === 0 ? (
+                              <div className="p-6 text-center text-sm text-slate-500 italic">
+                                No supporting documents attached.
+                              </div>
+                            ) : (
+                              <ul className="divide-y divide-slate-100">
+                                {supportingDocs.map((doc) => {
+                                  const fname = doc.file_name || 'Untitled document';
+                                  const sizeKb = doc.file_size ? `${Math.round(doc.file_size / 1024)} KB` : '';
+                                  const ext = (fname.split('.').pop() || '').toLowerCase();
+                                  return (
+                                    <li key={doc.id}>
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          setOpenDocPreview({
+                                            label: fname,
+                                            url: doc.view_url || doc.download_url,
+                                          })
+                                        }
+                                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-indigo-50/50 transition text-left"
+                                      >
+                                        <span className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+                                          <FontAwesomeIcon icon={faFilePdf} className="w-3.5 h-3.5" />
+                                        </span>
+                                        <div className="min-w-0 flex-1">
+                                          <p className="text-sm font-semibold text-slate-800 truncate" title={fname}>
+                                            {fname}
+                                          </p>
+                                          <p className="text-[11px] text-slate-500 uppercase tracking-wide">
+                                            {ext}{sizeKb ? ` · ${sizeKb}` : ''}
+                                          </p>
+                                        </div>
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-slate-400 shrink-0">
+                                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                                        </svg>
+                                      </button>
+                                    </li>
+                                  );
+                                })}
+                              </ul>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* 4) FULL PAPER DOCUMENT */}
+                      {submissionDetails?.full_paper && (
+                        <div>
+                          <button
+                            onClick={() => setShowFullPaper(!showFullPaper)}
+                            className="w-full flex items-center justify-between p-4 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition shadow-sm"
+                          >
+                            <span className="text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-2">
+                              <FontAwesomeIcon icon={faBookOpen} className="w-3.5 h-3.5 text-purple-500" />
+                              Full Paper Document
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[11px] text-slate-500 font-medium">
+                                {showFullPaper ? 'Hide' : 'Show'}
+                              </span>
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                strokeWidth={2.5}
+                                stroke="currentColor"
+                                className={`w-4 h-4 text-slate-500 transition-transform duration-200 ${showFullPaper ? 'rotate-180' : ''}`}
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                              </svg>
+                            </div>
+                          </button>
+
+                          {showFullPaper && (
+                            <div className="mt-3 bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                              {submissionDetails.full_paper.full_paper_view_url ||
+                              submissionDetails.full_paper.full_paper_file_id ? (
+                                <ul className="divide-y divide-slate-100">
+                                  <li>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setOpenDocPreview({
+                                          label: 'Full Paper PDF',
+                                          url:
+                                            submissionDetails.full_paper.full_paper_view_url ||
+                                            `https://drive.google.com/file/d/${submissionDetails.full_paper.full_paper_file_id}/view`,
+                                        })
+                                      }
+                                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-purple-50/50 transition text-left"
+                                    >
+                                      <span className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
+                                        <FontAwesomeIcon icon={faFilePdf} className="w-3.5 h-3.5" />
+                                      </span>
+                                      <div className="min-w-0 flex-1">
+                                        <p className="text-sm font-semibold text-slate-800 truncate">
+                                          Full Paper PDF
+                                        </p>
+                                        <p className="text-[11px] text-slate-500 uppercase tracking-wide">
+                                          PDF
+                                          {submissionDetails.full_paper.submitted_at
+                                            ? ` · Submitted ${new Date(submissionDetails.full_paper.submitted_at).toLocaleDateString()}`
+                                            : ''}
+                                        </p>
+                                      </div>
+                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-slate-400 shrink-0">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                                      </svg>
+                                    </button>
+                                  </li>
+                                </ul>
+                              ) : (
+                                <div className="p-6 text-center text-sm text-slate-500 italic">
+                                  Full paper row exists but no file URL is stored.
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
                     </div>
                   ) : (
                     <div>
+                      {/* EMAIL SUBMISSION — unchanged */}
                       <div className="flex items-center justify-between mb-3">
                         <p className="text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-2">
                           <FontAwesomeIcon icon={faFilePdf} className="w-3.5 h-3.5 text-rose-500" />
@@ -2227,12 +2585,29 @@ export default function MasterReviewPage() {
                         </p>
                       )}
                       {selectedSubmission.attachment_view_url ? (
-                        <div className="border border-slate-200 rounded-xl bg-white overflow-hidden shadow-sm" style={{ height: '600px' }}>
-                          <iframe
-                            src={`https://drive.google.com/file/d/${extractGoogleDriveId(selectedSubmission.attachment_view_url)}/preview?embedded=true`}
-                            className="w-full h-full"
-                            allow="autoplay"
-                          />
+                        <div
+                          className="border border-slate-200 rounded-xl bg-white overflow-hidden shadow-sm cursor-pointer hover:border-indigo-300 transition group"
+                          style={{ height: '600px' }}
+                          onClick={() =>
+                            setOpenDocPreview({
+                              label: selectedSubmission.attachment_filename || 'Attachment',
+                              url: selectedSubmission.attachment_view_url,
+                            })
+                          }
+                          title="Click to enlarge"
+                        >
+                          <div className="relative w-full h-full">
+                            <iframe
+                              src={`https://drive.google.com/file/d/${extractGoogleDriveId(selectedSubmission.attachment_view_url)}/preview?embedded=true`}
+                              className="w-full h-full pointer-events-none"
+                              allow="autoplay"
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center bg-slate-900/0 group-hover:bg-slate-900/5 transition">
+                              <span className="opacity-0 group-hover:opacity-100 transition bg-white/95 border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-700 shadow">
+                                Click to enlarge
+                              </span>
+                            </div>
+                          </div>
                         </div>
                       ) : (
                         <div className="text-center py-16 text-slate-500 bg-white rounded-xl border border-dashed border-slate-300 text-sm italic">
@@ -2291,6 +2666,55 @@ export default function MasterReviewPage() {
                   maxHeight="60vh"
                 />
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ============ FULLSCREEN DOCUMENT PREVIEW MODAL ============ */}
+      {openDocPreview && (
+        <div className="fixed inset-0 z-80 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm">
+          <div className="relative w-full max-w-6xl h-[90vh] bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-3 border-b border-slate-200 bg-slate-50 shrink-0">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-8 h-8 rounded-lg bg-indigo-100 border border-indigo-200 flex items-center justify-center shrink-0">
+                  <FontAwesomeIcon icon={faFilePdf} className="w-4 h-4 text-indigo-600" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-slate-900 truncate">{openDocPreview.label}</p>
+                  <p className="text-[11px] text-slate-500">Document preview</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <a
+                  href={openDocPreview.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg transition"
+                >
+                  <FontAwesomeIcon icon={faFilePdf} className="w-3 h-3" />
+                  Open in new tab
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setOpenDocPreview(null)}
+                  className="w-9 h-9 flex items-center justify-center rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-200 transition"
+                  aria-label="Close preview"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="flex-1 bg-slate-100 min-h-0">
+              <iframe
+                src={`https://drive.google.com/file/d/${extractGoogleDriveId(openDocPreview.url)}/preview?embedded=true`}
+                className="w-full h-full"
+                allow="autoplay"
+              />
             </div>
           </div>
         </div>

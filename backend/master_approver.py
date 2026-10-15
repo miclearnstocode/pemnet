@@ -1,6 +1,11 @@
-from models import db, Submission, EmailSubmission, ExtractedAbstractData, SubmissionVote, User, EmailNotificationLog, EvaluatorDiscussion
+from models import (
+    db, Submission, EmailSubmission, ExtractedAbstractData,
+    SubmissionVote, User, EmailNotificationLog, EvaluatorDiscussion,
+    SupportingDocument, FullPaper,
+)
 from email_service import send_status_update_email, send_endorsement_confirmation_email, build_endorsement_email
 import traceback
+
 
 class MasterApproverService:
     
@@ -82,6 +87,29 @@ class MasterApproverService:
                     'downgrade': sum(1 for v in votes if v.vote_status in ['downgraded-non_competitive', 'downgraded-poster_only', 'downgrade']),
                     'reassign': sum(1 for v in votes if v.vote_status == 'reassign')
                 }
+
+                # ---- Supporting documents ----
+                supporting = (
+                    SupportingDocument.query
+                    .filter_by(submission_id=submission_id)
+                    .order_by(SupportingDocument.created_at.asc())
+                    .all()
+                )
+
+                # ---- Full paper ----
+                full_paper_row = FullPaper.query.filter_by(submission_id=submission_id).first()
+                full_paper_dict = None
+                if full_paper_row:
+                    full_paper_dict = {
+                        'id': full_paper_row.id,
+                        'title': full_paper_row.title,
+                        'status': full_paper_row.status,
+                        'full_paper_file_id': full_paper_row.full_paper_file_id,
+                        'full_paper_view_url': full_paper_row.full_paper_view_url,
+                        'full_paper_download_url': full_paper_row.full_paper_download_url,
+                        'submitted_at': full_paper_row.submitted_at.isoformat() if full_paper_row.submitted_at else None,
+                    }
+
                 return {
                     'submission': {
                         'id': submission.id,
@@ -94,11 +122,14 @@ class MasterApproverService:
                         'corresponding_author_name': submission.corresponding_author_name,
                         'corresponding_author_email': submission.corresponding_author_email,
                         'corresponding_author_position': submission.corresponding_author_position,
+                        'co_authors': submission.co_authors,
                         'status': submission.status,
                         'evaluation_status': submission.evaluation_status,
                         'abstract_view_url': submission.abstract_view_url,
                         'endorsement_view_url': submission.endorsement_view_url,
-                        'created_at': submission.created_at
+                        'created_at': submission.created_at,
+                        'has_full_paper': bool(submission.has_full_paper),
+                        'full_paper_submitted_at': submission.full_paper_submitted_at,
                     },
                     'votes': [{
                         'evaluator_id': v.evaluator_id,
@@ -108,6 +139,8 @@ class MasterApproverService:
                         'vote_downgrade_to': v.vote_downgrade_to
                     } for v in votes],
                     'vote_stats': vote_stats,
+                    'supporting_documents': [s.to_dict() for s in supporting],
+                    'full_paper': full_paper_dict,
                     'type': 'system',
                     'discussion_count': discussion_count
                 }, 200
@@ -140,7 +173,7 @@ class MasterApproverService:
                             'evaluation_status': extracted.evaluation_status,
                             'abstract_view_url': email_sub.attachment_view_url,
                             'endorsement_view_url': None,
-                            'created_at': email_sub.email_received_at
+                            'created_at': email_sub.email_received_at,
                         },
                         'votes': [{
                             'evaluator_id': v.evaluator_id,
@@ -150,6 +183,8 @@ class MasterApproverService:
                             'vote_downgrade_to': v.vote_downgrade_to
                         } for v in votes],
                         'vote_stats': vote_stats,
+                        'supporting_documents': [],
+                        'full_paper': None,
                         'type': 'email',
                         'discussion_count': discussion_count
                     }, 200

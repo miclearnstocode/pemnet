@@ -1,7 +1,10 @@
 import traceback
 from flask import Blueprint, jsonify, request
 from master_approver import MasterApproverService
-from models import (db, Submission, ExtractedAbstractData, ExtractedDataRevision, EmailNotificationLog,)
+from models import (
+    db, Submission, SubmissionVote, User, EmailNotificationLog, EvaluatorDiscussion,
+    SupportingDocument, FullPaper,
+)
 from sqlalchemy import func
 
 master_approver_bp = Blueprint('master_approver', __name__)
@@ -42,6 +45,7 @@ def get_submission_with_votes(submission_id):
 
     try:
         result, status_code = MasterApproverService.get_submission_with_votes(submission_id)
+        
         return jsonify(result), status_code
     except Exception as e:
         print(f"Error in get_submission_with_votes: {e}")
@@ -225,5 +229,39 @@ def master_approver_chart_data():
 
     except Exception as e:
         print(f"Error in master_approver_chart_data: {e}")
+        traceback.print_exc()
+        return jsonify({"detail": str(e)}), 500
+    
+@master_approver_bp.route('/api/submissions/<string:submission_id>/supporting-documents', methods=['GET', 'OPTIONS'])
+def get_supporting_documents(submission_id):
+    """
+    Return supporting documents attached to a submission.
+    Currently supports SYSTEM submissions (SupportingDocument rows).
+    """
+    if request.method == 'OPTIONS':
+        return jsonify({})
+
+    try:
+        if not submission_id:
+            return jsonify({"detail": "submission_id is required"}), 400
+
+        # Confirm the submission exists (system first, then email) so we can 404 cleanly
+        exists = (
+            Submission.query.filter_by(submission_id=submission_id).first() is not None
+        )
+        if not exists:
+            return jsonify({"detail": "Submission not found"}), 404
+
+        docs = (
+            SupportingDocument.query
+            .filter_by(submission_id=submission_id)
+            .order_by(SupportingDocument.created_at.asc())
+            .all()
+        )
+
+        return jsonify([d.to_dict() for d in docs]), 200
+
+    except Exception as e:
+        print(f"Error fetching supporting documents for {submission_id}: {e}")
         traceback.print_exc()
         return jsonify({"detail": str(e)}), 500

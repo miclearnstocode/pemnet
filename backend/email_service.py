@@ -360,159 +360,195 @@ def _build_ongoing_template(author_name, paper_title, institution, thematic_area
 # MAIN ENDORSEMENT EMAIL FUNCTION
 # ============================================================================
 
-def send_endorsement_confirmation_email(submission_data, extracted_data=None, master_approver_id=None):
+def build_endorsement_email(submission_data, extracted_data=None):
     """
-    Send a detailed confirmation email when an abstract is endorsed or downgraded.
-    
+    Build (but do NOT send) the Notice of Acceptance email.
+
+    Used by both the preview endpoint and the send function so the master
+    approver always sees exactly what will be delivered.
+
     Template selection logic:
       - paper_category contains 'Completed' AND status == 'endorse'
-            → Completed Extension Project Paper (Competitive) template
+            -> Completed Extension Project Paper (Competitive) template
       - paper_category contains 'Completed' AND status is a downgrade
-            → Completed Extension Project Paper - Non-Competitive Oral Presentation template
+            -> Completed Extension Project Paper - Non-Competitive Oral Presentation template
       - paper_category contains 'Ongoing' (any status: endorse or downgrade)
-            → Ongoing Extension Project Paper - Non-Competitive Presentation template
-      - fallback → Completed Competitive template
-    
+            -> Ongoing Extension Project Paper - Non-Competitive Presentation template
+      - fallback -> Completed Competitive template
+
     Args:
-        submission_data (dict): Submission data from submissions table or extracted data
-        extracted_data (dict, optional): Extracted data from extracted_abstract_data table
-        master_approver_id (int, optional): ID of the master approver sending the email
-    
+        submission_data (dict): Submission data (must include 'status')
+        extracted_data (dict, optional): Extracted data dict (email submissions)
+
+    Returns:
+        dict | None: {to_email, cc_list, subject, html_body, template_used,
+                      submission_id, status, is_downgrade, paper_category}
+                     or None when no recipient email could be determined.
+    """
+    # --- Determine recipient ---
+    to_email = submission_data.get('corresponding_author_email')
+    if not to_email and extracted_data:
+        to_email = extracted_data.get('corresponding_author_email')
+
+    sender_email = submission_data.get('sender_email')
+    if not sender_email and extracted_data:
+        sender_email = extracted_data.get('sender_email')
+
+    if not to_email and sender_email:
+        to_email = sender_email
+
+    if not to_email:
+        return None
+
+    # --- Submission ID ---
+    submission_id = submission_data.get('submission_id') or (extracted_data.get('submission_id') if extracted_data else None)
+
+    # --- Author details ---
+    author_name = (
+        submission_data.get('corresponding_author_name') or
+        submission_data.get('author') or
+        (extracted_data.get('corresponding_author_name') if extracted_data else None) or
+        (extracted_data.get('project_leader') if extracted_data else None) or
+        submission_data.get('sender_name') or
+        'Author'
+    )
+
+    institution = (
+        submission_data.get('suc_agencies') or
+        (extracted_data.get('sucs') if extracted_data else None) or
+        submission_data.get('sender_name') or
+        ''
+    )
+
+    # --- Paper details ---
+    paper_title = (
+        submission_data.get('extension_project_title') or
+        (extracted_data.get('title') if extracted_data else None) or
+        submission_data.get('subject') or
+        ''
+    )
+
+    paper_category = (
+        submission_data.get('paper_category') or
+        (extracted_data.get('paper_category') if extracted_data else None) or
+        'Not specified'
+    )
+
+    thematic_area = (
+        submission_data.get('thematic_area') or
+        (extracted_data.get('thematic_area') if extracted_data else None) or
+        'Not specified'
+    )
+
+    # --- Authors list ---
+    raw_authors = (
+        submission_data.get('co_authors') or
+        (extracted_data.get('authors_list') if extracted_data else None) or
+        ''
+    )
+    authors_display = _parse_authors_list(raw_authors) or author_name
+
+    # --- Determine status (endorse vs downgrade) ---
+    status = submission_data.get('status') or (extracted_data.get('evaluation_status') if extracted_data else None) or 'endorse'
+    is_downgrade = status in ('downgraded-non_competitive', 'downgraded-poster_only')
+    is_completed = bool(paper_category and 'Completed' in paper_category)
+    is_ongoing = bool(paper_category and 'Ongoing' in paper_category)
+
+    # --- Select template ---
+    if is_completed and not is_downgrade:
+        subject = f"PEMNet 2026 - Notice of Acceptance: {paper_title}"
+        html_body = _build_completed_competitive_template(
+            author_name, paper_title, authors_display, institution, thematic_area
+        )
+        template_used = 'completed_competitive'
+    elif is_completed and is_downgrade:
+        subject = f"PEMNet 2026 - Notice of Acceptance (Non-Competitive): {paper_title}"
+        html_body = _build_completed_non_competitive_template(
+            author_name, paper_title, institution, thematic_area
+        )
+        template_used = 'completed_non_competitive'
+    elif is_ongoing:
+        subject = f"PEMNet 2026 - Notice of Acceptance (Ongoing Project): {paper_title}"
+        html_body = _build_ongoing_template(
+            author_name, paper_title, institution, thematic_area
+        )
+        template_used = 'ongoing'
+    else:
+        subject = f"PEMNet 2026 - Notice of Acceptance: {paper_title}"
+        html_body = _build_completed_competitive_template(
+            author_name, paper_title, authors_display, institution, thematic_area
+        )
+        template_used = 'fallback'
+
+    # --- CC list ---
+    cc_list = []
+    if sender_email and sender_email != to_email:
+        cc_list.append(sender_email)
+
+    return {
+        'to_email': to_email,
+        'cc_list': cc_list,
+        'subject': subject,
+        'html_body': html_body,
+        'template_used': template_used,
+        'submission_id': submission_id,
+        'status': status,
+        'is_downgrade': is_downgrade,
+        'paper_category': paper_category,
+    }
+
+
+# ============================================================================
+# MAIN ENDORSEMENT EMAIL FUNCTION (send)
+# ============================================================================
+
+def send_endorsement_confirmation_email(submission_data, extracted_data=None, master_approver_id=None):
+    """
+    Send the Notice of Acceptance email (endorsed or downgraded).
+    Content comes from build_endorsement_email(), the same builder the preview uses.
+
     Returns:
         bool: True if email was sent successfully
     """
+    email = None
     try:
         if not gmail_service:
             print("Gmail service not configured, skipping email send")
             return False
-        
-        # --- Determine recipient ---
-        to_email = submission_data.get('corresponding_author_email')
-        if not to_email and extracted_data:
-            to_email = extracted_data.get('corresponding_author_email')
-        
-        sender_email = submission_data.get('sender_email')
-        if not sender_email and extracted_data:
-            sender_email = extracted_data.get('sender_email')
-        
-        if not to_email and sender_email:
-            to_email = sender_email
-        
-        if not to_email:
+
+        email = build_endorsement_email(submission_data, extracted_data)
+        if not email:
             print("⚠️ No email found for recipient, skipping email")
             return False
-        
-        # --- Submission ID ---
-        submission_id = submission_data.get('submission_id') or (extracted_data.get('submission_id') if extracted_data else None)
-        
-        # --- Author details ---
-        author_name = (
-            submission_data.get('corresponding_author_name') or 
-            submission_data.get('author') or 
-            (extracted_data.get('corresponding_author_name') if extracted_data else None) or 
-            (extracted_data.get('project_leader') if extracted_data else None) or 
-            submission_data.get('sender_name') or 
-            'Author'
-        )
-        
-        institution = (
-            submission_data.get('suc_agencies') or 
-            (extracted_data.get('sucs') if extracted_data else None) or 
-            submission_data.get('sender_name') or 
-            ''
-        )
-        
-        # --- Paper details ---
-        paper_title = (
-            submission_data.get('extension_project_title') or 
-            (extracted_data.get('title') if extracted_data else None) or 
-            submission_data.get('subject') or 
-            ''
-        )
-        
-        paper_category = (
-            submission_data.get('paper_category') or 
-            (extracted_data.get('paper_category') if extracted_data else None) or 
-            'Not specified'
-        )
-        
-        thematic_area = (
-            submission_data.get('thematic_area') or 
-            (extracted_data.get('thematic_area') if extracted_data else None) or 
-            'Not specified'
-        )
-        
-        # --- Authors list ---
-        raw_authors = (
-            submission_data.get('co_authors') or 
-            (extracted_data.get('authors_list') if extracted_data else None) or 
-            ''
-        )
-        authors_display = _parse_authors_list(raw_authors) or author_name
-        
-        # --- Determine status (endorse vs downgrade) ---
-        status = submission_data.get('status') or (extracted_data.get('evaluation_status') if extracted_data else None) or 'endorse'
-        is_downgrade = status in ('downgraded-non_competitive', 'downgraded-poster_only')
-        is_completed = paper_category and 'Completed' in paper_category
-        is_ongoing = paper_category and 'Ongoing' in paper_category
-        
-        # --- Select template ---
-        if is_completed and not is_downgrade:
-            # Completed + Endorsed → Competitive Oral Presentation
-            subject = f"PEMNet 2026 - Notice of Acceptance: {paper_title}"
-            html_body = _build_completed_competitive_template(
-                author_name, paper_title, authors_display, institution, thematic_area
-            )
-            template_used = 'completed_competitive'
-        elif is_completed and is_downgrade:
-            # Completed + Downgraded → Non-Competitive Oral Presentation
-            subject = f"PEMNet 2026 - Notice of Acceptance (Non-Competitive): {paper_title}"
-            html_body = _build_completed_non_competitive_template(
-                author_name, paper_title, institution, thematic_area
-            )
-            template_used = 'completed_non_competitive'
-        elif is_ongoing:
-            # Ongoing (regardless of endorse/downgrade) → Ongoing Non-Competitive template
-            subject = f"PEMNet 2026 - Notice of Acceptance (Ongoing Project): {paper_title}"
-            html_body = _build_ongoing_template(
-                author_name, paper_title, institution, thematic_area
-            )
-            template_used = 'ongoing'
-        else:
-            # Fallback — generic notice
-            subject = f"PEMNet 2026 - Notice of Acceptance: {paper_title}"
-            html_body = _build_completed_competitive_template(
-                author_name, paper_title, authors_display, institution, thematic_area
-            )
-            template_used = 'fallback'
-        
-        print(f"📧 Using template: {template_used} (category: {paper_category}, status: {status})")
-        
-        # --- CC list ---
-        cc_list = []
-        if sender_email and sender_email != to_email:
-            cc_list.append(sender_email)
-        
+
+        to_email = email['to_email']
+        cc_list = email['cc_list']
+        subject = email['subject']
+        html_body = email['html_body']
+        is_downgrade = email['is_downgrade']
+
+        print(f"📧 Using template: {email['template_used']} (category: {email['paper_category']}, status: {email['status']})")
+
         # --- Log the email attempt ---
         log = log_email_notification(
-            submission_id=submission_id,
+            submission_id=email['submission_id'],
             email_type='endorsement',
             recipient_email=to_email,
             subject=subject,
             body=html_body,
-            action_performed='endorse' if not is_downgrade else status,
+            action_performed='endorse' if not is_downgrade else email['status'],
             cc_emails=', '.join(cc_list) if cc_list else None,
             master_approver_id=master_approver_id,
             status='pending'
         )
-        
+
         # --- Send the email ---
         result = gmail_service.send_email(to_email, subject, html_body, is_html=True, cc=cc_list)
-        
+
         if result:
             if log:
                 update_email_log_status(log.id, 'sent')
-            print(f"✅ Notice of Acceptance sent to {to_email} (template: {template_used})")
+            print(f"✅ Notice of Acceptance sent to {to_email} (template: {email['template_used']})")
             if cc_list:
                 print(f"   CC: {', '.join(cc_list)}")
             return True
@@ -521,21 +557,21 @@ def send_endorsement_confirmation_email(submission_data, extracted_data=None, ma
                 update_email_log_status(log.id, 'failed', 'Gmail API send failed')
             print(f"❌ Failed to send Notice of Acceptance to {to_email}")
             return False
-        
+
     except Exception as e:
         print(f"❌ Error sending endorsement confirmation email: {e}")
         import traceback
         traceback.print_exc()
-        submission_id = submission_data.get('submission_id') or (extracted_data.get('submission_id') if extracted_data else None)
+        submission_id = (email or {}).get('submission_id') or submission_data.get('submission_id')
         if submission_id:
             log_email_notification(
                 submission_id=submission_id,
                 email_type='endorsement',
-                recipient_email=to_email if 'to_email' in locals() else 'unknown',
-                subject=subject if 'subject' in locals() else 'Unknown',
+                recipient_email=(email or {}).get('to_email') or 'unknown',
+                subject=(email or {}).get('subject') or 'Unknown',
                 body='',
                 action_performed='endorse',
-                cc_emails=', '.join(cc_list) if 'cc_list' in locals() and cc_list else None,
+                cc_emails=', '.join(email['cc_list']) if email and email.get('cc_list') else None,
                 master_approver_id=master_approver_id,
                 status='failed',
                 error_message=str(e)

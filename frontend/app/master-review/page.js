@@ -8,13 +8,14 @@ import {
   faFilePdf, faCalendarAlt, faTag, faUser, faSchool, faFlag, faExclamationTriangle, 
   faThumbsUp, faThumbsDown, faArrowDown, faUsers, faBookOpen, faLayerGroup, faEdit, faHistory,
   faBars, faDashboard, faCog, faQuestionCircle, faBell, faLifeRing,
-  faChevronDown, faChevronUp, faEnvelopeOpen, faClipboardList, faCommentDots, } from '@fortawesome/free-solid-svg-icons';
+  faChevronDown, faChevronUp, faEnvelopeOpen, faClipboardList, faCommentDots, faPaperPlane, } from '@fortawesome/free-solid-svg-icons';
 import ConfirmModal from '../components/ConfirmModal';
 import DowngradeModal from '../components/DowngradeModal';
 import EditSubmission from '../components/EditSubmission';
 import DiscussionSection from '../components/DiscussionSection';
 import ViewHistory from '../components/ViewHistory';
 import DecisionSummary from '../components/DecisionSummary';
+import SendCommunicationEmailModal from '../components/master-components/SendCommunicationEmailModal';
 import Sidebar from '../components/master-components/Sidebar';
 import { QuickLinkCard, UnderUpdateModal } from '../components/master-components/QuickLinkCard';
 import UnderDevelopment from '../components/master-components/UnderDevelopment';
@@ -245,7 +246,7 @@ function HelpCenterPanel({ isOpen, onClose }) {
   const faqs = [
     {
       q: 'How do I endorse a submission?',
-      a: 'Open a submission by clicking on any row in the table. In the details modal, scroll to the "Master Approver Decision" section and click "Endorse for Presentation". A confirmation dialog will appear where you can choose whether to send a confirmation email to the corresponding author.'
+      a: 'Open a submission by clicking on any row in the table. In the details modal, scroll to the "Master Approver Decision" section and click "Endorse for Presentation" (or "Downgrade Submission") to set the status. Then click "Send Communication Email" to preview the email and send it to the corresponding author.'
     },
     {
       q: 'What is the difference between Non-Competitive and Poster Only?',
@@ -467,8 +468,8 @@ export default function MasterReviewPage() {
   const [loadingEmailLogs, setLoadingEmailLogs] = useState(false);
   const [showDiscussionModal, setShowDiscussionModal] = useState(false);
 
-  // Email sending preference
-  const [sendEmailConfirmation, setSendEmailConfirmation] = useState(true);
+  // Communication email (separate from the status decision)
+  const [showCommunicationModal, setShowCommunicationModal] = useState(false);
 
   // Collapsible sections
   const [showEndorsement, setShowEndorsement] = useState(false);
@@ -712,7 +713,7 @@ export default function MasterReviewPage() {
     setShowAuthors(false);            
     setShowCorresponding(false);        
     setShowEvaluatorVotes(false);    
-    setSendEmailConfirmation(true);
+    setShowCommunicationModal(false);
     setIsModalOpen(true);
 
     try {
@@ -857,19 +858,12 @@ export default function MasterReviewPage() {
           status: status,
           master_approver_id: currentUser.id,
           notes: notes || document.getElementById('masterNotes')?.value || '',
-          send_email: sendEmailConfirmation,
           submission_type: activeTab
         }),
       });
 
       if (res.ok) {
-        const data = await res.json();
-        const emailMessage = data.email_sent ? ' Confirmation email sent to the corresponding author.' : '';
-        showToast(`Status updated to ${getStatusDisplay(status)}.${emailMessage}`, 'success');
-
-        if (sendEmailConfirmation) {
-          await fetchEmailLogs(submissionId);
-        }
+        showToast(`Status updated to ${getStatusDisplay(status)}. Use "Send Communication Email" to notify the author.`, 'success');
 
         setSubmissions(prev =>
           prev.map(sub => {
@@ -914,10 +908,6 @@ export default function MasterReviewPage() {
         setPendingStatusAction(null);
         setShowDowngradeConfirm(false);
         setPendingDowngradeType(null);
-
-        setTimeout(() => {
-          setIsModalOpen(false);
-        }, 1500);
       } else {
         const error = await res.json();
         showToast(error.detail || 'Failed to update status', 'error');
@@ -932,7 +922,6 @@ export default function MasterReviewPage() {
   const confirmStatusChange = (status) => {
     setSelectedStatus(status);
     setPendingStatusAction(status);
-    setSendEmailConfirmation(status === 'endorse');
     setShowConfirmModal(true);
   };
 
@@ -1766,9 +1755,17 @@ export default function MasterReviewPage() {
         cancelText="No, Cancel"
         isLoading={isSettingStatus}
         type={pendingStatusAction === 'return_to_sender' ? 'warning' : pendingStatusAction === 'endorse' ? 'info' : 'info'}
-        showEmailCheckbox={pendingStatusAction === 'endorse'}
-        emailChecked={sendEmailConfirmation}
-        onEmailToggle={setSendEmailConfirmation}
+      />
+
+      {/* Communication Email — preview & send (separate from status decision) */}
+      <SendCommunicationEmailModal
+        isOpen={showCommunicationModal}
+        onClose={() => setShowCommunicationModal(false)}
+        submissionId={selectedSubmission?.submission_id}
+        masterApproverId={currentUser?.id}
+        apiUrl={API_URL}
+        showToast={showToast}
+        onSent={() => fetchEmailLogs(selectedSubmission?.submission_id)}
       />
 
       <DowngradeModal
@@ -2044,7 +2041,7 @@ export default function MasterReviewPage() {
                           Master Approver Decision
                         </h4>
                         <p className="text-xs text-blue-700/70">
-                          This action is final and will notify the corresponding author
+                          Step 1: set the decision. Step 2: send the communication email to the author.
                         </p>
                       </div>
                     </div>
@@ -2059,7 +2056,6 @@ export default function MasterReviewPage() {
                         {getField('paperCategory')?.includes('Ongoing')
                           ? 'Endorse for Non-Competitive Presentation'
                           : 'Endorse for Presentation'}
-                        <span className="text-[10px] bg-white/25 px-2 py-0.5 rounded-full ml-1">📧 Email</span>
                       </button>
 
                       {getField('paperCategory')?.includes('Completed') && (
@@ -2086,6 +2082,25 @@ export default function MasterReviewPage() {
                           </span>
                         </div>
                       )}
+
+                      {/* Communication email — separate from the status decision */}
+                      <div className="pt-3 mt-1 border-t border-blue-200/70 space-y-2">
+                        <button
+                          onClick={() => setShowCommunicationModal(true)}
+                          disabled={
+                            !['endorse', 'downgraded-non_competitive', 'downgraded-poster_only'].includes(selectedSubmission.status)
+                          }
+                          className="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition shadow-sm hover:shadow disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
+                        >
+                          <FontAwesomeIcon icon={faPaperPlane} className="w-4 h-4" />
+                          Send Communication Email
+                        </button>
+                        {!['endorse', 'downgraded-non_competitive', 'downgraded-poster_only'].includes(selectedSubmission.status) && (
+                          <p className="text-[11px] text-slate-500 text-center">
+                            Endorse or downgrade the submission first to enable this.
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -2224,7 +2239,7 @@ export default function MasterReviewPage() {
             <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden max-h-[85vh] flex flex-col">
 
               {/* Header — messenger style */}
-              <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-200 bg-gradient-to-r from-purple-50 to-indigo-50">
+              <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-200 bg-linear-to-r from-purple-50 to-indigo-50">
                 <div className="w-10 h-10 rounded-full bg-purple-100 border border-purple-200 flex items-center justify-center shrink-0">
                   <FontAwesomeIcon icon={faCommentDots} className="w-5 h-5 text-purple-600" />
                 </div>

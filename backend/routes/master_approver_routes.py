@@ -67,6 +67,35 @@ def set_master_status(submission_id):
         return jsonify({"detail": str(e)}), 500
 
 
+@master_approver_bp.route('/api/submissions/<string:submission_id>/communication-email/preview', methods=['GET', 'OPTIONS'])
+def preview_communication_email(submission_id):
+    if request.method == 'OPTIONS':
+        return jsonify({})
+
+    try:
+        result, status_code = MasterApproverService.get_communication_email_preview(submission_id)
+        return jsonify(result), status_code
+    except Exception as e:
+        print(f"Error in preview_communication_email: {e}")
+        traceback.print_exc()
+        return jsonify({"detail": str(e)}), 500
+
+
+@master_approver_bp.route('/api/submissions/<string:submission_id>/communication-email/send', methods=['POST', 'OPTIONS'])
+def send_communication_email(submission_id):
+    if request.method == 'OPTIONS':
+        return jsonify({})
+
+    try:
+        data = request.get_json(silent=True) or {}
+        result, status_code = MasterApproverService.send_communication_email(submission_id, data)
+        return jsonify(result), status_code
+    except Exception as e:
+        print(f"Error in send_communication_email: {e}")
+        traceback.print_exc()
+        return jsonify({"detail": str(e)}), 500
+
+
 @master_approver_bp.route('/api/master-approver/bulk-email', methods=['POST', 'OPTIONS'])
 def bulk_send_status_emails():
     if request.method == 'OPTIONS':
@@ -197,4 +226,4 @@ def master_approver_chart_data():
     except Exception as e:
         print(f"Error in master_approver_chart_data: {e}")
         traceback.print_exc()
-        return jsonify({"detail": str(e)}), 500 
+        return jsonify({"detail": str(e)}), 500

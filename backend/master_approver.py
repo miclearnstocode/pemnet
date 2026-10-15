@@ -1,5 +1,5 @@
 from models import db, Submission, EmailSubmission, ExtractedAbstractData, SubmissionVote, User, EmailNotificationLog
-from email_service import send_status_update_email, send_endorsement_confirmation_email
+from email_service import send_status_update_email, send_endorsement_confirmation_email, build_endorsement_email
 import traceback
 
 class MasterApproverService:
@@ -168,7 +168,6 @@ class MasterApproverService:
             status = data.get('status')
             master_approver_id = data.get('master_approver_id')
             notes = data.get('notes', '')
-            send_email = data.get('send_email', True)
             
             if not status or not master_approver_id:
                 return {"detail": "Status and master_approver_id are required"}, 400
@@ -177,8 +176,6 @@ class MasterApproverService:
             allowed_statuses = ['endorse', 'downgraded-non_competitive', 'downgraded-poster_only', 'pending']
             if status not in allowed_statuses:
                 return {"detail": f"Invalid status: {status}. Must be one of: {', '.join(allowed_statuses)}"}, 400
-            
-            email_sent = False
             
             # First try to find in system submissions
             submission = Submission.query.filter_by(submission_id=submission_id).first()
@@ -189,44 +186,8 @@ class MasterApproverService:
                 
                 db.session.commit()
                 
-                # Send email if requested
-                if send_email:
-                    if status == 'endorse':
-                        # Use the detailed endorsement email
-                        submission_dict = {
-                            'submission_id': submission.submission_id,
-                            'extension_project_title': submission.extension_project_title,
-                            'project_leader': submission.project_leader,  # FIXED: Use project_leader
-                            'corresponding_author_name': submission.corresponding_author_name,
-                            'corresponding_author_email': submission.corresponding_author_email,
-                            'corresponding_author_position': submission.corresponding_author_position,
-                            'suc_agencies': submission.suc_agencies,
-                            'paper_category': submission.paper_category,
-                            'thematic_area': submission.thematic_area
-                        }
-                        email_sent = send_endorsement_confirmation_email(
-                            submission_dict,
-                            master_approver_id=master_approver_id
-                        )
-                    else:
-                        # Use the status update email
-                        project_leader = submission.project_leader  # FIXED: Use project_leader
-                        author_name = submission.corresponding_author_name or project_leader
-                        cc_emails = [submission.corresponding_author_email] if submission.corresponding_author_email else None
-                        email_sent = send_status_update_email(
-                            submission.corresponding_author_email or submission.corresponding_author_email,
-                            author_name,
-                            submission.extension_project_title,
-                            status,
-                            notes,
-                            submission_id=submission.submission_id,
-                            master_approver_id=master_approver_id,
-                            cc_emails=cc_emails
-                        )
-                
                 return {
                     "message": f"Status updated to {status}",
-                    "email_sent": email_sent,
                     "status": status,
                     "evaluation_status": submission.evaluation_status,
                     "type": "system"
@@ -247,48 +208,8 @@ class MasterApproverService:
                 
                 db.session.commit()
                 
-                # Send email if requested
-                if send_email and email_sub:
-                    # Get the corresponding author email from extracted data
-                    corr_email = extracted.corresponding_author_email or email_sub.sender_email
-                    author_name = extracted.corresponding_author_name or email_sub.project_leader_name or email_sub.sender_name
-                    project_title = extracted.title or email_sub.subject
-                    
-                    if status == 'endorse':
-                        # Use the detailed endorsement email
-                        submission_dict = {
-                            'submission_id': submission_id,
-                            'extension_project_title': project_title,
-                            'project_leader': author_name,  # FIXED: Use project_leader
-                            'corresponding_author_name': extracted.corresponding_author_name or author_name,
-                            'corresponding_author_email': corr_email,
-                            'corresponding_author_position': extracted.corresponding_author_position or '',
-                            'suc_agencies': extracted.sucs or email_sub.sender_name,
-                            'paper_category': extracted.paper_category or 'Not specified',
-                            'thematic_area': extracted.thematic_area or 'Not specified',
-                            'sender_email': email_sub.sender_email
-                        }
-                        email_sent = send_endorsement_confirmation_email(
-                            submission_dict,
-                            extracted_data=extracted,
-                            master_approver_id=master_approver_id
-                        )
-                    else:
-                        cc_emails = [email_sub.sender_email] if email_sub.sender_email and email_sub.sender_email != corr_email else None
-                        email_sent = send_status_update_email(
-                            corr_email,
-                            author_name,
-                            project_title,
-                            status,
-                            notes,
-                            submission_id=submission_id,
-                            master_approver_id=master_approver_id,
-                            cc_emails=cc_emails
-                        )
-                
                 return {
                     "message": f"Status updated to {status}",
-                    "email_sent": email_sent,
                     "status": status,
                     "evaluation_status": extracted.evaluation_status,
                     "type": "email"
@@ -302,6 +223,104 @@ class MasterApproverService:
             traceback.print_exc()
             return {"detail": str(e)}, 500
     
+    # ------------------------------------------------------------------
+    # Communication email (separate from status update)
+    # ------------------------------------------------------------------
+    COMMUNICATION_STATUSES = ('endorse', 'downgraded-non_competitive', 'downgraded-poster_only')
+
+    @staticmethod
+    def _communication_context(submission_id):
+        """
+        Load the submission and build the dict used by the email builder.
+        Returns (submission_dict, None, None) or (None, error_body, status_code).
+        """
+        submission = Submission.query.filter_by(submission_id=submission_id).first()
+        if not submission:
+            return None, {"detail": "Submission not found"}, 404
+
+        if submission.status not in MasterApproverService.COMMUNICATION_STATUSES:
+            return None, {
+                "detail": "Set the final decision (endorse or downgrade) before sending a communication email"
+            }, 400
+
+        submission_dict = {
+            'submission_id': submission.submission_id,
+            'extension_project_title': submission.extension_project_title,
+            'project_leader': submission.project_leader,
+            'corresponding_author_name': submission.corresponding_author_name,
+            'corresponding_author_email': submission.corresponding_author_email,
+            'corresponding_author_position': submission.corresponding_author_position,
+            'co_authors': submission.co_authors,
+            'suc_agencies': submission.suc_agencies,
+            'paper_category': submission.paper_category,
+            'thematic_area': submission.thematic_area,
+            'status': submission.status,
+        }
+        return submission_dict, None, None
+
+    @staticmethod
+    def get_communication_email_preview(submission_id):
+        """Build the acceptance/downgrade email WITHOUT sending it."""
+        try:
+            submission_dict, error, code = MasterApproverService._communication_context(submission_id)
+            if error:
+                return error, code
+
+            email = build_endorsement_email(submission_dict)
+            if not email:
+                return {"detail": "No recipient email found for this submission"}, 400
+
+            last_sent = EmailNotificationLog.query.filter_by(
+                submission_id=submission_id, email_type='endorsement', status='sent'
+            ).order_by(EmailNotificationLog.created_at.desc()).first()
+
+            return {
+                "to": email['to_email'],
+                "cc": email['cc_list'],
+                "subject": email['subject'],
+                "html_body": email['html_body'],
+                "template_used": email['template_used'],
+                "status": email['status'],
+                "submission_id": submission_id,
+                "already_sent": last_sent is not None,
+                "last_sent_at": last_sent.sent_at.isoformat() if last_sent and last_sent.sent_at else None,
+            }, 200
+
+        except Exception as e:
+            print(f"Error building communication email preview: {e}")
+            traceback.print_exc()
+            return {"detail": str(e)}, 500
+
+    @staticmethod
+    def send_communication_email(submission_id, data):
+        """Send the acceptance/downgrade email for a submission whose status is already set."""
+        try:
+            master_approver_id = (data or {}).get('master_approver_id')
+            if not master_approver_id:
+                return {"detail": "master_approver_id is required"}, 400
+
+            submission_dict, error, code = MasterApproverService._communication_context(submission_id)
+            if error:
+                return error, code
+
+            email_sent = send_endorsement_confirmation_email(
+                submission_dict,
+                master_approver_id=master_approver_id
+            )
+            if not email_sent:
+                return {"detail": "Email failed to send. Check the email logs for details."}, 502
+
+            return {
+                "message": "Communication email sent",
+                "email_sent": True,
+                "status": submission_dict['status'],
+            }, 200
+
+        except Exception as e:
+            print(f"Error sending communication email: {e}")
+            traceback.print_exc()
+            return {"detail": str(e)}, 500
+
     @staticmethod
     def bulk_send_status_emails(data):
         try:

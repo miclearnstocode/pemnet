@@ -259,19 +259,21 @@ export function FullPaperPreview({ data }) {
         BLUE={BLUE}
         LIGHT={LIGHT}
         BORDER={BORDER}
+        eventTheme={data.eventTheme || ''}
+        eventName={data.eventName || ''}
       />
     </>
   );
 }
 
-function A4Paginator({ data, BLUE, LIGHT, BORDER }) {
+function A4Paginator({ data, BLUE, LIGHT, BORDER,  eventTheme, eventName }) {
   const [pages, setPages] = useState(null);
   const [containerWidth, setContainerWidth] = useState(0);
   const measureRef = React.useRef(null);
   const wrapperRef = React.useRef(null);
 
   const blocks = React.useMemo(
-    () => buildBlocks({ data, BLUE, LIGHT, BORDER }),
+    () => buildBlocks({ data, BLUE, LIGHT, BORDER, eventName, eventTheme }),
     [data, BLUE, LIGHT, BORDER]
   );
 
@@ -306,7 +308,7 @@ function A4Paginator({ data, BLUE, LIGHT, BORDER }) {
         `<div style="border:1px solid ${BORDER};min-height:46px;color:${BLUE};font-family:Arial;font-size:10pt;padding:6px 8px;white-space:pre-wrap;">${inner}</div>`;
 
       try {
-        const titleHeight = measure(firstPageTitleHTML(BLUE, LIGHT, BORDER));
+        const titleHeight = measure(firstPageTitleHTML(BLUE, LIGHT, BORDER, eventName, eventTheme));
         setPages(packBlocks(blocks, { measure, boxHTML, titleHeight }));
       } finally {
         host.removeChild(probe);
@@ -321,7 +323,7 @@ function A4Paginator({ data, BLUE, LIGHT, BORDER }) {
     return () => {
       cancelled = true;
     };
-  }, [blocks, containerWidth, BLUE, LIGHT, BORDER]);
+  }, [blocks, containerWidth, BLUE, LIGHT, BORDER, eventName, eventTheme]);
 
   const extraPages = pages
     ? (pages[0]?.isFirstPage ? pages.length - 1 : pages.length)
@@ -343,7 +345,8 @@ function A4Paginator({ data, BLUE, LIGHT, BORDER }) {
           </div>
         ) : (
           <>
-            <A4Sheet key="cover" pageNumber={1} totalPages={totalPages} isFirstPage={true} BLUE={BLUE} LIGHT={LIGHT} BORDER={BORDER}>
+            <A4Sheet key="cover" pageNumber={1} totalPages={totalPages} isFirstPage={true} BLUE={BLUE} LIGHT={LIGHT} BORDER={BORDER}     eventTheme={eventTheme}
+    eventName={eventName}>
               {null}
             </A4Sheet>
 
@@ -359,7 +362,7 @@ function A4Paginator({ data, BLUE, LIGHT, BORDER }) {
   );
 }
 
-function A4Sheet({ pageNumber, totalPages, isFirstPage, children, BLUE, LIGHT, BORDER }) {
+function A4Sheet({ pageNumber, totalPages, isFirstPage, children, BLUE, LIGHT, BORDER, eventTheme, eventName }) {
   const HEADER_ZONE_H = `calc(0.1in + 18mm)`;
   const FOOTER_ZONE_H = `calc(0.2in + 18mm)`;
 
@@ -376,7 +379,7 @@ function A4Sheet({ pageNumber, totalPages, isFirstPage, children, BLUE, LIGHT, B
 
       {/* first-page title block */}
       {isFirstPage && (
-        <div style={{ flexShrink: 0 }} dangerouslySetInnerHTML={{ __html: firstPageTitleHTML(BLUE, LIGHT, BORDER) }} />
+        <div style={{ flexShrink: 0 }} dangerouslySetInnerHTML={{ __html: firstPageTitleHTML(BLUE, LIGHT, BORDER, eventName, eventTheme) }} />
       )}
 
       {/* dynamic content */}
@@ -393,7 +396,10 @@ function A4Sheet({ pageNumber, totalPages, isFirstPage, children, BLUE, LIGHT, B
   );
 }
 
-function firstPageTitleHTML(BLUE, LIGHT, BORDER) {
+function firstPageTitleHTML(BLUE, LIGHT, BORDER, eventName = '', eventTheme = '') {
+  const orgName = 'PHILIPPINE EXTENSION MANAGERS NETWORK (PEMNet), INC.';
+  const conferenceName = eventName;
+  const themeText = eventTheme;
   return `
     <div style="display:flex;align-items:center;gap:0px;margin-bottom:24px;">
       <img
@@ -403,10 +409,10 @@ function firstPageTitleHTML(BLUE, LIGHT, BORDER) {
       />
       <div style="flex:1;text-align:center;">
         <p style="margin:0 0 8px 0;font-family:Arial;font-size:12pt;font-weight:700;color:#000;letter-spacing:0.3px;">
-          PHILIPPINE EXTENSION MANAGERS NETWORK (PEMNet), INC.
+          ${orgName}
         </p>
         <p style="margin:0;font-family:Arial;font-size:12pt;font-weight:700;color:#000;">
-          1st NATIONAL EXTENSION CONFERENCE 2026
+          ${conferenceName}
         </p>
       </div>
     </div>
@@ -416,7 +422,7 @@ function firstPageTitleHTML(BLUE, LIGHT, BORDER) {
         Theme:
       </p>
       <p style="margin:0;font-family:Arial;font-size:11pt;font-style:italic;color:#000;line-height:1.4;">
-        HEIs at the Forefront of Transformative Extension: Advancing Evidence-Based, Inclusive, Sustainable, and Resilient Community Development
+        ${themeText}
       </p>
     </div>
 
@@ -443,7 +449,7 @@ function firstPageTitleHTML(BLUE, LIGHT, BORDER) {
   `;
 }
 
-function consentPageHTML(BLUE, LIGHT, BORDER) {
+function consentPageHTML(BLUE, LIGHT, BORDER, eventName='') {
   const para = (html) =>
     `<p style="margin:0 0 12px 0;font-family:Arial;font-size:11pt;color:#000;line-height:1.5;text-align:justify;">${html}</p>`;
   const li = (html) =>
@@ -456,7 +462,7 @@ function consentPageHTML(BLUE, LIGHT, BORDER) {
       AUTHOR CONSENT AND LIMITED PUBLICATION LICENSE
     </h2>
 
-    ${para(`By submitting a full paper to the <b>PEMNet 1st National Extension Conference 2026</b>, the author/s acknowledge and agree that the submitted manuscript may be received, stored, reviewed, evaluated, analyzed, and processed by the <b>Philippine Extension and Management Network, Inc. (PEMNet)</b> for purposes related to the conference, scholarly documentation, knowledge dissemination, research, and possible publication.`)}
+    ${para(`By submitting a full paper to the <b>${eventName}</b>, the author/s acknowledge and agree that the submitted manuscript may be received, stored, reviewed, evaluated, analyzed, and processed by the <b>Philippine Extension and Management Network, Inc. (PEMNet)</b> for purposes related to the conference, scholarly documentation, knowledge dissemination, research, and possible publication.`)}
 
     ${para(`The author/s grant PEMNet a <b>non-exclusive, royalty-free permission</b> to use the submitted manuscript, in whole or in part, for the following purposes:`)}
 
@@ -859,24 +865,16 @@ function buildBodyBlocks(data, BLUE, LIGHT, BORDER) {
   return blocks;
 }
 
-function buildBlocks({ data, BLUE, LIGHT, BORDER }) {
-  const head = { kind: 'atomic', html: firstPageTitleHTML(BLUE, LIGHT, BORDER), forceNewPage: true };
+function buildBlocks({ data, BLUE, LIGHT, BORDER, eventName, eventTheme }) {
+  const head = { kind: 'atomic', html: firstPageTitleHTML(BLUE, LIGHT, BORDER, eventName, eventTheme), forceNewPage: true };
   return [
-    { kind: 'atomic', html: consentPageHTML(BLUE, LIGHT, BORDER), forceNewPage: true },
+    { kind: 'atomic', html: consentPageHTML(BLUE, LIGHT, BORDER, eventName), forceNewPage: true },
     { kind: 'atomic', html: titleAuthorPageHTML(data, BLUE, LIGHT, BORDER), forceNewPage: true },
     ...buildBodyBlocks(data, BLUE, LIGHT, BORDER),
   ];
 }
 
-/**
- * Generate a PDF blob using the browser's native print-to-PDF.
- * Opens a new window with the rendered A4 sheets and triggers print.
- * The user can then "Save as PDF" from the print dialog.
- * 
- * NOTE: This function is kept for API compatibility but the actual
- * PDF generation now happens via the native print dialog on the client.
- * If you need a true programmatic PDF blob, use a server-side solution.
- */
+
 async function generateFullPaperPdfBlob(previewData) {
   // Create a hidden container to render the preview
   const host = document.createElement('div');
@@ -1213,6 +1211,8 @@ export default function SubmitFullPaper({
   onToast,
   initialSubmission = null, 
   existingFullPaper = null, 
+  eventTheme = '',
+  eventName = '',
 }) {
   const isResubmit = Boolean(existingFullPaper || initialSubmission);
   const [submissionId, setSubmissionId] = useState('');
@@ -1850,7 +1850,8 @@ export default function SubmitFullPaper({
         correspondingOrcid,
         paperCategory,
         thematicArea,
-
+        eventTheme,
+        eventName,
         // Section 1 — Introduction
         backgroundContext,
         evidenceNeed,
@@ -2113,7 +2114,8 @@ export default function SubmitFullPaper({
     correspondingOrcid,
     paperCategory,
     thematicArea,
-
+    eventTheme,
+    eventName,
     // Section 1 — Introduction
     backgroundContext,
     evidenceNeed,

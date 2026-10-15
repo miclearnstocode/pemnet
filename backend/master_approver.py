@@ -1,4 +1,4 @@
-from models import db, Submission, EmailSubmission, ExtractedAbstractData, SubmissionVote, User, EmailNotificationLog
+from models import db, Submission, EmailSubmission, ExtractedAbstractData, SubmissionVote, User, EmailNotificationLog, EvaluatorDiscussion
 from email_service import send_status_update_email, send_endorsement_confirmation_email, build_endorsement_email
 import traceback
 
@@ -7,7 +7,6 @@ class MasterApproverService:
     @staticmethod
     def get_status_summary():
         try:
-            # Count system submissions by status (master approver decision)
             system_total = Submission.query.count()
             system_pending = Submission.query.filter_by(status='pending').count()
             system_endorsed = Submission.query.filter_by(status='endorse').count()
@@ -45,7 +44,7 @@ class MasterApproverService:
                     'id': sub.submission_id,
                     'type': 'system',
                     'title': sub.extension_project_title,
-                    'project_leader': sub.project_leader,  # FIXED: Use project_leader instead of author
+                    'project_leader': sub.project_leader,
                     'suc_agencies': sub.suc_agencies,
                     'paper_category': sub.paper_category,
                     'thematic_area': sub.thematic_area,
@@ -72,6 +71,8 @@ class MasterApproverService:
     @staticmethod
     def get_submission_with_votes(submission_id):
         try:
+            discussion_count = EvaluatorDiscussion.query.filter_by(submission_id=submission_id).count()
+
             # First try to find in system submissions
             submission = Submission.query.filter_by(submission_id=submission_id).first()
             if submission:
@@ -86,7 +87,7 @@ class MasterApproverService:
                         'id': submission.id,
                         'submission_id': submission.submission_id,
                         'title': submission.extension_project_title,
-                        'project_leader': submission.project_leader,  # FIXED: Use project_leader
+                        'project_leader': submission.project_leader, 
                         'suc_agencies': submission.suc_agencies,
                         'paper_category': submission.paper_category,
                         'thematic_area': submission.thematic_area,
@@ -107,7 +108,8 @@ class MasterApproverService:
                         'vote_downgrade_to': v.vote_downgrade_to
                     } for v in votes],
                     'vote_stats': vote_stats,
-                    'type': 'system'
+                    'type': 'system',
+                    'discussion_count': discussion_count
                 }, 200
             
             # If not found, try email submission (extracted_abstract_data)
@@ -115,10 +117,7 @@ class MasterApproverService:
             if extracted:
                 email_sub = EmailSubmission.query.get(extracted.email_submission_id)
                 if email_sub:
-                    # IMPORTANT FIX: Also fetch votes for email submissions using the same submission_id
                     votes = SubmissionVote.query.filter_by(submission_id=submission_id).all()
-                    
-                    # Fix vote stats to handle both 'downgrade' and specific downgrade types
                     vote_stats = {
                         'endorse': sum(1 for v in votes if v.vote_status == 'endorse'),
                         'downgrade': sum(1 for v in votes if v.vote_status in ['downgraded-non_competitive', 'downgraded-poster_only', 'downgrade']),
@@ -130,7 +129,7 @@ class MasterApproverService:
                             'id': email_sub.id,
                             'submission_id': extracted.submission_id,
                             'title': extracted.title or email_sub.subject,
-                            'project_leader': extracted.project_leader or email_sub.project_leader_name,  # FIXED: Use project_leader
+                            'project_leader': extracted.project_leader or email_sub.project_leader_name, 
                             'suc_agencies': extracted.sucs or email_sub.sender_name,
                             'paper_category': extracted.paper_category or 'Not specified',
                             'thematic_area': extracted.thematic_area or 'Not specified',
@@ -151,7 +150,8 @@ class MasterApproverService:
                             'vote_downgrade_to': v.vote_downgrade_to
                         } for v in votes],
                         'vote_stats': vote_stats,
-                        'type': 'email'
+                        'type': 'email',
+                        'discussion_count': discussion_count
                     }, 200
             
             return {"detail": "Submission not found"}, 404
@@ -201,9 +201,6 @@ class MasterApproverService:
                 if email_sub:
                     # Update email_submission status
                     email_sub.status = status
-                    
-                    # For email submissions, also update the evaluation_status to match
-                    # since email submissions don't have separate evaluator/master statuses
                     extracted.evaluation_status = status
                 
                 db.session.commit()
@@ -223,17 +220,11 @@ class MasterApproverService:
             traceback.print_exc()
             return {"detail": str(e)}, 500
     
-    # ------------------------------------------------------------------
-    # Communication email (separate from status update)
-    # ------------------------------------------------------------------
     COMMUNICATION_STATUSES = ('endorse', 'downgraded-non_competitive', 'downgraded-poster_only')
 
     @staticmethod
     def _communication_context(submission_id):
-        """
-        Load the submission and build the dict used by the email builder.
-        Returns (submission_dict, None, None) or (None, error_body, status_code).
-        """
+
         submission = Submission.query.filter_by(submission_id=submission_id).first()
         if not submission:
             return None, {"detail": "Submission not found"}, 404
@@ -270,8 +261,7 @@ class MasterApproverService:
             if not email:
                 return {"detail": "No recipient email found for this submission"}, 400
 
-            last_sent = EmailNotificationLog.query.filter_by(
-                submission_id=submission_id, email_type='endorsement', status='sent'
+            last_sent = EmailNotificationLog.query.filter_by(submission_id=submission_id, email_type='endorsement', status='sent'
             ).order_by(EmailNotificationLog.created_at.desc()).first()
 
             return {
@@ -303,18 +293,11 @@ class MasterApproverService:
             if error:
                 return error, code
 
-            email_sent = send_endorsement_confirmation_email(
-                submission_dict,
-                master_approver_id=master_approver_id
-            )
+            email_sent = send_endorsement_confirmation_email(submission_dict, master_approver_id=master_approver_id)
             if not email_sent:
                 return {"detail": "Email failed to send. Check the email logs for details."}, 502
 
-            return {
-                "message": "Communication email sent",
-                "email_sent": True,
-                "status": submission_dict['status'],
-            }, 200
+            return {"message": "Communication email sent", "email_sent": True, "status": submission_dict['status'], }, 200
 
         except Exception as e:
             print(f"Error sending communication email: {e}")
@@ -337,14 +320,9 @@ class MasterApproverService:
                 # Try system submissions first
                 submission = Submission.query.filter_by(submission_id=submission_id).first()
                 if submission:
-                    author_name = submission.corresponding_author_name or submission.project_leader  # FIXED: Use project_leader
-                    email_sent = send_status_update_email(
-                        submission.corresponding_author_email or submission.corresponding_author_email,
-                        author_name,
-                        submission.extension_project_title,
-                        status,
-                        submission_id=submission.submission_id
-                    )
+                    author_name = submission.corresponding_author_name or submission.project_leader 
+                    email_sent = send_status_update_email(submission.corresponding_author_email or submission.corresponding_author_email,
+                        author_name, submission.extension_project_title, status, submission_id=submission.submission_id)
                     if email_sent:
                         sent_count += 1
                     else:
@@ -359,13 +337,7 @@ class MasterApproverService:
                         corr_email = extracted.corresponding_author_email or email_sub.sender_email
                         author_name = extracted.corresponding_author_name or email_sub.project_leader_name or email_sub.sender_name
                         project_title = extracted.title or email_sub.subject
-                        email_sent = send_status_update_email(
-                            corr_email,
-                            author_name,
-                            project_title,
-                            status,
-                            submission_id=submission_id
-                        )
+                        email_sent = send_status_update_email(corr_email, author_name, project_title, status, submission_id=submission_id)
                         if email_sent:
                             sent_count += 1
                         else:

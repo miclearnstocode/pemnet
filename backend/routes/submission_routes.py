@@ -10,27 +10,10 @@ from services.submission_id_service import generate_submission_id
 
 submission_bp = Blueprint('submissions', __name__)
 
-
-# ---------------------------------------------------------------------------
-# Filename helpers
-# ---------------------------------------------------------------------------
-
-_PREFIXES = (
-    'abstract_',
-    'endorsement_',
-    'full_paper_',
-    'preview_',
-    'supporting_',
-)
+_PREFIXES = ('abstract_', 'endorsement_', 'full_paper_', 'preview_', 'supporting_',)
 
 
 def strip_known_prefixes(name: str) -> str:
-    """
-    Strip any previously-added internal prefixes so we never end up with
-    'abstract_abstract_...' or 'endorsement_endorsement_...' in Drive.
-
-    Only strips prefixes repeatedly (covers legacy double prefixes).
-    """
     if not name:
         return name
     base = name
@@ -46,14 +29,6 @@ def strip_known_prefixes(name: str) -> str:
 
 
 def safe_drive_name(upload_filename: str, kind: str) -> str:
-    """
-    Build the filename we hand to Drive.
-
-    * kind in {'abstract', 'endorsement', 'supporting'} — prepends a single
-      canonical prefix like 'abstract_...' / 'endorsement_...'
-    * The original extension is preserved (.pdf, .png, etc.)
-    * Any prior internal prefix on the incoming name is stripped first.
-    """
     if not upload_filename:
         upload_filename = f"{kind}.pdf"
 
@@ -63,11 +38,6 @@ def safe_drive_name(upload_filename: str, kind: str) -> str:
     stem = secure_filename(stem.replace(' ', '_')) or f"{kind}"
     ext = ext or '.pdf'
     return f"{kind}_{stem}{ext}"
-
-
-# ---------------------------------------------------------------------------
-# Submit abstract
-# ---------------------------------------------------------------------------
 
 @submission_bp.route('/api/submit', methods=['POST', 'OPTIONS'])
 def submit():
@@ -89,7 +59,6 @@ def submit():
         corresponding_author_position = request.form.get('corresponding_author_position', '')
         corresponding_author_email = request.form.get('corresponding_author_email', '')
         co_authors = request.form.get('co_authors', '')
-
         community_need = request.form.get('community_need', '')
         project_objectives = request.form.get('project_objectives', '')
         extension_methods = request.form.get('extension_methods', '')
@@ -169,14 +138,7 @@ def submit():
 
         # ---- Drive: abstract ----
         try:
-            abstract_file_id, abstract_view_url = upload_file_to_drive(
-                abstract_path,
-                abstract_drive_name,          # e.g. "abstract_From_Farm_Residue_....pdf"
-                project_title=extension_project_title,
-                sender_name=project_leader,
-                paper_category=paper_category,
-                thematic_area=thematic_area,
-            )
+            abstract_file_id, abstract_view_url = upload_file_to_drive(abstract_path,abstract_drive_name, project_title=extension_project_title, sender_name=project_leader, paper_category=paper_category, thematic_area=thematic_area,)
         except Exception as drive_error:
             print(f"Drive upload error (abstract): {drive_error}")
             traceback.print_exc()
@@ -184,14 +146,8 @@ def submit():
 
         # ---- Drive: endorsement ----
         try:
-            endorsement_file_id, endorsement_view_url = upload_file_to_drive(
-                endorsement_path,
-                endorsement_drive_name,       # e.g. "endorsement_From_Farm_Residue_....pdf"
-                project_title=extension_project_title,
-                sender_name=project_leader,
-                paper_category=paper_category,
-                thematic_area=thematic_area,
-            )
+            endorsement_file_id, endorsement_view_url = upload_file_to_drive(endorsement_path, endorsement_drive_name, project_title=extension_project_title,
+                sender_name=project_leader, paper_category=paper_category, thematic_area=thematic_area,)
         except Exception as drive_error:
             print(f"Drive upload error (endorsement): {drive_error}")
             traceback.print_exc()
@@ -201,11 +157,7 @@ def submit():
         sender_folder_id = None
         try:
             service = get_drive_service()
-            file_info = service.files().get(
-                fileId=abstract_file_id,
-                fields='parents',
-                supportsAllDrives=True,
-            ).execute()
+            file_info = service.files().get(fileId=abstract_file_id, fields='parents', supportsAllDrives=True,).execute()
             parents = file_info.get('parents', [])
             sender_folder_id = parents[0] if parents else None
         except Exception as folder_err:
@@ -221,9 +173,7 @@ def submit():
 
                 for sf in supporting_file_paths:
                     try:
-                        sf_id, sf_view_url = upload_supporting_document_to_drive(
-                            sf['path'], sf['original_name'], sender_folder_id,
-                        )
+                        sf_id, sf_view_url = upload_supporting_document_to_drive(sf['path'], sf['original_name'], sender_folder_id,)
                         sf_download_url = f"https://drive.google.com/uc?export=download&id={sf_id}"
                         supporting_docs_metadata.append({
                             'file_id': sf_id,
@@ -269,23 +219,17 @@ def submit():
             endorsement_file_id=endorsement_file_id,
             endorsement_view_url=endorsement_view_url,
             status='pending',
-            has_full_paper=False,
-        )
+            has_full_paper=False,)
         db.session.add(new_submission)
         db.session.flush()
 
         for sfd in supporting_docs_metadata:
             db.session.add(SupportingDocument(
                 submission_id=submission_id_value,
-                file_id=sfd['file_id'],
-                file_name=sfd['file_name'],
-                view_url=sfd['view_url'],
-                download_url=sfd['download_url'],
-                file_size=sfd['file_size'],
-                mime_type=sfd['mime_type'],
-                folder_id=sfd.get('folder_id'),
-                parent_folder_id=sfd.get('parent_folder_id'),
-            ))
+                file_id=sfd['file_id'], file_name=sfd['file_name'],
+                view_url=sfd['view_url'], download_url=sfd['download_url'],
+                file_size=sfd['file_size'], mime_type=sfd['mime_type'],
+                folder_id=sfd.get('folder_id'), parent_folder_id=sfd.get('parent_folder_id'), ))
 
         db.session.commit()
 
@@ -515,11 +459,7 @@ def get_sucs():
 
         if search:
             query = query.filter(
-                db.or_(
-                    SUC.name.like(f'%{search}%'),
-                    SUC.region.like(f'%{search}%'),
-                )
-            )
+                db.or_(SUC.name.like(f'%{search}%'), SUC.region.like(f'%{search}%'), ))
 
         sucs = query.order_by(SUC.name).all()
         return jsonify([{'id': s.id, 'region': s.region, 'name': s.name} for s in sucs]), 200

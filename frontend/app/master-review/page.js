@@ -730,6 +730,21 @@ export default function MasterReviewPage() {
     }
   };
 
+  // Re-fetch details so the Discussion dot reflects messages posted while the chat was open
+  const closeDiscussionModal = async () => {
+    setShowDiscussionModal(false);
+    const submissionId = selectedSubmission?.submission_id;
+    if (!submissionId) return;
+    try {
+      const res = await fetch(`${API_URL}/api/submissions/${submissionId}/master-details`);
+      if (res.ok) {
+        setSubmissionDetails(await res.json());
+      }
+    } catch (error) {
+      console.error('Error refreshing discussion count:', error);
+    }
+  };
+
   const getField = (logicalName, fallback = 'Not specified') => {
     const mapping = FIELD_MAP[logicalName];
     if (!mapping) return fallback;
@@ -1904,8 +1919,13 @@ export default function MasterReviewPage() {
                     >
                       <FontAwesomeIcon icon={faCommentDots} className="w-3.5 h-3.5" />
                       Discussion
-                      {/* Optional: notification dot */}
-                      <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-purple-500 ring-2 ring-white" />
+                      {/* Notification dot — only when the submission has discussion messages */}
+                      {(submissionDetails?.discussion_count || 0) > 0 && (
+                        <span
+                          className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-purple-500 ring-2 ring-white"
+                          title={`${submissionDetails.discussion_count} message${submissionDetails.discussion_count !== 1 ? 's' : ''}`}
+                        />
+                      )}
                     </button>
                   </div>
 
@@ -2233,7 +2253,7 @@ export default function MasterReviewPage() {
         <div className="fixed inset-0 z-70 overflow-y-auto">
           <div
             className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
-            onClick={() => setShowDiscussionModal(false)}
+            onClick={closeDiscussionModal}
           />
           <div className="relative min-h-full flex items-center justify-center p-4">
             <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden max-h-[85vh] flex flex-col">
@@ -2252,7 +2272,7 @@ export default function MasterReviewPage() {
                   </p>
                 </div>
                 <button
-                  onClick={() => setShowDiscussionModal(false)}
+                  onClick={closeDiscussionModal}
                   aria-label="Close discussion"
                   className="w-9 h-9 flex items-center justify-center rounded-lg bg-white hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition shrink-0"
                 >

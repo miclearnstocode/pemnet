@@ -58,9 +58,7 @@ def register_news_routes(app):
             if featured_only:
                 query = query.filter(NewsEvent.is_featured.is_(True))
 
-            query = query.order_by(
-                db.desc(db.func.coalesce(NewsEvent.event_start_date, NewsEvent.created_at))
-            )
+            query = query.order_by(db.desc(db.func.coalesce(NewsEvent.event_start_date, NewsEvent.created_at)))
 
             if limit:
                 query = query.limit(limit)
@@ -156,7 +154,8 @@ def register_news_routes(app):
                     db.or_(
                         NewsEvent.title.ilike(search_pattern),
                         NewsEvent.excerpt.ilike(search_pattern),
-                        NewsEvent.tag.ilike(search_pattern)
+                        NewsEvent.tag.ilike(search_pattern),
+                        NewsEvent.theme.ilike(search_pattern)
                     )
                 )
             
@@ -225,6 +224,7 @@ def register_news_routes(app):
             title = data.get('title', '').strip()
             item_type = data.get('type', 'NEWS').upper()
             date_display = data.get('date_display', '').strip()
+            theme = (data.get('theme') or '').strip() or None
 
             if not title:
                 return jsonify({"detail": "Title is required"}), 400
@@ -232,6 +232,8 @@ def register_news_routes(app):
                 return jsonify({"detail": "Invalid type. Must be NEWS, EVENT, or ANNOUNCEMENT"}), 400
             if not date_display:
                 return jsonify({"detail": "Display date is required"}), 400
+            if theme and len(theme) > 255:
+                return jsonify({"detail": "Theme must be 255 characters or fewer"}), 400
 
             default_colors = {
                 'NEWS': {'type_color': 'bg-yellow-100 text-yellow-800', 'tag_color': 'bg-yellow-50 text-yellow-700 border-yellow-200'},
@@ -263,6 +265,7 @@ def register_news_routes(app):
             new_item = NewsEvent(
                 type=item_type,
                 title=title,
+                theme=theme if item_type == 'EVENT' else None,
                 excerpt=data.get('excerpt', '').strip() or None,
                 content=data.get('content', '').strip() or None,
                 date_display=date_display,
@@ -298,13 +301,7 @@ def register_news_routes(app):
                 temp_files.append(file_path)
 
                 try:
-                    entry = upload_news_event_image(
-                        file_path,
-                        f"news_{safe_filename}",
-                        item_type=new_item.type,
-                        title=new_item.title,
-                        item_id=new_item.id,
-                    )
+                    entry = upload_news_event_image(file_path,f"news_{safe_filename}", item_type=new_item.type, title=new_item.title, item_id=new_item.id,)
                     image_entries.append(entry)
                     print(f"✅ Image uploaded: {entry['view_url']}")
                 except Exception as drive_error:
@@ -328,8 +325,6 @@ def register_news_routes(app):
             # 3️⃣ Attach image entries and commit
             new_item.image_urls = image_entries or None
             db.session.commit()
-
-            print(f"✅ Created news/event: {new_item.title} (ID: {new_item.id}) with {len(image_entries)} image(s)")
             return jsonify({"message": "News/Event created successfully", "item": new_item.to_dict()}), 201
 
         except Exception as e:
@@ -396,6 +391,17 @@ def register_news_routes(app):
                             'ANNOUNCEMENT': 'bg-green-100 text-green-800',
                         }
                         item.type_color = default_type_colors.get(new_type, item.type_color)
+
+            if 'theme' in data:
+                new_theme = data['theme'].strip() if data['theme'] else None
+                if new_theme and len(new_theme) > 255:
+                    return jsonify({"detail": "Theme must be 255 characters or fewer"}), 400
+                # Theme only applies to events
+                if item.type != 'EVENT':
+                    new_theme = None
+                if new_theme != item.theme:
+                    changes['theme'] = {'old': item.theme, 'new': new_theme}
+                    item.theme = new_theme
 
             if 'excerpt' in data:
                 new_excerpt = data['excerpt'].strip() if data['excerpt'] else None
@@ -500,7 +506,6 @@ def register_news_routes(app):
                 try:
                     entry = upload_news_event_image(file_path, f"news_{safe_filename}", item.type)
                     new_entries.append(entry)
-                    print(f"✅ New image uploaded: {entry['view_url']}")
                 except Exception as drive_error:
                     print(f"⚠️ Drive upload failed: {drive_error}")
 
@@ -547,13 +552,7 @@ def register_news_routes(app):
 
             if (title_changed or type_changed) and item.image_urls:
                 try:
-                    move_news_images_to_item_folder(
-                        image_entries=item.image_urls,
-                        item_type=item.type,
-                        title=item.title,
-                        item_id=item.id,
-                    )
-                    print(f"📁 Moved images to new folder for: {item.title}")
+                    move_news_images_to_item_folder(image_entries=item.image_urls, item_type=item.type, title=item.title, item_id=item.id,)
                 except Exception as move_err:
                     print(f"⚠️ Could not move images: {move_err}")
             if changes:
@@ -625,8 +624,6 @@ def register_news_routes(app):
 
             db.session.delete(item)
             db.session.commit()
-
-            print(f"✅ Deleted news/event: {saved_title} (ID: {item_id})")
             return jsonify({
                 "message": "News/Event deleted successfully",
                 "deleted_id": item_id,
@@ -737,5 +734,3 @@ def register_news_routes(app):
         except Exception as e:
             print(f"Error fetching stats: {e}")
             return jsonify({"detail": str(e)}), 500
-
-    print("✅ News/Events routes registered")

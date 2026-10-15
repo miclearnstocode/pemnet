@@ -833,6 +833,7 @@ class NewsEvent(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     type = db.Column(db.String(20), nullable=False)
     title = db.Column(db.String(255), nullable=False)
+    theme = db.Column(db.String(255), nullable=True)  # Event theme (used for EVENT type)
     excerpt = db.Column(db.Text)
     content = db.Column(db.Text)
     date_display = db.Column(db.String(100), nullable=False)
@@ -880,6 +881,7 @@ class NewsEvent(db.Model):
             'id': self.id,
             'type': self.type,
             'title': self.title,
+            'theme': self.theme,
             'excerpt': self.excerpt,
             'content': self.content,
             'date_display': self.date_display,

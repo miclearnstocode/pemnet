@@ -102,6 +102,7 @@ export default function AdminNewsPage() {
     date_display: '',
     event_start_date: '',
     event_end_date: '',
+    theme: '',
     tag: '',
     tag_color: TAG_COLOR_OPTIONS[1].value,
     type_color: '',
@@ -200,6 +201,7 @@ export default function AdminNewsPage() {
       date_display: '',
       event_start_date: '',
       event_end_date: '',
+      theme: '',
       tag: '',
       tag_color: TAG_COLOR_OPTIONS[1].value,
       type_color: '',
@@ -236,6 +238,7 @@ export default function AdminNewsPage() {
       date_display: item.date_display || '',
       event_start_date: toDateInput(item.event_start_date),
       event_end_date: toDateInput(item.event_end_date),
+      theme: item.theme || '',
       tag: item.tag || '',
       tag_color: item.tag_color || TAG_COLOR_OPTIONS[1].value,
       type_color: item.type_color || '',
@@ -311,6 +314,7 @@ export default function AdminNewsPage() {
         formDataToSend.append('event_start_date', formData.event_start_date || '');
         formDataToSend.append('event_end_date', formData.event_end_date || '');
       }
+      formDataToSend.append('theme', formData.type === 'EVENT' ? (formData.theme || '').trim() : '');
       formDataToSend.append('tag', formData.tag || '');
       formDataToSend.append('tag_color', formData.tag_color || '');
       formDataToSend.append('type_color', formData.type_color || '');
@@ -635,6 +639,9 @@ export default function AdminNewsPage() {
                           {item.excerpt && (
                             <p className="text-xs text-slate-500 truncate max-w-sm mt-0.5">{item.excerpt}</p>
                           )}
+                          {item.type === 'EVENT' && item.theme && (
+                            <p className="text-xs text-indigo-600 font-medium truncate max-w-sm mt-0.5">Theme: {item.theme}</p>
+                          )}
                           {item.tag && (
                             <span className={`inline-flex mt-1 px-2 py-0.5 rounded text-[10px] font-semibold border ${item.tag_color || 'bg-slate-50 text-slate-600 border-slate-200'}`}>
                               {item.tag}
@@ -813,9 +820,22 @@ export default function AdminNewsPage() {
                   />
                 </div>
 
-                {/* Event Dates */}
+                {/* Event Details — Theme & Dates */}
                 {formData.type === 'EVENT' && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5 p-4 bg-indigo-50/50 rounded-xl border border-indigo-100">
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                        Event Theme
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.theme}
+                        onChange={(e) => setFormData({ ...formData, theme: e.target.value })}
+                        placeholder="e.g. Sustainable Extension for Community Resilience"
+                        maxLength={255}
+                        className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                      />
+                    </div>
                     <div>
                       <label className="block text-sm font-semibold text-slate-700 mb-1.5">
                         Event Start Date

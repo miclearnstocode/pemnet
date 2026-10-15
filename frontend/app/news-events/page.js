@@ -242,7 +242,8 @@ export default function NewsEventsPage() {
     const matchesSearch =
       !searchTerm ||
       item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (item.excerpt && item.excerpt.toLowerCase().includes(searchTerm.toLowerCase()));
+      (item.excerpt && item.excerpt.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (item.theme && item.theme.toLowerCase().includes(searchTerm.toLowerCase()));
     return matchesTab && matchesSearch;
   });
 
@@ -357,6 +358,12 @@ export default function NewsEventsPage() {
                     <div className="flex flex-col flex-1 p-5">
                       <div className="text-xs font-semibold text-slate-500 mb-3">{item.date_display}</div>
                       <h3 className="text-lg font-bold text-slate-900 leading-snug mb-2 line-clamp-2">{item.title}</h3>
+                      {item.type === 'EVENT' && item.theme && (
+                        <p className="text-xs font-semibold text-blue-700 mb-2 line-clamp-2">
+                          <span className="uppercase tracking-wide text-slate-400 mr-1">Theme:</span>
+                          {item.theme}
+                        </p>
+                      )}
                       {item.excerpt && (
                         <p className="text-sm text-slate-600 leading-relaxed mb-6 line-clamp-3">{item.excerpt}</p>
                       )}
@@ -437,6 +444,13 @@ export default function NewsEventsPage() {
                   <h2 className="text-2xl sm:text-3xl font-serif text-slate-900 leading-tight mb-4">
                     {selectedItem.title}
                   </h2>
+
+                  {selectedItem.type === 'EVENT' && selectedItem.theme && (
+                    <div className="mb-4 px-4 py-3 rounded-xl bg-blue-50 border border-blue-100">
+                      <p className="text-[10px] font-bold uppercase tracking-wide text-blue-500 mb-0.5">Theme</p>
+                      <p className="text-base font-semibold text-blue-900 leading-snug">{selectedItem.theme}</p>
+                    </div>
+                  )}
 
                   <div className="flex flex-wrap items-center gap-3 mb-6 pb-6 border-b border-slate-200">
                     <span className="text-sm text-slate-500 font-medium">{selectedItem.date_display}</span>

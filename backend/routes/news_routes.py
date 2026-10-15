@@ -9,7 +9,7 @@ import tempfile
 import traceback
 import re
 from datetime import datetime
-
+import pytz
 
 def admin_required(f):
     """Decorator to check if user is admin or staff"""
@@ -28,6 +28,70 @@ def admin_required(f):
 
 def register_news_routes(app):
 
+    @app.route('/api/events/upcoming', methods=['GET', 'OPTIONS'])
+    def get_upcoming_event():
+
+        if request.method == 'OPTIONS':
+            return jsonify({})
+        
+        try:
+
+            # 1. Get Current Time in Manila
+            tz_manila = pytz.timezone('Asia/Manila')
+            now_manila = datetime.now(tz_manila)
+
+            
+            query = NewsEvent.query.filter(
+                NewsEvent.is_published.is_(True),
+                NewsEvent.type == 'EVENT'
+            )
+
+            now_utc = now_manila.astimezone(pytz.utc).replace(tzinfo=None)
+            
+            query = query.filter(
+                db.or_(
+                    NewsEvent.event_end_date.is_(None),
+                    NewsEvent.event_end_date >= now_utc
+                )
+            )
+            
+            # Order by start date ascending (nearest upcoming event first)
+            query = query.order_by(NewsEvent.event_start_date.asc())
+            
+            upcoming_event = query.first()
+            
+            if upcoming_event:
+                event_data = upcoming_event.to_dict()
+                event_data['is_active'] = True
+                
+                end_date = upcoming_event.event_end_date
+                if end_date:
+                    # If DB date is naive (no timezone), assume it's UTC based on your model's utcnow()
+                    if end_date.tzinfo is None:
+                        end_date_aware = pytz.utc.localize(end_date)
+                    else:
+                        end_date_aware = end_date
+                    
+                    # Convert end date to Manila time for calculation
+                    end_date_manila = end_date_aware.astimezone(tz_manila)
+                    
+                    delta = end_date_manila - now_manila
+                    event_data['days_remaining'] = delta.days
+                    event_data['ends_at_manila'] = end_date_manila.isoformat()
+                else:
+                    event_data['days_remaining'] = None
+                    
+                return jsonify(event_data), 200
+            else:
+                return jsonify({
+                    "is_active": False,
+                    "message": "No upcoming events scheduled. Submissions are closed."
+                }), 200
+                
+        except Exception as e:
+            print(f"Error fetching upcoming event: {e}")
+            traceback.print_exc()
+            return jsonify({"detail": str(e)}), 500
     
     @app.route('/api/news-events', methods=['GET', 'OPTIONS'])
     def get_public_news_events():

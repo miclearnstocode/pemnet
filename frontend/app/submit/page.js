@@ -192,6 +192,478 @@ const FileViewerModal = ({ isOpen, onClose, fileUrl, fileType, title }) => {
   );
 };
 
+// Submission Details Modal Component
+const SubmissionDetailsModal = ({
+  isOpen,
+  onClose,
+  submission,
+  userFullPapers,
+  userPayments,
+  onOpenFileViewer,
+  onResubmitFullPaper,
+  onOpenPaymentTab,
+  getStatusStyle,
+  formatStatus,
+  formatFileSize,
+  getFileIcon
+}) => {
+  const [openSections, setOpenSections] = useState([1]); // 1: Primary Docs, 2: Supporting Docs, 3: Full Paper, 4: Payment
+
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen, onClose]);
+
+  if (!isOpen || !submission) return null;
+
+  const toggleSection = (sectionId) => {
+    setOpenSections(prev =>
+      prev.includes(sectionId)
+        ? prev.filter(id => id !== sectionId)
+        : [...prev, sectionId]
+    );
+  };
+
+  const isAccepted = submission.status === 'endorse';
+  const existingPayment = userPayments.find((p) => p.submission_id === submission.id);
+
+  const fp = userFullPapers[String(submission.id)] || userFullPapers[String(submission.submission_id)] || null;
+  const hasFullPaper = submission.has_full_paper === true || submission.has_full_paper === 1 || Boolean(fp);
+
+  // Helper for Full Paper Status
+  let fullPaperUrl = null;
+  if (fp) {
+    fullPaperUrl = fp.full_paper_view_url || null;
+    if (!fullPaperUrl && fp.full_paper_file_id) {
+      fullPaperUrl = `https://drive.google.com/file/d/${fp.full_paper_file_id}/view`;
+    }
+  }
+  const downloadUrl = fp?.full_paper_download_url || null;
+  const fpStatus = fp?.status || 'submitted';
+  const submittedAt = fp?.submitted_at || submission.full_paper_submitted_at || null;
+
+  const fpStatusColor =
+    fpStatus === 'accepted' ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+    : fpStatus === 'rejected' ? 'bg-red-50 text-red-700 border-red-200'
+    : fpStatus === 'revision' ? 'bg-amber-50 text-amber-700 border-amber-200'
+    : fpStatus === 'under_review' ? 'bg-blue-50 text-blue-700 border-blue-200'
+    : 'bg-yellow-50 text-yellow-700 border-yellow-200';
+
+  const prettyFpStatus = fpStatus.split('_').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
+  return (
+    <div
+      className="fixed inset-0 z-10000 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-scale-in"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50 shrink-0">
+          <div className="min-w-0 flex-1 pr-4">
+            <h2 className="text-lg font-bold text-slate-900 truncate">
+              {submission.extension_project_title}
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Submitted {new Date(submission.created_at).toLocaleDateString(undefined, {
+                year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+              })}
+            </p>
+          </div>
+          <div className="flex items-center gap-3 shrink-0">
+            <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusStyle(submission.status)}`}>
+              {formatStatus(submission.status)}
+            </span>
+            <button
+              onClick={onClose}
+              className="w-9 h-9 flex items-center justify-center rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-200 transition"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Body (Scrollable) */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+
+          {/* Metadata Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm bg-slate-50 p-4 rounded-xl border border-slate-100">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-0.5">Project Leader</p>
+              <p className="text-slate-800 truncate">{submission.project_leader || '—'}</p>
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-0.5">Presenter</p>
+              <p className="text-slate-800 truncate">{submission.presenter || '—'}</p>
+            </div>
+            {submission.corresponding_author_name && (
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-0.5">Corresponding Author</p>
+                <p className="text-slate-800 truncate">
+                  {submission.corresponding_author_name}
+                  {submission.corresponding_author_position && (
+                    <span className="text-slate-500 font-normal"> · {submission.corresponding_author_position}</span>
+                  )}
+                </p>
+              </div>
+            )}
+            {submission.suc_agencies && (
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-0.5">SUC / Agency</p>
+                <p className="text-slate-800 truncate">{submission.suc_agencies}</p>
+              </div>
+            )}
+            {/* Paper Category & Thematic Area as badges */}
+            <div className="sm:col-span-2 flex flex-wrap gap-2 mt-1">
+              {submission.paper_category && (
+                <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 bg-purple-50 text-purple-700 rounded-full font-medium">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3 h-3">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  {submission.paper_category}
+                </span>
+              )}
+              {submission.thematic_area && (
+                <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full font-medium">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3 h-3">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 6h.008v.008H6V6z" />
+                  </svg>
+                  {submission.thematic_area}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* --- Section 1: Primary Documents --- */}
+          <div className="border border-slate-200 rounded-xl overflow-hidden">
+            <button
+              onClick={() => toggleSection(1)}
+              className="w-full flex items-center justify-between px-4 py-3 bg-slate-50 hover:bg-slate-100 transition text-left"
+            >
+              <div className="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-slate-500">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25z" />
+                </svg>
+                <span className="font-semibold text-sm text-slate-700">Primary Documents</span>
+              </div>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className={`w-4 h-4 text-slate-400 transition-transform ${openSections.includes(1) ? 'rotate-180' : ''}`}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+              </svg>
+            </button>
+            {openSections.includes(1) && (
+              <div className="p-4 bg-white grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {submission.abstract_view_url && (
+                  <button
+                    type="button"
+                    onClick={() => onOpenFileViewer(submission.abstract_view_url, 'abstract', submission.extension_project_title)}
+                    className="group flex items-center gap-3 p-3 bg-white hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-xl transition text-left"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-4.5 h-4.5 text-blue-600">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                      </svg>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-slate-800 group-hover:text-blue-700">Abstract</p>
+                      <p className="text-xs text-slate-500 truncate">Primary submission document</p>
+                    </div>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-slate-400 group-hover:text-blue-600 shrink-0">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                    </svg>
+                  </button>
+                )}
+                {submission.endorsement_view_url && (
+                  <button
+                    type="button"
+                    onClick={() => onOpenFileViewer(submission.endorsement_view_url, 'endorsement', submission.extension_project_title)}
+                    className="group flex items-center gap-3 p-3 bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 rounded-xl transition text-left"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-4.5 h-4.5 text-emerald-600">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
+                      </svg>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-slate-800 group-hover:text-emerald-700">Endorsement</p>
+                      <p className="text-xs text-slate-500 truncate">Signed endorsement letter</p>
+                    </div>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-slate-400 group-hover:text-emerald-600 shrink-0">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* --- Section 2: Supporting Documents --- */}
+          {submission.supporting_documents && submission.supporting_documents.length > 0 && (
+            <div className="border border-slate-200 rounded-xl overflow-hidden">
+              <button
+                onClick={() => toggleSection(2)}
+                className="w-full flex items-center justify-between px-4 py-3 bg-slate-50 hover:bg-slate-100 transition text-left"
+              >
+                <div className="flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-slate-500">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13" />
+                  </svg>
+                  <span className="font-semibold text-sm text-slate-700">Supporting Documents</span>
+                  <span className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 text-[10px] font-bold rounded-full bg-purple-100 text-purple-700">
+                    {submission.supporting_documents.length}
+                  </span>
+                </div>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className={`w-4 h-4 text-slate-400 transition-transform ${openSections.includes(2) ? 'rotate-180' : ''}`}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                </svg>
+              </button>
+              {openSections.includes(2) && (
+                <div className="p-4 bg-white grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                  {submission.supporting_documents.map((doc, idx) => {
+                    const icon = getFileIcon(doc.file_name);
+                    const ext = (doc.file_name?.split('.').pop() || '').toLowerCase();
+                    return (
+                      <button
+                        key={doc.id || idx}
+                        type="button"
+                        onClick={() => onOpenFileViewer(doc.view_url, 'supporting', doc.file_name)}
+                        className="group flex items-center gap-2.5 p-2.5 bg-white hover:bg-purple-50 border border-slate-200 hover:border-purple-300 rounded-lg transition text-left min-w-0"
+                        title={doc.file_name}
+                      >
+                        <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg shrink-0" style={{ backgroundColor: icon.bg, color: icon.color }}>
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-4 h-4">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                          </svg>
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-semibold text-slate-800 group-hover:text-purple-700 truncate">{doc.file_name}</p>
+                          <p className="text-[10px] text-slate-500 uppercase tracking-wide">
+                            {ext}{doc.file_size ? ` · ${formatFileSize(doc.file_size)}` : ''}
+                          </p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* --- Section 3: Full Extension Project Paper --- */}
+          <div className="border border-slate-200 rounded-xl overflow-hidden">
+            <button
+              onClick={() => toggleSection(3)}
+              className="w-full flex items-center justify-between px-4 py-3 bg-slate-50 hover:bg-slate-100 transition text-left"
+            >
+              <div className="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-slate-500">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+                </svg>
+                <span className="font-semibold text-sm text-slate-700">Full Extension Project Paper</span>
+              </div>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className={`w-4 h-4 text-slate-400 transition-transform ${openSections.includes(3) ? 'rotate-180' : ''}`}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+              </svg>
+            </button>
+            {openSections.includes(3) && (
+              <div className="p-4 bg-white">
+                {!isAccepted && !hasFullPaper ? (
+                  <div className="flex items-center gap-2 text-slate-500 text-sm bg-slate-50 p-3 rounded-xl border border-slate-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 shrink-0">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                    </svg>
+                    Full paper submission will be available once your abstract is accepted.
+                  </div>
+                ) : isAccepted && !hasFullPaper ? (
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-purple-50 border border-purple-200 p-4 rounded-xl">
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-purple-600">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                        </svg>
+                      </div>
+                      <div className="text-sm">
+                        <p className="font-semibold text-purple-900">Full paper not yet submitted</p>
+                        <p className="text-xs text-purple-700 mt-0.5">Your abstract has been accepted. You can now submit the full paper.</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => onResubmitFullPaper(submission, null)}
+                      className="shrink-0 inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-semibold transition"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                      </svg>
+                      Submit Full Paper
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <button
+                      type="button"
+                      disabled={!fullPaperUrl}
+                      onClick={() => fullPaperUrl && onOpenFileViewer(fullPaperUrl, 'full-paper', fp?.title || submission.extension_project_title)}
+                      className={`group w-full flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-xl transition text-left ${fullPaperUrl ? 'hover:bg-purple-50 hover:border-purple-300 cursor-pointer' : 'cursor-default opacity-70'}`}
+                    >
+                      <div className="w-9 h-9 rounded-lg bg-purple-100 flex items-center justify-center shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-4.5 h-4.5 text-purple-600">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+                        </svg>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-sm font-semibold text-slate-800 group-hover:text-purple-700 truncate">Full Paper</p>
+                          <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${fpStatusColor}`}>
+                            {prettyFpStatus}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500 truncate mt-0.5">
+                          Uploaded full paper PDF
+                          {submittedAt && (
+                            <> · {new Date(submittedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}</>
+                          )}
+                        </p>
+                        {(fp?.figures?.length > 0 || fp?.project_design) && (
+                          <div className="flex flex-wrap gap-1.5 mt-1.5">
+                            {fp?.figures?.length > 0 && (
+                              <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded">
+                                {fp.figures.length} figure{fp.figures.length === 1 ? '' : 's'}
+                              </span>
+                            )}
+                            {fp?.project_design && (
+                              <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded">
+                                project design
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-slate-400 group-hover:text-purple-600 shrink-0">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                      </svg>
+                    </button>
+                    <div className="flex flex-wrap gap-2">
+                      {downloadUrl && (
+                        <a
+                          href={downloadUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                          </svg>
+                          Download
+                        </a>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => onResubmitFullPaper(submission, fp)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg transition"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
+                        </svg>
+                        Resubmit
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* --- Section 4: Payment --- */}
+          <div className="border border-slate-200 rounded-xl overflow-hidden">
+            <button
+              onClick={() => toggleSection(4)}
+              className="w-full flex items-center justify-between px-4 py-3 bg-slate-50 hover:bg-slate-100 transition text-left"
+            >
+              <div className="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-slate-500">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
+                </svg>
+                <span className="font-semibold text-sm text-slate-700">Payment</span>
+              </div>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className={`w-4 h-4 text-slate-400 transition-transform ${openSections.includes(4) ? 'rotate-180' : ''}`}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+              </svg>
+            </button>
+            {openSections.includes(4) && (
+              <div className="p-4 bg-white">
+                {!isAccepted ? (
+                  <div className="flex items-center gap-2 text-slate-500 text-sm bg-slate-50 p-3 rounded-xl border border-slate-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 shrink-0">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                    </svg>
+                    Payment will be available once your submission is accepted.
+                  </div>
+                ) : existingPayment ? (
+                  <div className={`p-3 rounded-xl border text-sm ${
+                    existingPayment.payment_status === 'verified'
+                      ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                      : existingPayment.payment_status === 'rejected'
+                      ? 'bg-red-50 border-red-200 text-red-700'
+                      : 'bg-yellow-50 border-yellow-200 text-yellow-700'
+                  }`}>
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <span>
+                        Status: <strong>{existingPayment.payment_status.toUpperCase()}</strong>
+                      </span>
+                      {existingPayment.payment_proof_view_url && (
+                        <a
+                          href={existingPayment.payment_proof_view_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="underline font-medium"
+                        >
+                          View Proof
+                        </a>
+                      )}
+                    </div>
+                    {existingPayment.payment_status === 'rejected' && existingPayment.rejection_reason && (
+                      <p className="text-xs mt-1">Reason: {existingPayment.rejection_reason}</p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-center">
+                    <p className="text-sm text-slate-500 mb-3">No payment submitted yet.</p>
+                    <button
+                      type="button"
+                      onClick={() => onOpenPaymentTab(submission)}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
+                      </svg>
+                      Upload Payment
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function SubmitPage() {
   const [activeTab, setActiveTab] = useState('home');
   const [coAuthors, setCoAuthors] = useState(['']);
@@ -222,9 +694,11 @@ export default function SubmitPage() {
   const [paymentStatus, setPaymentStatus] = useState(null);
   const [isUploadingPayment, setIsUploadingPayment] = useState(false);
   const [userPayments, setUserPayments] = useState([]);
-  const [userFullPapers, setUserFullPapers] = useState({}); // { [submission_id]: fullPaperObj }
+  const [userFullPapers, setUserFullPapers] = useState({});
   const [selectedSubmission, setSelectedSubmission] = useState(null);
   const [editingFullPaper, setEditingFullPaper] = useState(null);
+  const [upcomingEvent, setUpcomingEvent] = useState(null);
+  const [isLoadingEvent, setIsLoadingEvent] = useState(true);
 
   const [viewerModal, setViewerModal] = useState({
     isOpen: false,
@@ -233,15 +707,10 @@ export default function SubmitPage() {
     title: ''
   });
 
-  const [openSections, setOpenSections] = useState([1]);
-
-  const toggleSection = (sectionId) => {
-    setOpenSections(prev =>
-      prev.includes(sectionId)
-        ? prev.filter(id => id !== sectionId)
-        : [...prev, sectionId]
-    );
-  };
+  const [detailsModal, setDetailsModal] = useState({
+    isOpen: false,
+    submission: null
+  });
 
   const openFileViewer = (fileUrl, fileType, title) => {
     if (!fileUrl) return;
@@ -260,6 +729,14 @@ export default function SubmitPage() {
       fileType: '',
       title: ''
     });
+  };
+
+  const openDetailsModal = (submission) => {
+    setDetailsModal({ isOpen: true, submission });
+  };
+
+  const closeDetailsModal = () => {
+    setDetailsModal({ isOpen: false, submission: null });
   };
 
   useEffect(() => {
@@ -313,6 +790,46 @@ export default function SubmitPage() {
     }
   }, []);
 
+  useEffect(() => {
+    const fetchUpcomingEvent = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/events/upcoming`);
+        if (res.ok) {
+          const data = await res.json();
+          setUpcomingEvent(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch upcoming event:", error);
+      } finally {
+        setIsLoadingEvent(false);
+      }
+    };
+    
+    fetchUpcomingEvent();
+  }, []);
+
+  const isSubmissionOpen = (() => {
+    if (upcomingEvent?.is_active === true) return true;
+
+    if (upcomingEvent?.event_end_date) {
+      const end = new Date(upcomingEvent.event_end_date);
+      if (end.getUTCHours() === 0 && end.getUTCMinutes() === 0 && end.getUTCSeconds() === 0) {
+        end.setUTCHours(23, 59, 59, 999);
+      }
+      if (end.getTime() >= Date.now()) {
+        return true;
+      }
+    }
+
+    if (isLoadingEvent) return true;
+
+    if (upcomingEvent && upcomingEvent.is_active === false) {
+      return false;
+    }
+
+    return true;
+  })();
+
   const fetchUserSubmissions = async (userId) => {
     setIsLoadingSubmissions(true);
     try {
@@ -340,7 +857,6 @@ export default function SubmitPage() {
     }
   };
 
-  // Fetch every full paper the user has submitted, keyed by submission_id
   const fetchUserFullPapers = async (userId) => {
     try {
       const subsRes = await fetch(`${API_URL}/api/submissions/user/${userId}`);
@@ -350,12 +866,9 @@ export default function SubmitPage() {
       const results = {};
       await Promise.all(
         (subs || []).map(async (s) => {
-          // Only bother fetching if the submission actually has a full paper
           if (!s.has_full_paper) return;
 
           try {
-            // IMPORTANT: backend route is keyed by the STRING submission_id,
-            // not the integer id.
             const key = s.submission_id;
             const res = await fetch(
               `${API_URL}/api/submissions/${encodeURIComponent(key)}/full-paper`
@@ -560,6 +1073,11 @@ export default function SubmitPage() {
       return;
     }
 
+    if (!isSubmissionOpen) {
+      showToast("Cannot submit: The event registration period has ended.", "error");
+      return;
+    }
+    
     const formData = new FormData(e.target);
     const filteredCoAuthors = coAuthors.filter(c => c.trim() !== '');
 
@@ -688,6 +1206,51 @@ export default function SubmitPage() {
     }
   }
 
+  // Helper: status pill styling
+  const getStatusStyle = (status) => {
+    switch (status) {
+      case 'endorse':
+        return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+      case 'downgraded-non_competitive':
+        return 'bg-amber-50 text-amber-700 border-amber-200';
+      case 'downgraded-poster_only':
+        return 'bg-amber-50 text-amber-700 border-amber-200';
+      case 'accepted':
+        return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+      case 'rejected':
+        return 'bg-red-50 text-red-700 border-red-200';
+      default:
+        return 'bg-yellow-50 text-yellow-700 border-yellow-200';
+    }
+  };
+
+  const formatStatus = (status) => {
+    if (!status) return 'Pending';
+    return status
+      .split('-')
+      .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+      .join(' ');
+  };
+
+  const formatFileSize = (bytes) => {
+    if (!bytes) return '';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const getFileIcon = (name = '') => {
+    const ext = name.split('.').pop()?.toLowerCase() || '';
+    if (['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'svg'].includes(ext))
+      return { bg: '#E0F2FE', color: '#0284C7' };
+    if (ext === 'pdf') return { bg: '#FEE2E2', color: '#DC2626' };
+    if (['xls', 'xlsx', 'csv'].includes(ext))
+      return { bg: '#DCFCE7', color: '#16A34A' };
+    if (['doc', 'docx'].includes(ext))
+      return { bg: '#DBEAFE', color: '#2563EB' };
+    return { bg: '#F1F5F9', color: '#475569' };
+  };
+
   const renderSubmissions = () => {
     if (isLoadingSubmissions) {
       return (
@@ -717,788 +1280,38 @@ export default function SubmitPage() {
       );
     }
 
-    // Helper: status pill styling
-    const getStatusStyle = (status) => {
-      switch (status) {
-        case 'endorse':
-          return 'bg-emerald-50 text-emerald-700 border-emerald-200';
-        case 'downgraded-non_competitive':
-          return 'bg-amber-50 text-amber-700 border-amber-200';
-        case 'downgraded-poster_only':
-          return 'bg-amber-50 text-amber-700 border-amber-200';
-        case 'accepted':
-          return 'bg-emerald-50 text-emerald-700 border-emerald-200';
-        case 'rejected':
-          return 'bg-red-50 text-red-700 border-red-200';
-        default:
-          return 'bg-yellow-50 text-yellow-700 border-yellow-200';
-      }
-    };
-
-    const formatStatus = (status) => {
-      if (!status) return 'Pending';
-      return status
-        .split('-')
-        .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
-        .join(' ');
-    };
-
-    const formatFileSize = (bytes) => {
-      if (!bytes) return '';
-      if (bytes < 1024) return `${bytes} B`;
-      if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-      return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-    };
-
-    const getFileIcon = (name = '') => {
-      const ext = name.split('.').pop()?.toLowerCase() || '';
-      if (['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'svg'].includes(ext))
-        return { bg: '#E0F2FE', color: '#0284C7' };
-      if (ext === 'pdf') return { bg: '#FEE2E2', color: '#DC2626' };
-      if (['xls', 'xlsx', 'csv'].includes(ext))
-        return { bg: '#DCFCE7', color: '#16A34A' };
-      if (['doc', 'docx'].includes(ext))
-        return { bg: '#DBEAFE', color: '#2563EB' };
-      return { bg: '#F1F5F9', color: '#475569' };
-    };
-
     return (
-      <div className="space-y-5">
-        {userSubmissions.map((submission) => {
-          const isAccepted = submission.status === 'endorse';
-          const existingPayment = userPayments.find(
-            (p) => p.submission_id === submission.id
-          );
-
-          return (
-            <div
-              key={submission.id}
-              className="bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-md transition overflow-hidden"
-            >
-              {/* ===== HEADER: Title + Status ===== */}
-              <div className="px-6 py-5 border-b border-slate-100">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-base font-bold text-slate-900 leading-snug line-clamp-2">
-                      {submission.extension_project_title}
-                    </h3>
-                    <p className="text-xs text-slate-400 mt-1.5">
-                      Submitted{' '}
-                      {new Date(submission.created_at).toLocaleDateString(
-                        undefined,
-                        {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        }
-                      )}
-                    </p>
-                  </div>
-                  <span
-                    className={`shrink-0 px-3 py-1 rounded-full text-xs font-semibold border ${getStatusStyle(
-                      submission.status
-                    )}`}
-                  >
-                    {formatStatus(submission.status)}
-                  </span>
-                </div>
-
-                {/* Badges row — wraps gracefully */}
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {submission.paper_category && (
-                    <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 bg-purple-50 text-purple-700 rounded-full font-medium">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth={2}
-                        stroke="currentColor"
-                        className="w-3 h-3"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                        />
-                      </svg>
-                      {submission.paper_category}
-                    </span>
-                  )}
-                  {submission.thematic_area && (
-                    <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full font-medium">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth={2}
-                        stroke="currentColor"
-                        className="w-3 h-3"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z"
-                        />
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M6 6h.008v.008H6V6z"
-                        />
-                      </svg>
-                      {submission.thematic_area}
-                    </span>
-                  )}
-                </div>
+      <div className="space-y-3">
+        {userSubmissions.map((submission) => (
+          <div
+            key={submission.id}
+            className="bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-md transition p-5 flex items-center justify-between gap-4"
+          >
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-3 mb-1">
+                <h3 className="text-base font-bold text-slate-900 leading-snug line-clamp-1">
+                  {submission.extension_project_title}
+                </h3>
+                <span className={`shrink-0 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${getStatusStyle(submission.status)}`}>
+                  {formatStatus(submission.status)}
+                </span>
               </div>
-
-              {/* ===== BODY: Metadata Grid ===== */}
-              <div className="px-6 py-4 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-0.5">
-                    Project Leader
-                  </p>
-                  <p className="text-slate-800 truncate">
-                    {submission.project_leader || '—'}
-                  </p>
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-0.5">
-                    Presenter
-                  </p>
-                  <p className="text-slate-800 truncate">
-                    {submission.presenter || '—'}
-                  </p>
-                </div>
-                {submission.corresponding_author_name && (
-                  <div className="min-w-0">
-                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-0.5">
-                      Corresponding Author
-                    </p>
-                    <p className="text-slate-800 truncate">
-                      {submission.corresponding_author_name}
-                      {submission.corresponding_author_position && (
-                        <span className="text-slate-500 font-normal">
-                          {' '}
-                          · {submission.corresponding_author_position}
-                        </span>
-                      )}
-                    </p>
-                  </div>
-                )}
-                {submission.suc_agencies && (
-                  <div className="min-w-0">
-                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-0.5">
-                      SUC / Agency
-                    </p>
-                    <p className="text-slate-800 truncate">
-                      {submission.suc_agencies}
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* ===== FILES SECTION ===== */}
-              <div className="px-6 py-5 bg-slate-50 border-t border-slate-100 space-y-5">
-
-                {/* ---------- Group 1: Primary Documents ---------- */}
-                <div>
-                  <div className="flex items-center gap-2 mb-2.5">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1.5}
-                      stroke="currentColor"
-                      className="w-4 h-4 text-slate-500"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25z"
-                      />
-                    </svg>
-                    <span className="font-semibold text-xs uppercase tracking-wide text-slate-500">
-                      Primary Documents
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {/* Abstract card */}
-                    {submission.abstract_view_url && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          openFileViewer(
-                            submission.abstract_view_url,
-                            'abstract',
-                            submission.extension_project_title
-                          )
-                        }
-                        className="group flex items-center gap-3 p-3 bg-white hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-xl transition text-left"
-                      >
-                        <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth={1.8}
-                            stroke="currentColor"
-                            className="w-4.5 h-4.5 text-blue-600"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
-                            />
-                          </svg>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-semibold text-slate-800 group-hover:text-blue-700">
-                            Abstract
-                          </p>
-                          <p className="text-xs text-slate-500 truncate">
-                            Primary submission document
-                          </p>
-                        </div>
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          strokeWidth={2}
-                          stroke="currentColor"
-                          className="w-4 h-4 text-slate-400 group-hover:text-blue-600 shrink-0"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
-                          />
-                        </svg>
-                      </button>
-                    )}
-
-                    {/* Endorsement card */}
-                    {submission.endorsement_view_url && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          openFileViewer(
-                            submission.endorsement_view_url,
-                            'endorsement',
-                            submission.extension_project_title
-                          )
-                        }
-                        className="group flex items-center gap-3 p-3 bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 rounded-xl transition text-left"
-                      >
-                        <div className="w-9 h-9 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth={1.8}
-                            stroke="currentColor"
-                            className="w-4.5 h-4.5 text-emerald-600"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z"
-                            />
-                          </svg>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-semibold text-slate-800 group-hover:text-emerald-700">
-                            Endorsement
-                          </p>
-                          <p className="text-xs text-slate-500 truncate">
-                            Signed endorsement letter
-                          </p>
-                        </div>
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          strokeWidth={2}
-                          stroke="currentColor"
-                          className="w-4 h-4 text-slate-400 group-hover:text-emerald-600 shrink-0"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
-                          />
-                        </svg>
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* ---------- Group 2: Supporting Documents ---------- */}
-                {submission.supporting_documents &&
-                  submission.supporting_documents.length > 0 && (
-                    <div className="pt-4 border-t border-slate-200">
-                      <div className="flex items-center justify-between mb-2.5">
-                        <div className="flex items-center gap-2">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth={1.5}
-                            stroke="currentColor"
-                            className="w-4 h-4 text-slate-500"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13"
-                            />
-                          </svg>
-                          <span className="font-semibold text-xs uppercase tracking-wide text-slate-500">
-                            Supporting Documents
-                          </span>
-                        </div>
-                        <span className="inline-flex items-center justify-center min-w-6 h-6 px-2 text-xs font-bold rounded-full bg-purple-100 text-purple-700">
-                          {submission.supporting_documents.length}
-                        </span>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                        {submission.supporting_documents.map((doc, idx) => {
-                          const icon = getFileIcon(doc.file_name);
-                          const ext = (doc.file_name?.split('.').pop() || '').toLowerCase();
-
-                          return (
-                            <button
-                              key={doc.id || idx}
-                              type="button"
-                              onClick={() =>
-                                openFileViewer(doc.view_url, 'supporting', doc.file_name)
-                              }
-                              className="group flex items-center gap-2.5 p-2.5 bg-white hover:bg-purple-50 border border-slate-200 hover:border-purple-300 rounded-lg transition text-left min-w-0"
-                              title={doc.file_name}
-                            >
-                              <span
-                                className="inline-flex items-center justify-center w-8 h-8 rounded-lg shrink-0"
-                                style={{ backgroundColor: icon.bg, color: icon.color }}
-                              >
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  strokeWidth={1.8}
-                                  stroke="currentColor"
-                                  className="w-4 h-4"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
-                                  />
-                                </svg>
-                              </span>
-                              <div className="min-w-0 flex-1">
-                                <p className="text-xs font-semibold text-slate-800 group-hover:text-purple-700 truncate">
-                                  {doc.file_name}
-                                </p>
-                                <p className="text-[10px] text-slate-500 uppercase tracking-wide">
-                                  {ext}
-                                  {doc.file_size ? ` · ${formatFileSize(doc.file_size)}` : ''}
-                                </p>
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-              </div>
-
-              {/* ===== FULL PAPER SECTION ===== */}
-              <div className="px-6 py-5 border-t border-slate-100">
-                <div className="flex items-center gap-2 mb-3">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={1.5}
-                    stroke="currentColor"
-                    className="w-4 h-4 text-slate-500"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"
-                    />
-                  </svg>
-                  <span className="font-semibold text-sm text-slate-700">
-                    Full Extension Project Paper
-                  </span>
-                </div>
-
-                {(() => {
-                  const fp =
-                    userFullPapers[String(submission.id)] ||
-                    userFullPapers[String(submission.submission_id)] ||
-                    null;
-
-                  const hasFullPaper =
-                    submission.has_full_paper === true ||
-                    submission.has_full_paper === 1 ||
-                    Boolean(fp);
-
-                  // ---------- Not accepted & no full paper: locked ----------
-                  if (!isAccepted && !hasFullPaper) {
-                    return (
-                      <div className="flex items-center gap-2 text-slate-500 text-sm bg-slate-50 p-3 rounded-xl border border-slate-100">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 shrink-0">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-                        </svg>
-                        Full paper submission will be available once your abstract is accepted.
-                      </div>
-                    );
-                  }
-
-                  // ---------- Accepted, no full paper yet: show CTA ----------
-                  if (isAccepted && !hasFullPaper) {
-                    return (
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-purple-50 border border-purple-200 p-4 rounded-xl">
-                        <div className="flex items-start gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center shrink-0">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-purple-600">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                            </svg>
-                          </div>
-                          <div className="text-sm">
-                            <p className="font-semibold text-purple-900">
-                              Full paper not yet submitted
-                            </p>
-                            <p className="text-xs text-purple-700 mt-0.5">
-                              Your abstract has been accepted. You can now submit the full paper.
-                            </p>
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setActiveTab('full-paper')}
-                          className="shrink-0 inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-semibold transition"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-                          </svg>
-                          Submit Full Paper
-                        </button>
-                      </div>
-                    );
-                  }
-
-                  let fullPaperUrl = fp?.full_paper_view_url || null;
-                  if (!fullPaperUrl && fp?.full_paper_file_id) {
-                    fullPaperUrl = `https://drive.google.com/file/d/${fp.full_paper_file_id}/view`;
-                  }
-                  const downloadUrl = fp?.full_paper_download_url || null;
-                  const fpStatus = fp?.status || 'submitted';
-                  const submittedAt = fp?.submitted_at || submission.full_paper_submitted_at || null;
-
-                  const statusColor =
-                    fpStatus === 'accepted'
-                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                      : fpStatus === 'rejected'
-                      ? 'bg-red-50 text-red-700 border-red-200'
-                      : fpStatus === 'revision'
-                      ? 'bg-amber-50 text-amber-700 border-amber-200'
-                      : fpStatus === 'under_review'
-                      ? 'bg-blue-50 text-blue-700 border-blue-200'
-                      : 'bg-yellow-50 text-yellow-700 border-yellow-200';
-
-                  const prettyStatus = fpStatus
-                    .split('_')
-                    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-                    .join(' ');
-
-                  return (
-                    <div className="space-y-3">
-                      {/* Attachment card — matches "Primary Documents" styling */}
-                      <button
-                        type="button"
-                        disabled={!fullPaperUrl}
-                        onClick={() =>
-                          fullPaperUrl &&
-                          openFileViewer(
-                            fullPaperUrl,
-                            'full-paper',
-                            fp?.title || submission.extension_project_title
-                          )
-                        }
-                        className={`group w-full flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-xl transition text-left ${
-                          fullPaperUrl
-                            ? 'hover:bg-purple-50 hover:border-purple-300 cursor-pointer'
-                            : 'cursor-default opacity-70'
-                        }`}
-                      >
-                        <div className="w-9 h-9 rounded-lg bg-purple-100 flex items-center justify-center shrink-0">
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-4.5 h-4.5 text-purple-600">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-                          </svg>
-                        </div>
-
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <p className="text-sm font-semibold text-slate-800 group-hover:text-purple-700 truncate">
-                              Full Paper
-                            </p>
-                            <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${statusColor}`}>
-                              {prettyStatus}
-                            </span>
-                          </div>
-                          <p className="text-xs text-slate-500 truncate mt-0.5">
-                            {'Uploaded full paper PDF'}
-                            {submittedAt && (
-                              <>
-                                {' · '}
-                                {new Date(submittedAt).toLocaleDateString(undefined, {
-                                  year: 'numeric',
-                                  month: 'short',
-                                  day: 'numeric',
-                                })}
-                              </>
-                            )}
-                          </p>
-
-                          {/* Extras: figure / project design counts */}
-                          {(fp?.figures?.length > 0 || fp?.project_design) && (
-                            <div className="flex flex-wrap gap-1.5 mt-1.5">
-                              {fp?.figures?.length > 0 && (
-                                <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded">
-                                  {fp.figures.length} figure
-                                  {fp.figures.length === 1 ? '' : 's'}
-                                </span>
-                              )}
-                              {fp?.project_design && (
-                                <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded">
-                                  project design
-                                </span>
-                              )}
-                            </div>
-                          )}
-                        </div>
-
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-slate-400 group-hover:text-purple-600 shrink-0">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-                        </svg>
-                      </button>
-
-                      {/* Secondary actions: preview, download, resubmit */}
-                      <div className="flex flex-wrap gap-2">
-                        {downloadUrl && (
-                          <a
-                            href={downloadUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                            </svg>
-                            Download
-                          </a>
-                        )}
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedSubmission(submission);
-                            setEditingFullPaper(fp);       
-                            setActiveTab('full-paper');
-                          }}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg transition"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
-                          </svg>
-                          Resubmit
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })()}
-              </div>
-
-              {/* ===== PAYMENT SECTION ===== */}
-              <div className="px-6 py-5 border-t border-slate-100">
-                <div className="flex items-center gap-2 mb-3">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={1.5}
-                    stroke="currentColor"
-                    className="w-4 h-4 text-slate-500"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"
-                    />
-                  </svg>
-                  <span className="font-semibold text-sm text-slate-700">
-                    Payment
-                  </span>
-                </div>
-
-                {!isAccepted ? (
-                  <div className="flex items-center gap-2 text-slate-500 text-sm bg-slate-50 p-3 rounded-xl border border-slate-100">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1.5}
-                      stroke="currentColor"
-                      className="w-4 h-4 shrink-0"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"
-                      />
-                    </svg>
-                    Payment will be available once your submission is accepted.
-                  </div>
-                ) : existingPayment ? (
-                  <div
-                    className={`p-3 rounded-xl border text-sm ${
-                      existingPayment.payment_status === 'verified'
-                        ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
-                        : existingPayment.payment_status === 'rejected'
-                        ? 'bg-red-50 border-red-200 text-red-700'
-                        : 'bg-yellow-50 border-yellow-200 text-yellow-700'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between flex-wrap gap-2">
-                      <span>
-                        Status:{' '}
-                        <strong>
-                          {existingPayment.payment_status.toUpperCase()}
-                        </strong>
-                      </span>
-                      {existingPayment.payment_proof_view_url && (
-                        <a
-                          href={existingPayment.payment_proof_view_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="underline font-medium"
-                        >
-                          View Proof
-                        </a>
-                      )}
-                    </div>
-                    {existingPayment.payment_status === 'rejected' &&
-                      existingPayment.rejection_reason && (
-                        <p className="text-xs mt-1">
-                          Reason: {existingPayment.rejection_reason}
-                        </p>
-                      )}
-                  </div>
-                ) : (
-                  <form
-                    onSubmit={handlePaymentUpload}
-                    className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3"
-                  >
-                    <p className="text-xs text-slate-500">
-                      Provide your payment details and upload proof of payment.
-                    </p>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                      <div>
-                        <label className="block text-xs font-medium text-slate-600 mb-1">
-                          Reference Number *
-                        </label>
-                        <input
-                          type="text"
-                          value={referenceNumber}
-                          onChange={(e) => setReferenceNumber(e.target.value)}
-                          placeholder="e.g. 1234567890"
-                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-slate-600 mb-1">
-                          Amount (PHP) *
-                        </label>
-                        <input
-                          type="number"
-                          value={paymentAmount}
-                          onChange={(e) => setPaymentAmount(e.target.value)}
-                          placeholder="e.g. 6500.00"
-                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-slate-600 mb-1">
-                          Date of Payment *
-                        </label>
-                        <input
-                          type="date"
-                          value={paymentDate}
-                          onChange={(e) => setPaymentDate(e.target.value)}
-                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                          required
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">
-                        Proof of Payment *
-                      </label>
-                      <div className="border-2 border-dashed border-slate-300 rounded-lg p-3 text-center hover:border-blue-400 transition bg-white">
-                        <input
-                          type="file"
-                          accept=".jpg,.jpeg,.png,.gif,.bmp,.webp,.pdf"
-                          onChange={(e) => setPaymentFile(e.target.files[0])}
-                          className="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-blue-600 file:text-white file:font-medium hover:file:bg-blue-700 cursor-pointer"
-                          required
-                        />
-                        <p className="text-[10px] text-slate-400 mt-1">
-                          PDF, JPG, PNG (Max 5MB)
-                        </p>
-                        {paymentFile && (
-                          <p className="text-xs text-emerald-600 mt-1">
-                            {paymentFile.name}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex justify-end">
-                      <button
-                        type="submit"
-                        disabled={isUploadingPayment || !paymentFile}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          strokeWidth={2}
-                          stroke="currentColor"
-                          className="w-4 h-4"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"
-                          />
-                        </svg>
-                        {isUploadingPayment ? 'Uploading...' : 'Submit Payment'}
-                      </button>
-                    </div>
-                  </form>
-                )}
-              </div>
+              <p className="text-xs text-slate-500">
+                Submitted {new Date(submission.created_at).toLocaleDateString(undefined, {
+                  year: 'numeric', month: 'short', day: 'numeric'
+                })}
+                {submission.paper_category && ` · ${submission.paper_category}`}
+                {submission.thematic_area && ` · ${submission.thematic_area}`}
+              </p>
             </div>
-          );
-        })}
+            <button
+              onClick={() => openDetailsModal(submission)}
+              className="shrink-0 px-4 py-2 bg-blue-50 text-blue-600 rounded-xl text-sm font-semibold hover:bg-blue-100 transition"
+            >
+              View Details
+            </button>
+          </div>
+        ))}
       </div>
     );
   };
@@ -1523,6 +1336,33 @@ export default function SubmitPage() {
         fileUrl={viewerModal.fileUrl}
         fileType={viewerModal.fileType}
         title={viewerModal.title}
+      />
+
+      <SubmissionDetailsModal
+        isOpen={detailsModal.isOpen}
+        onClose={closeDetailsModal}
+        submission={detailsModal.submission}
+        userFullPapers={userFullPapers}
+        userPayments={userPayments}
+        onOpenFileViewer={openFileViewer}
+        onResubmitFullPaper={(sub, fp) => {
+          setSelectedSubmission(sub);
+          setEditingFullPaper(fp);
+          setActiveTab('full-paper');
+          closeDetailsModal();
+        }}
+        onOpenPaymentTab={(sub) => {
+          setSelectedSubmission(sub);
+          // Since payment is handled inside the submission card, we need to scroll to it or handle it.
+          // For now, we'll just close the modal and let the user click the payment section.
+          // Alternatively, we could set a flag to auto-open the payment section in the card,
+          // but that's a larger refactor. We'll just close the modal.
+          closeDetailsModal();
+        }}
+        getStatusStyle={getStatusStyle}
+        formatStatus={formatStatus}
+        formatFileSize={formatFileSize}
+        getFileIcon={getFileIcon}
       />
 
       {/* --- TOP NAVBAR --- */}
@@ -1573,14 +1413,23 @@ export default function SubmitPage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <button onClick={() => setActiveTab('submit')} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition text-left group">
+                <button 
+                  onClick={() => isSubmissionOpen ? setActiveTab('submit') : showToast("Submissions are closed. No upcoming events.", "error")}
+                  disabled={!isSubmissionOpen}
+                  className={`bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition text-left group ${!isSubmissionOpen ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
+                >
                   <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-4 group-hover:bg-blue-200 transition">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-blue-600">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                    </svg>
+                    {/* Icon */}
                   </div>
                   <h3 className="text-lg font-bold text-slate-900 mb-1">Submit Abstract</h3>
-                  <p className="text-sm text-slate-500">Create and submit your extension project abstract for review.</p>
+                  <p className="text-sm text-slate-500">
+                    {isSubmissionOpen 
+                      ? "Create and submit your extension project abstract for review." 
+                      : "Submissions are currently closed."}
+                  </p>
+                  {!isSubmissionOpen && upcomingEvent?.message && (
+                    <p className="text-xs text-red-500 mt-2 font-semibold">{upcomingEvent.message}</p>
+                  )}
                 </button>
 
                 <button onClick={() => { setActiveTab('my-submissions'); fetchUserSubmissions(user.id); fetchUserFullPapers(user.id); }} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition text-left group">
@@ -1636,9 +1485,10 @@ export default function SubmitPage() {
                 error={error}
                 sucList={sucList}
                 isLoadingSucs={isLoadingSucs}
+                isSubmissionOpen={isSubmissionOpen}
+                upcomingEvent={upcomingEvent}
                 onSucAdded={(newSuc) => setSucList((prev) => [...prev, newSuc])}
                 onSubmit={async (payload) => {
-                  // Called when the child form is ready to submit
                   if (payload.error) {
                     setError(payload.error);
                     showToast(payload.error, 'error');

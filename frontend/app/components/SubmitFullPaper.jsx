@@ -2299,7 +2299,7 @@ export default function SubmitFullPaper({
 
         {/* ---- Scrollable form area ---- */}
         <div className="flex-1 min-h-0 px-6 pb-6">
-          <div className="form-scroll max-w-4xl mx-auto h-full overflow-y-scroll" style={{ scrollPaddingTop: '80px' }}>
+          <div className="form-scroll max-w-4xl mx-auto h-full overflow-y-auto" style={{ scrollPaddingTop: '80px' }}>
             <div className="bg-white border border-slate-200 rounded-2xl shadow-sm">
               <div className="sticky top-0 z-20 bg-linear-to-r from-blue-700 to-blue-800 px-6 py-4 flex items-center justify-between rounded-t-2xl">
                 <div className="text-white">
@@ -2333,12 +2333,6 @@ export default function SubmitFullPaper({
 
                 {/* ============ Linked Accepted Abstract ============ */}
                 <div>
-                  <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
-                    Linked Accepted Abstract <span className="text-red-500">*</span>
-                  </label>
-                  <GuidanceBlock>
-                    <p>Select which of your accepted abstracts this full paper belongs to. The title, keywords, and author information from that abstract will be auto-filled where possible.</p>
-                  </GuidanceBlock>
                   {acceptedSubmissions.length === 0 ? (
                     <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-amber-600 shrink-0 mt-0.5">
@@ -2367,1362 +2361,1367 @@ export default function SubmitFullPaper({
                   )}
                 </div>
 
-                {/* ============ Title of the Paper ============ */}
-                <div>
-                  <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
-                    Full Paper Title <span className="text-red-500">*</span>
-                  </label>
-                  <GuidanceBlock>
-                    <p className="font-semibold">The title should communicate the central intervention or extension issue, major outcome or focus, and context where appropriate. Avoid titles consisting only of the institutional project name or acronym.</p>
-                    <p className="italic">Example structure: <b>Implementation and Outcomes of a Community-Based Natural Farming Extension Program among Smallholder Farmers in [Location]</b></p>
-                    <p className="italic">rather than: <b>Project UMWAD: An Extension Program</b></p>
-                  </GuidanceBlock>
-                  <input
-                    type="text"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Enter a concise, informative, and scholarly title"
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                  />
-                </div>
-
-                {/* ============ Author Information ============ */}
-                <div>
-                  <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
-                    Author/s &amp; Affiliations <span className="text-red-500">*</span>
-                  </label>
-                  <GuidanceBlock>
-                    <p>Add each author in order. The number is assigned automatically and is used as their superscript in the paper.</p>
-                    <p className="font-semibold">Example: <b>Juan Dela Cruz<sup>1</sup></b> — <i>¹Department of Agriculture, University of the Philippines Los Baños, Laguna, Philippines</i></p>
-                    <p>If two authors share the same affiliation, repeat the affiliation text — the number stays unique per author.</p>
-                  </GuidanceBlock>
-
-                  <div className="space-y-4">
-                    {authorsList.map((author, idx) => (
-                      <div
-                        key={idx}
-                        className="border border-slate-200 rounded-xl p-4 bg-slate-50/50 space-y-3"
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-bold text-slate-700">
-                            Author {idx + 1}
-                          </span>
-                          {authorsList.length > 1 && (
-                            <button
-                              type="button"
-                              onClick={() => removeAuthor(idx)}
-                              className="text-slate-400 hover:text-red-500 transition"
-                              aria-label={`Remove author ${idx + 1}`}
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                              </svg>
-                            </button>
-                          )}
-                        </div>
-
-                        <div>
-                          <label className="text-xs font-semibold text-slate-600 mb-1 block">
-                            Author {idx + 1} — Full Name
-                          </label>
-                          <input
-                            type="text"
-                            value={author.name}
-                            onChange={(e) => updateAuthor(idx, 'name', e.target.value)}
-                            placeholder="e.g., Juan Dela Cruz"
-                            className="w-full px-3 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="text-xs font-semibold text-slate-600 mb-1 block">
-                            Author {idx + 1} — Affiliation
-                          </label>
-                          <input
-                            type="text"
-                            value={author.affiliation}
-                            onChange={(e) => updateAuthor(idx, 'affiliation', e.target.value)}
-                            placeholder="e.g., Department of Agriculture, University of the Philippines Los Baños, Laguna, Philippines"
-                            className="w-full px-3 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={addAuthor}
-                    className="mt-3 px-3 py-2 text-sm font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition inline-flex items-center gap-1"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                    </svg>
-                    Add author
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
-                      Corresponding Author Name <span className="text-red-500">*</span>
-                    </label>
-                    <GuidanceBlock>
-                      <p>Enter the full name of the author who will handle correspondence.</p>
-                    </GuidanceBlock>
-                    <input
-                      type="text"
-                      value={correspondingName}
-                      onChange={(e) => setCorrespondingName(e.target.value)}
-                      placeholder="e.g., Juan Dela Cruz"
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
-                      Corresponding Author Email <span className="text-red-500">*</span>
-                    </label>
-                    <GuidanceBlock>
-                      <p>Enter a valid institutional or personal email address.</p>
-                    </GuidanceBlock>
-                    <input
-                      type="email"
-                      value={correspondingEmail}
-                      onChange={(e) => setCorrespondingEmail(e.target.value)}
-                      placeholder="e.g., juan@university.edu.ph"
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
-                    Corresponding Author ORCID{' '}
-                    <span className="text-slate-400 font-normal">(optional)</span>
-                  </label>
-                  <GuidanceBlock>
-                    <p>Enter your ORCID iD if available (e.g., 0000-0002-1825-0097).</p>
-                  </GuidanceBlock>
-                  <input
-                    type="text"
-                    value={correspondingOrcid}
-                    onChange={(e) => setCorrespondingOrcid(e.target.value)}
-                    placeholder="e.g., 0000-0002-1825-0097"
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                  />
-                </div>
-
-                {/* ============ Paper Category ============ */}
-                <div>
-                  <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
-                    Paper Category <span className="text-red-500">*</span>
-                  </label>
-                  <GuidanceBlock>
-                    <p>Select the category that best describes the status of your extension project at the time of submission.</p>
-                  </GuidanceBlock>
-                  <div className="space-y-2">
-                    {[
-                      'Completed Extension Project Paper',
-                      'Ongoing Extension Project Paper',
-                    ].map((option) => (
-                      <label
-                        key={option}
-                        className={`flex items-center gap-3 px-4 py-3 rounded-xl border cursor-pointer transition ${
-                          paperCategory === option
-                            ? 'border-blue-500 bg-blue-50'
-                            : 'border-slate-200 bg-slate-50 hover:bg-slate-100'
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="paperCategory"
-                          value={option}
-                          checked={paperCategory === option}
-                          onChange={(e) => setPaperCategory(e.target.value)}
-                          className="w-4 h-4 text-blue-600 focus:ring-blue-500/30"
-                        />
-                        <span className="text-sm font-medium text-slate-700">{option}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                {/* ============ Thematic Area ============ */}
-                <div>
-                  <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
-                    Thematic Area <span className="text-red-500">*</span>
-                  </label>
-                  <GuidanceBlock>
-                    <p>Select the single thematic area that best represents the project&apos;s primary intended outcome and strongest evidence of public value.</p>
-                  </GuidanceBlock>
-                  <select
-                    value={thematicArea}
-                    onChange={(e) => setThematicArea(e.target.value)}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none mb-3"
-                  >
-                    <option value="">— Select a thematic area —</option>
-                    {THEMATIC_AREAS.map((area, idx) => (
-                      <option key={idx} value={area}>
-                        {area}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* ============ Keywords ============ */}
-                <div>
-                  <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
-                    Keywords <span className="text-red-500">*</span>
-                  </label>
-                  <GuidanceBlock>
-                    <p>Provide 4–6 keywords separated by semicolons.</p>
-                  </GuidanceBlock>
-                  <input
-                    type="text"
-                    value={keywords}
-                    onChange={(e) => setKeywords(e.target.value)}
-                    placeholder="e.g., community extension; sustainable agriculture; resilience"
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                  />
-                </div>
-
-                {/* ============ Abstract ============ */}
-                <div>
-                  <FieldLabel text={abstract} min={250} max={300}>
-                    Abstract <span className="text-red-500">*</span>
-                  </FieldLabel>
-                  <GuidanceBlock>
-                    <p className="font-semibold">Recommended length: <span style={{ color: '#FF0000' }}>250–300 words</span>, preferably as one coherent paragraph.</p>
-                    <p>Include these elements: <b>Background/Need</b>, <b>Objective</b>, <b>Methods/Approach</b>, <b>Results</b> (with actual evidence), and <b>Conclusion</b> (with implication for practice/policy).</p>
-                    <p>Do not introduce claims in the abstract that are not supported in the main paper.</p>
-                  </GuidanceBlock>
-                  <textarea
-                    value={abstract}
-                    onChange={(e) => setAbstract(e.target.value)}
-                    placeholder="Write the 250–300-word abstract as one coherent paragraph"
-                    rows={6}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
-                  />
-                </div>
-
-                {/* =====================================================
-                * 1. INTRODUCTION
-                * ===================================================== */}
-                <div className="border-t border-slate-200 pt-5">
-                  <h3 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">
-                    1. Introduction
-                  </h3>
-                  <div className="flex items-baseline justify-between mb-1">
-                    <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                      Section total
-                    </span>
-                    <WordCounter
-                      text={[backgroundContext, evidenceNeed, relatedLiterature, rationale, objectives].join(' ')}
-                      min={900}
-                      max={1100}
-                    />
-                  </div>
-                  <GuidanceBlock>
-                    <p className="font-semibold">Recommended maximum: <span style={{ color: '#FF0000' }}>900–1,100 words</span></p>
-                    <p>The Introduction should establish the scholarly and development basis of the extension project, demonstrate how the intervention was informed by existing knowledge, and clearly identify the project&apos;s objectives.</p>
-                  </GuidanceBlock>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">1.1 Background and Context</label>
-                      <GuidanceBlock>
-                        <p>Describe the community, institutional, sectoral, environmental, economic, educational, health, or development context. Explain the significance of the issue and provide relevant statistics, policies, research findings, or documented community evidence where appropriate.</p>
-                      </GuidanceBlock>
-                      <textarea
-                        value={backgroundContext}
-                        onChange={(e) => setBackgroundContext(e.target.value)}
-                        placeholder="Describe the community, institutional, sectoral, environmental, economic, educational, health, or development context..."
-                        rows={4}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">1.2 Evidence of the Problem or Development Need</label>
-                      <GuidanceBlock>
-                        <p>Explain how the need, condition, gap, or opportunity was established. Evidence may come from:</p>
-                        <ul className="list-disc list-inside ml-1">
-                          <li>situational or needs assessment; baseline data; community consultations</li>
-                          <li>surveys; focus group discussions; key informant interviews</li>
-                          <li>institutional records; government statistics; previous research; technical assessments; or other credible sources</li>
-                        </ul>
-                        <p>Avoid relying solely on statements such as &ldquo;the community requested training.&rdquo;</p>
-                      </GuidanceBlock>
-                      <textarea
-                        value={evidenceNeed}
-                        onChange={(e) => setEvidenceNeed(e.target.value)}
-                        placeholder="Explain how the need, condition, gap, or opportunity was established..."
-                        rows={4}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">1.3 Related Literature and Extension Evidence</label>
-                      <GuidanceBlock>
-                        <p>Provide a focused synthesis of relevant scholarly and technical literature concerning:</p>
-                        <ul className="list-disc list-inside ml-1">
-                          <li>the issue being addressed; comparable interventions; relevant extension approaches</li>
-                          <li>documented factors influencing adoption or outcomes; and the knowledge or practice gap the project sought to address</li>
-                        </ul>
-                        <p>This should not become an exhaustive review — its purpose is to demonstrate that the intervention was informed by existing knowledge.</p>
-                      </GuidanceBlock>
-                      <textarea
-                        value={relatedLiterature}
-                        onChange={(e) => setRelatedLiterature(e.target.value)}
-                        placeholder="Focused synthesis of relevant scholarly and technical literature..."
-                        rows={4}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">1.4 Rationale and Contribution of the Project</label>
-                      <GuidanceBlock>
-                        <p>Explain why the intervention was appropriate given the identified problem, available evidence, community context, and institutional expertise. Clearly identify what is potentially distinctive or useful about the project.</p>
-                      </GuidanceBlock>
-                      <textarea
-                        value={rationale}
-                        onChange={(e) => setRationale(e.target.value)}
-                        placeholder="Why the intervention was appropriate given the problem, evidence, community context, and institutional expertise..."
-                        rows={3}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">1.5 Objectives</label>
-                      <GuidanceBlock>
-                        <p>State the general and specific objectives. The objectives reported here should correspond with the results presented later in the paper.</p>
-                      </GuidanceBlock>
-                      <textarea
-                        value={objectives}
-                        onChange={(e) => setObjectives(e.target.value)}
-                        placeholder="General and specific objectives of the extension project..."
-                        rows={3}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* =====================================================
-                * 2. MATERIALS AND METHODS
-                * ===================================================== */}
-                <div className="border-t border-slate-200 pt-5">
-                  <h3 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">
-                    2. Materials and Methods / Extension Project Methodology
-                  </h3>
-                  <WordCounter
-                    text={[
-                      settingDuration, participantsDesc, reachPopulation, situationalAnalysis,
-                      interventionRationale, implementationStrategies, partnership,
-                      monitoringEval, dataAnalysis, ethicalConsiderations,
-                    ].join(' ')}
-                    min={1100}
-                    max={1400}
-                  />
-                  <GuidanceBlock>
-                    <p className="font-semibold">Recommended maximum: <span style={{ color: '#FF0000' }}>1,100–1,400 words</span></p>
-                    <p>This section must be sufficiently detailed to allow readers to understand what was done, with whom, how, why, and how results were determined.</p>
-                  </GuidanceBlock>
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.1 Project Setting and Duration</label>
-                        <GuidanceBlock>
-                          <p>Describe the project site, relevant characteristics of the community or institution, implementation period, and contextual conditions important to understanding the intervention. A map may be included when genuinely useful.</p>
-                        </GuidanceBlock>
-                        <textarea
-                          value={settingDuration}
-                          onChange={(e) => setSettingDuration(e.target.value)}
-                          placeholder="Project site, community characteristics, implementation period, contextual conditions..."
-                          rows={4}
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.2 Participants, Intended Users, or Beneficiaries</label>
-                        <GuidanceBlock>
-                          <p>Describe the target population, participant selection or inclusion criteria, number reached, relevant demographic or sectoral characteristics, and involvement of women, youth, vulnerable groups, or other relevant sectors where applicable.</p>
-                          <p>Distinguish between persons reached by project activities and the population for whom outcome data were actually obtained.</p>
-                        </GuidanceBlock>
-                        <textarea
-                          value={participantsDesc}
-                          onChange={(e) => setParticipantsDesc(e.target.value)}
-                          placeholder="Target population, selection criteria, number reached, demographics..."
-                          rows={4}
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
-                        />
-                      </div>
-                    </div>
+                {/* ============ FULL PAPER DETAILS (conditionally rendered) ============ */}
+                {submissionId && (
+                  <>
+                    {/* ============ Title of the Paper ============ */}
                     <div>
                       <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
-                        Distinguish reach vs. population for whom outcome data were obtained
+                        Full Paper Title <span className="text-red-500">*</span>
                       </label>
                       <GuidanceBlock>
-                        <p>Clarify the distinction between the number of people reached by project activities and the population that actually provided outcome data.</p>
+                        <p className="font-semibold">The title should communicate the central intervention or extension issue, major outcome or focus, and context where appropriate. Avoid titles consisting only of the institutional project name or acronym.</p>
+                        <p className="italic">Example structure: <b>Implementation and Outcomes of a Community-Based Natural Farming Extension Program among Smallholder Farmers in [Location]</b></p>
+                        <p className="italic">rather than: <b>Project UMWAD: An Extension Program</b></p>
                       </GuidanceBlock>
-                      <textarea
-                        value={reachPopulation}
-                        onChange={(e) => setReachPopulation(e.target.value)}
-                        placeholder="Explain the distinction between reach and the population that provided outcome data..."
-                        rows={2}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
+                      <input
+                        type="text"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        placeholder="Enter a concise, informative, and scholarly title"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                       />
                     </div>
-                    <div>
-                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.3 Situational Analysis and Baseline</label>
-                      <GuidanceBlock>
-                        <p>Describe how the initial situation was established. Identify information collected, data sources, methods or instruments used, baseline indicators (where available), and major findings that informed project design.</p>
-                      </GuidanceBlock>
-                      <textarea
-                        value={situationalAnalysis}
-                        onChange={(e) => setSituationalAnalysis(e.target.value)}
-                        placeholder="Information collected, data sources, methods/instruments, baseline indicators, major findings..."
-                        rows={4}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.4 Project / Intervention Design — Rationale</label>
-                      <GuidanceBlock>
-                        <p>Describe the extension intervention and its underlying logic. Explain why the selected intervention was expected to address the identified condition.</p>
-                      </GuidanceBlock>
-                      {/* ---- 2.4 Project Design Image Upload ---- */}
-                      <div className="mt-3 mb-3">
-                        <div className="flex items-center justify-between mb-2">
-                          <div>
-                            <label className="text-sm font-semibold text-slate-700 block">
-                              Project Design / Results Pathway (optional)
-                            </label>
-                            <p className="text-xs text-slate-500 mt-0.5">
-                              Upload your own diagram. If none is uploaded, the template default
-                              (PEMNet sample pathway) will be used.
-                            </p>
-                          </div>
-                          <label className="cursor-pointer px-3 py-2 text-sm font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition inline-flex items-center gap-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                            </svg>
-                            {projectDesignImage ? 'Replace image' : 'Add image'}
-                            <input
-                              type="file"
-                              accept="image/png,image/jpeg,image/jpg,image/webp"
-                              className="hidden"
-                              onChange={handleAddProjectDesign}
-                            />
-                          </label>
-                        </div>
 
-                        {projectDesignImage ? (
-                          <div className="border border-slate-200 rounded-xl p-3 bg-slate-50/50 space-y-2">
-                            <div className="flex items-start justify-between gap-3">
-                              <span className="text-xs font-semibold text-slate-600 truncate">
-                                {projectDesignImage.fileName}
+                    {/* ============ Author Information ============ */}
+                    <div>
+                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
+                        Author/s &amp; Affiliations <span className="text-red-500">*</span>
+                      </label>
+                      <GuidanceBlock>
+                        <p>Add each author in order. The number is assigned automatically and is used as their superscript in the paper.</p>
+                        <p className="font-semibold">Example: <b>Juan Dela Cruz<sup>1</sup></b> — <i>¹Department of Agriculture, University of the Philippines Los Baños, Laguna, Philippines</i></p>
+                        <p>If two authors share the same affiliation, repeat the affiliation text — the number stays unique per author.</p>
+                      </GuidanceBlock>
+
+                      <div className="space-y-4">
+                        {authorsList.map((author, idx) => (
+                          <div
+                            key={idx}
+                            className="border border-slate-200 rounded-xl p-4 bg-slate-50/50 space-y-3"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-bold text-slate-700">
+                                Author {idx + 1}
                               </span>
-                              <button
-                                type="button"
-                                onClick={removeProjectDesign}
-                                className="text-slate-400 hover:text-red-500 transition shrink-0"
-                                aria-label="Remove project design image"
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                              </button>
+                              {authorsList.length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => removeAuthor(idx)}
+                                  className="text-slate-400 hover:text-red-500 transition"
+                                  aria-label={`Remove author ${idx + 1}`}
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
+                              )}
                             </div>
-                            <div className="border border-slate-200 rounded-lg bg-white p-2 flex items-center justify-center">
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img
-                                src={projectDesignImage.previewUrl}
-                                alt="Project design preview"
-                                className="max-h-64 w-auto object-contain"
+
+                            <div>
+                              <label className="text-xs font-semibold text-slate-600 mb-1 block">
+                                Author {idx + 1} — Full Name
+                              </label>
+                              <input
+                                type="text"
+                                value={author.name}
+                                onChange={(e) => updateAuthor(idx, 'name', e.target.value)}
+                                placeholder="e.g., Juan Dela Cruz"
+                                className="w-full px-3 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="text-xs font-semibold text-slate-600 mb-1 block">
+                                Author {idx + 1} — Affiliation
+                              </label>
+                              <input
+                                type="text"
+                                value={author.affiliation}
+                                onChange={(e) => updateAuthor(idx, 'affiliation', e.target.value)}
+                                placeholder="e.g., Department of Agriculture, University of the Philippines Los Baños, Laguna, Philippines"
+                                className="w-full px-3 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                               />
                             </div>
                           </div>
-                        ) : (
-                          <div className="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center text-xs text-slate-400">
-                            No image uploaded — the default pathway diagram will be shown in the PDF.
-                          </div>
-                        )}
+                        ))}
                       </div>
-                      <textarea
-                        value={interventionRationale}
-                        onChange={(e) => setInterventionRationale(e.target.value)}
-                        placeholder="Explain why the selected intervention was expected to address the identified condition..."
-                        rows={3}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
-                      />
+
+                      <button
+                        type="button"
+                        onClick={addAuthor}
+                        className="mt-3 px-3 py-2 text-sm font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition inline-flex items-center gap-1"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                        </svg>
+                        Add author
+                      </button>
                     </div>
-                    <div>
-                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.5 Implementation Strategies</label>
-                      <GuidanceBlock>
-                        <p>Describe the major strategies used, such as capability-building, technical assistance, demonstrations, mentoring or coaching, community organizing, communication interventions, technology transfer, enterprise development, policy or institutional development, partnership building, participatory planning, or other relevant approaches.</p>
-                        <p>Avoid presenting a simple chronological list of activities unless chronology is analytically important.</p>
-                      </GuidanceBlock>
-                      <textarea
-                        value={implementationStrategies}
-                        onChange={(e) => setImplementationStrategies(e.target.value)}
-                        placeholder="Capability-building, technical assistance, demonstrations, mentoring, community organizing, etc..."
-                        rows={3}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.6 Partnership and Stakeholder Participation</label>
-                      <GuidanceBlock>
-                        <p>Identify important partners and explain their actual roles, rather than merely listing organizations. Describe relevant community participation in project planning, implementation, monitoring, decision-making, resource mobilization, or sustainability mechanisms.</p>
-                      </GuidanceBlock>
-                      <textarea
-                        value={partnership}
-                        onChange={(e) => setPartnership(e.target.value)}
-                        placeholder="Partners and their actual roles; community participation in planning, implementation, monitoring..."
-                        rows={3}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
-                      />
-                    </div>
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.7 Monitoring and Evaluation Design</label>
+                        <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
+                          Corresponding Author Name <span className="text-red-500">*</span>
+                        </label>
                         <GuidanceBlock>
-                          <p>Explain how the project&apos;s results were measured or verified. Identify indicators, data sources, instruments, timing of measurements, persons or groups from whom data were obtained, follow-up procedures, and methods used to verify or triangulate evidence.</p>
-                          <p>Where baseline and endline measurements were conducted, describe them clearly.</p>
+                          <p>Enter the full name of the author who will handle correspondence.</p>
                         </GuidanceBlock>
-                        <textarea
-                          value={monitoringEval}
-                          onChange={(e) => setMonitoringEval(e.target.value)}
-                          placeholder="Indicators, data sources, instruments, timing, follow-up, triangulation..."
-                          rows={4}
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
+                        <input
+                          type="text"
+                          value={correspondingName}
+                          onChange={(e) => setCorrespondingName(e.target.value)}
+                          placeholder="e.g., Juan Dela Cruz"
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                         />
                       </div>
                       <div>
-                        <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.8 Data Analysis</label>
+                        <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
+                          Corresponding Author Email <span className="text-red-500">*</span>
+                        </label>
                         <GuidanceBlock>
-                          <p>Describe how quantitative and/or qualitative data were analyzed. Examples: frequencies and percentages; means or other descriptive statistics; pre-post comparison; appropriate statistical tests; thematic analysis; content analysis; or triangulation of multiple evidence sources.</p>
-                          <p>Do not employ statistical tests merely to make the manuscript appear more scholarly.</p>
+                          <p>Enter a valid institutional or personal email address.</p>
                         </GuidanceBlock>
-                        <textarea
-                          value={dataAnalysis}
-                          onChange={(e) => setDataAnalysis(e.target.value)}
-                          placeholder="Quantitative and/or qualitative analysis methods..."
-                          rows={4}
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
+                        <input
+                          type="email"
+                          value={correspondingEmail}
+                          onChange={(e) => setCorrespondingEmail(e.target.value)}
+                          placeholder="e.g., juan@university.edu.ph"
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                         />
                       </div>
                     </div>
-                    <div>
-                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.9 Ethical Considerations</label>
-                      <GuidanceBlock>
-                        <p>Explain relevant safeguards concerning informed participation or consent, confidentiality, privacy, community data, photographs, interviews and testimonies, vulnerable participants, and institutional records.</p>
-                        <p>Where formal ethics clearance was required and obtained, state the approving body and approval/reference number.</p>
-                      </GuidanceBlock>
-                      <textarea
-                        value={ethicalConsiderations}
-                        onChange={(e) => setEthicalConsiderations(e.target.value)}
-                        placeholder="Informed consent, confidentiality, privacy, community data, ethics clearance..."
-                        rows={3}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
-                      />
-                    </div>
-                  </div>
-                </div>
 
-                {/* =====================================================
-                * 3. RESULTS
-                * ===================================================== */}
-                <div className="border-t border-slate-200 pt-5">
-                  <h3 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">3. Results</h3>
-                  <WordCounter
-                    text={[
-                      reachImplementation, immediateResults, outcomes, adoption,
-                      institutionalization, publicValue,
-                    ].join(' ')}
-                    min={1200}
-                    max={1600}
-                  />
-                  <GuidanceBlock>
-                    <p className="font-semibold">Recommended maximum: <span style={{ color: '#FF0000' }}>1,200–1,600 words</span></p>
-                    <p>Present the evidence objectively and systematically. Results should correspond directly with the project objectives and indicators.</p>
-                    <p><b>Important Evidence Rule:</b> Attendance sheets, photographs, certificates, and activity reports can verify that an activity occurred, but they should not by themselves be used as proof that an outcome, adoption, utilization, or impact occurred.</p>
-                  </GuidanceBlock>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">3.1 Project Reach and Implementation</label>
-                      <GuidanceBlock>
-                        <p>Briefly report important implementation evidence: actual participants reached, interventions delivered, completion levels, major products or outputs, and significant deviations from the original project design.</p>
-                        <p>Do not allow activity counts to dominate the Results section.</p>
-                      </GuidanceBlock>
-                      <textarea
-                        value={reachImplementation}
-                        onChange={(e) => setReachImplementation(e.target.value)}
-                        placeholder="Actual participants, interventions delivered, completion levels, major outputs..."
-                        rows={3}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">3.2 Immediate Results</label>
-                      <GuidanceBlock>
-                        <p>Present documented immediate changes following the intervention, where applicable. Examples include changes in knowledge, skills, practices, confidence, organizational capacity, access, productivity, service delivery, or institutional processes.</p>
-                      </GuidanceBlock>
-                      <textarea
-                        value={immediateResults}
-                        onChange={(e) => setImmediateResults(e.target.value)}
-                        placeholder="Documented changes in knowledge, skills, practices, confidence, capacity..."
-                        rows={3}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">3.3 Outcomes</label>
-                      <GuidanceBlock>
-                        <p>Present evidence of changes that occurred beyond immediate project outputs. Where possible, distinguish clearly among:</p>
-                        <ul className="list-disc list-inside ml-1">
-                          <li><b>Output</b> – what the project produced</li>
-                          <li><b>Immediate result</b> – what changed shortly after the intervention</li>
-                          <li><b>Outcome</b> – meaningful change in practice, behavior, condition, performance, or institutional capacity</li>
-                        </ul>
-                      </GuidanceBlock>
-                      <textarea
-                        value={outcomes}
-                        onChange={(e) => setOutcomes(e.target.value)}
-                        placeholder="Meaningful change in practice, behavior, condition, performance, or institutional capacity..."
-                        rows={3}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">3.4 Adoption, Utilization, Adaptation, or Continuation</label>
-                      <GuidanceBlock>
-                        <p>Where applicable, report evidence that project participants or partners used acquired knowledge or technologies, adopted recommended practices, adapted an intervention to local circumstances, continued activities beyond project-supported delivery, or replicated project practices.</p>
-                        <p>Specify who adopted what, how many, to what extent, and based on what evidence whenever the data permit.</p>
-                      </GuidanceBlock>
-                      <textarea
-                        value={adoption}
-                        onChange={(e) => setAdoption(e.target.value)}
-                        placeholder="Who adopted what, how many, to what extent, on what evidence..."
-                        rows={3}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">3.5 Institutionalization and Sustainability</label>
-                      <GuidanceBlock>
-                        <p>Present documented evidence of mechanisms such as partner policies, local ordinances or resolutions, budget allocations, integration into regular programs, institutional structures, trained local implementers, community management mechanisms, continuing partnerships, locally generated resources, or other arrangements supporting continuation.</p>
-                      </GuidanceBlock>
-                      <textarea
-                        value={institutionalization}
-                        onChange={(e) => setInstitutionalization(e.target.value)}
-                        placeholder="Partner policies, ordinances, budget allocations, integration into programs..."
-                        rows={3}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">3.6 Public Value and Broader Benefits</label>
-                      <GuidanceBlock>
-                        <p>Where supported by evidence, describe the project&apos;s contribution to community or institutional benefit. Possible areas include improved livelihood, health or wellbeing, educational improvement, strengthened institutional capacity, increased resilience, improved environmental practices, empowerment, improved service delivery, or other documented public benefits.</p>
-                      </GuidanceBlock>
-                      <textarea
-                        value={publicValue}
-                        onChange={(e) => setPublicValue(e.target.value)}
-                        placeholder="Improved livelihood, health, education, resilience, environment, empowerment..."
-                        rows={3}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* =====================================================
-                * 4. DISCUSSION
-                * ===================================================== */}
-                <div className="border-t border-slate-200 pt-5">
-                  <h3 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">4. Discussion</h3>
-                  <WordCounter
-                    text={[
-                      interpretation, relationshipLiterature, factorsAffecting,
-                      inclusionResilience, transferability, limitations,
-                    ].join(' ')}
-                    min={1000}
-                    max={1400}
-                  />
-                  <GuidanceBlock>
-                    <p className="font-semibold">Recommended maximum: <span style={{ color: '#FF0000' }}>1,000–1,400 words</span></p>
-                    <p>The Discussion should explain what the results mean, rather than repeat the Results section.</p>
-                  </GuidanceBlock>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">4.1 Interpretation of Major Findings</label>
-                      <GuidanceBlock>
-                        <p>Explain the most important findings. Why did the intervention appear to work—or not work? What conditions may explain the observed results?</p>
-                      </GuidanceBlock>
-                      <textarea
-                        value={interpretation}
-                        onChange={(e) => setInterpretation(e.target.value)}
-                        placeholder="Most important findings, why the intervention worked (or not), conditions explaining results..."
-                        rows={3}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">4.2 Relationship to Previous Research and Extension Literature</label>
-                      <GuidanceBlock>
-                        <p>Compare the results with relevant published studies, extension literature, policies, frameworks, or previous interventions. Explain whether the results support, extend, differ from, or qualify what is already known.</p>
-                      </GuidanceBlock>
-                      <textarea
-                        value={relationshipLiterature}
-                        onChange={(e) => setRelationshipLiterature(e.target.value)}
-                        placeholder="Supporting, extending, differing from, or qualifying what is already known..."
-                        rows={3}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">4.3 Factors Affecting Implementation and Outcomes</label>
-                      <GuidanceBlock>
-                        <p>Discuss important enabling or constraining factors, such as community participation, leadership, institutional support, local culture, resources, partnerships, market conditions, environmental conditions, policy context, implementation fidelity, or other contextual factors.</p>
-                      </GuidanceBlock>
-                      <textarea
-                        value={factorsAffecting}
-                        onChange={(e) => setFactorsAffecting(e.target.value)}
-                        placeholder="Enabling or constraining factors: participation, leadership, resources, culture, policy..."
-                        rows={3}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">4.4 Inclusion, Sustainability, and Resilience</label>
-                      <GuidanceBlock>
-                        <p>Where applicable, interpret how the project addressed gender and social inclusion, participation of vulnerable or underserved groups, sustainability, resilience, institutional ownership, and local capacity.</p>
-                      </GuidanceBlock>
-                      <textarea
-                        value={inclusionResilience}
-                        onChange={(e) => setInclusionResilience(e.target.value)}
-                        placeholder="Gender and social inclusion, vulnerable groups, sustainability, resilience, ownership, local capacity..."
-                        rows={3}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">4.5 Transferability, Replication, or Scaling</label>
-                      <GuidanceBlock>
-                        <p>Discuss whether the intervention may reasonably be replicated, adapted, scaled, institutionalized, or transferred to another context.</p>
-                        <p>Do not automatically recommend scaling solely because participants were satisfied with the project.</p>
-                      </GuidanceBlock>
-                      <textarea
-                        value={transferability}
-                        onChange={(e) => setTransferability(e.target.value)}
-                        placeholder="Replicated, adapted, scaled, institutionalized, or transferred to another context..."
-                        rows={3}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">4.6 Limitations</label>
-                      <GuidanceBlock>
-                        <p>Clearly acknowledge relevant limitations, including possible weaknesses in baseline information, participant selection, sample size, absence of a comparison group, duration of follow-up, reliance on self-reported information, missing data, measurement instruments, attribution of outcomes, or other methodological constraints.</p>
-                        <p>A credible limitations section strengthens, rather than weakens, a scholarly paper.</p>
-                      </GuidanceBlock>
-                      <textarea
-                        value={limitations}
-                        onChange={(e) => setLimitations(e.target.value)}
-                        placeholder="Baseline, sample size, comparison group, follow-up, self-report, missing data, measurement..."
-                        rows={3}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* =====================================================
-                * 5. IMPLICATIONS
-                * ===================================================== */}
-                <div className="border-t border-slate-200 pt-5">
-                  <FieldLabel text={implications} min={400} max={500}>
-                    5. Implications for Extension Practice and Policy
-                  </FieldLabel>
-                  <GuidanceBlock>
-                    <p className="font-semibold">Recommended maximum: <span style={{ color: '#FF0000' }}>400–500 words</span></p>
-                    <p>Explain what extension managers, HEIs, practitioners, LGUs, partner institutions, policymakers, or other stakeholders can reasonably learn from the project. Possible implications may concern extension project design, community engagement, monitoring and evaluation, evidence generation, institutional partnerships, technology adoption, capability-building, sustainability mechanisms, quality assurance, policy development, or scaling and replication.</p>
-                    <p>Recommendations must arise from the evidence presented in the paper.</p>
-                  </GuidanceBlock>
-                  <textarea
-                    value={implications}
-                    onChange={(e) => setImplications(e.target.value)}
-                    placeholder="What extension managers, HEIs, LGUs, policymakers, and partners can learn from the project..."
-                    rows={4}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
-                  />
-                </div>
-
-                {/* =====================================================
-                * 6. CONCLUSION + BACK MATTER
-                * ===================================================== */}
-                <div className="border-t border-slate-200 pt-5">
-                  <FieldLabel text={conclusion} min={300} max={500}>
-                    6. Conclusion
-                  </FieldLabel>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">6. Conclusion</label>
-                      <GuidanceBlock>
-                        <p className="font-semibold">Recommended maximum: <span style={{ color: '#FF0000' }}>300–500 words</span></p>
-                        <p>Provide a concise synthesis of the development issue addressed, the principal intervention, the strongest documented results, the significance of those results, and the central implication for transformative extension.</p>
-                        <p>Do not introduce new data or literature in the Conclusion. Avoid exaggerated claims unless genuinely supported by evidence.</p>
-                      </GuidanceBlock>
-                      <textarea
-                        value={conclusion}
-                        onChange={(e) => setConclusion(e.target.value)}
-                        placeholder="Synthesis of issue, intervention, strongest results, significance, and central implication..."
-                        rows={4}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Acknowledgments</label>
-                      <GuidanceBlock>
-                        <p>Acknowledge institutions, communities, partners, funders, technical personnel, or individuals who contributed materially to the project but do not qualify for authorship.</p>
-                        <p>Do not use this section merely to list officials.</p>
-                      </GuidanceBlock>
-                      <textarea
-                        value={acknowledgments}
-                        onChange={(e) => setAcknowledgments(e.target.value)}
-                        placeholder="Institutions, communities, partners, funders, technical personnel who contributed..."
-                        rows={3}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Funding Statement</label>
-                      <GuidanceBlock>
-                        <p>Example: <i>This extension project was funded by [Institution/Agency] under [program/grant, if applicable].</i></p>
-                        <p>Or: <i>The authors received no external funding for the implementation of this project.</i></p>
-                      </GuidanceBlock>
-                      <textarea
-                        value={funding}
-                        onChange={(e) => setFunding(e.target.value)}
-                        placeholder="e.g., This extension project was funded by [Institution/Agency]..."
-                        rows={2}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Conflict of Interest</label>
-                      <GuidanceBlock>
-                        <p>Example: <i>The authors declare no conflict of interest.</i> Where a relevant conflict exists, it should be disclosed.</p>
-                      </GuidanceBlock>
-                      <textarea
-                        value={conflictOfInterest}
-                        onChange={(e) => setConflictOfInterest(e.target.value)}
-                        placeholder="e.g., The authors declare no conflict of interest."
-                        rows={2}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Ethics and Informed Consent Statement</label>
-                      <GuidanceBlock>
-                        <p>Where applicable: <i>The project and associated data-gathering procedures were reviewed/approved by [appropriate body]. Informed consent was obtained from participants prior to data collection and/or use of identifiable photographs and testimonies.</i></p>
-                        <p>Adapt the statement according to what actually occurred. Do not claim ethical clearance that was not obtained.</p>
-                      </GuidanceBlock>
-                      <textarea
-                        value={ethicsStatement}
-                        onChange={(e) => setEthicsStatement(e.target.value)}
-                        placeholder="e.g., The project was reviewed/approved by [appropriate body]. Informed consent was obtained..."
-                        rows={3}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Data Availability Statement</label>
-                      <GuidanceBlock>
-                        <p>Where appropriate: <i>The data supporting the findings of this paper are available from the corresponding author upon reasonable request, subject to applicable privacy, consent, institutional, and data-protection requirements.</i></p>
-                      </GuidanceBlock>
-                      <textarea
-                        value={dataAvailability}
-                        onChange={(e) => setDataAvailability(e.target.value)}
-                        placeholder="e.g., Data are available from the corresponding author upon reasonable request..."
-                        rows={2}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Author Contributions (CRediT-style)</label>
-                      <GuidanceBlock>
-                        <p>For stronger publication readiness, use a CRediT-style contributor approach. Example:</p>
-                        <p><i>Conceptualization: A.A., B.B.<br/>Methodology: A.A., C.C.<br/>Data Collection: B.B., C.C.<br/>Data Analysis: A.A.<br/>Writing – Original Draft: A.A.<br/>Writing – Review and Editing: A.A., B.B., C.C.<br/>Project Administration: B.B.</i></p>
-                      </GuidanceBlock>
-                      <textarea
-                        value={authorContributions}
-                        onChange={(e) => setAuthorContributions(e.target.value)}
-                        placeholder={`e.g.,\nConceptualization: A.A., B.B.\nMethodology: A.A., C.C.\nWriting – Original Draft: A.A.`}
-                        rows={4}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
-                      />
-                    </div>
                     <div>
                       <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
-                        References (APA 7th Edition)
+                        Corresponding Author ORCID{' '}
+                        <span className="text-slate-400 font-normal">(optional)</span>
                       </label>
                       <GuidanceBlock>
-                        <p>Use APA 7th Edition consistently. References appearing in the list must be cited in the manuscript, and all cited works must appear in the reference list.</p>
-                        <p>Prioritize peer-reviewed journal articles, scholarly books, government publications, official institutional reports, authoritative technical publications, and other credible primary sources.</p>
-                        <p className="font-semibold">Journal Article format: <i>Author, A. A., &amp; Author, B. B. (Year). Title of article. Journal Title, Volume(Issue), xx–xx. DOI</i></p>
-                        <p className="font-semibold">Government/Institutional Report: <i>Institution. (Year). Title of report. Publisher/Institution. URL</i></p>
-                        <p className="font-semibold">Book: <i>Author, A. A. (Year). Title of book. Publisher.</i></p>
+                        <p>Enter your ORCID iD if available (e.g., 0000-0002-1825-0097).</p>
                       </GuidanceBlock>
+                      <input
+                        type="text"
+                        value={correspondingOrcid}
+                        onChange={(e) => setCorrespondingOrcid(e.target.value)}
+                        placeholder="e.g., 0000-0002-1825-0097"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                      />
+                    </div>
 
-                      {/* Validated textarea wrapper */}
-                      <div className="relative text-slate-700">
-                        <textarea
-                          value={references}
-                          onChange={(e) => setReferences(e.target.value)}
-                          placeholder={"Enter the complete APA 7th Edition reference list, one entry per line...\n\nExample:\nSmith, J. A., & Doe, R. B. (2024). Community-based extension methods. Journal of Extension Practice, 12(3), 45–62."}
-                          rows={8}
-                          className={`w-full px-4 py-3 bg-slate-50 border rounded-xl text-sm focus:ring-2 focus:outline-none resize-y transition-colors ${
-                            references.trim() && references.split('\n').some(l => l.trim() && !validateAPAReference(l).valid)
-                              ? 'border-red-300 focus:border-red-400 focus:ring-red-200'
-                              : 'border-slate-200 focus:border-blue-500 focus:ring-blue-500/20'
-                          }`}
-                        />
-
-                        {/* Per-line validation indicators */}
-                        {references.trim() && (
-                          <div className="mt-2 space-y-1 max-h-40 overflow-y-auto">
-                            {references.split('\n').map((line, idx) => {
-                              const result = validateAPAReference(line);
-                              if (!line.trim()) return null;
-                              if (result.valid) return null;
-                              return (
-                                <div
-                                  key={idx}
-                                  className="flex items-start gap-2 px-3 py-1.5 bg-red-50 border border-red-200 rounded-lg text-xs"
-                                >
-                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5 text-red-500 shrink-0 mt-0.5">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-                                  </svg>
-                                  <div>
-                                    <span className="font-mono text-red-700 font-semibold">Line {idx + 1}:</span>{' '}
-                                    <span className="text-red-600">{result.message}</span>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
+                    {/* ============ Paper Category ============ */}
+                    <div>
+                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
+                        Paper Category <span className="text-red-500">*</span>
+                      </label>
+                      <GuidanceBlock>
+                        <p>Select the category that best describes the status of your extension project at the time of submission.</p>
+                      </GuidanceBlock>
+                      <div className="space-y-2">
+                        {[
+                          'Completed Extension Project Paper',
+                          'Ongoing Extension Project Paper',
+                        ].map((option) => (
+                          <label
+                            key={option}
+                            className={`flex items-center gap-3 px-4 py-3 rounded-xl border cursor-pointer transition ${
+                              paperCategory === option
+                                ? 'border-blue-500 bg-blue-50'
+                                : 'border-slate-200 bg-slate-50 hover:bg-slate-100'
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="paperCategory"
+                              value={option}
+                              checked={paperCategory === option}
+                              onChange={(e) => setPaperCategory(e.target.value)}
+                              className="w-4 h-4 text-blue-600 focus:ring-blue-500/30"
+                            />
+                            <span className="text-sm font-medium text-slate-700">{option}</span>
+                          </label>
+                        ))}
                       </div>
                     </div>
+
+                    {/* ============ Thematic Area ============ */}
                     <div>
-                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Appendices</label>
+                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
+                        Thematic Area <span className="text-red-500">*</span>
+                      </label>
                       <GuidanceBlock>
-                        <p>Appendices are optional and should contain only evidence necessary for understanding or verifying the manuscript. Possible appendices include: Appendix A: Project Results Framework; Appendix B: Major Monitoring Indicators; Appendix C: Relevant Data Collection Instrument; Appendix D: Additional Results Table; Appendix E: Evidence of Institutionalization.</p>
-                        <p>Do not turn the manuscript into a portfolio of certificates, attendance sheets, photographs, and administrative documents.</p>
+                        <p>Select the single thematic area that best represents the project&apos;s primary intended outcome and strongest evidence of public value.</p>
+                      </GuidanceBlock>
+                      <select
+                        value={thematicArea}
+                        onChange={(e) => setThematicArea(e.target.value)}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none mb-3"
+                      >
+                        <option value="">— Select a thematic area —</option>
+                        {THEMATIC_AREAS.map((area, idx) => (
+                          <option key={idx} value={area}>
+                            {area}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* ============ Keywords ============ */}
+                    <div>
+                      <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
+                        Keywords <span className="text-red-500">*</span>
+                      </label>
+                      <GuidanceBlock>
+                        <p>Provide 4–6 keywords separated by semicolons.</p>
+                      </GuidanceBlock>
+                      <input
+                        type="text"
+                        value={keywords}
+                        onChange={(e) => setKeywords(e.target.value)}
+                        placeholder="e.g., community extension; sustainable agriculture; resilience"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                      />
+                    </div>
+
+                    {/* ============ Abstract ============ */}
+                    <div>
+                      <FieldLabel text={abstract} min={250} max={300}>
+                        Abstract <span className="text-red-500">*</span>
+                      </FieldLabel>
+                      <GuidanceBlock>
+                        <p className="font-semibold">Recommended length: <span style={{ color: '#FF0000' }}>250–300 words</span>, preferably as one coherent paragraph.</p>
+                        <p>Include these elements: <b>Background/Need</b>, <b>Objective</b>, <b>Methods/Approach</b>, <b>Results</b> (with actual evidence), and <b>Conclusion</b> (with implication for practice/policy).</p>
+                        <p>Do not introduce claims in the abstract that are not supported in the main paper.</p>
                       </GuidanceBlock>
                       <textarea
-                        value={appendices}
-                        onChange={(e) => setAppendices(e.target.value)}
-                        placeholder="List or describe appendices that support the manuscript..."
-                        rows={3}
+                        value={abstract}
+                        onChange={(e) => setAbstract(e.target.value)}
+                        placeholder="Write the 250–300-word abstract as one coherent paragraph"
+                        rows={6}
                         className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
                       />
                     </div>
 
-                    {/* ---- TABLE AND FIGURE FORMAT ---- */}
-                    <div className="border-t border-slate-200 pt-5 mt-5">
-                      <h4 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">
-                        Table and Figure Format
-                      </h4>
+                    {/* =====================================================
+                    * 1. INTRODUCTION
+                    * ===================================================== */}
+                    <div className="border-t border-slate-200 pt-5">
+                      <h3 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">
+                        1. Introduction
+                      </h3>
+                      <div className="flex items-baseline justify-between mb-1">
+                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                          Section total
+                        </span>
+                        <WordCounter
+                          text={[backgroundContext, evidenceNeed, relatedLiterature, rationale, objectives].join(' ')}
+                          min={900}
+                          max={1100}
+                        />
+                      </div>
                       <GuidanceBlock>
-                        <p>Tables and figures should communicate evidence, not simply decorate the manuscript. They must be properly numbered, labeled, explained in the text, and directly relevant to the claims being presented.</p>
-                        <p>Every table must be discussed in the text.</p>
+                        <p className="font-semibold">Recommended maximum: <span style={{ color: '#FF0000' }}>900–1,100 words</span></p>
+                        <p>The Introduction should establish the scholarly and development basis of the extension project, demonstrate how the intervention was informed by existing knowledge, and clearly identify the project&apos;s objectives.</p>
                       </GuidanceBlock>
                       <div className="space-y-4">
+                        <div>
+                          <label className="text-sm font-semibold text-slate-700 mb-1.5 block">1.1 Background and Context</label>
+                          <GuidanceBlock>
+                            <p>Describe the community, institutional, sectoral, environmental, economic, educational, health, or development context. Explain the significance of the issue and provide relevant statistics, policies, research findings, or documented community evidence where appropriate.</p>
+                          </GuidanceBlock>
+                          <textarea
+                            value={backgroundContext}
+                            onChange={(e) => setBackgroundContext(e.target.value)}
+                            placeholder="Describe the community, institutional, sectoral, environmental, economic, educational, health, or development context..."
+                            rows={4}
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-semibold text-slate-700 mb-1.5 block">1.2 Evidence of the Problem or Development Need</label>
+                          <GuidanceBlock>
+                            <p>Explain how the need, condition, gap, or opportunity was established. Evidence may come from:</p>
+                            <ul className="list-disc list-inside ml-1">
+                              <li>situational or needs assessment; baseline data; community consultations</li>
+                              <li>surveys; focus group discussions; key informant interviews</li>
+                              <li>institutional records; government statistics; previous research; technical assessments; or other credible sources</li>
+                            </ul>
+                            <p>Avoid relying solely on statements such as &ldquo;the community requested training.&rdquo;</p>
+                          </GuidanceBlock>
+                          <textarea
+                            value={evidenceNeed}
+                            onChange={(e) => setEvidenceNeed(e.target.value)}
+                            placeholder="Explain how the need, condition, gap, or opportunity was established..."
+                            rows={4}
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-semibold text-slate-700 mb-1.5 block">1.3 Related Literature and Extension Evidence</label>
+                          <GuidanceBlock>
+                            <p>Provide a focused synthesis of relevant scholarly and technical literature concerning:</p>
+                            <ul className="list-disc list-inside ml-1">
+                              <li>the issue being addressed; comparable interventions; relevant extension approaches</li>
+                              <li>documented factors influencing adoption or outcomes; and the knowledge or practice gap the project sought to address</li>
+                            </ul>
+                            <p>This should not become an exhaustive review — its purpose is to demonstrate that the intervention was informed by existing knowledge.</p>
+                          </GuidanceBlock>
+                          <textarea
+                            value={relatedLiterature}
+                            onChange={(e) => setRelatedLiterature(e.target.value)}
+                            placeholder="Focused synthesis of relevant scholarly and technical literature..."
+                            rows={4}
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-semibold text-slate-700 mb-1.5 block">1.4 Rationale and Contribution of the Project</label>
+                          <GuidanceBlock>
+                            <p>Explain why the intervention was appropriate given the identified problem, available evidence, community context, and institutional expertise. Clearly identify what is potentially distinctive or useful about the project.</p>
+                          </GuidanceBlock>
+                          <textarea
+                            value={rationale}
+                            onChange={(e) => setRationale(e.target.value)}
+                            placeholder="Why the intervention was appropriate given the problem, evidence, community context, and institutional expertise..."
+                            rows={3}
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-semibold text-slate-700 mb-1.5 block">1.5 Objectives</label>
+                          <GuidanceBlock>
+                            <p>State the general and specific objectives. The objectives reported here should correspond with the results presented later in the paper.</p>
+                          </GuidanceBlock>
+                          <textarea
+                            value={objectives}
+                            onChange={(e) => setObjectives(e.target.value)}
+                            placeholder="General and specific objectives of the extension project..."
+                            rows={3}
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
+                          />
+                        </div>
+                      </div>
+                    </div>
 
-                        {/* ---------- Tables ---------- */}
-                        <div className="space-y-4">
-                          {tables.map((table, tIdx) => (
-                            <div
-                              key={table.id}
-                              className="border border-slate-200 rounded-xl p-4 bg-white space-y-3"
-                            >
-                              {/* Table header row */}
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm font-bold text-slate-800">
-                                  Table {tIdx + 1}
-                                </span>
-                                {tables.length > 1 && (
+                    {/* =====================================================
+                    * 2. MATERIALS AND METHODS
+                    * ===================================================== */}
+                    <div className="border-t border-slate-200 pt-5">
+                      <h3 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">
+                        2. Materials and Methods / Extension Project Methodology
+                      </h3>
+                      <WordCounter
+                        text={[
+                          settingDuration, participantsDesc, reachPopulation, situationalAnalysis,
+                          interventionRationale, implementationStrategies, partnership,
+                          monitoringEval, dataAnalysis, ethicalConsiderations,
+                        ].join(' ')}
+                        min={1100}
+                        max={1400}
+                      />
+                      <GuidanceBlock>
+                        <p className="font-semibold">Recommended maximum: <span style={{ color: '#FF0000' }}>1,100–1,400 words</span></p>
+                        <p>This section must be sufficiently detailed to allow readers to understand what was done, with whom, how, why, and how results were determined.</p>
+                      </GuidanceBlock>
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.1 Project Setting and Duration</label>
+                            <GuidanceBlock>
+                              <p>Describe the project site, relevant characteristics of the community or institution, implementation period, and contextual conditions important to understanding the intervention. A map may be included when genuinely useful.</p>
+                            </GuidanceBlock>
+                            <textarea
+                              value={settingDuration}
+                              onChange={(e) => setSettingDuration(e.target.value)}
+                              placeholder="Project site, community characteristics, implementation period, contextual conditions..."
+                              rows={4}
+                              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.2 Participants, Intended Users, or Beneficiaries</label>
+                            <GuidanceBlock>
+                              <p>Describe the target population, participant selection or inclusion criteria, number reached, relevant demographic or sectoral characteristics, and involvement of women, youth, vulnerable groups, or other relevant sectors where applicable.</p>
+                              <p>Distinguish between persons reached by project activities and the population for whom outcome data were actually obtained.</p>
+                            </GuidanceBlock>
+                            <textarea
+                              value={participantsDesc}
+                              onChange={(e) => setParticipantsDesc(e.target.value)}
+                              placeholder="Target population, selection criteria, number reached, demographics..."
+                              rows={4}
+                              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
+                            Distinguish reach vs. population for whom outcome data were obtained
+                          </label>
+                          <GuidanceBlock>
+                            <p>Clarify the distinction between the number of people reached by project activities and the population that actually provided outcome data.</p>
+                          </GuidanceBlock>
+                          <textarea
+                            value={reachPopulation}
+                            onChange={(e) => setReachPopulation(e.target.value)}
+                            placeholder="Explain the distinction between reach and the population that provided outcome data..."
+                            rows={2}
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.3 Situational Analysis and Baseline</label>
+                          <GuidanceBlock>
+                            <p>Describe how the initial situation was established. Identify information collected, data sources, methods or instruments used, baseline indicators (where available), and major findings that informed project design.</p>
+                          </GuidanceBlock>
+                          <textarea
+                            value={situationalAnalysis}
+                            onChange={(e) => setSituationalAnalysis(e.target.value)}
+                            placeholder="Information collected, data sources, methods/instruments, baseline indicators, major findings..."
+                            rows={4}
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.4 Project / Intervention Design — Rationale</label>
+                          <GuidanceBlock>
+                            <p>Describe the extension intervention and its underlying logic. Explain why the selected intervention was expected to address the identified condition.</p>
+                          </GuidanceBlock>
+                          {/* ---- 2.4 Project Design Image Upload ---- */}
+                          <div className="mt-3 mb-3">
+                            <div className="flex items-center justify-between mb-2">
+                              <div>
+                                <label className="text-sm font-semibold text-slate-700 block">
+                                  Project Design / Results Pathway (optional)
+                                </label>
+                                <p className="text-xs text-slate-500 mt-0.5">
+                                  Upload your own diagram. If none is uploaded, the template default
+                                  (PEMNet sample pathway) will be used.
+                                </p>
+                              </div>
+                              <label className="cursor-pointer px-3 py-2 text-sm font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition inline-flex items-center gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                                </svg>
+                                {projectDesignImage ? 'Replace image' : 'Add image'}
+                                <input
+                                  type="file"
+                                  accept="image/png,image/jpeg,image/jpg,image/webp"
+                                  className="hidden"
+                                  onChange={handleAddProjectDesign}
+                                />
+                              </label>
+                            </div>
+
+                            {projectDesignImage ? (
+                              <div className="border border-slate-200 rounded-xl p-3 bg-slate-50/50 space-y-2">
+                                <div className="flex items-start justify-between gap-3">
+                                  <span className="text-xs font-semibold text-slate-600 truncate">
+                                    {projectDesignImage.fileName}
+                                  </span>
                                   <button
                                     type="button"
-                                    onClick={() => removeTable(table.id)}
-                                    className="text-slate-400 hover:text-red-500 transition"
-                                    aria-label={`Remove table ${tIdx + 1}`}
+                                    onClick={removeProjectDesign}
+                                    className="text-slate-400 hover:text-red-500 transition shrink-0"
+                                    aria-label="Remove project design image"
                                   >
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                                     </svg>
                                   </button>
-                                )}
-                              </div>
-
-                              {/* Title */}
-                              <div>
-                                <label className="text-xs font-semibold text-slate-600 mb-1 block">
-                                  Table {tIdx + 1} — Title
-                                </label>
-                                <input
-                                  type="text"
-                                  value={table.title}
-                                  onChange={(e) => updateTableField(table.id, 'title', e.target.value)}
-                                  placeholder="e.g., Baseline and Post-Intervention Status of Selected Indicators"
-                                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                                />
-                              </div>
-
-                              {/* Rows */}
-                              <div>
-                                <label className="text-xs font-semibold text-slate-600 mb-1 block">
-                                  Table {tIdx + 1} — Rows
-                                </label>
-
-                                {/* Desktop header row */}
-                                <div
-                                  className="hidden sm:grid gap-2 mb-2 px-1"
-                                  style={{ gridTemplateColumns: '1.4fr 1fr 1.2fr 0.8fr 1.6fr 32px' }}
-                                >
-                                  <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Indicator</span>
-                                  <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Baseline</span>
-                                  <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Endline/Follow-up</span>
-                                  <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Change</span>
-                                  <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Source of Evidence</span>
-                                  <span />
                                 </div>
+                                <div className="border border-slate-200 rounded-lg bg-white p-2 flex items-center justify-center">
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img
+                                    src={projectDesignImage.previewUrl}
+                                    alt="Project design preview"
+                                    className="max-h-64 w-auto object-contain"
+                                  />
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center text-xs text-slate-400">
+                                No image uploaded — the default pathway diagram will be shown in the PDF.
+                              </div>
+                            )}
+                          </div>
+                          <textarea
+                            value={interventionRationale}
+                            onChange={(e) => setInterventionRationale(e.target.value)}
+                            placeholder="Explain why the selected intervention was expected to address the identified condition..."
+                            rows={3}
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.5 Implementation Strategies</label>
+                          <GuidanceBlock>
+                            <p>Describe the major strategies used, such as capability-building, technical assistance, demonstrations, mentoring or coaching, community organizing, communication interventions, technology transfer, enterprise development, policy or institutional development, partnership building, participatory planning, or other relevant approaches.</p>
+                            <p>Avoid presenting a simple chronological list of activities unless chronology is analytically important.</p>
+                          </GuidanceBlock>
+                          <textarea
+                            value={implementationStrategies}
+                            onChange={(e) => setImplementationStrategies(e.target.value)}
+                            placeholder="Capability-building, technical assistance, demonstrations, mentoring, community organizing, etc..."
+                            rows={3}
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.6 Partnership and Stakeholder Participation</label>
+                          <GuidanceBlock>
+                            <p>Identify important partners and explain their actual roles, rather than merely listing organizations. Describe relevant community participation in project planning, implementation, monitoring, decision-making, resource mobilization, or sustainability mechanisms.</p>
+                          </GuidanceBlock>
+                          <textarea
+                            value={partnership}
+                            onChange={(e) => setPartnership(e.target.value)}
+                            placeholder="Partners and their actual roles; community participation in planning, implementation, monitoring..."
+                            rows={3}
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
+                          />
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.7 Monitoring and Evaluation Design</label>
+                            <GuidanceBlock>
+                              <p>Explain how the project&apos;s results were measured or verified. Identify indicators, data sources, instruments, timing of measurements, persons or groups from whom data were obtained, follow-up procedures, and methods used to verify or triangulate evidence.</p>
+                              <p>Where baseline and endline measurements were conducted, describe them clearly.</p>
+                            </GuidanceBlock>
+                            <textarea
+                              value={monitoringEval}
+                              onChange={(e) => setMonitoringEval(e.target.value)}
+                              placeholder="Indicators, data sources, instruments, timing, follow-up, triangulation..."
+                              rows={4}
+                              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.8 Data Analysis</label>
+                            <GuidanceBlock>
+                              <p>Describe how quantitative and/or qualitative data were analyzed. Examples: frequencies and percentages; means or other descriptive statistics; pre-post comparison; appropriate statistical tests; thematic analysis; content analysis; or triangulation of multiple evidence sources.</p>
+                              <p>Do not employ statistical tests merely to make the manuscript appear more scholarly.</p>
+                            </GuidanceBlock>
+                            <textarea
+                              value={dataAnalysis}
+                              onChange={(e) => setDataAnalysis(e.target.value)}
+                              placeholder="Quantitative and/or qualitative analysis methods..."
+                              rows={4}
+                              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-sm font-semibold text-slate-700 mb-1.5 block">2.9 Ethical Considerations</label>
+                          <GuidanceBlock>
+                            <p>Explain relevant safeguards concerning informed participation or consent, confidentiality, privacy, community data, photographs, interviews and testimonies, vulnerable participants, and institutional records.</p>
+                            <p>Where formal ethics clearance was required and obtained, state the approving body and approval/reference number.</p>
+                          </GuidanceBlock>
+                          <textarea
+                            value={ethicalConsiderations}
+                            onChange={(e) => setEthicalConsiderations(e.target.value)}
+                            placeholder="Informed consent, confidentiality, privacy, community data, ethics clearance..."
+                            rows={3}
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
+                          />
+                        </div>
+                      </div>
+                    </div>
 
-                                <div className="space-y-3">
-                                  {table.rows.map((row, rIdx) => (
+                    {/* =====================================================
+                    * 3. RESULTS
+                    * ===================================================== */}
+                    <div className="border-t border-slate-200 pt-5">
+                      <h3 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">3. Results</h3>
+                      <WordCounter
+                        text={[
+                          reachImplementation, immediateResults, outcomes, adoption,
+                          institutionalization, publicValue,
+                        ].join(' ')}
+                        min={1200}
+                        max={1600}
+                      />
+                      <GuidanceBlock>
+                        <p className="font-semibold">Recommended maximum: <span style={{ color: '#FF0000' }}>1,200–1,600 words</span></p>
+                        <p>Present the evidence objectively and systematically. Results should correspond directly with the project objectives and indicators.</p>
+                        <p><b>Important Evidence Rule:</b> Attendance sheets, photographs, certificates, and activity reports can verify that an activity occurred, but they should not by themselves be used as proof that an outcome, adoption, utilization, or impact occurred.</p>
+                      </GuidanceBlock>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="text-sm font-semibold text-slate-700 mb-1.5 block">3.1 Project Reach and Implementation</label>
+                          <GuidanceBlock>
+                            <p>Briefly report important implementation evidence: actual participants reached, interventions delivered, completion levels, major products or outputs, and significant deviations from the original project design.</p>
+                            <p>Do not allow activity counts to dominate the Results section.</p>
+                          </GuidanceBlock>
+                          <textarea
+                            value={reachImplementation}
+                            onChange={(e) => setReachImplementation(e.target.value)}
+                            placeholder="Actual participants, interventions delivered, completion levels, major outputs..."
+                            rows={3}
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-semibold text-slate-700 mb-1.5 block">3.2 Immediate Results</label>
+                          <GuidanceBlock>
+                            <p>Present documented immediate changes following the intervention, where applicable. Examples include changes in knowledge, skills, practices, confidence, organizational capacity, access, productivity, service delivery, or institutional processes.</p>
+                          </GuidanceBlock>
+                          <textarea
+                            value={immediateResults}
+                            onChange={(e) => setImmediateResults(e.target.value)}
+                            placeholder="Documented changes in knowledge, skills, practices, confidence, capacity..."
+                            rows={3}
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-semibold text-slate-700 mb-1.5 block">3.3 Outcomes</label>
+                          <GuidanceBlock>
+                            <p>Present evidence of changes that occurred beyond immediate project outputs. Where possible, distinguish clearly among:</p>
+                            <ul className="list-disc list-inside ml-1">
+                              <li><b>Output</b> – what the project produced</li>
+                              <li><b>Immediate result</b> – what changed shortly after the intervention</li>
+                              <li><b>Outcome</b> – meaningful change in practice, behavior, condition, performance, or institutional capacity</li>
+                            </ul>
+                          </GuidanceBlock>
+                          <textarea
+                            value={outcomes}
+                            onChange={(e) => setOutcomes(e.target.value)}
+                            placeholder="Meaningful change in practice, behavior, condition, performance, or institutional capacity..."
+                            rows={3}
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-semibold text-slate-700 mb-1.5 block">3.4 Adoption, Utilization, Adaptation, or Continuation</label>
+                          <GuidanceBlock>
+                            <p>Where applicable, report evidence that project participants or partners used acquired knowledge or technologies, adopted recommended practices, adapted an intervention to local circumstances, continued activities beyond project-supported delivery, or replicated project practices.</p>
+                            <p>Specify who adopted what, how many, to what extent, and based on what evidence whenever the data permit.</p>
+                          </GuidanceBlock>
+                          <textarea
+                            value={adoption}
+                            onChange={(e) => setAdoption(e.target.value)}
+                            placeholder="Who adopted what, how many, to what extent, on what evidence..."
+                            rows={3}
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-semibold text-slate-700 mb-1.5 block">3.5 Institutionalization and Sustainability</label>
+                          <GuidanceBlock>
+                            <p>Present documented evidence of mechanisms such as partner policies, local ordinances or resolutions, budget allocations, integration into regular programs, institutional structures, trained local implementers, community management mechanisms, continuing partnerships, locally generated resources, or other arrangements supporting continuation.</p>
+                          </GuidanceBlock>
+                          <textarea
+                            value={institutionalization}
+                            onChange={(e) => setInstitutionalization(e.target.value)}
+                            placeholder="Partner policies, ordinances, budget allocations, integration into programs..."
+                            rows={3}
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-semibold text-slate-700 mb-1.5 block">3.6 Public Value and Broader Benefits</label>
+                          <GuidanceBlock>
+                            <p>Where supported by evidence, describe the project&apos;s contribution to community or institutional benefit. Possible areas include improved livelihood, health or wellbeing, educational improvement, strengthened institutional capacity, increased resilience, improved environmental practices, empowerment, improved service delivery, or other documented public benefits.</p>
+                          </GuidanceBlock>
+                          <textarea
+                            value={publicValue}
+                            onChange={(e) => setPublicValue(e.target.value)}
+                            placeholder="Improved livelihood, health, education, resilience, environment, empowerment..."
+                            rows={3}
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* =====================================================
+                    * 4. DISCUSSION
+                    * ===================================================== */}
+                    <div className="border-t border-slate-200 pt-5">
+                      <h3 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">4. Discussion</h3>
+                      <WordCounter
+                        text={[
+                          interpretation, relationshipLiterature, factorsAffecting,
+                          inclusionResilience, transferability, limitations,
+                        ].join(' ')}
+                        min={1000}
+                        max={1400}
+                      />
+                      <GuidanceBlock>
+                        <p className="font-semibold">Recommended maximum: <span style={{ color: '#FF0000' }}>1,000–1,400 words</span></p>
+                        <p>The Discussion should explain what the results mean, rather than repeat the Results section.</p>
+                      </GuidanceBlock>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="text-sm font-semibold text-slate-700 mb-1.5 block">4.1 Interpretation of Major Findings</label>
+                          <GuidanceBlock>
+                            <p>Explain the most important findings. Why did the intervention appear to work—or not work? What conditions may explain the observed results?</p>
+                          </GuidanceBlock>
+                          <textarea
+                            value={interpretation}
+                            onChange={(e) => setInterpretation(e.target.value)}
+                            placeholder="Most important findings, why the intervention worked (or not), conditions explaining results..."
+                            rows={3}
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-semibold text-slate-700 mb-1.5 block">4.2 Relationship to Previous Research and Extension Literature</label>
+                          <GuidanceBlock>
+                            <p>Compare the results with relevant published studies, extension literature, policies, frameworks, or previous interventions. Explain whether the results support, extend, differ from, or qualify what is already known.</p>
+                          </GuidanceBlock>
+                          <textarea
+                            value={relationshipLiterature}
+                            onChange={(e) => setRelationshipLiterature(e.target.value)}
+                            placeholder="Supporting, extending, differing from, or qualifying what is already known..."
+                            rows={3}
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-semibold text-slate-700 mb-1.5 block">4.3 Factors Affecting Implementation and Outcomes</label>
+                          <GuidanceBlock>
+                            <p>Discuss important enabling or constraining factors, such as community participation, leadership, institutional support, local culture, resources, partnerships, market conditions, environmental conditions, policy context, implementation fidelity, or other contextual factors.</p>
+                          </GuidanceBlock>
+                          <textarea
+                            value={factorsAffecting}
+                            onChange={(e) => setFactorsAffecting(e.target.value)}
+                            placeholder="Enabling or constraining factors: participation, leadership, resources, culture, policy..."
+                            rows={3}
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-semibold text-slate-700 mb-1.5 block">4.4 Inclusion, Sustainability, and Resilience</label>
+                          <GuidanceBlock>
+                            <p>Where applicable, interpret how the project addressed gender and social inclusion, participation of vulnerable or underserved groups, sustainability, resilience, institutional ownership, and local capacity.</p>
+                          </GuidanceBlock>
+                          <textarea
+                            value={inclusionResilience}
+                            onChange={(e) => setInclusionResilience(e.target.value)}
+                            placeholder="Gender and social inclusion, vulnerable groups, sustainability, resilience, ownership, local capacity..."
+                            rows={3}
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-semibold text-slate-700 mb-1.5 block">4.5 Transferability, Replication, or Scaling</label>
+                          <GuidanceBlock>
+                            <p>Discuss whether the intervention may reasonably be replicated, adapted, scaled, institutionalized, or transferred to another context.</p>
+                            <p>Do not automatically recommend scaling solely because participants were satisfied with the project.</p>
+                          </GuidanceBlock>
+                          <textarea
+                            value={transferability}
+                            onChange={(e) => setTransferability(e.target.value)}
+                            placeholder="Replicated, adapted, scaled, institutionalized, or transferred to another context..."
+                            rows={3}
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-semibold text-slate-700 mb-1.5 block">4.6 Limitations</label>
+                          <GuidanceBlock>
+                            <p>Clearly acknowledge relevant limitations, including possible weaknesses in baseline information, participant selection, sample size, absence of a comparison group, duration of follow-up, reliance on self-reported information, missing data, measurement instruments, attribution of outcomes, or other methodological constraints.</p>
+                            <p>A credible limitations section strengthens, rather than weakens, a scholarly paper.</p>
+                          </GuidanceBlock>
+                          <textarea
+                            value={limitations}
+                            onChange={(e) => setLimitations(e.target.value)}
+                            placeholder="Baseline, sample size, comparison group, follow-up, self-report, missing data, measurement..."
+                            rows={3}
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* =====================================================
+                    * 5. IMPLICATIONS
+                    * ===================================================== */}
+                    <div className="border-t border-slate-200 pt-5">
+                      <FieldLabel text={implications} min={400} max={500}>
+                        5. Implications for Extension Practice and Policy
+                      </FieldLabel>
+                      <GuidanceBlock>
+                        <p className="font-semibold">Recommended maximum: <span style={{ color: '#FF0000' }}>400–500 words</span></p>
+                        <p>Explain what extension managers, HEIs, practitioners, LGUs, partner institutions, policymakers, or other stakeholders can reasonably learn from the project. Possible implications may concern extension project design, community engagement, monitoring and evaluation, evidence generation, institutional partnerships, technology adoption, capability-building, sustainability mechanisms, quality assurance, policy development, or scaling and replication.</p>
+                        <p>Recommendations must arise from the evidence presented in the paper.</p>
+                      </GuidanceBlock>
+                      <textarea
+                        value={implications}
+                        onChange={(e) => setImplications(e.target.value)}
+                        placeholder="What extension managers, HEIs, LGUs, policymakers, and partners can learn from the project..."
+                        rows={4}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
+                      />
+                    </div>
+
+                    {/* =====================================================
+                    * 6. CONCLUSION + BACK MATTER
+                    * ===================================================== */}
+                    <div className="border-t border-slate-200 pt-5">
+                      <FieldLabel text={conclusion} min={300} max={500}>
+                        6. Conclusion
+                      </FieldLabel>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="text-sm font-semibold text-slate-700 mb-1.5 block">6. Conclusion</label>
+                          <GuidanceBlock>
+                            <p className="font-semibold">Recommended maximum: <span style={{ color: '#FF0000' }}>300–500 words</span></p>
+                            <p>Provide a concise synthesis of the development issue addressed, the principal intervention, the strongest documented results, the significance of those results, and the central implication for transformative extension.</p>
+                            <p>Do not introduce new data or literature in the Conclusion. Avoid exaggerated claims unless genuinely supported by evidence.</p>
+                          </GuidanceBlock>
+                          <textarea
+                            value={conclusion}
+                            onChange={(e) => setConclusion(e.target.value)}
+                            placeholder="Synthesis of issue, intervention, strongest results, significance, and central implication..."
+                            rows={4}
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Acknowledgments</label>
+                          <GuidanceBlock>
+                            <p>Acknowledge institutions, communities, partners, funders, technical personnel, or individuals who contributed materially to the project but do not qualify for authorship.</p>
+                            <p>Do not use this section merely to list officials.</p>
+                          </GuidanceBlock>
+                          <textarea
+                            value={acknowledgments}
+                            onChange={(e) => setAcknowledgments(e.target.value)}
+                            placeholder="Institutions, communities, partners, funders, technical personnel who contributed..."
+                            rows={3}
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Funding Statement</label>
+                          <GuidanceBlock>
+                            <p>Example: <i>This extension project was funded by [Institution/Agency] under [program/grant, if applicable].</i></p>
+                            <p>Or: <i>The authors received no external funding for the implementation of this project.</i></p>
+                          </GuidanceBlock>
+                          <textarea
+                            value={funding}
+                            onChange={(e) => setFunding(e.target.value)}
+                            placeholder="e.g., This extension project was funded by [Institution/Agency]..."
+                            rows={2}
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Conflict of Interest</label>
+                          <GuidanceBlock>
+                            <p>Example: <i>The authors declare no conflict of interest.</i> Where a relevant conflict exists, it should be disclosed.</p>
+                          </GuidanceBlock>
+                          <textarea
+                            value={conflictOfInterest}
+                            onChange={(e) => setConflictOfInterest(e.target.value)}
+                            placeholder="e.g., The authors declare no conflict of interest."
+                            rows={2}
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Ethics and Informed Consent Statement</label>
+                          <GuidanceBlock>
+                            <p>Where applicable: <i>The project and associated data-gathering procedures were reviewed/approved by [appropriate body]. Informed consent was obtained from participants prior to data collection and/or use of identifiable photographs and testimonies.</i></p>
+                            <p>Adapt the statement according to what actually occurred. Do not claim ethical clearance that was not obtained.</p>
+                          </GuidanceBlock>
+                          <textarea
+                            value={ethicsStatement}
+                            onChange={(e) => setEthicsStatement(e.target.value)}
+                            placeholder="e.g., The project was reviewed/approved by [appropriate body]. Informed consent was obtained..."
+                            rows={3}
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Data Availability Statement</label>
+                          <GuidanceBlock>
+                            <p>Where appropriate: <i>The data supporting the findings of this paper are available from the corresponding author upon reasonable request, subject to applicable privacy, consent, institutional, and data-protection requirements.</i></p>
+                          </GuidanceBlock>
+                          <textarea
+                            value={dataAvailability}
+                            onChange={(e) => setDataAvailability(e.target.value)}
+                            placeholder="e.g., Data are available from the corresponding author upon reasonable request..."
+                            rows={2}
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Author Contributions (CRediT-style)</label>
+                          <GuidanceBlock>
+                            <p>For stronger publication readiness, use a CRediT-style contributor approach. Example:</p>
+                            <p><i>Conceptualization: A.A., B.B.<br/>Methodology: A.A., C.C.<br/>Data Collection: B.B., C.C.<br/>Data Analysis: A.A.<br/>Writing – Original Draft: A.A.<br/>Writing – Review and Editing: A.A., B.B., C.C.<br/>Project Administration: B.B.</i></p>
+                          </GuidanceBlock>
+                          <textarea
+                            value={authorContributions}
+                            onChange={(e) => setAuthorContributions(e.target.value)}
+                            placeholder={`e.g.,\nConceptualization: A.A., B.B.\nMethodology: A.A., C.C.\nWriting – Original Draft: A.A.`}
+                            rows={4}
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
+                            References (APA 7th Edition)
+                          </label>
+                          <GuidanceBlock>
+                            <p>Use APA 7th Edition consistently. References appearing in the list must be cited in the manuscript, and all cited works must appear in the reference list.</p>
+                            <p>Prioritize peer-reviewed journal articles, scholarly books, government publications, official institutional reports, authoritative technical publications, and other credible primary sources.</p>
+                            <p className="font-semibold">Journal Article format: <i>Author, A. A., &amp; Author, B. B. (Year). Title of article. Journal Title, Volume(Issue), xx–xx. DOI</i></p>
+                            <p className="font-semibold">Government/Institutional Report: <i>Institution. (Year). Title of report. Publisher/Institution. URL</i></p>
+                            <p className="font-semibold">Book: <i>Author, A. A. (Year). Title of book. Publisher.</i></p>
+                          </GuidanceBlock>
+
+                          {/* Validated textarea wrapper */}
+                          <div className="relative text-slate-700">
+                            <textarea
+                              value={references}
+                              onChange={(e) => setReferences(e.target.value)}
+                              placeholder={"Enter the complete APA 7th Edition reference list, one entry per line...\n\nExample:\nSmith, J. A., & Doe, R. B. (2024). Community-based extension methods. Journal of Extension Practice, 12(3), 45–62."}
+                              rows={8}
+                              className={`w-full px-4 py-3 bg-slate-50 border rounded-xl text-sm focus:ring-2 focus:outline-none resize-y transition-colors ${
+                                references.trim() && references.split('\n').some(l => l.trim() && !validateAPAReference(l).valid)
+                                  ? 'border-red-300 focus:border-red-400 focus:ring-red-200'
+                                  : 'border-slate-200 focus:border-blue-500 focus:ring-blue-500/20'
+                              }`}
+                            />
+
+                            {/* Per-line validation indicators */}
+                            {references.trim() && (
+                              <div className="mt-2 space-y-1 max-h-40 overflow-y-auto">
+                                {references.split('\n').map((line, idx) => {
+                                  const result = validateAPAReference(line);
+                                  if (!line.trim()) return null;
+                                  if (result.valid) return null;
+                                  return (
                                     <div
-                                      key={rIdx}
-                                      className="space-y-2 sm:space-y-0 sm:grid sm:gap-2 sm:items-start pb-3 sm:pb-0 border-b border-slate-100 sm:border-0"
-                                      style={{ gridTemplateColumns: '1.4fr 1fr 1.2fr 0.8fr 1.6fr 32px' }}
+                                      key={idx}
+                                      className="flex items-start gap-2 px-3 py-1.5 bg-red-50 border border-red-200 rounded-lg text-xs"
                                     >
-                                      {/* Mobile inputs */}
-                                      <div className="sm:hidden">
-                                        <span className="text-xs font-semibold text-slate-500 mb-1 block">Indicator</span>
-                                        <input
-                                          type="text"
-                                          value={row.indicator}
-                                          onChange={(e) => updateTableRow(table.id, rIdx, 'indicator', e.target.value)}
-                                          placeholder="Indicator"
-                                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                                        />
-                                      </div>
-                                      <div className="sm:hidden">
-                                        <span className="text-xs font-semibold text-slate-500 mb-1 block">Baseline</span>
-                                        <input
-                                          type="text"
-                                          value={row.baseline}
-                                          onChange={(e) => updateTableRow(table.id, rIdx, 'baseline', e.target.value)}
-                                          placeholder="Baseline"
-                                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                                        />
-                                      </div>
-                                      <div className="sm:hidden">
-                                        <span className="text-xs font-semibold text-slate-500 mb-1 block">Endline/Follow-up</span>
-                                        <input
-                                          type="text"
-                                          value={row.endline}
-                                          onChange={(e) => updateTableRow(table.id, rIdx, 'endline', e.target.value)}
-                                          placeholder="Endline/Follow-up"
-                                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                                        />
-                                      </div>
-                                      <div className="sm:hidden">
-                                        <span className="text-xs font-semibold text-slate-500 mb-1 block">Change</span>
-                                        <input
-                                          type="text"
-                                          value={row.change}
-                                          onChange={(e) => updateTableRow(table.id, rIdx, 'change', e.target.value)}
-                                          placeholder="Change"
-                                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                                        />
-                                      </div>
-                                      <div className="sm:hidden">
-                                        <span className="text-xs font-semibold text-slate-500 mb-1 block">Source of Evidence</span>
-                                        <div className="flex gap-2 min-w-0">
-                                          <input
-                                            type="text"
-                                            value={row.source}
-                                            onChange={(e) => updateTableRow(table.id, rIdx, 'source', e.target.value)}
-                                            placeholder="Source"
-                                            className="flex-1 min-w-0 px-3 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                                          />
-                                          {table.rows.length > 1 && (
-                                            <button
-                                              type="button"
-                                              onClick={() => removeTableRow(table.id, rIdx)}
-                                              className="px-2 text-slate-400 hover:text-red-500 transition shrink-0"
-                                              aria-label="Remove row"
-                                            >
-                                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                              </svg>
-                                            </button>
-                                          )}
-                                        </div>
-                                      </div>
-
-                                      {/* Desktop inputs */}
-                                      <input
-                                        type="text"
-                                        value={row.indicator}
-                                        onChange={(e) => updateTableRow(table.id, rIdx, 'indicator', e.target.value)}
-                                        placeholder="Indicator"
-                                        className="hidden sm:block w-full min-w-0 px-2 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                                      />
-                                      <input
-                                        type="text"
-                                        value={row.baseline}
-                                        onChange={(e) => updateTableRow(table.id, rIdx, 'baseline', e.target.value)}
-                                        placeholder="Baseline"
-                                        className="hidden sm:block w-full min-w-0 px-2 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                                      />
-                                      <input
-                                        type="text"
-                                        value={row.endline}
-                                        onChange={(e) => updateTableRow(table.id, rIdx, 'endline', e.target.value)}
-                                        placeholder="Endline"
-                                        className="hidden sm:block w-full min-w-0 px-2 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                                      />
-                                      <input
-                                        type="text"
-                                        value={row.change}
-                                        onChange={(e) => updateTableRow(table.id, rIdx, 'change', e.target.value)}
-                                        placeholder="Change"
-                                        className="hidden sm:block w-full min-w-0 px-2 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                                      />
-                                      <input
-                                        type="text"
-                                        value={row.source}
-                                        onChange={(e) => updateTableRow(table.id, rIdx, 'source', e.target.value)}
-                                        placeholder="Source"
-                                        className="hidden sm:block w-full min-w-0 px-2 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                                      />
-                                      <div className="hidden sm:flex items-center justify-center">
-                                        {table.rows.length > 1 && (
-                                          <button
-                                            type="button"
-                                            onClick={() => removeTableRow(table.id, rIdx)}
-                                            className="text-slate-400 hover:text-red-500 transition"
-                                            aria-label="Remove row"
-                                          >
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                            </svg>
-                                          </button>
-                                        )}
+                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5 text-red-500 shrink-0 mt-0.5">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                                      </svg>
+                                      <div>
+                                        <span className="font-mono text-red-700 font-semibold">Line {idx + 1}:</span>{' '}
+                                        <span className="text-red-600">{result.message}</span>
                                       </div>
                                     </div>
-                                  ))}
-                                </div>
-
-                                <button
-                                  type="button"
-                                  onClick={() => addTableRow(table.id)}
-                                  className="mt-3 px-3 py-2 text-sm font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition inline-flex items-center gap-1"
-                                >
-                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                                  </svg>
-                                  Add row
-                                </button>
+                                  );
+                                })}
                               </div>
-
-                              {/* Note */}
-                              <div>
-                                <label className="text-xs font-semibold text-slate-600 mb-1 block">
-                                  Table {tIdx + 1} — Note
-                                </label>
-                                <textarea
-                                  value={table.note}
-                                  onChange={(e) => updateTableField(table.id, 'note', e.target.value)}
-                                  placeholder="e.g., Note. Explain abbreviations or important qualifications."
-                                  rows={2}
-                                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
-                                />
-                              </div>
-                            </div>
-                          ))}
-
-                          <button
-                            type="button"
-                            onClick={addTable}
-                            className="w-full px-4 py-3 text-sm font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border-2 border-dashed border-blue-200 hover:border-blue-300 rounded-xl transition inline-flex items-center justify-center gap-2"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                            </svg>
-                            Add table
-                          </button>
+                            )}
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Appendices</label>
+                          <GuidanceBlock>
+                            <p>Appendices are optional and should contain only evidence necessary for understanding or verifying the manuscript. Possible appendices include: Appendix A: Project Results Framework; Appendix B: Major Monitoring Indicators; Appendix C: Relevant Data Collection Instrument; Appendix D: Additional Results Table; Appendix E: Evidence of Institutionalization.</p>
+                            <p>Do not turn the manuscript into a portfolio of certificates, attendance sheets, photographs, and administrative documents.</p>
+                          </GuidanceBlock>
+                          <textarea
+                            value={appendices}
+                            onChange={(e) => setAppendices(e.target.value)}
+                            placeholder="List or describe appendices that support the manuscript..."
+                            rows={3}
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
+                          />
                         </div>
 
-                        {/* ---------- Figures ---------- */}
-                        <div className="border-t border-slate-100 pt-4">
-                          <div className="flex items-center justify-between mb-2">
-                            <div>
-                              <label className="text-sm font-semibold text-slate-700 block">
-                                Figures
-                              </label>
-                              <p className="text-xs text-slate-500 mt-0.5">
-                                Attach one or more figure images. Each will be numbered sequentially (Figure 1, Figure 2, …).
-                              </p>
-                            </div>
-                            <label className="cursor-pointer px-3 py-2 text-sm font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition inline-flex items-center gap-1">
-                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                              </svg>
-                              Add figure
-                              <input
-                                type="file"
-                                accept="image/png,image/jpeg,image/jpg,image/webp"
-                                multiple
-                                className="hidden"
-                                onChange={handleAddFigures}
-                              />
-                            </label>
-                          </div>
+                        {/* ---- TABLE AND FIGURE FORMAT ---- */}
+                        <div className="border-t border-slate-200 pt-5 mt-5">
+                          <h4 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">
+                            Table and Figure Format
+                          </h4>
+                          <GuidanceBlock>
+                            <p>Tables and figures should communicate evidence, not simply decorate the manuscript. They must be properly numbered, labeled, explained in the text, and directly relevant to the claims being presented.</p>
+                            <p>Every table must be discussed in the text.</p>
+                          </GuidanceBlock>
+                          <div className="space-y-4">
 
-                          {figures.length === 0 ? (
-                            <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center text-slate-400 text-sm">
-                              No figures attached yet.
-                            </div>
-                          ) : (
+                            {/* ---------- Tables ---------- */}
                             <div className="space-y-4">
-                              {figures.map((fig, idx) => (
+                              {tables.map((table, tIdx) => (
                                 <div
-                                  key={fig.id}
-                                  className="border border-slate-200 rounded-xl p-4 bg-slate-50/50 space-y-3"
+                                  key={table.id}
+                                  className="border border-slate-200 rounded-xl p-4 bg-white space-y-3"
                                 >
-                                  <div className="flex items-start justify-between gap-3">
-                                    <span className="text-sm font-bold text-slate-700">
-                                      Figure {idx + 1}
+                                  {/* Table header row */}
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-sm font-bold text-slate-800">
+                                      Table {tIdx + 1}
                                     </span>
-                                    <button
-                                      type="button"
-                                      onClick={() => removeFigure(fig.id)}
-                                      className="text-slate-400 hover:text-red-500 transition"
-                                      aria-label="Remove figure"
-                                    >
-                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                      </svg>
-                                    </button>
-                                  </div>
-
-                                  {/* Image preview */}
-                                  <div className="border border-slate-200 rounded-lg bg-white p-2 flex items-center justify-center">
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img
-                                      src={fig.previewUrl}
-                                      alt={fig.title || `Figure ${idx + 1}`}
-                                      className="max-h-48 w-auto object-contain"
-                                    />
+                                    {tables.length > 1 && (
+                                      <button
+                                        type="button"
+                                        onClick={() => removeTable(table.id)}
+                                        className="text-slate-400 hover:text-red-500 transition"
+                                        aria-label={`Remove table ${tIdx + 1}`}
+                                      >
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                      </button>
+                                    )}
                                   </div>
 
                                   {/* Title */}
                                   <div>
                                     <label className="text-xs font-semibold text-slate-600 mb-1 block">
-                                      Figure {idx + 1} — Title
+                                      Table {tIdx + 1} — Title
                                     </label>
-                                    <GuidanceBlock>
-                                      <p>Provide a concise, descriptive title for the figure (e.g., &ldquo;Extension Project Results Pathway&rdquo;).</p>
-                                    </GuidanceBlock>
                                     <input
                                       type="text"
-                                      value={fig.title}
-                                      onChange={(e) => updateFigure(fig.id, 'title', e.target.value)}
-                                      placeholder="e.g., Extension Project Results Pathway"
-                                      className="w-full px-3 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                                      value={table.title}
+                                      onChange={(e) => updateTableField(table.id, 'title', e.target.value)}
+                                      placeholder="e.g., Baseline and Post-Intervention Status of Selected Indicators"
+                                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                                     />
                                   </div>
 
-                                  {/* Description */}
+                                  {/* Rows */}
                                   <div>
                                     <label className="text-xs font-semibold text-slate-600 mb-1 block">
-                                      Figure {idx + 1} — Description
+                                      Table {tIdx + 1} — Rows
                                     </label>
-                                    <GuidanceBlock>
-                                      <p>Provide a description or source note, where necessary, following APA 7th Edition figure notes style.</p>
-                                    </GuidanceBlock>
+
+                                    {/* Desktop header row */}
+                                    <div
+                                      className="hidden sm:grid gap-2 mb-2 px-1"
+                                      style={{ gridTemplateColumns: '1.4fr 1fr 1.2fr 0.8fr 1.6fr 32px' }}
+                                    >
+                                      <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Indicator</span>
+                                      <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Baseline</span>
+                                      <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Endline/Follow-up</span>
+                                      <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Change</span>
+                                      <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Source of Evidence</span>
+                                      <span />
+                                    </div>
+
+                                    <div className="space-y-3">
+                                      {table.rows.map((row, rIdx) => (
+                                        <div
+                                          key={rIdx}
+                                          className="space-y-2 sm:space-y-0 sm:grid sm:gap-2 sm:items-start pb-3 sm:pb-0 border-b border-slate-100 sm:border-0"
+                                          style={{ gridTemplateColumns: '1.4fr 1fr 1.2fr 0.8fr 1.6fr 32px' }}
+                                        >
+                                          {/* Mobile inputs */}
+                                          <div className="sm:hidden">
+                                            <span className="text-xs font-semibold text-slate-500 mb-1 block">Indicator</span>
+                                            <input
+                                              type="text"
+                                              value={row.indicator}
+                                              onChange={(e) => updateTableRow(table.id, rIdx, 'indicator', e.target.value)}
+                                              placeholder="Indicator"
+                                              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                                            />
+                                          </div>
+                                          <div className="sm:hidden">
+                                            <span className="text-xs font-semibold text-slate-500 mb-1 block">Baseline</span>
+                                            <input
+                                              type="text"
+                                              value={row.baseline}
+                                              onChange={(e) => updateTableRow(table.id, rIdx, 'baseline', e.target.value)}
+                                              placeholder="Baseline"
+                                              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                                            />
+                                          </div>
+                                          <div className="sm:hidden">
+                                            <span className="text-xs font-semibold text-slate-500 mb-1 block">Endline/Follow-up</span>
+                                            <input
+                                              type="text"
+                                              value={row.endline}
+                                              onChange={(e) => updateTableRow(table.id, rIdx, 'endline', e.target.value)}
+                                              placeholder="Endline/Follow-up"
+                                              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                                            />
+                                          </div>
+                                          <div className="sm:hidden">
+                                            <span className="text-xs font-semibold text-slate-500 mb-1 block">Change</span>
+                                            <input
+                                              type="text"
+                                              value={row.change}
+                                              onChange={(e) => updateTableRow(table.id, rIdx, 'change', e.target.value)}
+                                              placeholder="Change"
+                                              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                                            />
+                                          </div>
+                                          <div className="sm:hidden">
+                                            <span className="text-xs font-semibold text-slate-500 mb-1 block">Source of Evidence</span>
+                                            <div className="flex gap-2 min-w-0">
+                                              <input
+                                                type="text"
+                                                value={row.source}
+                                                onChange={(e) => updateTableRow(table.id, rIdx, 'source', e.target.value)}
+                                                placeholder="Source"
+                                                className="flex-1 min-w-0 px-3 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                                              />
+                                              {table.rows.length > 1 && (
+                                                <button
+                                                  type="button"
+                                                  onClick={() => removeTableRow(table.id, rIdx)}
+                                                  className="px-2 text-slate-400 hover:text-red-500 transition shrink-0"
+                                                  aria-label="Remove row"
+                                                >
+                                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                                  </svg>
+                                                </button>
+                                              )}
+                                            </div>
+                                          </div>
+
+                                          {/* Desktop inputs */}
+                                          <input
+                                            type="text"
+                                            value={row.indicator}
+                                            onChange={(e) => updateTableRow(table.id, rIdx, 'indicator', e.target.value)}
+                                            placeholder="Indicator"
+                                            className="hidden sm:block w-full min-w-0 px-2 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                                          />
+                                          <input
+                                            type="text"
+                                            value={row.baseline}
+                                            onChange={(e) => updateTableRow(table.id, rIdx, 'baseline', e.target.value)}
+                                            placeholder="Baseline"
+                                            className="hidden sm:block w-full min-w-0 px-2 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                                          />
+                                          <input
+                                            type="text"
+                                            value={row.endline}
+                                            onChange={(e) => updateTableRow(table.id, rIdx, 'endline', e.target.value)}
+                                            placeholder="Endline"
+                                            className="hidden sm:block w-full min-w-0 px-2 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                                          />
+                                          <input
+                                            type="text"
+                                            value={row.change}
+                                            onChange={(e) => updateTableRow(table.id, rIdx, 'change', e.target.value)}
+                                            placeholder="Change"
+                                            className="hidden sm:block w-full min-w-0 px-2 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                                          />
+                                          <input
+                                            type="text"
+                                            value={row.source}
+                                            onChange={(e) => updateTableRow(table.id, rIdx, 'source', e.target.value)}
+                                            placeholder="Source"
+                                            className="hidden sm:block w-full min-w-0 px-2 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                                          />
+                                          <div className="hidden sm:flex items-center justify-center">
+                                            {table.rows.length > 1 && (
+                                              <button
+                                                type="button"
+                                                onClick={() => removeTableRow(table.id, rIdx)}
+                                                className="text-slate-400 hover:text-red-500 transition"
+                                                aria-label="Remove row"
+                                              >
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                              </button>
+                                            )}
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => addTableRow(table.id)}
+                                      className="mt-3 px-3 py-2 text-sm font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition inline-flex items-center gap-1"
+                                    >
+                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                                      </svg>
+                                      Add row
+                                    </button>
+                                  </div>
+
+                                  {/* Note */}
+                                  <div>
+                                    <label className="text-xs font-semibold text-slate-600 mb-1 block">
+                                      Table {tIdx + 1} — Note
+                                    </label>
                                     <textarea
-                                      value={fig.note}
-                                      onChange={(e) => updateFigure(fig.id, 'note', e.target.value)}
-                                      placeholder="e.g., Description. Source or explanatory sentences, where necessary."
+                                      value={table.note}
+                                      onChange={(e) => updateTableField(table.id, 'note', e.target.value)}
+                                      placeholder="e.g., Note. Explain abbreviations or important qualifications."
                                       rows={2}
-                                      className="w-full px-3 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
+                                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
                                     />
                                   </div>
                                 </div>
                               ))}
+
+                              <button
+                                type="button"
+                                onClick={addTable}
+                                className="w-full px-4 py-3 text-sm font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border-2 border-dashed border-blue-200 hover:border-blue-300 rounded-xl transition inline-flex items-center justify-center gap-2"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                                </svg>
+                                Add table
+                              </button>
                             </div>
-                          )}
+
+                            {/* ---------- Figures ---------- */}
+                            <div className="border-t border-slate-100 pt-4">
+                              <div className="flex items-center justify-between mb-2">
+                                <div>
+                                  <label className="text-sm font-semibold text-slate-700 block">
+                                    Figures
+                                  </label>
+                                  <p className="text-xs text-slate-500 mt-0.5">
+                                    Attach one or more figure images. Each will be numbered sequentially (Figure 1, Figure 2, …).
+                                  </p>
+                                </div>
+                                <label className="cursor-pointer px-3 py-2 text-sm font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition inline-flex items-center gap-1">
+                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                                  </svg>
+                                  Add figure
+                                  <input
+                                    type="file"
+                                    accept="image/png,image/jpeg,image/jpg,image/webp"
+                                    multiple
+                                    className="hidden"
+                                    onChange={handleAddFigures}
+                                  />
+                                </label>
+                              </div>
+
+                              {figures.length === 0 ? (
+                                <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center text-slate-400 text-sm">
+                                  No figures attached yet.
+                                </div>
+                              ) : (
+                                <div className="space-y-4">
+                                  {figures.map((fig, idx) => (
+                                    <div
+                                      key={fig.id}
+                                      className="border border-slate-200 rounded-xl p-4 bg-slate-50/50 space-y-3"
+                                    >
+                                      <div className="flex items-start justify-between gap-3">
+                                        <span className="text-sm font-bold text-slate-700">
+                                          Figure {idx + 1}
+                                        </span>
+                                        <button
+                                          type="button"
+                                          onClick={() => removeFigure(fig.id)}
+                                          className="text-slate-400 hover:text-red-500 transition"
+                                          aria-label="Remove figure"
+                                        >
+                                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                          </svg>
+                                        </button>
+                                      </div>
+
+                                      {/* Image preview */}
+                                      <div className="border border-slate-200 rounded-lg bg-white p-2 flex items-center justify-center">
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img
+                                          src={fig.previewUrl}
+                                          alt={fig.title || `Figure ${idx + 1}`}
+                                          className="max-h-48 w-auto object-contain"
+                                        />
+                                      </div>
+
+                                      {/* Title */}
+                                      <div>
+                                        <label className="text-xs font-semibold text-slate-600 mb-1 block">
+                                          Figure {idx + 1} — Title
+                                        </label>
+                                        <GuidanceBlock>
+                                          <p>Provide a concise, descriptive title for the figure (e.g., &ldquo;Extension Project Results Pathway&rdquo;).</p>
+                                        </GuidanceBlock>
+                                        <input
+                                          type="text"
+                                          value={fig.title}
+                                          onChange={(e) => updateFigure(fig.id, 'title', e.target.value)}
+                                          placeholder="e.g., Extension Project Results Pathway"
+                                          className="w-full px-3 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                                        />
+                                      </div>
+
+                                      {/* Description */}
+                                      <div>
+                                        <label className="text-xs font-semibold text-slate-600 mb-1 block">
+                                          Figure {idx + 1} — Description
+                                        </label>
+                                        <GuidanceBlock>
+                                          <p>Provide a description or source note, where necessary, following APA 7th Edition figure notes style.</p>
+                                        </GuidanceBlock>
+                                        <textarea
+                                          value={fig.note}
+                                          onChange={(e) => updateFigure(fig.id, 'note', e.target.value)}
+                                          placeholder="e.g., Description. Source or explanatory sentences, where necessary."
+                                          rows={2}
+                                          className="w-full px-3 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none resize-y"
+                                        />
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                </div>
 
-                {/* ============ Actions ============ */}
-                <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowPreview(true)}
-                    className="sm:flex-1 py-3 rounded-xl font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition inline-flex items-center justify-center gap-2"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    Preview Full Paper
-                  </button>
-                  <button
-                    type="button"
-                    disabled={submitting || generatingPdf ||
-                      acceptedSubmissions.length === 0 || !submissionId ||
-                      !title.trim() || !authors.trim() ||
-                      !affiliations.trim() || !keywords.trim() ||
-                      !correspondingName.trim() || !correspondingEmail.trim() || !thematicArea
-                    }
-                    onClick={handleSubmit}
-                    className="sm:flex-2 py-3 rounded-xl font-bold text-white bg-linear-to-r from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 transition shadow-lg shadow-blue-700/20 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
-                  >
-                    {generatingPdf ? (
-                      <>
-                        <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                        </svg>
-                        Generating PDF…
-                      </>
-                    ) : submitting ? (
-                      <>
-                        <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                        </svg>
-                        Submitting…
-                      </>
-                    ) : (
-                      <>
+                    {/* ============ Actions ============ */}
+                    <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowPreview(true)}
+                        className="sm:flex-1 py-3 rounded-xl font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition inline-flex items-center justify-center gap-2"
+                      >
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
-                        {isResubmit ? 'Resubmit Full Paper' : 'Submit Full Paper'}
-                      </>
-                    )}
-                  </button>
-                </div>
+                        Preview Full Paper
+                      </button>
+                      <button
+                        type="button"
+                        disabled={submitting || generatingPdf ||
+                          acceptedSubmissions.length === 0 || !submissionId ||
+                          !title.trim() || !authors.trim() ||
+                          !affiliations.trim() || !keywords.trim() ||
+                          !correspondingName.trim() || !correspondingEmail.trim() || !thematicArea
+                        }
+                        onClick={handleSubmit}
+                        className="sm:flex-2 py-3 rounded-xl font-bold text-white bg-linear-to-r from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 transition shadow-lg shadow-blue-700/20 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
+                      >
+                        {generatingPdf ? (
+                          <>
+                            <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                            </svg>
+                            Generating PDF…
+                          </>
+                        ) : submitting ? (
+                          <>
+                            <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                            </svg>
+                            Submitting…
+                          </>
+                        ) : (
+                          <>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                            </svg>
+                            {isResubmit ? 'Resubmit Full Paper' : 'Submit Full Paper'}
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>

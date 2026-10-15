@@ -2272,13 +2272,10 @@ export default function SubmitFullPaper({
         }
       `}</style>
 
-      <div
-        className="flex flex-col"
-        style={{ height: 'calc(100vh - 73px)' }}
-      >
-        {/* ---- Pinned header: title + Back to Home ---- */}
-        <div className="shrink-0 w-full">
-          <div className="max-w-4xl mx-auto px-6 pt-6 pb-4 flex justify-between items-center">
+      <div className="flex flex-col h-full">
+        {/* ---- Pinned page title: title + Back to Home ---- */}
+        <div className="shrink-0 w-full px-6 pt-6 pb-4">
+          <div className="max-w-4xl mx-auto flex justify-between items-center">
             <div>
               <h1 className="text-2xl font-bold text-slate-900">
                 {isResubmit ? 'Resubmit Full Paper' : 'Submit Full Paper'}
@@ -2299,11 +2296,12 @@ export default function SubmitFullPaper({
           </div>
         </div>
 
-        {/* ---- Scrollable form area ---- */}
+        {/* ---- Flex area: card with pinned header + scroll body + pinned footer ---- */}
         <div className="flex-1 min-h-0 px-6 pb-6">
-          <div className="form-scroll max-w-4xl mx-auto h-full overflow-y-auto" style={{ scrollPaddingTop: '80px' }}>
-            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm">
-              <div className="sticky top-0 z-20 bg-linear-to-r from-blue-700 to-blue-800 px-6 py-4 flex items-center justify-between rounded-t-2xl">
+          <div className={`max-w-4xl mx-auto flex flex-col rounded-b-lg ${submissionId ? 'h-full' : ''}`}>
+            {/* ===== PINNED CARD HEADER ===== */}
+            <div className="shrink-0 bg-white border border-slate-200 border-b-0 rounded-t-2xl shadow-sm overflow-hidden">
+              <div className="bg-linear-to-r from-blue-700 to-blue-800 px-6 py-4 flex items-center justify-between">
                 <div className="text-white">
                   <h2 className="text-lg font-bold">Full Paper Submission Template</h2>
                   <p className="text-xs text-blue-100">
@@ -2322,8 +2320,11 @@ export default function SubmitFullPaper({
                   Preview A4
                 </button>
               </div>
+            </div>
 
-              <div className="p-6 space-y-5">
+            {/* ===== SCROLLABLE BODY (the ONLY scrolling area) ===== */}
+            <div className="form-scroll flex-1 min-h-0 overflow-y-auto bg-white border-x border-slate-200">
+              <form id="full-paper-form" onSubmit={(e) => e.preventDefault()} className="p-6 space-y-5">
                 {error && (
                   <div className="bg-red-50 border border-red-100 text-red-600 text-sm p-4 rounded-xl flex items-start gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 shrink-0 mt-0.5">
@@ -3671,61 +3672,66 @@ export default function SubmitFullPaper({
                         </div>
                       </div>
                     </div>
-
-                    {/* ============ Actions ============ */}
-                    <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                      <button
-                        type="button"
-                        onClick={() => setShowPreview(true)}
-                        className="sm:flex-1 py-3 rounded-xl font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition inline-flex items-center justify-center gap-2"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        Preview Full Paper
-                      </button>
-                      <button
-                        type="button"
-                        disabled={submitting || generatingPdf ||
-                          acceptedSubmissions.length === 0 || !submissionId ||
-                          !title.trim() || !authors.trim() ||
-                          !affiliations.trim() || !keywords.trim() ||
-                          !correspondingName.trim() || !correspondingEmail.trim() || !thematicArea
-                        }
-                        onClick={handleSubmit}
-                        className="sm:flex-2 py-3 rounded-xl font-bold text-white bg-linear-to-r from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 transition shadow-lg shadow-blue-700/20 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
-                      >
-                        {generatingPdf ? (
-                          <>
-                            <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                            </svg>
-                            Generating PDF…
-                          </>
-                        ) : submitting ? (
-                          <>
-                            <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                            </svg>
-                            Submitting…
-                          </>
-                        ) : (
-                          <>
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-                            </svg>
-                            {isResubmit ? 'Resubmit Full Paper' : 'Submit Full Paper'}
-                          </>
-                        )}
-                      </button>
-                    </div>
                   </>
                 )}
-              </div>
+              </form>
             </div>
+
+            {/* ===== PINNED FOOTER (never scrolls) ===== */}
+            {submissionId && (
+              <div className="shrink-0 bg-white border border-t-0 border-slate-200 rounded-b-2xl p-4 shadow-sm space-y-3">
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowPreview(true)}
+                    className="sm:flex-1 py-3 rounded-xl font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition inline-flex items-center justify-center gap-2"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    Preview Full Paper
+                  </button>
+                  <button
+                    type="submit"
+                    form="full-paper-form"
+                    disabled={submitting || generatingPdf ||
+                      acceptedSubmissions.length === 0 || !submissionId ||
+                      !title.trim() || !authors.trim() ||
+                      !affiliations.trim() || !keywords.trim() ||
+                      !correspondingName.trim() || !correspondingEmail.trim() || !thematicArea
+                    }
+                    onClick={handleSubmit}
+                    className="sm:flex-2 py-3 rounded-xl font-bold text-white bg-linear-to-r from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 transition shadow-lg shadow-blue-700/20 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
+                  >
+                    {generatingPdf ? (
+                      <>
+                        <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                        </svg>
+                        Generating PDF…
+                      </>
+                    ) : submitting ? (
+                      <>
+                        <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                        </svg>
+                        Submitting…
+                      </>
+                    ) : (
+                      <>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                        </svg>
+                        {isResubmit ? 'Resubmit Full Paper' : 'Submit Full Paper'}
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

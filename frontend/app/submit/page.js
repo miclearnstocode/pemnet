@@ -1419,7 +1419,9 @@ export default function SubmitPage() {
                   className={`bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition text-left group ${!isSubmissionOpen ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
                 >
                   <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-4 group-hover:bg-blue-200 transition">
-                    {/* Icon */}
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-blue-600">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m3.75 9v6m3-3h-6m-3.75-12h9.75c.621 0 1.125.504 1.125 1.125v14.25c0 .621-.504 1.125-1.125 1.125H5.625c-.621 0-1.125-.504-1.125-1.125V4.125c0-.621.504-1.125 1.125-1.125z" />
+                    </svg>
                   </div>
                   <h3 className="text-lg font-bold text-slate-900 mb-1">Submit Abstract</h3>
                   <p className="text-sm text-slate-500">
@@ -1573,32 +1575,39 @@ export default function SubmitPage() {
           )}
 
           {activeTab === 'full-paper' && (
-            <SubmitFullPaper
-              key={
-                editingFullPaper
-                  ? `resubmit-${editingFullPaper.id}`
-                  : `submit-${selectedSubmission?.id ?? 'new'}`
-              }
-              user={user}
-              submissions={userSubmissions}
-              initialSubmission={selectedSubmission}
-              existingFullPaper={editingFullPaper}
-              eventTheme={upcomingEvent?.theme || ''}  
-              eventName={upcomingEvent?.title || ''} 
-              onBack={() => {
-                setActiveTab('home');
-                setEditingFullPaper(null);
-                setSelectedSubmission(null);
-              }}
-              onToast={showToast}
-              onSubmitted={() => {
-                fetchUserSubmissions(user.id);
-                fetchUserFullPapers(user.id);
-                setEditingFullPaper(null);
-                setSelectedSubmission(null);
-                setTimeout(() => setActiveTab('my-submissions'), 1000);
-              }}
-            />
+            <div
+              className="max-w-5xl mx-auto flex flex-col"
+              style={{ height: 'calc(100vh - 73px)' }}
+            >
+              <div className="flex-1 min-h-0">
+                  <SubmitFullPaper
+                    key={
+                      editingFullPaper
+                        ? `resubmit-${editingFullPaper.id}`
+                        : `submit-${selectedSubmission?.id ?? 'new'}`
+                    }
+                    user={user}
+                    submissions={userSubmissions}
+                    initialSubmission={selectedSubmission}
+                    existingFullPaper={editingFullPaper}
+                    eventTheme={upcomingEvent?.theme || ''}
+                    eventName={upcomingEvent?.title || ''}
+                    onBack={() => {
+                      setActiveTab('home');
+                      setEditingFullPaper(null);
+                      setSelectedSubmission(null);
+                    }}
+                    onToast={showToast}
+                    onSubmitted={() => {
+                      fetchUserSubmissions(user.id);
+                      fetchUserFullPapers(user.id);
+                      setEditingFullPaper(null);
+                      setSelectedSubmission(null);
+                      setTimeout(() => setActiveTab('my-submissions'), 1000);
+                    }}
+                  />
+              </div>
+            </div>
           )}
         </div>
       </main>

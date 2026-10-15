@@ -1165,561 +1165,606 @@ export default function AbstractForm({
 
   /* ---------------- Form mode ---------------- */
   return (
-    <form onSubmit={handleSubmit}>
-      {error && (
-        <div className="bg-red-50 border border-red-100 text-red-600 text-sm p-4 rounded-xl mb-4 flex items-start gap-2 max-w-4xl mx-auto">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 shrink-0 mt-0.5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-          </svg>
-          {error}
-        </div>
-      )}
-      
-      {/* Show message if event is not active */}
-      {!isSubmissionOpen && (
-          <div className="bg-amber-50 border border-amber-200 text-amber-800 text-sm p-4 rounded-xl mb-4 flex items-start gap-2 max-w-4xl mx-auto">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 shrink-0 mt-0.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-              </svg>
-              <div>
-                  <p className="font-semibold">Submissions are currently closed.</p>
-                  <p className="text-xs mt-1">{upcomingEvent?.message || "No upcoming events scheduled."}</p>
-              </div>
-          </div>
-      )}
+    <>
+      <style jsx global>{`
+        html, body {
+          overflow: hidden !important;
+          height: 100% !important;
+        }
 
-      <div className="max-w-4xl mx-auto bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-        <div className="bg-linear-to-r from-blue-700 to-blue-800 px-6 py-4 flex items-center justify-between">
-          <div className="text-white">
-            <h1 className="text-lg font-bold">Abstract Submission</h1>
-            {/* Dynamic Event Title */}
-            <p className="text-xs text-blue-100">
-              {eventTitle}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setShowPreview(true)}
-            className="px-4 py-2 text-sm font-semibold text-blue-800 bg-white hover:bg-blue-50 rounded-xl transition inline-flex items-center gap-2"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            Preview A4
-          </button>
-        </div>
-        <div className="p-6 space-y-6">
-          {/* A. PAPER INFORMATION */}
-          <SectionBlock letter="A" title="Paper Information">
-            <Field
-              label="1. Title of the Extension Project Paper"
-              required
-              value={formData.title}
-              onChange={handleChange}
-              name="title"
-              placeholder="Enter your project title"
-            />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Field
-                label="2a. Project Leader (add * to name)"
-                required
-                value={formData.project_leader}
-                onChange={handleChange}
-                name="project_leader"
-                placeholder="Project Leader Name *"
-              />
-              <Field
-                label="2b. Paper Presenter"
-                required
-                value={formData.presenter}
-                onChange={handleChange}
-                name="presenter"
-                placeholder="Presenter Name (paper presenter)"
-              />
-            </div>
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-semibold text-slate-700">2c. Co-Authors</label>
-                <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full">
-                  {coAuthors.length}
-                </span>
+        /* Force the form scrollbar to always be visible */
+        .form-scroll::-webkit-scrollbar {
+          width: 12px;
+        }
+        .form-scroll::-webkit-scrollbar-thumb {
+          background: #94a3b8;
+          border-radius: 6px;
+          border: 2px solid #f1f5f9;
+        }
+        .form-scroll::-webkit-scrollbar-thumb:hover {
+          background: #64748b;
+        }
+        .form-scroll::-webkit-scrollbar-track {
+          background: #f1f5f9;
+        }
+
+        /* Firefox */
+        .form-scroll {
+          scrollbar-width: auto;
+          scrollbar-color: #94a3b8 #f1f5f9;
+        }
+      `}</style>
+
+      <div className="flex flex-col" style={{ height: 'calc(100vh - 73px - 110px)' }}>  
+        {/* ---- Body area (padding only, no scroll here) ---- */}
+        <div className="flex-1 min-h-0 px-6 pb-6 pt-6">
+          <div className="max-w-4xl mx-auto h-full flex flex-col">
+
+            {/* ===== PINNED HEADER (never scrolls) ===== */}
+            <div className="shrink-0 bg-white border border-slate-200 border-b-0 rounded-t-2xl shadow-sm overflow-hidden">
+              <div className="bg-linear-to-r from-blue-700 to-blue-800 px-6 py-4 flex items-center justify-between">
+                <div className="text-white">
+                  <h1 className="text-lg font-bold">Abstract Submission</h1>
+                  {/* Dynamic Event Title */}
+                  <p className="text-xs text-blue-100">
+                    {eventTitle}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowPreview(true)}
+                  className="px-4 py-2 text-sm font-semibold text-blue-800 bg-white hover:bg-blue-50 rounded-xl transition inline-flex items-center gap-2"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  Preview A4
+                </button>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {coAuthors.map((a, i) => (
-                  <div key={i} className="flex items-center gap-1.5 px-3 h-10 bg-slate-50 border text-slate-700 border-slate-200 rounded-xl">
-                    <span className="text-xs font-bold text-blue-600">{i + 1}.</span>
-                    <input
-                      type="text"
-                      value={a}
-                      onChange={(e) => handleCoAuthorChange(i, e.target.value)}
-                      placeholder={`Author ${i + 1}`}
-                      className="w-32 bg-transparent text-sm focus:outline-none"
-                    />
-                    {coAuthors.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeCoAuthor(i)}
-                        className="w-5 h-5 flex items-center justify-center rounded-full text-slate-300 hover:text-red-500 hover:bg-red-50"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3 h-3">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    )}
+            </div>
+
+            {/* ===== SCROLLABLE FORM BODY ===== */}
+            <div
+              className="form-scroll flex-1 min-h-0 overflow-y-auto bg-white border border-slate-200 rounded-b-2xl shadow-sm"
+              style={{ scrollPaddingTop: '80px' }}
+            >
+              <form onSubmit={handleSubmit} className="p-6 space-y-6">
+                {error && (
+                  <div className="bg-red-50 border border-red-100 text-red-600 text-sm p-4 rounded-xl flex items-start gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 shrink-0 mt-0.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                    </svg>
+                    {error}
                   </div>
-                ))}
-              </div>
-              <button
-                type="button"
-                onClick={addCoAuthor}
-                className="mt-2 inline-flex items-center gap-1.5 px-3 h-9 rounded-xl border-2 border-dashed border-blue-300 text-blue-600 font-semibold text-xs hover:border-blue-500 hover:bg-blue-50"
-              >
-                + Add Co-Author
-              </button>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Field
-                label="3a. Corresponding Author Name"
-                required
-                value={formData.corresponding_author_name}
-                onChange={handleChange}
-                name="corresponding_author_name"
-                placeholder="Full Name"
-              />
-              <Field
-                label="3b. Position/Designation"
-                value={formData.corresponding_author_position}
-                onChange={handleChange}
-                name="corresponding_author_position"
-                placeholder="e.g., Professor"
-              />
-            </div>
-            <Field
-              label="3c. Corresponding Author Email"
-              required
-              type="email"
-              value={formData.corresponding_author_email}
-              onChange={handleChange}
-              name="corresponding_author_email"
-              placeholder="email@example.com"
-            />
-            <div>
-              <label className="text-sm font-semibold text-slate-700 mb-2 block">
-                4. Paper Category <span className="text-red-500">*</span>
-              </label>
-              <div className="space-y-2">
-                {paperCategories.map((c) => (
-                  <label key={c} className="flex items-center gap-2 cursor-pointer text-sm text-slate-800">
-                    <input
-                      type="radio"
-                      name="paper_category"
-                      value={c}
-                      required
-                      checked={formData.paper_category === c}
-                      onChange={handleChange}
-                      className="w-4 h-4 text-blue-600 accent-blue-600"
-                    />
-                    <span className="text-slate-800">{c}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-            <div>
-              <label className="text-sm font-semibold text-slate-700 mb-2 block">
-                5. Thematic Area (choose 1 only) <span className="text-red-500">*</span>
-              </label>
-              <div className="space-y-2">
-                {thematicAreas.map((t) => (
-                  <label key={t} className="flex items-start gap-2 cursor-pointer text-sm text-slate-800">
-                    <input
-                      type="radio"
-                      name="thematic_area"
-                      value={t}
-                      required
-                      checked={formData.thematic_area === t}
-                      onChange={handleChange}
-                      className="w-4 h-4 mt-0.5 text-blue-600 accent-blue-600"
-                    />
-                    <span className="text-slate-800 leading-snug">{t}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-            <div ref={dropdownRef} className="relative">
-              <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
-                SUC / Agency <span className="text-red-500">*</span>
-              </label>
-              {!showOtherSuc ? (
-                <>
-                  <input
-                    type="text"
-                    placeholder="Search SUC/Agency..."
-                    value={searchTerm}
-                    onChange={handleSearchChange}
-                    onFocus={() => setShowDropdown(true)}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                )}
+
+                {/* Show message if event is not active */}
+                {!isSubmissionOpen && (
+                  <div className="bg-amber-50 border border-amber-200 text-amber-800 text-sm p-4 rounded-xl flex items-start gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 shrink-0 mt-0.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                    </svg>
+                    <div>
+                      <p className="font-semibold">Submissions are currently closed.</p>
+                      <p className="text-xs mt-1">{upcomingEvent?.message || "No upcoming events scheduled."}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* A. PAPER INFORMATION */}
+                <SectionBlock letter="A" title="Paper Information">
+                  <Field
+                    label="1. Title of the Extension Project Paper"
+                    required
+                    value={formData.title}
+                    onChange={handleChange}
+                    name="title"
+                    placeholder="Enter your project title"
                   />
-                  {chosenSuc && !showOtherSuc && (
-                    <p className="text-xs text-emerald-600 mt-1.5 font-medium flex items-center gap-1">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                      Selected: {chosenSuc}
-                    </p>
-                  )}
-                  {showDropdown && (
-                    <div className="absolute z-20 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
-                      {isLoadingSucs ? (
-                        <div className="p-4 text-center text-sm text-slate-500">Loading...</div>
-                      ) : filteredSucList.length > 0 ? (
-                        filteredSucList.map((suc) => (
-                          <button
-                            key={suc.id}
-                            type="button"
-                            onClick={() => handleSucSelect(suc)}
-                            className="w-full px-4 py-2.5 text-left hover:bg-blue-50 text-slate-700 flex justify-between border-b border-slate-50 last:border-0"
-                          >
-                            <span className="text-sm">{suc.name}</span>
-                            <span className="text-xs text-slate-400">{suc.region}</span>
-                          </button>
-                        ))
-                      ) : (
-                        <div className="p-3 text-sm text-slate-500">
-                          No SUCs found.{' '}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Field
+                      label="2a. Project Leader (add * to name)"
+                      required
+                      value={formData.project_leader}
+                      onChange={handleChange}
+                      name="project_leader"
+                      placeholder="Project Leader Name *"
+                    />
+                    <Field
+                      label="2b. Paper Presenter"
+                      required
+                      value={formData.presenter}
+                      onChange={handleChange}
+                      name="presenter"
+                      placeholder="Presenter Name (paper presenter)"
+                    />
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-sm font-semibold text-slate-700">2c. Co-Authors</label>
+                      <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full">
+                        {coAuthors.length}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {coAuthors.map((a, i) => (
+                        <div key={i} className="flex items-center gap-1.5 px-3 h-10 bg-slate-50 border text-slate-700 border-slate-200 rounded-xl">
+                          <span className="text-xs font-bold text-blue-600">{i + 1}.</span>
+                          <input
+                            type="text"
+                            value={a}
+                            onChange={(e) => handleCoAuthorChange(i, e.target.value)}
+                            placeholder={`Author ${i + 1}`}
+                            className="w-32 bg-transparent text-sm focus:outline-none"
+                          />
+                          {coAuthors.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => removeCoAuthor(i)}
+                              className="w-5 h-5 flex items-center justify-center rounded-full text-slate-300 hover:text-red-500 hover:bg-red-50"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3 h-3">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={addCoAuthor}
+                      className="mt-2 inline-flex items-center gap-1.5 px-3 h-9 rounded-xl border-2 border-dashed border-blue-300 text-blue-600 font-semibold text-xs hover:border-blue-500 hover:bg-blue-50"
+                    >
+                      + Add Co-Author
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Field
+                      label="3a. Corresponding Author Name"
+                      required
+                      value={formData.corresponding_author_name}
+                      onChange={handleChange}
+                      name="corresponding_author_name"
+                      placeholder="Full Name"
+                    />
+                    <Field
+                      label="3b. Position/Designation"
+                      value={formData.corresponding_author_position}
+                      onChange={handleChange}
+                      name="corresponding_author_position"
+                      placeholder="e.g., Professor"
+                    />
+                  </div>
+                  <Field
+                    label="3c. Corresponding Author Email"
+                    required
+                    type="email"
+                    value={formData.corresponding_author_email}
+                    onChange={handleChange}
+                    name="corresponding_author_email"
+                    placeholder="email@example.com"
+                  />
+                  <div>
+                    <label className="text-sm font-semibold text-slate-700 mb-2 block">
+                      4. Paper Category <span className="text-red-500">*</span>
+                    </label>
+                    <div className="space-y-2">
+                      {paperCategories.map((c) => (
+                        <label key={c} className="flex items-center gap-2 cursor-pointer text-sm text-slate-800">
+                          <input
+                            type="radio"
+                            name="paper_category"
+                            value={c}
+                            required
+                            checked={formData.paper_category === c}
+                            onChange={handleChange}
+                            className="w-4 h-4 text-blue-600 accent-blue-600"
+                          />
+                          <span className="text-slate-800">{c}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-sm font-semibold text-slate-700 mb-2 block">
+                      5. Thematic Area (choose 1 only) <span className="text-red-500">*</span>
+                    </label>
+                    <div className="space-y-2">
+                      {thematicAreas.map((t) => (
+                        <label key={t} className="flex items-start gap-2 cursor-pointer text-sm text-slate-800">
+                          <input
+                            type="radio"
+                            name="thematic_area"
+                            value={t}
+                            required
+                            checked={formData.thematic_area === t}
+                            onChange={handleChange}
+                            className="w-4 h-4 mt-0.5 text-blue-600 accent-blue-600"
+                          />
+                          <span className="text-slate-800 leading-snug">{t}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <div ref={dropdownRef} className="relative">
+                    <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
+                      SUC / Agency <span className="text-red-500">*</span>
+                    </label>
+                    {!showOtherSuc ? (
+                      <>
+                        <input
+                          type="text"
+                          placeholder="Search SUC/Agency..."
+                          value={searchTerm}
+                          onChange={handleSearchChange}
+                          onFocus={() => setShowDropdown(true)}
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                        />
+                        {chosenSuc && !showOtherSuc && (
+                          <p className="text-xs text-emerald-600 mt-1.5 font-medium flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                            Selected: {chosenSuc}
+                          </p>
+                        )}
+                        {showDropdown && (
+                          <div className="absolute z-20 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                            {isLoadingSucs ? (
+                              <div className="p-4 text-center text-sm text-slate-500">Loading...</div>
+                            ) : filteredSucList.length > 0 ? (
+                              filteredSucList.map((suc) => (
+                                <button
+                                  key={suc.id}
+                                  type="button"
+                                  onClick={() => handleSucSelect(suc)}
+                                  className="w-full px-4 py-2.5 text-left hover:bg-blue-50 text-slate-700 flex justify-between border-b border-slate-50 last:border-0"
+                                >
+                                  <span className="text-sm">{suc.name}</span>
+                                  <span className="text-xs text-slate-400">{suc.region}</span>
+                                </button>
+                              ))
+                            ) : (
+                              <div className="p-3 text-sm text-slate-500">
+                                No SUCs found.{' '}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setShowOtherSuc(true);
+                                    setShowDropdown(false);
+                                    setOtherSucName(searchTerm);
+                                    setChosenSuc(searchTerm);
+                                  }}
+                                  className="text-blue-600 font-semibold hover:underline"
+                                >
+                                  Add "{searchTerm}"
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowOtherSuc(true);
+                            setShowDropdown(false);
+                            setOtherSucName(searchTerm || '');
+                            setChosenSuc(searchTerm || '');
+                          }}
+                          className="mt-2 text-sm text-blue-600 hover:text-blue-700 font-semibold"
+                        >
+                          + Can't find your SUC? Add it here
+                        </button>
+                      </>
+                    ) : (
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={otherSucName}
+                            onChange={handleOtherSucChange}
+                            placeholder="Enter your SUC/Agency name"
+                            required
+                            className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                          />
                           <button
                             type="button"
                             onClick={() => {
-                              setShowOtherSuc(true);
-                              setShowDropdown(false);
-                              setOtherSucName(searchTerm);
-                              setChosenSuc(searchTerm);
+                              setShowOtherSuc(false);
+                              setOtherSucName('');
+                              setChosenSuc('');
+                              setSearchTerm('');
                             }}
-                            className="text-blue-600 font-semibold hover:underline"
+                            className="px-3 py-3 text-red-500 hover:bg-red-50 rounded-xl"
+                            title="Cancel adding other SUC"
                           >
-                            Add "{searchTerm}"
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => {
-                        setShowOtherSuc(true);
-                        setShowDropdown(false);
-                        setOtherSucName(searchTerm || '');
-                        setChosenSuc(searchTerm || '');
-                    }}
-                    className="mt-2 text-sm text-blue-600 hover:text-blue-700 font-semibold"
-                  >
-                    + Can't find your SUC? Add it here
-                  </button>
-                </>
-              ) : (
-                <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                    <input
-                        type="text"
-                        value={otherSucName}
-                        onChange={handleOtherSucChange}
-                        placeholder="Enter your SUC/Agency name"
-                        required
-                        className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                    />
-                    <button
-                        type="button"
-                        onClick={() => {
-                        setShowOtherSuc(false);
-                        setOtherSucName('');
-                        setChosenSuc('');
-                        setSearchTerm('');
-                        }}
-                        className="px-3 py-3 text-red-500 hover:bg-red-50 rounded-xl"
-                        title="Cancel adding other SUC"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                    </div>
-                    <p className="text-xs text-slate-400">
-                        Please type your institution name above.
-                    </p>
-                </div>
-              )}
-            </div>
-          </SectionBlock>
-
-          {/* B. EXTENDED ABSTRACT NARRATIVE */}
-          <SectionBlock letter="B" title="Extended Abstract Narrative">
-            <NarrativeField
-              label="6. Community or Sectoral Need Addressed"
-              hint="Briefly describe in not more than 150 words the validated community, institutional, or sectoral need addressed by the project."
-              name="community_need"
-              value={formData.community_need}
-              onChange={handleChange}
-              rows={4}
-              required
-            />
-            <NarrativeField
-              label="7. Project Objectives"
-              hint="State the main objective/s of the extension project."
-              name="project_objectives"
-              value={formData.project_objectives}
-              onChange={handleChange}
-              rows={4}
-              required
-            />
-            <NarrativeField
-              label="8. Extension Methods, Strategies, or Activities Implemented"
-              hint="Describe in not more than 300 words the major extension approaches, methods, strategies, or activities implemented."
-              name="extension_methods"
-              value={formData.extension_methods}
-              onChange={handleChange}
-              rows={5}
-              required
-            />
-            <div className="border-t border-slate-200 pt-4 mt-2">
-              <h4 className="font-bold text-sm text-slate-800 mb-3">
-                9. Key Outputs, Emerging Results, and Evidence of Outcomes, Adoption, or Utilization
-              </h4>
-              <p className="text-xs text-slate-500 mb-3">
-                Briefly present in not more than 300 words the documented outputs and emerging results. Claims must be supported by verifiable evidence.
-              </p>
-              <div className="space-y-3">
-                <NarrativeField
-                  label="a. Major Outputs or Emerging Results"
-                  name="major_outputs"
-                  value={formData.major_outputs}
-                  onChange={handleChange}
-                  rows={3}
-                  required
-                />
-                <NarrativeField
-                  label="b. Evidence of Outcomes, Adoption, or Utilization"
-                  hint='If not yet available, write: "Not yet available."'
-                  name="evidence_outcomes"
-                  value={formData.evidence_outcomes}
-                  onChange={handleChange}
-                  rows={3}
-                />
-                <NarrativeField
-                  label="c. Supporting Documents/Evidence Available"
-                  hint="Examples: attendance sheets, monitoring reports, photos, testimonials, adoption records, partnership agreements, policy issuances, utilization reports. Upload these in Section D."
-                  name="supporting_docs"
-                  value={formData.supporting_docs}
-                  onChange={handleChange}
-                  rows={3}
-                />
-              </div>
-            </div>
-            <NarrativeField
-              label="10. Sustainability Direction or Next Steps"
-              hint="Explain in not more than 150 words how the project will be sustained, institutionalized, scaled, or improved."
-              name="sustainability"
-              value={formData.sustainability}
-              onChange={handleChange}
-              rows={4}
-              required
-            />
-          </SectionBlock>
-
-          {/* C. KEYWORDS */}
-          <SectionBlock letter="C" title="Keywords">
-            <Field
-              label="Keywords (3–5, comma-separated)"
-              required
-              value={formData.keywords}
-              onChange={handleChange}
-              name="keywords"
-              placeholder="e.g., community extension, sustainable agriculture, capability-building"
-            />
-          </SectionBlock>
-
-          {/* D. FILE UPLOAD */}
-          <SectionBlock letter="D" title="File Upload">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* ---- Endorsement PDF (single, required) ---- */}
-              <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-5 text-center">
-                <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-emerald-600">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
-                  </svg>
-                </div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  Endorsement PDF <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="file"
-                  accept=".pdf"
-                  required
-                  onChange={(e) => setEndorsementFile(e.target.files?.[0] || null)}
-                  className="w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-5 file:rounded-xl file:border-0 file:bg-emerald-600 file:text-white file:font-semibold hover:file:bg-emerald-700 cursor-pointer"
-                />
-                {endorsementFile && (
-                  <div className="flex items-center justify-between mt-2 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-lg text-left">
-                    <span className="text-xs text-emerald-700 truncate font-medium max-w-[200px]" title={endorsementFile.name}>
-                      ✓ {endorsementFile.name}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setEndorsementFile(null)}
-                      className="text-xs text-red-500 hover:text-red-700 hover:underline shrink-0 ml-2"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                )}
-                <p className="text-xs text-slate-400 mt-1">
-                  Upload the signed endorsement (PDF only).
-                </p>
-              </div>
-
-              {/* ---- Supporting Documents (multi-file) ---- */}
-              <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-5 text-center">
-                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-blue-600">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-                  </svg>
-                </div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  Supporting Documents
-                  <span className="text-xs font-normal text-slate-400 ml-1">
-                    (attach as many as needed)
-                  </span>
-                </label>
-                <input
-                  type="file"
-                  accept=".pdf,.png,.jpg,.jpeg,.xls,.xlsx,.csv,.doc,.docx"
-                  multiple
-                  onChange={(e) => {
-                    const picked = e.target.files ? Array.from(e.target.files) : [];
-                    e.target.value = '';
-                    if (picked.length === 0) return;
-                    setSupportingFiles((prev) => {
-                      const seen = new Set(prev.map((f) => `${f.name}::${f.size}`));
-                      const merged = [...prev];
-                      picked.forEach((f) => {
-                        const key = `${f.name}::${f.size}`;
-                        if (!seen.has(key)) {
-                          merged.push(f);
-                          seen.add(key);
-                        }
-                      });
-                      return merged;
-                    });
-                  }}
-                  className="w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-5 file:rounded-xl file:border-0 file:bg-blue-600 file:text-white file:font-semibold hover:file:bg-blue-700 cursor-pointer"
-                />
-                {supportingFiles.length > 0 && (
-                  <div className="mt-3 text-left">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-[11px] font-semibold text-slate-600">
-                        Attached ({supportingFiles.length})
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setSupportingFiles([])}
-                        className="text-[11px] font-semibold text-red-600 hover:text-red-700 hover:underline"
-                      >
-                        Clear all
-                      </button>
-                    </div>
-                    <ul className="text-xs text-blue-700 space-y-1 max-h-40 overflow-auto pr-1">
-                      {supportingFiles.map((f, i) => (
-                        <li
-                          key={`${f.name}-${f.size}-${i}`}
-                          className="flex items-center gap-2 bg-white border border-blue-100 rounded-lg px-2 py-1"
-                        >
-                          <FileTypeIcon fileName={f.name} className="w-5 h-5" />
-                          <span className="truncate flex-1 text-slate-700" title={f.name}>
-                            {f.name}
-                            <span className="text-slate-400 ml-1">
-                              ({(f.size / 1024).toFixed(0)} KB)
-                            </span>
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setSupportingFiles((prev) =>
-                                prev.filter((_, idx) => idx !== i)
-                              )
-                            }
-                            className="shrink-0 w-5 h-5 flex items-center justify-center rounded-full text-slate-400 hover:text-red-600 hover:bg-red-50 transition"
-                            title="Remove"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3 h-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
                               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                             </svg>
                           </button>
-                        </li>
-                      ))}
-                    </ul>
+                        </div>
+                        <p className="text-xs text-slate-400">
+                          Please type your institution name above.
+                        </p>
+                      </div>
+                    )}
                   </div>
-                )}
-                <p className="text-xs text-slate-400 mt-2">
-                  Examples: attendance sheets, monitoring reports, photos, testimonials,
-                  adoption records, partnership agreements, policy issuances, utilization
-                  reports (PDF, PNG, JPG, Excel, Word).
-                </p>
-              </div>
-            </div>
-          </SectionBlock>
+                </SectionBlock>
 
-          <div className="space-y-3 pt-2">
-              <div className="flex flex-col sm:flex-row gap-3">
-                  <button
-                  type="button"
-                  onClick={() => setShowPreview(true)}
-                  className="sm:flex-1 py-3 rounded-xl font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition inline-flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  Preview Abstract
-                  </button>
-                  <button
+                {/* B. EXTENDED ABSTRACT NARRATIVE */}
+                <SectionBlock letter="B" title="Extended Abstract Narrative">
+                  <NarrativeField
+                    label="6. Community or Sectoral Need Addressed"
+                    hint="Briefly describe in not more than 150 words the validated community, institutional, or sectoral need addressed by the project."
+                    name="community_need"
+                    value={formData.community_need}
+                    onChange={handleChange}
+                    rows={4}
+                    required
+                  />
+                  <NarrativeField
+                    label="7. Project Objectives"
+                    hint="State the main objective/s of the extension project."
+                    name="project_objectives"
+                    value={formData.project_objectives}
+                    onChange={handleChange}
+                    rows={4}
+                    required
+                  />
+                  <NarrativeField
+                    label="8. Extension Methods, Strategies, or Activities Implemented"
+                    hint="Describe in not more than 300 words the major extension approaches, methods, strategies, or activities implemented."
+                    name="extension_methods"
+                    value={formData.extension_methods}
+                    onChange={handleChange}
+                    rows={5}
+                    required
+                  />
+                  <div className="border-t border-slate-200 pt-4 mt-2">
+                    <h4 className="font-bold text-sm text-slate-800 mb-3">
+                      9. Key Outputs, Emerging Results, and Evidence of Outcomes, Adoption, or Utilization
+                    </h4>
+                    <p className="text-xs text-slate-500 mb-3">
+                      Briefly present in not more than 300 words the documented outputs and emerging results. Claims must be supported by verifiable evidence.
+                    </p>
+                    <div className="space-y-3">
+                      <NarrativeField
+                        label="a. Major Outputs or Emerging Results"
+                        name="major_outputs"
+                        value={formData.major_outputs}
+                        onChange={handleChange}
+                        rows={3}
+                        required
+                      />
+                      <NarrativeField
+                        label="b. Evidence of Outcomes, Adoption, or Utilization"
+                        hint='If not yet available, write: "Not yet available."'
+                        name="evidence_outcomes"
+                        value={formData.evidence_outcomes}
+                        onChange={handleChange}
+                        rows={3}
+                      />
+                      <NarrativeField
+                        label="c. Supporting Documents/Evidence Available"
+                        hint="Examples: attendance sheets, monitoring reports, photos, testimonials, adoption records, partnership agreements, policy issuances, utilization reports. Upload these in Section D."
+                        name="supporting_docs"
+                        value={formData.supporting_docs}
+                        onChange={handleChange}
+                        rows={3}
+                      />
+                    </div>
+                  </div>
+                  <NarrativeField
+                    label="10. Sustainability Direction or Next Steps"
+                    hint="Explain in not more than 150 words how the project will be sustained, institutionalized, scaled, or improved."
+                    name="sustainability"
+                    value={formData.sustainability}
+                    onChange={handleChange}
+                    rows={4}
+                    required
+                  />
+                </SectionBlock>
+
+                {/* C. KEYWORDS */}
+                <SectionBlock letter="C" title="Keywords">
+                  <Field
+                    label="Keywords (3–5, comma-separated)"
+                    required
+                    value={formData.keywords}
+                    onChange={handleChange}
+                    name="keywords"
+                    placeholder="e.g., community extension, sustainable agriculture, capability-building"
+                  />
+                </SectionBlock>
+
+                {/* D. FILE UPLOAD */}
+                <SectionBlock letter="D" title="File Upload">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* ---- Endorsement PDF (single, required) ---- */}
+                    <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-5 text-center">
+                      <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-emerald-600">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
+                        </svg>
+                      </div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">
+                        Endorsement PDF <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="file"
+                        accept=".pdf"
+                        required
+                        onChange={(e) => setEndorsementFile(e.target.files?.[0] || null)}
+                        className="w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-5 file:rounded-xl file:border-0 file:bg-emerald-600 file:text-white file:font-semibold hover:file:bg-emerald-700 cursor-pointer"
+                      />
+                      {endorsementFile && (
+                        <div className="flex items-center justify-between mt-2 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-lg text-left">
+                          <span className="text-xs text-emerald-700 truncate font-medium max-w-50" title={endorsementFile.name}>
+                            ✓ {endorsementFile.name}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setEndorsementFile(null)}
+                            className="text-xs text-red-500 hover:text-red-700 hover:underline shrink-0 ml-2"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      )}
+                      <p className="text-xs text-slate-400 mt-1">
+                        Upload the signed endorsement (PDF only).
+                      </p>
+                    </div>
+
+                    {/* ---- Supporting Documents (multi-file) ---- */}
+                    <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-5 text-center">
+                      <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-blue-600">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                        </svg>
+                      </div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">
+                        Supporting Documents
+                        <span className="text-xs font-normal text-slate-400 ml-1">
+                          (attach as many as needed)
+                        </span>
+                      </label>
+                      <input
+                        type="file"
+                        accept=".pdf,.png,.jpg,.jpeg,.xls,.xlsx,.csv,.doc,.docx"
+                        multiple
+                        onChange={(e) => {
+                          const picked = e.target.files ? Array.from(e.target.files) : [];
+                          e.target.value = '';
+                          if (picked.length === 0) return;
+                          setSupportingFiles((prev) => {
+                            const seen = new Set(prev.map((f) => `${f.name}::${f.size}`));
+                            const merged = [...prev];
+                            picked.forEach((f) => {
+                              const key = `${f.name}::${f.size}`;
+                              if (!seen.has(key)) {
+                                merged.push(f);
+                                seen.add(key);
+                              }
+                            });
+                            return merged;
+                          });
+                        }}
+                        className="w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-5 file:rounded-xl file:border-0 file:bg-blue-600 file:text-white file:font-semibold hover:file:bg-blue-700 cursor-pointer"
+                      />
+                      {supportingFiles.length > 0 && (
+                        <div className="mt-3 text-left">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-[11px] font-semibold text-slate-600">
+                              Attached ({supportingFiles.length})
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setSupportingFiles([])}
+                              className="text-[11px] font-semibold text-red-600 hover:text-red-700 hover:underline"
+                            >
+                              Clear all
+                            </button>
+                          </div>
+                          <ul className="text-xs text-blue-700 space-y-1 max-h-40 overflow-auto pr-1">
+                            {supportingFiles.map((f, i) => (
+                              <li
+                                key={`${f.name}-${f.size}-${i}`}
+                                className="flex items-center gap-2 bg-white border border-blue-100 rounded-lg px-2 py-1"
+                              >
+                                <FileTypeIcon fileName={f.name} className="w-5 h-5" />
+                                <span className="truncate flex-1 text-slate-700" title={f.name}>
+                                  {f.name}
+                                  <span className="text-slate-400 ml-1">
+                                    ({(f.size / 1024).toFixed(0)} KB)
+                                  </span>
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setSupportingFiles((prev) =>
+                                      prev.filter((_, idx) => idx !== i)
+                                    )
+                                  }
+                                  className="shrink-0 w-5 h-5 flex items-center justify-center rounded-full text-slate-400 hover:text-red-600 hover:bg-red-50 transition"
+                                  title="Remove"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3 h-3">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      <p className="text-xs text-slate-400 mt-2">
+                        Examples: attendance sheets, monitoring reports, photos, testimonials,
+                        adoption records, partnership agreements, policy issuances, utilization
+                        reports (PDF, PNG, JPG, Excel, Word).
+                      </p>
+                    </div>
+                  </div>
+                </SectionBlock>
+
+                <div className="space-y-3 pt-2">
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowPreview(true)}
+                      className="sm:flex-1 py-3 rounded-xl font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition inline-flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      Preview Abstract
+                    </button>
+                    <button
                       type="submit"
                       disabled={!isFormValid || submitting || generatingPdf}
                       className={`sm:flex-2 py-3 rounded-xl font-bold transition shadow-lg inline-flex items-center justify-center gap-2 ${
-                          !isFormValid || submitting || generatingPdf
-                              ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none opacity-60'
-                              : 'text-white bg-linear-to-r from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 shadow-blue-700/20 cursor-pointer'
+                        !isFormValid || submitting || generatingPdf
+                          ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none opacity-60'
+                          : 'text-white bg-linear-to-r from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 shadow-blue-700/20 cursor-pointer'
                       }`}
-                  >
+                    >
                       {generatingPdf
-                          ? 'Generating PDF…'
-                          : submitting
-                          ? 'Submitting…'
-                          : 'Submit Abstract'}
-                  </button>
-              </div>
-              {!isFormValid && (
-                  <div className="w-full text-xs text-amber-700 bg-amber-50 border border-amber-200/70 rounded-xl px-4 py-2.5 flex items-center gap-2">
+                        ? 'Generating PDF…'
+                        : submitting
+                        ? 'Submitting…'
+                        : 'Submit Abstract'}
+                    </button>
+                  </div>
+                  {!isFormValid && (
+                    <div className="w-full text-xs text-amber-700 bg-amber-50 border border-amber-200/70 rounded-xl px-4 py-2.5 flex items-center gap-2">
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 shrink-0 text-amber-600">
-                          <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                        <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
                       </svg>
                       <span>
-                          {!isSubmissionOpen
-                              ? 'Event submissions are currently closed as the registration period has ended.'
-                              : !endorsementFile && !isSucValid
-                              ? 'Please complete all required fields, select or enter your SUC/Agency, and upload the endorsement PDF file.'
-                              : !endorsementFile
-                              ? 'Please upload the Endorsement PDF file to enable submission.'
-                              : !isSucValid
-                              ? (showOtherSuc ? 'Please enter your SUC/Agency name to enable submission.' : 'Please select or enter your SUC/Agency to enable submission.')
-                              : !isEmailValid && formData.corresponding_author_email
-                              ? 'Please enter a valid corresponding author email address.'
-                              : 'Please complete all required fields marked with * to enable submission.'}
+                        {!isSubmissionOpen
+                          ? 'Event submissions are currently closed as the registration period has ended.'
+                          : !endorsementFile && !isSucValid
+                          ? 'Please complete all required fields, select or enter your SUC/Agency, and upload the endorsement PDF file.'
+                          : !endorsementFile
+                          ? 'Please upload the Endorsement PDF file to enable submission.'
+                          : !isSucValid
+                          ? (showOtherSuc ? 'Please enter your SUC/Agency name to enable submission.' : 'Please select or enter your SUC/Agency to enable submission.')
+                          : !isEmailValid && formData.corresponding_author_email
+                          ? 'Please enter a valid corresponding author email address.'
+                          : 'Please complete all required fields marked with * to enable submission.'}
                       </span>
-                  </div>
-              )}
+                    </div>
+                  )}
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       </div>
-    </form>
+    </>
   );
 }
 

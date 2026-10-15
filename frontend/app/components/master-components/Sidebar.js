@@ -14,6 +14,9 @@ import {
   faEnvelope,
   faCog,
   faQuestionCircle,
+  faInfoCircle,
+  faEdit,
+  faHistory,
 } from '@fortawesome/free-solid-svg-icons';
 import ConfirmModal from './../ConfirmModal';
 
@@ -78,6 +81,40 @@ export function SidebarItem({ icon, label, isActive, onClick, collapsed, badge =
   );
 }
 
+// ---------- Quick Tips (shown in expanded sidebar only) ----------
+const QUICK_TIPS = [
+  {
+    icon: faGavel,
+    title: 'Make final decisions',
+    text: 'Click any submission to review details and endorse or downgrade.',
+    box: 'bg-indigo-50 border-indigo-100',
+    iconBox: 'bg-indigo-100',
+    iconColor: 'text-indigo-600',
+    titleColor: 'text-indigo-900',
+    textColor: 'text-indigo-700',
+  },
+  {
+    icon: faEdit,
+    title: 'Edit before deciding',
+    text: 'Correct extracted data issues before making your final call.',
+    box: 'bg-emerald-50 border-emerald-100',
+    iconBox: 'bg-emerald-100',
+    iconColor: 'text-emerald-600',
+    titleColor: 'text-emerald-900',
+    textColor: 'text-emerald-700',
+  },
+  {
+    icon: faHistory,
+    title: 'Track all changes',
+    text: 'View edit history to see who changed what and when.',
+    box: 'bg-blue-50 border-blue-100',
+    iconBox: 'bg-blue-100',
+    iconColor: 'text-blue-600',
+    titleColor: 'text-blue-900',
+    textColor: 'text-blue-700',
+  },
+];
+
 // ---------- Sidebar Component ----------
 export default function Sidebar({
   collapsed,
@@ -106,18 +143,12 @@ export default function Sidebar({
     {
       id: 'system',
       icon: faFileAlt,
-      label: 'System Submissions',
+      label: 'Submissions',
       badge: systemPendingCount || null,
-    },
-    {
-      id: 'email',
-      icon: faEnvelope,
-      label: 'Email Submissions',
-      badge: emailPendingCount || null,
     },
   ];
 
-  // Secondary navigation — moved to the bottom, above user info
+  // Secondary navigation
   const secondaryItems = [
     {
       id: 'settings',
@@ -201,6 +232,32 @@ export default function Sidebar({
               badge={item.badge}
             />
           ))}
+
+          {/* Quick Tips — hidden when sidebar is collapsed */}
+          {!collapsed && (
+            <div className="pt-4 mt-3 border-t border-slate-200">
+              <h3 className="px-1 mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500">
+                <FontAwesomeIcon icon={faInfoCircle} className="w-3.5 h-3.5 text-blue-500" />
+                Quick Tips
+              </h3>
+              <div className="space-y-2">
+                {QUICK_TIPS.map((tip) => (
+                  <div
+                    key={tip.title}
+                    className={`flex items-start gap-2.5 p-2.5 rounded-xl border ${tip.box}`}
+                  >
+                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${tip.iconBox}`}>
+                      <FontAwesomeIcon icon={tip.icon} className={`w-3 h-3 ${tip.iconColor}`} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className={`text-xs font-semibold ${tip.titleColor}`}>{tip.title}</p>
+                      <p className={`text-[11px] leading-snug mt-0.5 ${tip.textColor}`}>{tip.text}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </nav>
 
         {/* Secondary Navigation — Settings & Help Center */}

@@ -1,14 +1,13 @@
-    "use client";
+"use client";
 
     import { useState, useEffect } from 'react';
     import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-    import {faCheckCircle,faClock,faFolderOpen,faInfoCircle,faGavel,faEdit,faHistory,faThumbsDown,faChartLine,faChartPie,faChartBar,faLock,
+    import {faCheckCircle,faClock,faFolderOpen,faThumbsDown,faChartLine,faChartPie,faChartBar,faLock,
     } from '@fortawesome/free-solid-svg-icons';
     import UnderDevelopment from './UnderDevelopment';
 
     const API_URL = (process.env.NEXT_PUBLIC_API_URL).replace(/\/+$/, '');
 
-    // ---------- Reusable helpers ----------
     function getStatusColor(status) {
     const safeStatus = status || 'pending';
     switch (safeStatus) {
@@ -369,7 +368,7 @@
             title="Submissions Over Time"
             subtitle="Monthly volume of abstract submissions (mock preview)"
             featureName="Submission Trend Analytics"
-            description="Interactive time-series charts with filters by source, category, and date range are on the way."
+            description="Interactive time-series charts with filters by category and date range are on the way."
             >
             <div className="h-48">
                 <LineChartPreview data={MOCK_LINE_DATA} color="#6366f1" />
@@ -461,13 +460,13 @@
         </div>
 
         {/* ===== Quick Actions ===== */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6">
             {/* Recent Submissions */}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
                 <h3 className="font-bold text-slate-800 flex items-center gap-2">
                 <FontAwesomeIcon icon={faClock} className="w-4 h-4 text-indigo-500" />
-                Recent Submissions
+                Submissions
                 </h3>
                 <button
                 onClick={() => onNavigate?.('system')}
@@ -485,10 +484,10 @@
                 >
                     <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-slate-800 truncate">
-                        {sub.extension_project_title || sub.subject || 'Untitled'}
+                        {sub.extension_project_title || 'Untitled'}
                     </p>
                     <p className="text-xs text-slate-500 truncate">
-                        {sub.project_leader || sub.sender_name || 'Unknown'}
+                        {sub.project_leader || 'Unknown'}
                     </p>
                     </div>
                     <span className={`shrink-0 px-2.5 py-1 rounded-full text-[10px] font-semibold ${getStatusColor(sub.status)}`}>
@@ -502,51 +501,6 @@
                     <p>No submissions yet</p>
                 </div>
                 )}
-            </div>
-            </div>
-
-            {/* Quick Tips */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-200">
-                <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                <FontAwesomeIcon icon={faInfoCircle} className="w-4 h-4 text-blue-500" />
-                Quick Tips
-                </h3>
-            </div>
-            <div className="p-6 space-y-4">
-                <div className="flex items-start gap-3 p-3 bg-indigo-50 rounded-xl border border-indigo-100">
-                <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center shrink-0">
-                    <FontAwesomeIcon icon={faGavel} className="w-3.5 h-3.5 text-indigo-600" />
-                </div>
-                <div>
-                    <p className="text-sm font-semibold text-indigo-900">Make final decisions</p>
-                    <p className="text-xs text-indigo-700 mt-0.5">
-                    Click any submission to review details and endorse or downgrade.
-                    </p>
-                </div>
-                </div>
-                <div className="flex items-start gap-3 p-3 bg-emerald-50 rounded-xl border border-emerald-100">
-                <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
-                    <FontAwesomeIcon icon={faEdit} className="w-3.5 h-3.5 text-emerald-600" />
-                </div>
-                <div>
-                    <p className="text-sm font-semibold text-emerald-900">Edit before deciding</p>
-                    <p className="text-xs text-emerald-700 mt-0.5">
-                    Correct extracted data issues before making your final call.
-                    </p>
-                </div>
-                </div>
-                <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-xl border border-blue-100">
-                <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
-                    <FontAwesomeIcon icon={faHistory} className="w-3.5 h-3.5 text-blue-600" />
-                </div>
-                <div>
-                    <p className="text-sm font-semibold text-blue-900">Track all changes</p>
-                    <p className="text-xs text-blue-700 mt-0.5">
-                    View edit history to see who changed what and when.
-                    </p>
-                </div>
-                </div>
             </div>
             </div>
         </div>

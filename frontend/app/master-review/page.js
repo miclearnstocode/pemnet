@@ -1117,6 +1117,15 @@ export default function MasterReviewPage() {
     isPosterOnly(s.status) || isPosterOnly(s.evaluation_status)
   ).length;
 
+  // ── Dashboard-only counts: SYSTEM submissions table only (email excluded for now) ──
+  const dashSubmissions         = allSubmissions.filter(s => s.__source === 'system');
+  const dashTotalCount          = dashSubmissions.length;
+  const dashPendingCount        = dashSubmissions.filter(s => isPending(s.status)).length;
+  const dashEndorsedCount       = dashSubmissions.filter(s => isEndorsed(s.status)).length;
+  const dashNonCompetitiveCount = dashSubmissions.filter(s =>
+    isNonCompetitive(s.status) || isNonCompetitive(s.evaluation_status)
+  ).length;
+
   // ── Per-source breakdown for sidebar badges ──
   const systemPendingCount = allSubmissions
     .filter(s => s.__source === 'system')
@@ -1369,11 +1378,11 @@ export default function MasterReviewPage() {
           {activeNavItem === 'dashboard' && (
             <Dashboard
               currentUser={currentUser}
-              allSubmissions={allSubmissions}
-              totalSubmissions={totalSubmissions}
-              pendingCount={pendingCount}
-              endorsedCount={endorsedCount}
-              nonCompetitiveCount={nonCompetitiveCount}
+              allSubmissions={dashSubmissions}
+              totalSubmissions={dashTotalCount}
+              pendingCount={dashPendingCount}
+              endorsedCount={dashEndorsedCount}
+              nonCompetitiveCount={dashNonCompetitiveCount}
               onNavigate={handleNavClick}
               onStatCardClick={handleStatCardClick}
               onSelectSubmission={selectSubmission}

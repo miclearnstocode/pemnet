@@ -14,24 +14,12 @@ class MasterApproverService:
             system_non_competitive = Submission.query.filter_by(status='downgraded-non_competitive').count()
             system_poster_only = Submission.query.filter_by(status='downgraded-poster_only').count()
             
-            # Count email submissions from extracted_abstract_data
-            email_pending = ExtractedAbstractData.query.filter_by(evaluation_status='pending').count()
-            email_endorsed = ExtractedAbstractData.query.filter_by(evaluation_status='endorse').count()
-            email_non_competitive = ExtractedAbstractData.query.filter_by(evaluation_status='downgraded-non_competitive').count()
-            email_poster_only = ExtractedAbstractData.query.filter_by(evaluation_status='downgraded-poster_only').count()
-            
-            # Get total system submissions
-            total_system = system_total
-            
-            # Get total email submissions
-            total_email = ExtractedAbstractData.query.count()
-            
             return {
-                "total": total_system + total_email,
-                "pending": system_pending + email_pending,
-                "endorsed": system_endorsed + email_endorsed,
-                "non_competitive": system_non_competitive + email_non_competitive,
-                "poster_only": system_poster_only + email_poster_only
+                "total": system_total,
+                "pending": system_pending,
+                "endorsed": system_endorsed,
+                "non_competitive": system_non_competitive,
+                "poster_only": system_poster_only
             }, 200
             
         except Exception as e:
@@ -73,39 +61,6 @@ class MasterApproverService:
                         'vote_downgrade_to': v.vote_downgrade_to
                     } for v in votes]
                 })
-            
-            # Get email submissions (using extracted_abstract_data)
-            email_data = ExtractedAbstractData.query.filter_by(evaluation_status='pending').all()
-            for extracted in email_data:
-                email_sub = EmailSubmission.query.get(extracted.email_submission_id)
-                if email_sub:
-                    # IMPORTANT FIX: Also fetch votes for email submissions
-                    votes = SubmissionVote.query.filter_by(submission_id=extracted.submission_id).all()
-                    vote_stats = {
-                        'endorse': sum(1 for v in votes if v.vote_status == 'endorse'),
-                        'downgrade': sum(1 for v in votes if v.vote_status in ['downgraded-non_competitive', 'downgraded-poster_only', 'downgrade']),
-                        'reassign': sum(1 for v in votes if v.vote_status == 'reassign')
-                    }
-                    results.append({
-                        'id': extracted.submission_id,
-                        'type': 'email',
-                        'title': extracted.title or email_sub.subject,
-                        'project_leader': extracted.project_leader or email_sub.project_leader_name,  # FIXED: Use project_leader
-                        'suc_agencies': extracted.sucs or email_sub.sender_name,
-                        'paper_category': extracted.paper_category or 'Not specified',
-                        'thematic_area': extracted.thematic_area or 'Not specified',
-                        'status': email_sub.status,
-                        'evaluation_status': extracted.evaluation_status,
-                        'created_at': email_sub.email_received_at,
-                        'vote_stats': vote_stats,
-                        'votes': [{
-                            'evaluator_id': v.evaluator_id,
-                            'vote_status': v.vote_status,
-                            'vote_notes': v.vote_notes,
-                            'vote_reassign_to': v.vote_reassign_to,
-                            'vote_downgrade_to': v.vote_downgrade_to
-                        } for v in votes]
-                    })
             
             return results, 200
             

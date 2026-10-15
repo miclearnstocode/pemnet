@@ -129,7 +129,7 @@ def master_approver_chart_data():
             '#ec4899', '#14b8a6', '#3b82f6', '#a855f7', '#f97316'
         ]
 
-        # ---- Canonical category names (edit this list if your DB has more) ----
+        # ---- Canonical categoy ----
         CANONICAL_CATEGORIES = {
             'completed extension project paper':  'Completed Extension Project Paper',
             'completed extension project papers': 'Completed Extension Project Paper',
@@ -171,39 +171,6 @@ def master_approver_chart_data():
             norm = normalize_thematic(thematic_area)
             if norm:
                 thematic_counts[norm] = thematic_counts.get(norm, 0) + cnt
-
-        # ------------------------------------------------------------
-        # 2) EMAIL submissions — use latest revision if present
-        # ------------------------------------------------------------
-        email_rows = ExtractedAbstractData.query.all()
-
-        for row in email_rows:
-            latest_rev = (
-                ExtractedDataRevision.query
-                .filter_by(extracted_data_id=row.id)
-                .order_by(ExtractedDataRevision.created_at.desc())
-                .first()
-            )
-
-            raw_category = None
-            if latest_rev and latest_rev.paper_category:
-                raw_category = latest_rev.paper_category
-            elif row.paper_category:
-                raw_category = row.paper_category
-
-            raw_thematic = None
-            if latest_rev and latest_rev.thematic_area:
-                raw_thematic = latest_rev.thematic_area
-            elif row.thematic_area:
-                raw_thematic = row.thematic_area
-
-            cat = normalize_category(raw_category)
-            the = normalize_thematic(raw_thematic)
-
-            if cat:
-                category_counts[cat] = category_counts.get(cat, 0) + 1
-            if the:
-                thematic_counts[the] = thematic_counts.get(the, 0) + 1
 
         # ------------------------------------------------------------
         # 3) Format for the chart

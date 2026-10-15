@@ -1583,6 +1583,8 @@ export default function SubmitPage() {
               submissions={userSubmissions}
               initialSubmission={selectedSubmission}
               existingFullPaper={editingFullPaper}
+              eventTheme={upcomingEvent?.theme || ''}  
+              eventName={upcomingEvent?.title || ''} 
               onBack={() => {
                 setActiveTab('home');
                 setEditingFullPaper(null);

@@ -381,6 +381,54 @@ function TreasurerSidebar({ collapsed, onToggleCollapse, activeNavItem, onNavCli
               </button>
             );
           })}
+
+          {/* ===== Quick Tips (below Rejected) ===== */}
+          {!collapsed && (
+            <div className="pt-4 mt-2 border-t border-slate-200">
+              <p className="px-3 mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                <FontAwesomeIcon icon={faInfoCircle} className="w-3 h-3" />
+                Quick Tips
+              </p>
+
+              <div className="space-y-2 px-1">
+                <div className="flex items-start gap-2 p-2.5 bg-emerald-50 rounded-lg border border-emerald-100">
+                  <div className="w-6 h-6 rounded-md bg-emerald-100 flex items-center justify-center shrink-0 mt-0.5">
+                    <FontAwesomeIcon icon={faCheckCircle} className="w-3 h-3 text-emerald-600" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-semibold text-emerald-900 leading-tight">Verify payments</p>
+                    <p className="text-[10px] text-emerald-700 mt-0.5 leading-snug">
+                      Click a pending payment to review proof.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2 p-2.5 bg-amber-50 rounded-lg border border-amber-100">
+                  <div className="w-6 h-6 rounded-md bg-amber-100 flex items-center justify-center shrink-0 mt-0.5">
+                    <FontAwesomeIcon icon={faReceipt} className="w-3 h-3 text-amber-600" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-semibold text-amber-900 leading-tight">Check references</p>
+                    <p className="text-[10px] text-amber-700 mt-0.5 leading-snug">
+                      Match reference numbers against proof.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2 p-2.5 bg-blue-50 rounded-lg border border-blue-100">
+                  <div className="w-6 h-6 rounded-md bg-blue-100 flex items-center justify-center shrink-0 mt-0.5">
+                    <FontAwesomeIcon icon={faDownload} className="w-3 h-3 text-blue-600" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-semibold text-blue-900 leading-tight">Export records</p>
+                    <p className="text-[10px] text-blue-700 mt-0.5 leading-snug">
+                      Download accepted payments for your records.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </nav>
 
         {/* Bottom cluster: Settings + Help Center + Treasurer Info */}
@@ -904,71 +952,35 @@ export default function TreasurerPage() {
                   </div>
                 )}
               </div>
-
-              {/* Quick Tips */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                  <div className="px-6 py-4 border-b border-slate-200">
-                    <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                      <FontAwesomeIcon icon={faClock} className="w-4 h-4 text-amber-500" />
-                      Recent Pending Payments
-                    </h3>
-                  </div>
-                  <div className="divide-y divide-slate-100">
-                    {payments.filter(p => p.payment_status === 'pending').slice(0, 5).map((payment) => (
-                      <div key={payment.id} onClick={() => openPaymentDetails(payment)} className="px-6 py-3 hover:bg-slate-50 cursor-pointer transition flex items-center justify-between gap-3">
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-semibold text-slate-800 truncate">{payment.user_name}</p>
-                          <p className="text-xs text-slate-500 truncate">{payment.submission_title || 'N/A'}</p>
-                        </div>
-                        <span className="shrink-0 text-sm font-semibold text-slate-700">{formatCurrency(payment.payment_amount)}</span>
-                      </div>
-                    ))}
-                    {payments.filter(p => p.payment_status === 'pending').length === 0 && (
-                      <div className="px-6 py-8 text-center text-slate-400 text-sm">
-                        <FontAwesomeIcon icon={faCheckCircle} className="w-8 h-8 mb-2 text-emerald-300" />
-                        <p>All caught up!</p>
-                      </div>
-                    )}
-                  </div>
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-200">
+                  <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                    <FontAwesomeIcon icon={faClock} className="w-4 h-4 text-amber-500" />
+                    Recent Pending Payments
+                  </h3>
                 </div>
-
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                  <div className="px-6 py-4 border-b border-slate-200">
-                    <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                      <FontAwesomeIcon icon={faInfoCircle} className="w-4 h-4 text-blue-500" />
-                      Quick Tips
-                    </h3>
-                  </div>
-                  <div className="p-6 space-y-4">
-                    <div className="flex items-start gap-3 p-3 bg-emerald-50 rounded-xl border border-emerald-100">
-                      <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
-                        <FontAwesomeIcon icon={faCheckCircle} className="w-3.5 h-3.5 text-emerald-600" />
+                <div className="divide-y divide-slate-100">
+                  {payments.filter(p => p.payment_status === 'pending').slice(0, 5).map((payment) => (
+                    <div
+                      key={payment.id}
+                      onClick={() => openPaymentDetails(payment)}
+                      className="px-6 py-3 hover:bg-slate-50 cursor-pointer transition flex items-center justify-between gap-3"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-slate-800 truncate">{payment.user_name}</p>
+                        <p className="text-xs text-slate-500 truncate">{payment.submission_title || 'N/A'}</p>
                       </div>
-                      <div>
-                        <p className="text-sm font-semibold text-emerald-900">Verify payments</p>
-                        <p className="text-xs text-emerald-700 mt-0.5">Click a pending payment to review proof and verify.</p>
-                      </div>
+                      <span className="shrink-0 text-sm font-semibold text-slate-700">
+                        {formatCurrency(payment.payment_amount)}
+                      </span>
                     </div>
-                    <div className="flex items-start gap-3 p-3 bg-amber-50 rounded-xl border border-amber-100">
-                      <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
-                        <FontAwesomeIcon icon={faReceipt} className="w-3.5 h-3.5 text-amber-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-amber-900">Check references</p>
-                        <p className="text-xs text-amber-700 mt-0.5">Always match reference numbers against proof.</p>
-                      </div>
+                  ))}
+                  {payments.filter(p => p.payment_status === 'pending').length === 0 && (
+                    <div className="px-6 py-8 text-center text-slate-400 text-sm">
+                      <FontAwesomeIcon icon={faCheckCircle} className="w-8 h-8 mb-2 text-emerald-300" />
+                      <p>All caught up!</p>
                     </div>
-                    <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-xl border border-blue-100">
-                      <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
-                        <FontAwesomeIcon icon={faDownload} className="w-3.5 h-3.5 text-blue-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-blue-900">Export records</p>
-                        <p className="text-xs text-blue-700 mt-0.5">Download accepted payments for your records.</p>
-                      </div>
-                    </div>
-                  </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -1156,58 +1168,105 @@ export default function TreasurerPage() {
                 {/* Left: Payment Info */}
                 <div className="p-6 overflow-y-auto border-r border-slate-200">
                   <SectionTitle icon={faReceipt} color="emerald" label="Payment Information" />
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-sm text-slate-600 font-medium">Submission Title</p>
-                      <p className="text-lg font-semibold text-slate-900">{selectedPayment.submission_title || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-slate-600 font-medium">User</p>
-                      <p className="text-lg font-semibold text-slate-900">{selectedPayment.user_name}</p>
-                      <p className="text-sm text-slate-500">{selectedPayment.user_email}</p>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-sm text-slate-600 font-medium">Amount</p>
-                        <p className="text-lg font-semibold text-slate-900">{formatCurrency(selectedPayment.payment_amount)}</p>
+                  <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+                    <dl className="divide-y divide-slate-100">
+                      {/* Submission Title */}
+                      <div className="px-5 py-3 sm:grid sm:grid-cols-3 sm:gap-4">
+                        <dt className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 sm:pt-0.5">
+                          Submission Title
+                        </dt>
+                        <dd className="mt-1 sm:mt-0 sm:col-span-2 text-sm font-semibold text-slate-900 leading-relaxed">
+                          {selectedPayment.submission_title || 'N/A'}
+                        </dd>
                       </div>
-                      <div>
-                        <p className="text-sm text-slate-600 font-medium">Reference Number</p>
-                        <p className="text-lg font-semibold text-slate-900">{selectedPayment.reference_number || 'N/A'}</p>
+
+                      {/* User */}
+                      <div className="px-5 py-3 sm:grid sm:grid-cols-3 sm:gap-4">
+                        <dt className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 sm:pt-0.5">
+                          User
+                        </dt>
+                        <dd className="mt-1 sm:mt-0 sm:col-span-2 leading-relaxed">
+                          <p className="text-sm font-semibold text-slate-900">{selectedPayment.user_name}</p>
+                          <p className="text-xs text-slate-500 mt-0.5 break-all">{selectedPayment.user_email}</p>
+                        </dd>
                       </div>
+
+                      {/* Amount */}
+                      <div className="px-5 py-3 sm:grid sm:grid-cols-3 sm:gap-4">
+                        <dt className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 sm:pt-0.5">
+                          Amount
+                        </dt>
+                        <dd className="mt-1 sm:mt-0 sm:col-span-2 text-sm font-bold text-slate-900">
+                          {formatCurrency(selectedPayment.payment_amount)}
+                        </dd>
+                      </div>
+
+                      {/* Reference Number */}
+                      <div className="px-5 py-3 sm:grid sm:grid-cols-3 sm:gap-4">
+                        <dt className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 sm:pt-0.5">
+                          Reference Number
+                        </dt>
+                        <dd className="mt-1 sm:mt-0 sm:col-span-2 text-sm font-semibold text-slate-900 break-all font-mono">
+                          {selectedPayment.reference_number || 'N/A'}
+                        </dd>
+                      </div>
+
+                      {/* Payment Date */}
+                      <div className="px-5 py-3 sm:grid sm:grid-cols-3 sm:gap-4">
+                        <dt className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 sm:pt-0.5">
+                          Payment Date
+                        </dt>
+                        <dd className="mt-1 sm:mt-0 sm:col-span-2 text-sm font-semibold text-slate-900">
+                          {selectedPayment.payment_date
+                            ? new Date(selectedPayment.payment_date).toLocaleDateString()
+                            : 'N/A'}
+                        </dd>
+                      </div>
+
+                      {/* Submitted On */}
+                      <div className="px-5 py-3 sm:grid sm:grid-cols-3 sm:gap-4">
+                        <dt className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 sm:pt-0.5">
+                          Submitted On
+                        </dt>
+                        <dd className="mt-1 sm:mt-0 sm:col-span-2 text-sm font-semibold text-slate-900">
+                          {new Date(selectedPayment.created_at).toLocaleString()}
+                        </dd>
+                      </div>
+
+                      {/* Status */}
+                      <div className="px-5 py-3 sm:grid sm:grid-cols-3 sm:gap-4">
+                        <dt className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 sm:pt-0.5">
+                          Status
+                        </dt>
+                        <dd className="mt-1 sm:mt-0 sm:col-span-2">
+                          <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(selectedPayment.payment_status)}`}>
+                            {getStatusIcon(selectedPayment.payment_status)}{' '}
+                            {selectedPayment.payment_status === 'verified'
+                              ? 'ACCEPTED'
+                              : selectedPayment.payment_status.toUpperCase()}
+                          </span>
+                        </dd>
+                      </div>
+                    </dl>
+                  </div>
+
+                  {/* Rejection reason + verified by — outside the dl, still stacked below */}
+                  {selectedPayment.rejection_reason && (
+                    <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl">
+                      <p className="text-sm font-semibold text-red-700">Rejection Reason</p>
+                      <p className="text-sm text-red-600">{selectedPayment.rejection_reason}</p>
                     </div>
-                    <div>
-                      <p className="text-sm text-slate-600 font-medium">Payment Date</p>
-                      <p className="text-lg font-semibold text-slate-900">
-                        {selectedPayment.payment_date ? new Date(selectedPayment.payment_date).toLocaleDateString() : 'N/A'}
+                  )}
+
+                  {selectedPayment.verified_by && (
+                    <div className="mt-4 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
+                      <p className="text-sm font-semibold text-emerald-700">Verified By</p>
+                      <p className="text-sm text-emerald-600">{getUserName(selectedPayment.verified_by)}</p>
+                      <p className="text-xs text-emerald-500">
+                        {selectedPayment.verified_at ? new Date(selectedPayment.verified_at).toLocaleString() : ''}
                       </p>
                     </div>
-                    <div>
-                      <p className="text-sm text-slate-600 font-medium">Submitted On</p>
-                      <p className="text-lg font-semibold text-slate-900">{new Date(selectedPayment.created_at).toLocaleString()}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-slate-600 font-medium">Status</p>
-                      <span className={`inline-flex px-3 py-1.5 rounded-full text-sm font-medium ${getStatusColor(selectedPayment.payment_status)}`}>
-                        {getStatusIcon(selectedPayment.payment_status)} {selectedPayment.payment_status === 'verified' ? 'ACCEPTED' : selectedPayment.payment_status.toUpperCase()}
-                      </span>
-                    </div>
-                    {selectedPayment.rejection_reason && (
-                      <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
-                        <p className="text-sm font-semibold text-red-700">Rejection Reason</p>
-                        <p className="text-sm text-red-600">{selectedPayment.rejection_reason}</p>
-                      </div>
-                    )}
-                    {selectedPayment.verified_by && (
-                      <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
-                        <p className="text-sm font-semibold text-emerald-700">Verified By</p>
-                        <p className="text-sm text-emerald-600">{getUserName(selectedPayment.verified_by)}</p>
-                        <p className="text-xs text-emerald-500">
-                          {selectedPayment.verified_at ? new Date(selectedPayment.verified_at).toLocaleString() : ''}
-                        </p>
-                      </div>
-                    )}
-                  </div>
+                  )}
 
                   {selectedPayment.payment_status === 'pending' && (
                     <div className="mt-6 pt-6 border-t-2 border-emerald-200 space-y-3">
